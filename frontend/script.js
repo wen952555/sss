@@ -40,22 +40,28 @@ document.addEventListener('DOMContentLoaded', () => {
     let arrangedCardsData = { head: [], middle: [], tail: [] };
     let selectedCardElement = null;
 
-    // --- 卡牌图片路径转换 (suit_rank.png 格式) ---
+    // --- 卡牌图片路径转换 (rank_of_suit.png 格式) ---
     function getCardImagePath(card) {
         if (!card || typeof card.suit !== 'string' || typeof card.rank !== 'string') {
             return IMAGE_SERVER_BASE_URL + "placeholder_error.png";
         }
-        const suitName = String(card.suit).toLowerCase();
-        let rankName = String(card.rank).toLowerCase(); // 后端可能返回大写或小写
-
+        const suitMap = {
+            's': 'spades',
+            'h': 'hearts',
+            'd': 'diamonds',
+            'c': 'clubs'
+        };
+        let rankName = String(card.rank).toLowerCase();
         if (rankName === 'a') rankName = 'ace';
         else if (rankName === 'k') rankName = 'king';
         else if (rankName === 'q') rankName = 'queen';
         else if (rankName === 'j') rankName = 'jack';
         else if (rankName === 't') rankName = '10'; // 'T' 转换为 "10"
-
-        const finalPath = `${IMAGE_SERVER_BASE_URL}${suitName}_${rankName}.png`;
-        // console.log(`script.js: CORS_CHECK_DEBUG - getCardImagePath for ${card.suit}${card.rank} -> ${finalPath}`);
+        // 允许 rank 传数字
+        if (rankName === '1') rankName = 'ace';
+        if (rankName.length === 1 && '23456789'.includes(rankName)) rankName = rankName;
+        const suitName = suitMap[String(card.suit).toLowerCase()] || card.suit.toLowerCase();
+        const finalPath = `${IMAGE_SERVER_BASE_URL}${rankName}_of_${suitName}.png`;
         return finalPath;
     }
 
@@ -69,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cardDiv.dataset.suit = cardData.suit; cardDiv.dataset.rank = cardData.rank;
 
         const imagePath = getCardImagePath(cardData);
-        // console.log(`script.js: CORS_CHECK_DEBUG - Render: ${cardData.suit}${cardData.rank} -> ${imagePath}`);
         cardDiv.style.backgroundImage = `url('${imagePath}')`;
 
         const cardText = `${cardData.rank.toUpperCase()}${cardData.suit.toUpperCase().charAt(0)}`;
@@ -77,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cardDiv.style.color = 'transparent';
 
         const imgTest = new Image();
-        // imgTest.crossOrigin = "Anonymous"; // 尝试添加这个，但主要还是服务器CORS要对
         imgTest.src = imagePath;
         imgTest.onload = () => {
             console.log(`script.js: CORS_CHECK_SUCCESS - Img loaded: ${imagePath}`);
@@ -97,13 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- handleHandCardClick, handleArrangedCardClick, 牌道点击事件, updateCountsAndStates, resetGame, resetArrangementButton 事件 ---
-    // 【这些交互函数与我倒数第二条回复中提供的 "frontend/script.js (实现卡牌点击选择和放置逻辑)" 版本中的对应函数保持一致】
-    // 【为了简洁，这里不再重复粘贴，请确保你使用的是那个版本中的这些交互函数】
-    // 【如果需要，我可以把它们也完整粘贴进来】
+    // 这些交互函数与上一版带交互逻辑的一致
 
-    // 假设交互函数已存在... (以下是主要的发牌逻辑，与上一版基本一致)
-
-    function updateCountsAndStates() { /* ...与上一版交互逻辑代码一致... */
+    function updateCountsAndStates() {
         let handCount = Object.keys(currentHandElements).length;
         if(handCardCountSpan) handCardCountSpan.textContent = handCount;
         let totalArranged = 0;
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    function resetGame() { /* ...与上一版交互逻辑代码一致... */
+    function resetGame() {
         originalHandData = []; currentHandElements = {};
         arrangedCardsData = { head: [], middle: [], tail: [] };
         if(playerHandDiv) playerHandDiv.innerHTML = '';
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedCardElement = null; if(messageArea) messageArea.textContent = "请点击“发牌”。";
         if(dealButton) dealButton.disabled = false; updateCountsAndStates();
     }
-    if(resetArrangementButton) resetArrangementButton.addEventListener('click', () => { /* ...与上一版交互逻辑代码一致... */
+    if(resetArrangementButton) resetArrangementButton.addEventListener('click', () => {
         if(playerHandDiv) playerHandDiv.innerHTML = ''; currentHandElements = {};
         originalHandData.forEach(cardData => {
             const cardElement = renderCardElement(cardData, true);
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(messageArea) messageArea.textContent = "摆牌已重置。"; updateCountsAndStates();
     });
 
-    function handleHandCardClick(event) { /* ...与上一版交互逻辑代码一致... */
+    function handleHandCardClick(event) {
         const clickedCard = event.currentTarget;
         if (selectedCardElement === clickedCard) {
             selectedCardElement.classList.remove('selected-from-hand'); selectedCardElement = null;
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(messageArea) messageArea.textContent = `选中 ${selectedCardElement.dataset.rank}${selectedCardElement.dataset.suit}。`;
         }
     }
-    function handleArrangedCardClick(event) { /* ...与上一版交互逻辑代码一致... */
+    function handleArrangedCardClick(event) {
         if (selectedCardElement) { if(messageArea) messageArea.textContent = "请先放置手牌。"; return; }
         const clickedArrangedCard = event.currentTarget; const cardId = clickedArrangedCard.dataset.id;
         const sourceLaneDiv = clickedArrangedCard.parentElement;
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     Object.values(arrangementZones).forEach(zoneData => {
         if (zoneData && zoneData.div) {
-            zoneData.div.addEventListener('click', function() { /* ...与上一版交互逻辑代码一致... */
+            zoneData.div.addEventListener('click', function() {
                 const targetLaneDiv = this; const lane = targetLaneDiv.dataset.lane;
                 const maxCards = parseInt(targetLaneDiv.dataset.maxCards, 10);
                 if (selectedCardElement && arrangedCardsData[lane].length < maxCards) {
@@ -215,13 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function displayHand() { // displayHand也需要定义在dealButton的addEventListener之前
+    function displayHand() {
         if(playerHandDiv) playerHandDiv.innerHTML = ''; else return;
         if (originalHandData && Array.isArray(originalHandData) && originalHandData.length > 0) {
-             // 清空 currentHandElements 并根据 originalHandData 重新填充和渲染到 playerHandDiv
             currentHandElements = {};
             originalHandData.forEach(cardData => {
-                // 只渲染那些还没有被放到摆牌区的牌
                 let isArranged = false;
                 for (const lane in arrangedCardsData) {
                     if (arrangedCardsData[lane].find(c => c.id === cardData.id)) {
@@ -237,13 +235,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             console.log("script.js: CORS_CHECK_DEBUG - displayHand - 渲染了", Object.keys(currentHandElements).length, "张牌到手牌区。");
         }
-        updateCountsAndStates(); // 确保在显示手牌后更新计数
+        updateCountsAndStates();
     }
-
 
     dealButton.addEventListener('click', async () => {
         console.log("script.js: CORS_CHECK_DEBUG - 发牌按钮被点击！");
-        resetGame(); // 发牌前重置
+        resetGame();
         dealButton.disabled = true;
         if (messageArea) messageArea.textContent = "正在获取手牌...";
         const fullApiUrl = `${API_BASE_URL}/deal_cards.php`;
@@ -256,12 +253,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (data && data.success === true && data.hand && Array.isArray(data.hand)) {
                 if (messageArea) messageArea.textContent = data.message || "手牌获取成功...";
-                originalHandData = data.hand.map((card, index) => ({ // 使用 originalHandData 存储原始牌
+                originalHandData = data.hand.map((card, index) => ({
                     ...card,
-                    id: card.id || `card-${Date.now()}-${index}` // 确保每张牌有唯一ID
+                    id: card.id || `card-${Date.now()}-${index}`
                 }));
                 console.log("script.js: CORS_CHECK_DEBUG - 原始手牌数据:", originalHandData.slice(0,3));
-                displayHand(); // 调用 displayHand 来显示初始手牌
+                displayHand();
             } else {
                 const errorMsg = (data && data.message) ? data.message : "手牌数据格式不正确。";
                 if (messageArea) messageArea.textContent = errorMsg; originalHandData = []; displayHand();
@@ -271,10 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
             originalHandData = []; displayHand();
         } finally {
             dealButton.disabled = false;
-            // updateCountsAndStates(); // displayHand 末尾会调用
         }
     });
     console.log("script.js: CORS_CHECK_DEBUG - 初始化完成。");
-    updateCountsAndStates(); // 页面加载后也初始化一次计数和按钮状态
+    updateCountsAndStates();
 });
 console.log("script.js: CORS_CHECK_DEBUG - 文件加载结束。");
