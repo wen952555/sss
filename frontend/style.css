@@ -1,32 +1,19 @@
 /* frontend/style.css */
-body {
-    font-family: sans-serif; margin: 20px; background-color: #f4f4f4;
-}
-.container {
-    max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px;
-}
+body { font-family: sans-serif; margin: 20px; background-color: #eee; }
+.container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 5px; }
+#message-area { padding: 10px; background-color: #f0f0f0; border: 1px solid #ccc; margin-bottom: 15px; }
 .card-container {
-    border: 1px solid #ddd; padding: 10px; margin-top: 10px; min-height: 120px;
-    display: flex; flex-wrap: wrap; gap: 10px;
+    border: 1px solid #ccc; padding: 10px; margin-top: 10px; min-height: 125px;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;
 }
 .card {
-    width: 71px;  /* 标准扑克牌宽度比例 (e.g., 2.5 inches * 28.35px/inch for 71px) */
-    height: 100px; /* 标准扑克牌高度比例 (e.g., 3.5 inches * 28.35px/inch for 100px) */
-    border: 1px solid black;
-    background-color: white;
+    width: 71px; height: 100px; border: 1px solid #333; border-radius: 4px;
+    background-color: white; color: black; /* Default text color */
     display: flex; justify-content: center; align-items: center;
-    font-size: 16px; font-weight: bold; color: black; /* 后备文本默认可见，JS会尝试隐藏 */
-    border-radius: 5px;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-
-    /* 【关键的背景图属性】 */
-    background-size: contain;     /* 或 cover, 或者具体的像素值 */
+    font-size: 16px; font-weight: bold;
+    background-size: contain; /* Or 100% 100% if your images are exact aspect ratio */
     background-repeat: no-repeat;
-    background-position: center center;
+    background-position: center;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
 }
-#controls button {
-    padding: 10px 15px; margin-right: 10px; cursor: pointer;
-}
-#message-area {
-    padding: 10px; background-color: #eee; border: 1px solid #ccc; margin-bottom: 15px;
-}
+#controls button { padding: 10px 20px; cursor: pointer; }
