@@ -3,68 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水在线</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>十三水游戏</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>十三水游戏</h1>
-            <div class="game-controls">
-                <label for="numPlayers">玩家人数:</label>
-                <select id="numPlayersSelect">
-                    <option value="2" selected>2人</option>
-                    <option value="3">3人</option>
-                    <option value="4">4人</option>
-                </select>
-                <button id="newGameBtn">开始新游戏</button>
-                <button id="getStateBtn" style="display:none;">刷新状态</button> <!-- 通常由其他操作触发更新 -->
-            </div>
+            <h1>十三水</h1>
         </header>
 
-        <main id="gameBoard" class="hidden">
-            <div class="player-info-area">
-                <!-- 玩家信息和分数将动态生成 -->
-            </div>
+        <main>
+            <section id="game-status">
+                <p id="message-area">欢迎来到十三水！点击 "发牌" 开始游戏。</p>
+            </section>
 
-            <div class="my-player-area">
-                <h2>我的手牌 (<span id="myPlayerId"></span>)</h2>
-                <div id="myHandArea" class="hand-area droppable-area" data-area-type="hand">
-                    <!-- 我的13张手牌将在这里显示 -->
+            <section id="player-hand-area">
+                <h2>我的手牌 (拖动或点击选择)</h2>
+                <div id="player-hand" class="card-container hand-zone">
+                    <!-- 卡牌会通过 JS 动态插入这里 -->
                 </div>
+            </section>
 
-                <h3>摆牌区</h3>
-                <div class="played-hands-area">
-                    <div class="played-hand-segment">
-                        <h4>头墩 (3张) <span class="card-count">(0/3)</span></h4>
-                        <div id="frontHandArea" class="hand-segment droppable-area" data-area-type="front" data-max-cards="3"></div>
-                    </div>
-                    <div class="played-hand-segment">
-                        <h4>中墩 (5张) <span class="card-count">(0/5)</span></h4>
-                        <div id="middleHandArea" class="hand-segment droppable-area" data-area-type="middle" data-max-cards="5"></div>
-                    </div>
-                    <div class="played-hand-segment">
-                        <h4>尾墩 (5张) <span class="card-count">(0/5)</span></h4>
-                        <div id="backHandArea" class="hand-segment droppable-area" data-area-type="back" data-max-cards="5"></div>
-                    </div>
+            <section id="arrangement-area">
+                <h2>摆牌区 (将牌拖至此处或点击放置)</h2>
+                <div class="arrangement-row">
+                    <h3>头道 (3张) <span id="head-type" class="type-display"></span></h3>
+                    <div id="arranged-head" class="card-container drop-zone" data-lane="head" data-size="3"></div>
                 </div>
-                <button id="submitHandBtn" class="hidden">确认出牌</button>
-                <button id="resetSelectionBtn" class="hidden">重置摆牌</button>
-            </div>
+                <div class="arrangement-row">
+                    <h3>中道 (5张) <span id="middle-type" class="type-display"></span></h3>
+                    <div id="arranged-middle" class="card-container drop-zone" data-lane="middle" data-size="5"></div>
+                </div>
+                <div class="arrangement-row">
+                    <h3>尾道 (5张) <span id="tail-type" class="type-display"></span></h3>
+                    <div id="arranged-tail" class="card-container drop-zone" data-lane="tail" data-size="5"></div>
+                </div>
+            </section>
 
-            <div class="other-players-view">
-                <!-- 其他玩家的牌墩将在这里显示 -->
-            </div>
-
-            <div id="gameMessages" class="game-messages">
-                <!-- 游戏消息，如等待其他玩家，结算信息等 -->
-            </div>
+            <section id="controls">
+                <button id="dealButton">发牌</button>
+                <button id="submitButton" disabled>确定牌型</button>
+                <button id="resetButton" disabled>重置摆牌</button>
+            </section>
         </main>
 
-        <div id="loadingIndicator" class="loading hidden">加载中...</div>
-        <div id="errorDisplay" class="error-message hidden"></div>
-
+        <footer>
+            <p>十三水游戏 v0.1</p>
+        </footer>
     </div>
-    <script src="js/app.js"></script>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
