@@ -1,8 +1,9 @@
 // frontend/config.js
 const CONFIG = {
-    // 重要: 部署后，将下面的 URL 替换为你的 serv00 后端 API 的实际公共 URL
-    // 例如: 'http://yourusername.serv00.net/thirteen-water-game/backend/api'
-    // 本地测试时，如果PHP服务器运行在不同端口，也可能需要指定完整路径
-    API_BASE_URL: 'https://9526.ip-ddns.com/backend/api', // 本地示例, 请修改
-    CARD_IMAGE_PATH: './assets/images/' // 卡牌图片相对路径
+    // 将 API_BASE_URL 修改为你的后端域名
+    API_BASE_URL: 'https://9526.ip-ddns.com/backend/api', // 假设你的PHP API文件在 backend/api/ 目录下
+                                                        // 如果你的serv00部署路径不同，请相应调整
+                                                        // 例如，如果PHP文件直接在 https://9526.ip-ddns.com/ 下的某个文件夹，
+                                                        // 比如叫 thirteen_php，那就是 'https://9526.ip-ddns.com/thirteen_php'
+    CARD_IMAGE_PATH: './assets/images/' // 这个通常不需要改，确认图片在 frontend/assets/images/ 下即可
 };
