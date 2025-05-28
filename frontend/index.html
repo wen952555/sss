@@ -1,20 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thirteen Waters Game</title>
+    <title>十三水在线</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <h1>Thirteen Waters</h1>
-    <button id="newGameBtn">New Game (2 Players)</button>
-    <button id="getStateBtn">Get Game State</button>
+    <div class="container">
+        <header>
+            <h1>十三水游戏</h1>
+            <div class="game-controls">
+                <label for="numPlayers">玩家人数:</label>
+                <select id="numPlayersSelect">
+                    <option value="2" selected>2人</option>
+                    <option value="3">3人</option>
+                    <option value="4">4人</option>
+                </select>
+                <button id="newGameBtn">开始新游戏</button>
+                <button id="getStateBtn" style="display:none;">刷新状态</button> <!-- 通常由其他操作触发更新 -->
+            </div>
+        </header>
 
-    <div id="gameArea">
-        <!-- Game content will be rendered here by JavaScript -->
+        <main id="gameBoard" class="hidden">
+            <div class="player-info-area">
+                <!-- 玩家信息和分数将动态生成 -->
+            </div>
+
+            <div class="my-player-area">
+                <h2>我的手牌 (<span id="myPlayerId"></span>)</h2>
+                <div id="myHandArea" class="hand-area droppable-area" data-area-type="hand">
+                    <!-- 我的13张手牌将在这里显示 -->
+                </div>
+
+                <h3>摆牌区</h3>
+                <div class="played-hands-area">
+                    <div class="played-hand-segment">
+                        <h4>头墩 (3张) <span class="card-count">(0/3)</span></h4>
+                        <div id="frontHandArea" class="hand-segment droppable-area" data-area-type="front" data-max-cards="3"></div>
+                    </div>
+                    <div class="played-hand-segment">
+                        <h4>中墩 (5张) <span class="card-count">(0/5)</span></h4>
+                        <div id="middleHandArea" class="hand-segment droppable-area" data-area-type="middle" data-max-cards="5"></div>
+                    </div>
+                    <div class="played-hand-segment">
+                        <h4>尾墩 (5张) <span class="card-count">(0/5)</span></h4>
+                        <div id="backHandArea" class="hand-segment droppable-area" data-area-type="back" data-max-cards="5"></div>
+                    </div>
+                </div>
+                <button id="submitHandBtn" class="hidden">确认出牌</button>
+                <button id="resetSelectionBtn" class="hidden">重置摆牌</button>
+            </div>
+
+            <div class="other-players-view">
+                <!-- 其他玩家的牌墩将在这里显示 -->
+            </div>
+
+            <div id="gameMessages" class="game-messages">
+                <!-- 游戏消息，如等待其他玩家，结算信息等 -->
+            </div>
+        </main>
+
+        <div id="loadingIndicator" class="loading hidden">加载中...</div>
+        <div id="errorDisplay" class="error-message hidden"></div>
+
     </div>
-
     <script src="js/app.js"></script>
 </body>
 </html>
