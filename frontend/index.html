@@ -7,7 +7,6 @@
   <script src="config.js"></script>
   <script src="assets/getCardImage.js"></script>
   <script src="assets/pokerUtils.js"></script>
-  <!-- 不要引入 stadium.js -->
 </head>
 <body>
   <div id="main-container">
@@ -36,6 +35,54 @@
       <button id="aiAutoButton">AI托管</button>
       <button id="aiReleaseButton" style="display:none;">解除托管</button>
       <span id="hand-card-hint">手牌剩余：<span id="hand-card-count">0</span></span>
+      <button id="show-register-btn" class="toolbar-btn">注册</button>
+      <button id="show-points-btn" class="toolbar-btn">积分</button>
+    </div>
+
+    <!-- 注册弹窗 -->
+    <div id="register-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="modal-close" id="register-close">&times;</span>
+        <h2>手机号注册</h2>
+        <div class="form-group">
+          <label for="register-phone">手机号：</label>
+          <input type="text" id="register-phone" maxlength="11" placeholder="请输入手机号">
+        </div>
+        <div class="form-group">
+          <label for="register-pw">密码：</label>
+          <input type="password" id="register-pw" maxlength="32" placeholder="6-32位密码">
+        </div>
+        <div class="form-group">
+          <label for="register-pw-confirm">确认密码：</label>
+          <input type="password" id="register-pw-confirm" maxlength="32" placeholder="再次输入密码">
+        </div>
+        <div id="register-msg" class="form-msg"></div>
+        <button id="register-submit">注册</button>
+      </div>
+    </div>
+
+    <!-- 积分管理弹窗 -->
+    <div id="points-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="modal-close" id="points-close">&times;</span>
+        <h2>积分管理</h2>
+        <div>我的积分：<span id="my-points">--</span></div>
+        <div class="form-group">
+          <label for="search-phone">查找朋友手机号：</label>
+          <input type="text" id="search-phone" maxlength="11" placeholder="请输入手机号">
+          <button id="search-friend-btn">查找</button>
+        </div>
+        <div id="friend-info" style="display:none;">
+          <div>朋友昵称：<span id="friend-nick"></span></div>
+          <div>朋友积分：<span id="friend-points"></span></div>
+          <div class="form-group">
+            <label for="give-points-num">赠送积分：</label>
+            <input type="number" id="give-points-num" min="1" style="width:60px;">
+            <button id="give-points-btn">赠送</button>
+          </div>
+        </div>
+        <div id="points-msg" class="form-msg"></div>
+      </div>
     </div>
   </div>
   <script src="script.js"></script>
