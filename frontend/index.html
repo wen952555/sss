@@ -3,54 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水游戏（调试版）</title>
-    <link rel="stylesheet" href="style.css"> <!-- 假设你有 style.css -->
+    <title>十三水（最终调试）</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>十三水</h1>
         </header>
-
         <main>
             <section id="game-status">
-                <p id="message-area">调试信息会显示在这里和控制台。</p>
+                <p id="message-area">点击“发牌”开始。</p>
             </section>
-
             <section id="player-hand-area">
                 <h2>我的手牌</h2>
-                <div id="player-hand" class="card-container hand-zone"></div>
-            </section>
-
-            <section id="arrangement-area">
-                <h2>摆牌区</h2>
-                <div class="arrangement-row">
-                    <h3>头道 (3张) <span id="head-type" class="type-display"></span></h3>
-                    <div id="arranged-head" class="card-container drop-zone" data-lane="head" data-size="3"></div>
-                </div>
-                <div class="arrangement-row">
-                    <h3>中道 (5张) <span id="middle-type" class="type-display"></span></h3>
-                    <div id="arranged-middle" class="card-container drop-zone" data-lane="middle" data-size="5"></div>
-                </div>
-                <div class="arrangement-row">
-                    <h3>尾道 (5张) <span id="tail-type" class="type-display"></span></h3>
-                    <div id="arranged-tail" class="card-container drop-zone" data-lane="tail" data-size="5"></div>
+                <div id="player-hand" class="card-container">
+                    <!-- 卡牌将在这里显示 -->
                 </div>
             </section>
-
             <section id="controls">
-                <button id="dealButton">发牌 (点我测试)</button>
-                <button id="submitButton" disabled>确定牌型</button>
-                <button id="resetButton" disabled>重置摆牌</button>
+                <button id="dealButton">发牌</button>
             </section>
         </main>
-
-        <footer>
-            <p>十三水游戏调试</p>
-        </footer>
     </div>
-
-    <!-- 【重要】确保 config.js 在 script.js 之前加载 -->
     <script src="config.js"></script>
     <script src="script.js"></script>
 </body>
