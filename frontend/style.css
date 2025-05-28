@@ -1,134 +1,32 @@
 /* frontend/style.css */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    background-color: #2c3e50; /* 深色背景 */
-    color: #ecf0f1; /* 浅色文字 */
-    display: flex;
-    justify-content: center;
-    padding-top: 20px;
-    min-height: 100vh;
+    font-family: sans-serif; margin: 20px; background-color: #f4f4f4;
 }
-
 .container {
-    width: 90%;
-    max-width: 900px;
-    background-color: #34495e; /* 容器背景 */
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px;
 }
-
-header h1 {
-    text-align: center;
-    color: #1abc9c; /* 亮色标题 */
-    margin-bottom: 20px;
-}
-
-h2, h3 {
-    color: #e67e22; /* 橙色副标题 */
-    margin-top: 0;
-}
-
 .card-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    min-height: 100px; /* 根据卡牌大小调整 */
-    padding: 10px;
-    border: 2px dashed #7f8c8d; /* 虚线边框 */
-    border-radius: 5px;
-    background-color: rgba(0,0,0,0.1); /* 半透明背景 */
-    margin-bottom: 15px;
-    align-items: flex-start; /* 卡牌顶部对齐 */
+    border: 1px solid #ddd; padding: 10px; margin-top: 10px; min-height: 120px;
+    display: flex; flex-wrap: wrap; gap: 10px;
 }
-
-.hand-zone {
-    min-height: 110px; /* 手牌区域稍大一点 */
-}
-
 .card {
-    width: 70px;  /* 卡牌宽度 */
-    height: 100px; /* 卡牌高度 */
-    border: 1px solid #95a5a6; /* 边框颜色 */
+    width: 71px;  /* 标准扑克牌宽度比例 (e.g., 2.5 inches * 28.35px/inch for 71px) */
+    height: 100px; /* 标准扑克牌高度比例 (e.g., 3.5 inches * 28.35px/inch for 100px) */
+    border: 1px solid black;
+    background-color: white;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 16px; font-weight: bold; color: black; /* 后备文本默认可见，JS会尝试隐藏 */
     border-radius: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 12px; /* 如果图片加载失败，显示文字 */
-    font-weight: bold;
-    cursor: grab;
-    user-select: none;
-    background-color: #ecf0f1; /* 卡牌背景 */
-    color: #2c3e50; /* 卡牌文字颜色 */
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-    background-size: contain; /* 让SVG图片完整显示 */
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+
+    /* 【关键的背景图属性】 */
+    background-size: contain;     /* 或 cover, 或者具体的像素值 */
     background-repeat: no-repeat;
-    background-position: center;
-    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+    background-position: center center;
 }
-
-.card.dragging {
-    opacity: 0.5;
-    cursor: grabbing;
-    transform: scale(1.1);
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
-}
-
-.card.selected-for-placement {
-    border: 2px solid #3498db; /* 蓝色高亮 */
-    box-shadow: 0 0 8px #3498db;
-}
-
-
-.drop-zone.drag-over {
-    background-color: rgba(46, 204, 113, 0.2); /* 拖拽悬停时高亮 */
-    border-style: solid;
-    border-color: #2ecc71;
-}
-
-.arrangement-row {
-    margin-bottom: 10px;
-}
-
-#controls {
-    text-align: center;
-    margin-top: 25px;
-}
-
 #controls button {
-    padding: 12px 25px;
-    margin: 0 10px;
-    cursor: pointer;
-    background-color: #1abc9c; /* 按钮颜色 */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    transition: background-color 0.2s;
+    padding: 10px 15px; margin-right: 10px; cursor: pointer;
 }
-
-#controls button:disabled {
-    background-color: #7f8c8d; /* 禁用时颜色 */
-    cursor: not-allowed;
-}
-
-#controls button:not(:disabled):hover {
-    background-color: #16a085; /* 悬停颜色 */
-}
-
 #message-area {
-    text-align: center;
-    padding: 10px;
-    margin-bottom: 20px;
-    background-color: rgba(0,0,0,0.2);
-    border-radius: 5px;
-    min-height: 20px;
-    color: #f1c40f; /* 消息区黄色文字 */
-}
-
-.type-display {
-    font-size: 0.9em;
-    color: #bdc3c7;
-    margin-left: 10px;
+    padding: 10px; background-color: #eee; border: 1px solid #ccc; margin-bottom: 15px;
 }
