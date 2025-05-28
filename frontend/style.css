@@ -1,45 +1,146 @@
-/* frontend/style.css */
-body { font-family: sans-serif; margin: 20px; background-color: #eee; }
-.container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 5px; }
-#message-area { padding: 10px; background-color: #f0f0f0; border: 1px solid #ccc; margin-bottom: 15px; }
-.card-container {
-    border: 1px solid #ccc; padding: 10px; margin-top: 10px; min-height: 125px;
-    display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  background: #184d47;
+  color: #fff;
+  margin: 0;
+  padding: 0;
 }
+
+#main-container {
+  max-width: 950px;
+  margin: 32px auto;
+  background: #285963;
+  padding: 24px 24px 12px 24px;
+  border-radius: 18px;
+  box-shadow: 0 6px 32px #0004;
+}
+
+#message-area {
+  background: #315d6e;
+  min-height: 32px;
+  margin-bottom: 12px;
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 16px;
+  box-shadow: 0 2px 8px #0002;
+}
+
+.toolbar {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+button {
+  font-size: 15px;
+  border-radius: 5px;
+  border: none;
+  background: #fae29f;
+  color: #184d47;
+  padding: 7px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.15s;
+}
+button:disabled {
+  background: #c0c0c0;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.card-zone {
+  min-height: 116px;
+  padding: 10px 0;
+  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #223e41;
+  border-radius: 7px;
+  box-shadow: 0 2px 8px #0002;
+}
+
 .card {
-    width: 71px; height: 100px; border: 1px solid #333; border-radius: 4px;
-    background-color: white; color: black; /* Default text color */
-    display: flex; justify-content: center; align-items: center;
-    font-size: 16px; font-weight: bold;
-    background-size: contain; /* Or 100% 100% if your images are exact aspect ratio */
-    background-repeat: no-repeat;
-    background-position: center;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-}
-#controls button { padding: 10px 20px; cursor: pointer; }
-/* frontend/style.css (追加/修改) */
-/* ... (保留你之前的样式) ... */
-
-.card.selected-from-hand { /* 手牌中被选中的牌的样式 */
-    border: 2px solid dodgerblue;
-    box-shadow: 0 0 8px dodgerblue;
-    transform: translateY(-5px); /* 稍微向上移动一点以示选中 */
-}
-
-.drop-zone.can-drop { /* 当有牌被选中，可以放置牌的区域高亮 */
-    background-color: #e6ffe6; /* 淡绿色背景 */
-    border-style: dashed;
-    border-color: #33cc33;
+  width: 64px;
+  height: 90px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 7px;
+  border: 2px solid #eee4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: 21px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: border 0.18s, box-shadow 0.18s;
+  position: relative;
+  box-shadow: 0 2px 10px #0003;
+  user-select: none;
+  color: transparent;
 }
 
-.card-container { /* 给牌道一些最小高度，即使是空的 */
-    min-height: 110px;
+.card.selected-from-hand {
+  border: 2.5px solid #ffd700;
+  box-shadow: 0 0 14px #ffd70088;
 }
-.hand-zone .card:hover { /* 手牌区的牌悬停效果 */
-    transform: scale(1.05);
-    cursor: pointer;
+
+.arrangement-zone {
+  min-height: 116px;
+  background: #375f6d;
+  border-radius: 7px;
+  margin-bottom: 8px;
+  padding: 8px 0 6px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  box-shadow: 0 2px 8px #0002;
+  position: relative;
 }
-.drop-zone .card:hover { /* 摆牌区的牌悬停效果 (用于移回) */
-    transform: scale(1.05);
-    cursor: pointer;
+.arrangement-zone .zone-title {
+  font-size: 17px;
+  margin-left: 12px;
+  margin-bottom: 2px;
+}
+.arrangement-zone .type-display {
+  font-size: 15px;
+  margin-left: 12px;
+  color: #ffd700;
+  min-height: 22px;
+}
+.arrangement-zone.can-drop {
+  background: #48ac8b;
+  box-shadow: 0 0 14px #48ac8b66;
+}
+
+.arrangement-zone .card {
+  margin-left: 8px;
+}
+
+#arrangement-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#hand-card-hint {
+  margin-left: 18px;
+  font-size: 15px;
+  color: #ffecb3;
+}
+
+@media (max-width: 700px) {
+  #main-container {
+    padding: 7px;
+  }
+  .card, .arrangement-zone .card {
+    width: 46px;
+    height: 64px;
+    font-size: 14px;
+  }
+  .arrangement-zone .zone-title, .arrangement-zone .type-display {
+    font-size: 13px;
+  }
 }
