@@ -1,0 +1,14 @@
+# General
+.DS_Store
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# PHP / Composer
+vendor/
+composer.lock
+
+# Frontend build artifacts (if using a framework)
+dist/
+build/
