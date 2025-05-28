@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiSuggestButton = document.getElementById('aiSuggestButton');
     const aiAutoButton = document.getElementById('aiAutoButton');
     const aiReleaseButton = document.getElementById('aiReleaseButton');
-    const handCardCountSpan = document.getElementById('hand-card-count');
     const arrangementZones = {
         head: { div: document.getElementById('arranged-head'), countSpan: document.querySelector('.arranged-count[data-lane="head"]'), typeDisplay: document.getElementById('head-type-display'), max: 3 },
         hand: { div: document.getElementById('arranged-hand'), countSpan: document.querySelector('.arranged-count[data-lane="hand"]'), typeDisplay: document.getElementById('hand-type-display'), max: 5 },
@@ -22,8 +21,54 @@ document.addEventListener('DOMContentLoaded', () => {
     let arrangedCardsData = { head: [], hand: [], tail: [] };
     let selectedCardElement = null;
     let isAIAuto = false;
-    // 假设注册登录后有当前用户
+    let aiAutoRemainRounds = 0;
+    let aiStrategyIndex = 0;
+    let lastAIMode = 0;
     window.currentUser = null; // {phone: '1xxxxxxxxxx', token: '...'}
+
+    // AI 分牌策略
+    const aiDivideStrategies = [
+      {
+        name: '最优分牌',
+        func: function(hand) {
+          return simpleAIDivide13(hand);
+        }
+      },
+      {
+        name: '均衡分牌',
+        func: function(hand) {
+          const sorted = [...hand].sort((a, b) => getRankValue(b.rank) - getRankValue(a.rank));
+          return {
+            tail: [sorted[0],sorted[3],sorted[6],sorted[9],sorted[12]],
+            hand: [sorted[1],sorted[4],sorted[7],sorted[10],sorted[11]],
+            head: [sorted[2],sorted[5],sorted[8]]
+          };
+        }
+      },
+      {
+        name: '花色优先',
+        func: function(hand) {
+          let suits = {};
+          hand.forEach(card => {
+            if (!suits[card.suit]) suits[card.suit] = [];
+            suits[card.suit].push(card);
+          });
+          let piles = [[],[],[]];
+          let pileIndex = 0;
+          Object.values(suits).forEach(cards => {
+            for (let c of cards) {
+              piles[pileIndex%3].push(c);
+              pileIndex++;
+            }
+          });
+          return {
+            head: piles[0].slice(0,3),
+            hand: piles[1].slice(0,5),
+            tail: piles[2].slice(0,5)
+          };
+        }
+      }
+    ];
 
     // === 功能函数 ===
     function renderCardElement(cardData, sourceLane) {
@@ -61,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const lane in arrangementZones) {
             arrangementZones[lane].countSpan.textContent = arrangedCardsData[lane].length;
         }
-        handCardCountSpan.textContent = arrangedCardsData.hand.length;
         resetArrangementButton.disabled = originalHandData.length === 0 || isAIAuto;
         submitButton.disabled = !(
             arrangedCardsData.head.length === 3 &&
@@ -89,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         arrangedCardsData = { head: [], hand: [], tail: [] };
         selectedCardElement = null;
         isAIAuto = false;
+        aiAutoRemainRounds = 0;
         aiAutoButton.style.display = "inline-block";
         aiReleaseButton.style.display = "none";
         Object.values(arrangementZones).forEach(zone => {
@@ -217,10 +262,12 @@ document.addEventListener('DOMContentLoaded', () => {
         messageArea.textContent = "请先发牌。";
         return;
       }
-      const aiResult = simpleAIDivide13(originalHandData);
+      const strategy = aiDivideStrategies[aiStrategyIndex % aiDivideStrategies.length];
+      const aiResult = strategy.func(originalHandData);
       arrangedCardsData = { head: [...aiResult.head], hand: [...aiResult.hand], tail: [...aiResult.tail] };
       renderAllZones();
-      messageArea.textContent = "AI参考摆牌已自动分配，请根据需要微调。";
+      messageArea.textContent = `AI参考：${strategy.name}。再次点击切换分牌策略。`;
+      aiStrategyIndex++;
     });
 
     aiAutoButton.addEventListener('click', () => {
@@ -228,17 +275,45 @@ document.addEventListener('DOMContentLoaded', () => {
         messageArea.textContent = "请先发牌。";
         return;
       }
-      const aiResult = simpleAIDivide13(originalHandData);
-      arrangedCardsData = { head: [...aiResult.head], hand: [...aiResult.hand], tail: [...aiResult.tail] };
+      document.getElementById('ai-auto-modal').style.display = 'flex';
+    });
+    document.getElementById('ai-auto-close').onclick = function() {
+      document.getElementById('ai-auto-modal').style.display = 'none';
+    };
+    document.querySelectorAll('.ai-auto-count-btn').forEach(btn => {
+      btn.onclick = function() {
+        aiAutoRemainRounds = parseInt(btn.dataset.count, 10);
+        document.getElementById('ai-auto-modal').style.display = 'none';
+        startAIAuto();
+      };
+    });
+
+    function startAIAuto() {
       isAIAuto = true;
-      renderAllZones();
-      messageArea.textContent = "AI已自动摆牌并托管。如需手动操作请解除托管。";
       aiAutoButton.style.display = "none";
       aiReleaseButton.style.display = "inline-block";
-    });
+      messageArea.textContent = `AI已托管，剩余${aiAutoRemainRounds}局。`;
+      runAIAutoForCurrentRound();
+    }
+
+    function runAIAutoForCurrentRound() {
+      if (!originalHandData || originalHandData.length !== 13) {
+        messageArea.textContent = "请先发牌。";
+        return;
+      }
+      const aiResult = aiDivideStrategies[0].func(originalHandData);
+      arrangedCardsData = {
+        head: [...aiResult.head],
+        hand: [...aiResult.hand],
+        tail: [...aiResult.tail]
+      };
+      renderAllZones();
+      messageArea.textContent = `AI托管中，本局已自动摆牌。剩余${aiAutoRemainRounds}局。`;
+    }
 
     aiReleaseButton.addEventListener('click', () => {
       isAIAuto = false;
+      aiAutoRemainRounds = 0;
       arrangedCardsData = { head: [], hand: [...originalHandData], tail: [] };
       renderAllZones();
       aiAutoButton.style.display = "inline-block";
@@ -248,7 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 简单AI分牌 ---
     function simpleAIDivide13(hand) {
-        // 尾道最大5张，头道最大3张，剩下5张为手牌
         const sorted = [...hand].sort((a, b) => getRankValue(b.rank) - getRankValue(a.rank));
         return {
             tail: sorted.slice(0,5),
@@ -271,11 +345,34 @@ document.addEventListener('DOMContentLoaded', () => {
           compareHandType(handType, headType) >= 0
         ) {
           messageArea.textContent = "牌型摆放合法！";
+          // 若托管，自动下一局
+          if (isAIAuto && aiAutoRemainRounds > 0) {
+            onRoundEnd();
+          }
         } else {
           messageArea.textContent = "不合法的摆牌，请调整！";
         }
       }
     });
+
+    function onRoundEnd() {
+      aiAutoRemainRounds--;
+      if (aiAutoRemainRounds === 0) {
+        isAIAuto = false;
+        aiAutoButton.style.display = "inline-block";
+        aiReleaseButton.style.display = "none";
+        messageArea.textContent = "AI托管已结束。";
+      } else {
+        // 这里应该自动发牌，演示用resetGame+发牌模拟
+        resetGame();
+        setTimeout(() => {
+          dealButton.click(); // 或调用你的自动发牌函数
+          setTimeout(() => {
+            runAIAutoForCurrentRound();
+          }, 400);
+        }, 600);
+      }
+    }
 
     // ---------------- 注册弹窗逻辑 ----------------
     document.getElementById('show-register-btn').onclick = function() {
@@ -294,7 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!/^1\d{10}$/.test(phone)) { msgDiv.textContent = '请输入正确的11位手机号'; return; }
       if (pw.length < 6 || pw.length > 32) { msgDiv.textContent = '密码需6-32位'; return; }
       if (pw !== pw2) { msgDiv.textContent = '两次密码输入不一致'; return; }
-      // 调用后端注册API（需实现 /register.php）
       try {
         const resp = await fetch(`${CONFIG.API_BASE_URL}/register.php`, {
           method: 'POST',
@@ -329,7 +425,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('points-modal').style.display = 'flex';
       document.getElementById('points-msg').textContent = '';
       document.getElementById('friend-info').style.display = 'none';
-      // 获取当前用户积分
       try {
         const resp = await fetch(`${CONFIG.API_BASE_URL}/user_points.php?phone=${encodeURIComponent(window.currentUser.phone)}`);
         const data = await resp.json();
@@ -348,7 +443,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const msgDiv = document.getElementById('points-msg');
       msgDiv.textContent = '';
       if (!/^1\d{10}$/.test(searchPhone)) { msgDiv.textContent = '请输入正确的11位手机号'; return; }
-      // 查找好友
       try {
         const resp = await fetch(`${CONFIG.API_BASE_URL}/user_points.php?phone=${encodeURIComponent(searchPhone)}`);
         const data = await resp.json();
@@ -373,7 +467,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const msgDiv = document.getElementById('points-msg');
       msgDiv.textContent = '';
       if (!points || points < 1) { msgDiv.textContent = '请输入正确的积分数'; return; }
-      // 调用赠送接口
       try {
         const resp = await fetch(`${CONFIG.API_BASE_URL}/give_points.php`, {
           method: 'POST',
@@ -388,7 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.success) {
           msgDiv.style.color = '#28a745';
           msgDiv.textContent = '赠送成功！';
-          // 刷新自己积分
           const selfResp = await fetch(`${CONFIG.API_BASE_URL}/user_points.php?phone=${encodeURIComponent(window.currentUser.phone)}`);
           const selfData = await selfResp.json();
           document.getElementById('my-points').textContent = selfData.success ? selfData.points : '--';
@@ -401,6 +493,66 @@ document.addEventListener('DOMContentLoaded', () => {
         msgDiv.textContent = '网络错误';
       }
     };
+
+    // ====== 比牌相关 ======
+    function getCompareData() {
+      // 自己
+      const me = {
+        name: '我',
+        piles: [arrangedCardsData.head, arrangedCardsData.hand, arrangedCardsData.tail], // 3,5,5
+        totalScore: 6
+      };
+      // 假设3个对手（演示用静态假数据，实际请从接口获取）
+      const others = [
+        {
+          name: '玩家A',
+          piles: [arrangedCardsData.head, arrangedCardsData.hand, arrangedCardsData.tail],
+          score: -2
+        },
+        {
+          name: '玩家B',
+          piles: [arrangedCardsData.head, arrangedCardsData.hand, arrangedCardsData.tail],
+          score: 3
+        },
+        {
+          name: '玩家C',
+          piles: [arrangedCardsData.head, arrangedCardsData.hand, arrangedCardsData.tail],
+          score: 5
+        }
+      ];
+      return { me, others };
+    }
+
+    document.getElementById('start-compare-btn').onclick = function() {
+      const compareData = getCompareData();
+      renderComparePiles('my-piles', compareData.me.piles);
+      document.getElementById('my-total-score').textContent = `总分：${compareData.me.totalScore >= 0 ? '+' : ''}${compareData.me.totalScore}`;
+      for (let i = 0; i < 3; ++i) {
+        document.getElementById(`player${i+1}-name`).textContent = compareData.others[i].name;
+        document.getElementById(`player${i+1}-score`).textContent = `${compareData.others[i].score >= 0 ? '+' : ''}${compareData.others[i].score}`;
+        renderComparePiles(`player${i+1}-piles`, compareData.others[i].piles);
+      }
+      document.getElementById('compare-modal').style.display = 'flex';
+    };
+    document.getElementById('compare-close').onclick = function() {
+      document.getElementById('compare-modal').style.display = 'none';
+    };
+
+    function renderComparePiles(containerId, piles) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      for (const pile of piles) {
+        const row = document.createElement('div');
+        row.className = 'compare-pile-row';
+        for (const card of pile) {
+          const c = document.createElement('div');
+          c.className = 'compare-card';
+          c.textContent = `${card.rank || '?'}${card.suit || '?'}`;
+          row.appendChild(c);
+        }
+        container.appendChild(row);
+      }
+    }
 
     // --- 启动 ---
     resetGame();
