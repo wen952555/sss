@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水（最终调试）</title>
+    <title>十三水（完善交互）</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,16 +13,36 @@
         </header>
         <main>
             <section id="game-status">
-                <p id="message-area">点击“发牌”开始。</p>
+                <p id="message-area">请点击“发牌”按钮。发牌后，点击手牌，再点击目标牌道进行摆牌。</p>
             </section>
+
             <section id="player-hand-area">
-                <h2>我的手牌</h2>
-                <div id="player-hand" class="card-container">
-                    <!-- 卡牌将在这里显示 -->
+                <h2>我的手牌 (<span id="hand-card-count">0</span>/13)</h2>
+                <div id="player-hand" class="card-container hand-zone">
+                    <!-- 手牌会显示在这里 -->
                 </div>
             </section>
+
+            <section id="arrangement-area">
+                <h2>摆牌区</h2>
+                <div class="arrangement-row">
+                    <h3>头道 (<span class="arranged-count" data-lane="head">0</span>/3) <span class="lane-type" id="head-type-display"></span></h3>
+                    <div id="arranged-head" class="card-container drop-zone" data-lane="head" data-max-cards="3"></div>
+                </div>
+                <div class="arrangement-row">
+                    <h3>中道 (<span class="arranged-count" data-lane="middle">0</span>/5) <span class="lane-type" id="middle-type-display"></span></h3>
+                    <div id="arranged-middle" class="card-container drop-zone" data-lane="middle" data-max-cards="5"></div>
+                </div>
+                <div class="arrangement-row">
+                    <h3>尾道 (<span class="arranged-count" data-lane="tail">0</span>/5) <span class="lane-type" id="tail-type-display"></span></h3>
+                    <div id="arranged-tail" class="card-container drop-zone" data-lane="tail" data-max-cards="5"></div>
+                </div>
+            </section>
+
             <section id="controls">
                 <button id="dealButton">发牌</button>
+                <button id="submitButton" disabled>确定牌型</button>
+                <button id="resetArrangementButton" disabled>重置摆牌</button>
             </section>
         </main>
     </div>
