@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
   <script src="assets/getCardImage.js"></script>
+  <script src="assets/pokerUtils.js"></script>
 </head>
 <body>
   <div id="main-container">
@@ -16,6 +17,9 @@
       <button id="sortHandButton">一键排序</button>
       <button id="resetArrangementButton" disabled>重置摆牌</button>
       <button id="submitButton" disabled>提交摆牌</button>
+      <button id="aiSuggestButton">AI参考</button>
+      <button id="aiAutoButton">AI托管</button>
+      <button id="aiReleaseButton" style="display:none;">解除托管</button>
       <span id="hand-card-hint">手牌剩余：<span id="hand-card-count">0</span></span>
     </div>
     <div id="player-hand" class="card-zone"></div>
