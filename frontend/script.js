@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let arrangedCardsData = { head: [], hand: [], tail: [] };
     let selectedCardElement = null;
     let isAIAuto = false;
+    // 假设注册登录后有当前用户
+    window.currentUser = null; // {phone: '1xxxxxxxxxx', token: '...'}
 
     // === 功能函数 ===
     function renderCardElement(cardData, sourceLane) {
@@ -274,6 +276,131 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+
+    // ---------------- 注册弹窗逻辑 ----------------
+    document.getElementById('show-register-btn').onclick = function() {
+      document.getElementById('register-modal').style.display = 'flex';
+    };
+    document.getElementById('register-close').onclick = function() {
+      document.getElementById('register-modal').style.display = 'none';
+      document.getElementById('register-msg').textContent = '';
+    };
+    document.getElementById('register-submit').onclick = async function() {
+      const phone = document.getElementById('register-phone').value.trim();
+      const pw = document.getElementById('register-pw').value;
+      const pw2 = document.getElementById('register-pw-confirm').value;
+      const msgDiv = document.getElementById('register-msg');
+      msgDiv.textContent = '';
+      if (!/^1\d{10}$/.test(phone)) { msgDiv.textContent = '请输入正确的11位手机号'; return; }
+      if (pw.length < 6 || pw.length > 32) { msgDiv.textContent = '密码需6-32位'; return; }
+      if (pw !== pw2) { msgDiv.textContent = '两次密码输入不一致'; return; }
+      // 调用后端注册API（需实现 /register.php）
+      try {
+        const resp = await fetch(`${CONFIG.API_BASE_URL}/register.php`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ phone, password: pw })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          msgDiv.style.color = '#28a745';
+          msgDiv.textContent = '注册成功，请登录！';
+          window.currentUser = {phone};
+          setTimeout(() => {
+            document.getElementById('register-modal').style.display = 'none';
+            msgDiv.textContent = '';
+          }, 1000);
+        } else {
+          msgDiv.style.color = '#d9534f';
+          msgDiv.textContent = data.message || '注册失败';
+        }
+      } catch (e) {
+        msgDiv.style.color = '#d9534f';
+        msgDiv.textContent = '网络或服务器错误';
+      }
+    };
+
+    // ---------------- 积分管理弹窗逻辑 ----------------
+    document.getElementById('show-points-btn').onclick = async function() {
+      if (!window.currentUser || !window.currentUser.phone) {
+        alert('请先登录！');
+        return;
+      }
+      document.getElementById('points-modal').style.display = 'flex';
+      document.getElementById('points-msg').textContent = '';
+      document.getElementById('friend-info').style.display = 'none';
+      // 获取当前用户积分
+      try {
+        const resp = await fetch(`${CONFIG.API_BASE_URL}/user_points.php?phone=${encodeURIComponent(window.currentUser.phone)}`);
+        const data = await resp.json();
+        document.getElementById('my-points').textContent = data.success ? data.points : '--';
+      } catch {
+        document.getElementById('my-points').textContent = '--';
+      }
+    };
+    document.getElementById('points-close').onclick = function() {
+      document.getElementById('points-modal').style.display = 'none';
+      document.getElementById('points-msg').textContent = '';
+      document.getElementById('friend-info').style.display = 'none';
+    };
+    document.getElementById('search-friend-btn').onclick = async function() {
+      const searchPhone = document.getElementById('search-phone').value.trim();
+      const msgDiv = document.getElementById('points-msg');
+      msgDiv.textContent = '';
+      if (!/^1\d{10}$/.test(searchPhone)) { msgDiv.textContent = '请输入正确的11位手机号'; return; }
+      // 查找好友
+      try {
+        const resp = await fetch(`${CONFIG.API_BASE_URL}/user_points.php?phone=${encodeURIComponent(searchPhone)}`);
+        const data = await resp.json();
+        if (data.success) {
+          document.getElementById('friend-info').style.display = '';
+          document.getElementById('friend-nick').textContent = data.nickname || searchPhone;
+          document.getElementById('friend-points').textContent = data.points;
+          document.getElementById('give-points-num').value = '';
+          document.getElementById('give-points-btn').dataset.friendPhone = searchPhone;
+        } else {
+          document.getElementById('friend-info').style.display = 'none';
+          msgDiv.textContent = data.message || '未找到该用户';
+        }
+      } catch {
+        document.getElementById('friend-info').style.display = 'none';
+        msgDiv.textContent = '网络错误';
+      }
+    };
+    document.getElementById('give-points-btn').onclick = async function() {
+      const friendPhone = this.dataset.friendPhone;
+      const points = parseInt(document.getElementById('give-points-num').value, 10);
+      const msgDiv = document.getElementById('points-msg');
+      msgDiv.textContent = '';
+      if (!points || points < 1) { msgDiv.textContent = '请输入正确的积分数'; return; }
+      // 调用赠送接口
+      try {
+        const resp = await fetch(`${CONFIG.API_BASE_URL}/give_points.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: window.currentUser.phone,
+            to: friendPhone,
+            points: points
+          })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          msgDiv.style.color = '#28a745';
+          msgDiv.textContent = '赠送成功！';
+          // 刷新自己积分
+          const selfResp = await fetch(`${CONFIG.API_BASE_URL}/user_points.php?phone=${encodeURIComponent(window.currentUser.phone)}`);
+          const selfData = await selfResp.json();
+          document.getElementById('my-points').textContent = selfData.success ? selfData.points : '--';
+        } else {
+          msgDiv.style.color = '#d9534f';
+          msgDiv.textContent = data.message || '赠送失败';
+        }
+      } catch {
+        msgDiv.style.color = '#d9534f';
+        msgDiv.textContent = '网络错误';
+      }
+    };
 
     // --- 启动 ---
     resetGame();
