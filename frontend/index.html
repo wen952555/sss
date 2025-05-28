@@ -34,9 +34,9 @@
       <button id="aiSuggestButton">AI参考</button>
       <button id="aiAutoButton">AI托管</button>
       <button id="aiReleaseButton" style="display:none;">解除托管</button>
-      <span id="hand-card-hint">手牌剩余：<span id="hand-card-count">0</span></span>
       <button id="show-register-btn" class="toolbar-btn">注册</button>
       <button id="show-points-btn" class="toolbar-btn">积分</button>
+      <button id="start-compare-btn" class="toolbar-btn">开始比牌</button>
     </div>
 
     <!-- 注册弹窗 -->
@@ -82,6 +82,56 @@
           </div>
         </div>
         <div id="points-msg" class="form-msg"></div>
+      </div>
+    </div>
+
+    <!-- AI托管局数弹窗 -->
+    <div id="ai-auto-modal" class="modal" style="display:none;">
+      <div class="modal-content" style="min-width:240px;">
+        <span class="modal-close" id="ai-auto-close">&times;</span>
+        <h3>请选择托管局数</h3>
+        <button class="ai-auto-count-btn" data-count="3">托管3局</button>
+        <button class="ai-auto-count-btn" data-count="5">托管5局</button>
+        <button class="ai-auto-count-btn" data-count="10">托管10局</button>
+      </div>
+    </div>
+
+    <!-- 比牌弹窗 -->
+    <div id="compare-modal" class="modal" style="display:none;">
+      <div class="modal-content" style="width:750px;max-width:96vw;">
+        <span class="modal-close" id="compare-close">&times;</span>
+        <h2>比牌结果</h2>
+        <div class="compare-grid">
+          <!-- 四个玩家区域 -->
+          <div class="compare-cell" id="compare-me">
+            <div class="compare-head">
+              <span>我</span>
+              <span class="compare-score" id="my-total-score"></span>
+            </div>
+            <div class="compare-piles" id="my-piles"></div>
+          </div>
+          <div class="compare-cell" id="compare-player1">
+            <div class="compare-head">
+              <span id="player1-name">玩家A</span>
+              <span class="compare-score" id="player1-score"></span>
+            </div>
+            <div class="compare-piles" id="player1-piles"></div>
+          </div>
+          <div class="compare-cell" id="compare-player2">
+            <div class="compare-head">
+              <span id="player2-name">玩家B</span>
+              <span class="compare-score" id="player2-score"></span>
+            </div>
+            <div class="compare-piles" id="player2-piles"></div>
+          </div>
+          <div class="compare-cell" id="compare-player3">
+            <div class="compare-head">
+              <span id="player3-name">玩家C</span>
+              <span class="compare-score" id="player3-score"></span>
+            </div>
+            <div class="compare-piles" id="player3-piles"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
