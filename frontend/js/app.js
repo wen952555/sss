@@ -1,47 +1,14 @@
-const newGameBtn = document.getElementById('newGameBtn');
-const getStateBtn = document.getElementById('getStateBtn');
-const gameArea = document.getElementById('gameArea');
+// ... (之前的代码，API_BASE_URL等保持不变) ...
 
-// IMPORTANT: Update this URL to your Serv00 PHP backend API endpoint
-const API_BASE_URL = 'http://YOUR_SERV00_USERNAME.serv00.net/thirteen_waters_api/api/game.php';
-
-newGameBtn.addEventListener('click', async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}?action=new_game&players=2`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('New Game:', data);
-        if (data.status === 'success') {
-            renderGameState(data.gameState);
-        } else {
-            alert('Error starting new game: ' + data.message);
-        }
-    } catch (error) {
-        console.error('Error fetching new game:', error);
-        alert('Failed to start new game. Check console for details.');
+function getCardImagePath(cardImageString) {
+    // cardImageString is now like "spades_ace", "clubs_10", etc.
+    if (!cardImageString || typeof cardImageString !== 'string') {
+        console.warn('Invalid cardImageString:', cardImageString);
+        // Return a path to a placeholder or default back image if needed
+        return `images/cards/red_joker.svg`; // Or some other default/error image
     }
-});
-
-getStateBtn.addEventListener('click', async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}?action=get_state`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('Game State:', data);
-        if (data.status === 'success') {
-            renderGameState(data.gameState);
-        } else {
-            alert('Error getting game state: ' + data.message);
-        }
-    } catch (error) {
-        console.error('Error fetching game state:', error);
-        alert('Failed to get game state. Check console for details.');
-    }
-});
+    return `images/cards/${cardImageString.toLowerCase()}.svg`; // Ensure lowercase and add .svg extension
+}
 
 function renderGameState(gameState) {
     gameArea.innerHTML = ''; // Clear previous state
@@ -51,30 +18,44 @@ function renderGameState(gameState) {
     }
 
     for (const playerId in gameState) {
-        const player = gameState[playerId];
-        const playerDiv = document.createElement('div');
-        playerDiv.classList.add('player-hand');
-        playerDiv.innerHTML = `<h3>${playerId} (Score: ${player.score})</h3>`;
+        if (gameState.hasOwnProperty(playerId)) { // Good practice for iterating objects
+            const player = gameState[playerId];
+            const playerDiv = document.createElement('div');
+            playerDiv.classList.add('player-hand-container');
+            playerDiv.innerHTML = `<h3>${playerId} (Score: ${player.score})</h3>`;
 
-        const handDiv = document.createElement('div');
-        if (player.hand && player.hand.length > 0) {
-            player.hand.forEach(cardStr => {
-                const cardEl = document.createElement('span');
-                cardEl.classList.add('card');
-                cardEl.textContent = cardStr;
-                handDiv.appendChild(cardEl);
-            });
-        } else {
-            handDiv.textContent = 'No cards dealt yet.';
+            const handDiv = document.createElement('div');
+            handDiv.classList.add('player-hand');
+
+            if (player.hand && Array.isArray(player.hand) && player.hand.length > 0) {
+                player.hand.forEach(cardStr => {
+                    const cardImg = document.createElement('img'); // Still using <img> for SVG
+                    cardImg.classList.add('card-image');
+                    cardImg.src = getCardImagePath(cardStr);
+                    cardImg.alt = cardStr.replace('_', ' '); // e.g., "spades ace" for alt text
+                    cardImg.title = cardStr.replace('_', ' ');
+                    handDiv.appendChild(cardImg);
+                });
+            } else {
+                handDiv.textContent = 'No cards dealt yet or hand is empty.';
+            }
+            playerDiv.appendChild(handDiv);
+
+            // TODO: Display played hands if available
+            // if(player.played_hands) { ... }
+
+            gameArea.appendChild(playerDiv);
         }
-        playerDiv.appendChild(handDiv);
-
-        // TODO: Display played hands if available
-        // if(player.played_hands) { ... }
-
-        gameArea.appendChild(playerDiv);
     }
 }
 
-// Initial state load (optional)
-// getStateBtn.click();
+// ... (事件监听器等代码保持不变) ...
+
+// Example of how to display a card back (if you want to show face-down cards)
+// function renderFaceDownCard() {
+//     const cardImg = document.createElement('img');
+//     cardImg.classList.add('card-image');
+//     cardImg.src = 'images/cards/red_joker.svg'; // Your card back image
+//     cardImg.alt = 'Card Back';
+//     return cardImg;
+// }
