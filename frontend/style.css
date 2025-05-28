@@ -109,6 +109,22 @@ button:disabled {
   color: #ffecb3;
 }
 
+/* 弹窗通用样式 */
+.modal {
+  position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.4); z-index: 99; display: flex; align-items: center; justify-content: center;
+}
+.modal-content {
+  background: #fff; color: #184d47; border-radius: 10px; padding: 32px 24px 18px 24px; min-width: 320px; max-width: 90vw; position: relative;
+}
+.modal-close {
+  position: absolute; right: 14px; top: 10px; font-size: 28px; font-weight: bold; color: #888; cursor: pointer;
+}
+.form-group { margin-bottom: 14px; }
+.form-group label { display: inline-block; min-width: 80px;}
+.form-msg { min-height: 22px; color: #d9534f; font-size: 14px;}
+.toolbar-btn { margin-left: 12px; }
+
 /* 匹配中loading动画 */
 #matching-loading {
   display: inline-block;
