@@ -114,6 +114,11 @@ button:disabled {
   background: #48ac8b;
   box-shadow: 0 0 14px #48ac8b66;
 }
+.arrangement-zone.ai-suggest {
+  background: #ffd700 !important;
+  box-shadow: 0 0 10px #ffd700;
+  color: #184d47 !important;
+}
 
 .arrangement-zone .card {
   margin-left: 8px;
