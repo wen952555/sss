@@ -2,63 +2,102 @@
 console.log("script.js: 文件开始加载。");
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("script.js: DOMContentLoaded 事件已触发。脚本主逻辑开始执行。");
+    console.log("script.js: DOMContentLoaded 事件已触发。");
 
-    // --- 【关键】将需要在多个地方使用的 DOM 元素定义在顶层作用域 ---
-    let messageArea = null;
-    let dealButton = null;
-    let API_BASE_URL = ''; // 将 API_BASE_URL 也移到这里，以便在所有函数中可用
+    let messageArea = document.getElementById('message-area');
+    let dealButton = document.getElementById('dealButton');
+    let playerHandDiv = document.getElementById('player-hand'); // 获取手牌显示区域
+    // 摆牌区的div也需要获取，但我们先专注于显示手牌
+    let arrangedHeadDiv = document.getElementById('arranged-head');
+    let arrangedMiddleDiv = document.getElementById('arranged-middle');
+    let arrangedTailDiv = document.getElementById('arranged-tail');
 
-    // --- DOM 元素获取 ---
-    console.log("script.js: 正在获取DOM元素...");
-    messageArea = document.getElementById('message-area'); // 赋值给顶层变量
-    dealButton = document.getElementById('dealButton');   // 赋值给顶层变量
-    // 其他需要全局访问的元素也可以在这里获取并赋值
+    let API_BASE_URL = '';
+    let CARD_IMAGE_PATH = './assets/images/'; // 默认值
 
-    if (!messageArea) {
-        console.error("script.js: 严重错误 - 未能获取到 'message-area' 元素！");
-        alert("页面结构错误：缺少 message-area 元素。");
-        return;
-    }
-    console.log("script.js: messageArea 元素获取成功。");
-    messageArea.textContent = "脚本已加载，等待操作。";
-
-    if (!dealButton) {
-        console.error("script.js: 严重错误 - 未能获取到 'dealButton' 元素！");
-        if(messageArea) messageArea.textContent = "错误：发牌按钮未找到！";
-        alert("页面结构错误：缺少 dealButton 元素。");
-        return;
-    }
-    console.log("script.js: dealButton 元素获取成功。");
-
-
-    // --- 检查 CONFIG 对象和 API_BASE_URL ---
-    console.log("script.js: 正在检查 CONFIG 对象...");
-    if (typeof CONFIG === 'undefined' || CONFIG === null) {
-        console.error("script.js: 严重错误 - CONFIG 对象未定义！请确保 config.js 已正确加载并在 script.js 之前。");
+    // 检查和设置CONFIG
+    if (typeof CONFIG !== 'undefined' && CONFIG) {
+        if (typeof CONFIG.API_BASE_URL === 'string' && CONFIG.API_BASE_URL.trim() !== '') {
+            API_BASE_URL = CONFIG.API_BASE_URL;
+            console.log("script.js: API_BASE_URL 已确认:", API_BASE_URL);
+        } else {
+            console.error("script.js: 严重错误 - CONFIG.API_BASE_URL 无效！");
+            if(messageArea) messageArea.textContent = "错误：API基础URL配置无效！";
+            if(dealButton) dealButton.disabled = true;
+            return;
+        }
+        if (typeof CONFIG.CARD_IMAGE_PATH === 'string') {
+            CARD_IMAGE_PATH = CONFIG.CARD_IMAGE_PATH;
+        }
+    } else {
+        console.error("script.js: 严重错误 - CONFIG 对象未定义！");
         if(messageArea) messageArea.textContent = "错误：前端配置 (CONFIG) 未加载！";
-        alert("前端配置错误：CONFIG 对象未加载！");
         if(dealButton) dealButton.disabled = true;
         return;
     }
-    console.log("script.js: CONFIG 对象存在:", CONFIG);
 
-    if (typeof CONFIG.API_BASE_URL !== 'string' || CONFIG.API_BASE_URL.trim() === '') {
-        console.error("script.js: 严重错误 - CONFIG.API_BASE_URL 无效！值为:", CONFIG.API_BASE_URL);
-        if(messageArea) messageArea.textContent = "错误：API基础URL配置无效！";
-        alert("前端配置错误：API_BASE_URL 无效！");
-        if(dealButton) dealButton.disabled = true;
-        return;
+    let currentHand = []; // 存储当前手牌
+    // let arrangedCards = { head: [], middle: [], tail: [] }; // 暂时不用
+
+    // --- 卡牌图片路径转换 ---
+    function getCardImagePath(card) {
+        if (!card || typeof card.suit !== 'string' || typeof card.rank !== 'string') {
+            return '';
+        }
+        const suitName = card.suit.toLowerCase();
+        let rankName = card.rank.toLowerCase();
+        if (rankName === 'a') rankName = 'ace';
+        else if (rankName === 'k') rankName = 'king';
+        else if (rankName === 'q') rankName = 'queen';
+        else if (rankName === 'j') rankName = 'jack';
+        else if (rankName === 't') rankName = '10';
+        return `${CARD_IMAGE_PATH}${suitName}_${rankName}.svg`;
     }
-    API_BASE_URL = CONFIG.API_BASE_URL; // 赋值给顶层变量
-    console.log("script.js: API_BASE_URL 已确认:", API_BASE_URL);
 
-    // 其他 CONFIG 值也可以在这里获取
-    const CARD_IMAGE_PATH = (typeof CONFIG.CARD_IMAGE_PATH === 'string') ? CONFIG.CARD_IMAGE_PATH : './assets/images/';
+    // --- 渲染单张卡牌 ---
+    function renderCardElement(cardData) {
+        const cardDiv = document.createElement('div');
+        cardDiv.classList.add('card');
+        // 为卡牌添加数据属性，方便后续操作
+        cardDiv.dataset.id = cardData.id || `${cardData.suit}-${cardData.rank}`; // 如果后端没给ID，前端简单生成一个
+        cardDiv.dataset.suit = cardData.suit;
+        cardDiv.dataset.rank = cardData.rank;
 
+        const imagePath = getCardImagePath(cardData);
+        cardDiv.style.backgroundImage = `url('${imagePath}')`;
+        // 后备文本，以防图片加载失败
+        cardDiv.textContent = `${cardData.rank}${cardData.suit.charAt(0).toUpperCase()}`;
+        cardDiv.style.color = 'transparent'; // 使文字在图片加载成功时不可见
 
-    // --- 简单的 fetch 函数封装 (这个函数现在可以访问顶层的 API_BASE_URL 和 messageArea) ---
-    async function verySimpleFetchTest(endpoint) { // API_BASE_URL 现在是外部变量
+        // 【TODO】: 在这里可以为卡牌添加点击或拖拽事件监听器
+        // cardDiv.draggable = true;
+        // cardDiv.addEventListener('dragstart', handleDragStart);
+        // cardDiv.addEventListener('click', handleCardClick);
+
+        return cardDiv;
+    }
+
+    // --- 显示手牌 ---
+    function displayHand() {
+        console.log("script.js: displayHand() 被调用. currentHand:", currentHand);
+        if (!playerHandDiv) {
+            console.error("script.js: displayHand - playerHandDiv 未找到!");
+            return;
+        }
+        playerHandDiv.innerHTML = ''; // 清空旧的手牌显示
+        if (currentHand && Array.isArray(currentHand)) {
+            currentHand.forEach(card => {
+                const cardElement = renderCardElement(card);
+                playerHandDiv.appendChild(cardElement);
+            });
+            console.log("script.js: displayHand - 已渲染", currentHand.length, "张牌到playerHandDiv。");
+        } else {
+            console.error("script.js: displayHand - currentHand 无效或不是数组:", currentHand);
+        }
+    }
+
+    // --- API 调用封装 (保持和上一版能工作的 verySimpleFetchTest 一致) ---
+    async function verySimpleFetchTest(endpoint) {
         const fullApiUrl = `${API_BASE_URL}/${endpoint}`;
         console.log(`script.js: verySimpleFetchTest - 准备请求 URL: ${fullApiUrl}`);
         if(messageArea) messageArea.textContent = `正在尝试连接: ${fullApiUrl}`;
@@ -73,12 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(messageArea) messageArea.textContent = `连接错误: ${errorText}`;
                 throw new Error(errorText);
             }
-
             const data = await response.json();
             console.log(`script.js: verySimpleFetchTest - JSON 解析成功 for ${fullApiUrl}:`, data);
-            if(messageArea) messageArea.textContent = `从服务器获取消息: ${data.message || JSON.stringify(data)}`;
+            // messageArea 更新移到调用处，以便根据具体业务逻辑显示消息
             return data;
-
         } catch (error) {
             console.error(`script.js: verySimpleFetchTest - 请求 ${fullApiUrl} 失败:`, error);
             if(messageArea) messageArea.textContent = `请求失败: ${error.message}`;
@@ -86,66 +123,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-    // --- 发牌按钮事件监听器 (现在可以正确访问 messageArea 和 dealButton) ---
-    console.log("script.js: 准备为 dealButton 绑定点击事件监听器。");
-    dealButton.addEventListener('click', async () => {
-        console.log("================================================");
-        console.log("script.js: EVENT HANDLER - dealButton 被点击！(时间戳:", Date.now(), ")");
-        // 现在 messageArea 是在这个函数作用域之外定义的，可以访问
-        if(messageArea) messageArea.textContent = "发牌按钮事件处理开始...";
-
-        try {
-            console.log("script.js: EVENT HANDLER - 进入 try 块。");
-            dealButton.disabled = true; // dealButton 也是外部定义的
-            if(messageArea) messageArea.textContent = "发牌按钮已点击，正在处理...";
-
-            const endpoint = 'deal_cards.php';
-            // API_BASE_URL 也是外部定义的
-            console.log(`script.js: EVENT HANDLER - 目标API URL: ${API_BASE_URL}/${endpoint}`);
-
-
-            if (typeof verySimpleFetchTest !== 'function') {
-                console.error("script.js: EVENT HANDLER - 严重错误: verySimpleFetchTest 函数未定义!");
-                if(messageArea) messageArea.textContent = "内部错误：网络请求函数丢失。";
-                return;
-            }
-
-            console.log("script.js: EVENT HANDLER - 准备调用 verySimpleFetchTest。");
-            const data = await verySimpleFetchTest(endpoint); // 直接传递 endpoint
-            console.log("script.js: EVENT HANDLER - verySimpleFetchTest 调用已完成。返回的data:", data);
-
-            // 【根据后端返回的真实牌局数据进行处理】
-            if (data && data.success === true && data.hand && Array.isArray(data.hand)) {
-                console.log("script.js: EVENT HANDLER - 成功获取到手牌数据:", data.hand);
-                // currentHand = data.hand.map(...); // 你之前的逻辑
-                // displayHand();
-                if(messageArea) messageArea.textContent = data.message || "手牌已获取！";
-            } else {
-                let errorMsg = "发牌失败或返回数据格式不正确。";
-                if (data && data.message) errorMsg = data.message;
-                console.error("script.js: EVENT HANDLER - ", errorMsg, "完整data:", data);
-                if(messageArea) messageArea.textContent = errorMsg;
-            }
-
-        } catch (error) {
-            console.error("script.js: EVENT HANDLER - try 块捕获到错误:", error);
-            if(messageArea && !messageArea.textContent.startsWith("请求失败:") && !messageArea.textContent.startsWith("连接错误:")) {
-               messageArea.textContent = `发牌操作中发生前端错误: ${error.message}`;
-            }
-        } finally {
-            console.log("script.js: EVENT HANDLER - 进入 finally 块。");
-            dealButton.disabled = false;
-            // updateButtonStates();
-            if(messageArea) messageArea.textContent += " (操作结束)";
-            console.log("script.js: EVENT HANDLER - dealButton 事件处理结束。");
+    // --- 发牌按钮事件监听器 ---
+    if (dealButton) {
+        dealButton.addEventListener('click', async () => {
             console.log("================================================");
-        }
-    });
-    console.log("script.js: dealButton 点击事件监听器已成功绑定。");
+            console.log("script.js: EVENT HANDLER - dealButton 被点击！(时间戳:", Date.now(), ")");
+            if(messageArea) messageArea.textContent = "发牌按钮事件处理开始...";
 
-    if(messageArea) messageArea.textContent = "页面和脚本初始化完成。请点击“发牌”按钮测试。";
+            try {
+                dealButton.disabled = true;
+                if(messageArea) messageArea.textContent = "正在从服务器获取手牌...";
+
+                const endpoint = 'deal_cards.php';
+                console.log(`script.js: EVENT HANDLER - 准备调用 verySimpleFetchTest for endpoint: ${endpoint}`);
+                const data = await verySimpleFetchTest(endpoint);
+                console.log("script.js: EVENT HANDLER - verySimpleFetchTest 调用已完成。返回的data:", data);
+
+                if (data && data.success === true && data.hand && Array.isArray(data.hand)) {
+                    console.log("script.js: EVENT HANDLER - 成功获取到手牌数据:", data.hand);
+                    // 给每张牌添加一个前端唯一的ID，如果后端没提供的话
+                    currentHand = data.hand.map((card, index) => ({
+                        ...card,
+                        id: card.id || `card-${Date.now()}-${index}`
+                    }));
+                    console.log("script.js: EVENT HANDLER - currentHand 处理完毕:", currentHand);
+
+                    if(messageArea) messageArea.textContent = data.message || "手牌已获取，正在显示...";
+                    displayHand(); // 【调用函数显示手牌】
+
+                } else {
+                    let errorMsg = "发牌失败或返回数据格式不正确。";
+                    if (data && data.message) { errorMsg = data.message; }
+                    else if (data) { errorMsg += " 原始数据: " + JSON.stringify(data).substring(0,100); }
+                    console.error("script.js: EVENT HANDLER - ", errorMsg, "完整data:", data);
+                    if(messageArea) messageArea.textContent = errorMsg;
+                    currentHand = []; // 清空手牌
+                    displayHand();    // 清空显示
+                }
+
+            } catch (error) {
+                console.error("script.js: EVENT HANDLER - try 块捕获到错误:", error);
+                // messageArea 的更新已在 verySimpleFetchTest 的 catch 中部分处理
+                currentHand = []; // 出错时清空手牌
+                displayHand();    // 清空显示
+            } finally {
+                console.log("script.js: EVENT HANDLER - 进入 finally 块。");
+                dealButton.disabled = false;
+                // updateButtonStates(); // 稍后恢复
+                if(messageArea) messageArea.textContent += " (发牌操作结束)";
+                console.log("script.js: EVENT HANDLER - dealButton 事件处理结束。");
+                console.log("================================================");
+            }
+        });
+        console.log("script.js: dealButton 点击事件监听器已成功绑定。");
+    } else {
+        console.error("script.js: 严重错误 - dealButton 未找到！");
+    }
+
+    if(messageArea) messageArea.textContent = "页面和脚本初始化完成。请点击“发牌”按钮。";
     console.log("script.js: 脚本主逻辑执行完毕。");
 });
 
-console.log("script.js: 文件加载结束（但在 DOMContentLoaded 事件触发前）。");
+console.log("script.js: 文件加载结束。");
