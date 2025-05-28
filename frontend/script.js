@@ -1,111 +1,90 @@
 // frontend/script.js
-console.log("script.js: 文件开始加载。");
+// ... (其他代码，包括 verySimpleFetchTest 函数，保持不变) ...
 
-// 等待 DOM 完全加载后再执行主要逻辑
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("script.js: DOMContentLoaded 事件已触发。脚本主逻辑开始执行。");
+// --- 发牌按钮事件监听器 (修改版) ---
+console.log("script.js: 准备为 dealButton 绑定点击事件监听器。");
+dealButton.addEventListener('click', async () => {
+    console.log("================================================");
+    console.log("script.js: EVENT HANDLER - dealButton 被点击！(时间戳:", Date.now(), ")");
+    messageArea.textContent = "发牌按钮事件处理开始...";
 
-    // --- DOM 元素获取 ---
-    console.log("script.js: 正在获取DOM元素...");
-    const messageArea = document.getElementById('message-area');
-    const dealButton = document.getElementById('dealButton');
-    // 其他元素获取可以暂时省略，我们先关注发牌按钮和消息区
-    if (messageArea) {
-        console.log("script.js: messageArea 元素获取成功。");
-        messageArea.textContent = "脚本已加载，等待操作。";
-    } else {
-        console.error("script.js: 严重错误 - 未能获取到 'message-area' 元素！");
-        alert("页面结构错误：缺少 message-area 元素。");
-        return; // 如果关键元素缺失，不继续执行
-    }
-    if (!dealButton) {
-        console.error("script.js: 严重错误 - 未能获取到 'dealButton' 元素！");
-        messageArea.textContent = "错误：发牌按钮未找到！";
-        alert("页面结构错误：缺少 dealButton 元素。");
-        return; // 如果发牌按钮缺失，不继续执行
-    }
-    console.log("script.js: dealButton 元素获取成功。");
-
-    // --- 检查 CONFIG 对象和 API_BASE_URL ---
-    console.log("script.js: 正在检查 CONFIG 对象...");
-    if (typeof CONFIG === 'undefined' || CONFIG === null) {
-        console.error("script.js: 严重错误 - CONFIG 对象未定义！请确保 config.js 已正确加载并在 script.js 之前。");
-        messageArea.textContent = "错误：前端配置 (CONFIG) 未加载！";
-        alert("前端配置错误：CONFIG 对象未加载！");
+    try {
+        console.log("script.js: EVENT HANDLER - 进入 try 块。");
         dealButton.disabled = true;
-        return;
-    }
-    console.log("script.js: CONFIG 对象存在:", CONFIG);
-
-    if (typeof CONFIG.API_BASE_URL !== 'string' || CONFIG.API_BASE_URL.trim() === '') {
-        console.error("script.js: 严重错误 - CONFIG.API_BASE_URL 无效！值为:", CONFIG.API_BASE_URL);
-        messageArea.textContent = "错误：API基础URL配置无效！";
-        alert("前端配置错误：API_BASE_URL 无效！");
-        dealButton.disabled = true;
-        return;
-    }
-    const API_BASE_URL = CONFIG.API_BASE_URL; // 在这个作用域内获取一次
-    console.log("script.js: API_BASE_URL 已确认:", API_BASE_URL);
-
-
-    // --- 简单的 fetch 函数封装，用于测试 ---
-    async function verySimpleFetchTest(url) {
-        console.log(`script.js: verySimpleFetchTest - 准备请求 URL: ${url}`);
-        messageArea.textContent = `正在尝试连接: ${url}`;
-        try {
-            const response = await fetch(url); // 直接使用 fetch
-            console.log(`script.js: verySimpleFetchTest - 收到响应对象 for ${url}:`, response);
-            messageArea.textContent = `收到服务器响应 (状态: ${response.status})。正在解析...`;
-
-            if (!response.ok) {
-                const errorText = `HTTP error! Status: ${response.status} for ${url}`;
-                console.error("script.js: verySimpleFetchTest - HTTP 错误:", errorText);
-                messageArea.textContent = `连接错误: ${errorText}`;
-                throw new Error(errorText);
-            }
-
-            const data = await response.json();
-            console.log(`script.js: verySimpleFetchTest - JSON 解析成功 for ${url}:`, data);
-            messageArea.textContent = `从服务器获取消息: ${data.message || JSON.stringify(data)}`;
-            return data;
-
-        } catch (error) {
-            console.error(`script.js: verySimpleFetchTest - 请求 ${url} 失败:`, error);
-            messageArea.textContent = `请求失败: ${error.message}`;
-            // 如果错误是 "TypeError: Failed to fetch", 通常是网络问题或CORS问题
-            // 如果错误是 "SyntaxError: Unexpected token ... in JSON", 是后端返回的不是有效JSON
-            throw error;
-        }
-    }
-
-    // --- 发牌按钮事件监听器 ---
-    console.log("script.js: 准备为 dealButton 绑定点击事件监听器。");
-    dealButton.addEventListener('click', async () => {
-        console.log("script.js: dealButton 被点击！");
-        dealButton.disabled = true; // 防止重复点击
         messageArea.textContent = "发牌按钮已点击，正在处理...";
 
-        const endpoint = 'deal_cards.php'; // API的端点
-        const fullApiUrl = `${API_BASE_URL}/${endpoint}`;
-        console.log(`script.js: 目标API URL: ${fullApiUrl}`);
+        const endpoint = 'deal_cards.php';
+        const fullApiUrl = `${API_BASE_URL}/${endpoint}`; // API_BASE_URL 应该已经在这个作用域外定义好了
+        console.log(`script.js: EVENT HANDLER - 目标API URL: ${fullApiUrl}`);
 
-        try {
-            await verySimpleFetchTest(fullApiUrl);
-            // 如果成功，verySimpleFetchTest 内部会更新 messageArea
-        } catch (error) {
-            // verySimpleFetchTest 内部已经打印了错误并更新了 messageArea
-            // 这里可以不用再做什么，或者只做一些额外的清理
-            console.log("script.js: dealButton 点击事件的 catch 块捕获到错误（通常已被内部处理）。");
-        } finally {
-            console.log("script.js: dealButton 点击事件的 finally 块执行。");
-            dealButton.disabled = false; // 无论成功或失败，都恢复按钮
+        if (typeof verySimpleFetchTest !== 'function') {
+            console.error("script.js: EVENT HANDLER - 严重错误: verySimpleFetchTest 函数未定义!");
+            messageArea.textContent = "内部错误：网络请求函数丢失。";
+            return; // 提前退出
         }
-    });
-    console.log("script.js: dealButton 点击事件监听器已成功绑定。");
 
-    messageArea.textContent = "页面和脚本初始化完成。请点击“发牌”按钮测试。";
-    console.log("script.js: 脚本主逻辑执行完毕。");
+        console.log("script.js: EVENT HANDLER - 准备调用 verySimpleFetchTest。");
+        const data = await verySimpleFetchTest(fullApiUrl); // 调用并获取返回的data
+        console.log("script.js: EVENT HANDLER - verySimpleFetchTest 调用已完成。返回的data:", data);
+
+        // 【关键】现在后端应该返回包含 'hand' 字段的真实数据了
+        if (data && data.success === true && data.hand && Array.isArray(data.hand) && data.hand.length === 13) {
+            console.log("script.js: EVENT HANDLER - 成功获取到手牌数据:", data.hand);
+            currentHand = data.hand.map((card, index) => {
+                // 为每张牌添加一个前端唯一的ID，如果后端没提供的话
+                return { ...card, id: card.id || `card-${Date.now()}-${index}` };
+            });
+            console.log("script.js: EVENT HANDLER - currentHand 处理完毕:", currentHand);
+
+            // displayHand(); // 你需要实现或恢复这个函数来显示牌
+            // resetGame(false); // 如果需要重置牌局状态
+
+            messageArea.textContent = data.message || "手牌已获取，请摆牌！";
+            console.log("script.js: EVENT HANDLER - 准备调用 displayHand() (如果已实现)。");
+            // 在调用 displayHand 之前，确保它已定义
+            if (typeof displayHand === 'function') {
+                displayHand(); // 调用你实际的显示手牌函数
+            } else {
+                console.warn("script.js: EVENT HANDLER - displayHand 函数未定义或未实现。");
+            }
+
+        } else {
+            // 处理后端返回成功但数据结构不符合预期的情况，或后端明确返回失败
+            let errorMsg = "发牌失败或返回数据格式不正确。";
+            if (data && data.message) {
+                errorMsg = data.message;
+            } else if (data) {
+                errorMsg += " 原始数据: " + JSON.stringify(data).substring(0,100);
+            }
+            console.error("script.js: EVENT HANDLER - ", errorMsg, "完整data:", data);
+            messageArea.textContent = errorMsg;
+        }
+
+    } catch (error) {
+        console.error("script.js: EVENT HANDLER - try 块捕获到错误:", error);
+        // messageArea 的更新已在 verySimpleFetchTest 的 catch 中部分处理，这里可以补充
+        if (!messageArea.textContent.startsWith("请求失败:") && !messageArea.textContent.startsWith("连接错误:")) {
+            messageArea.textContent = `发牌操作中发生前端错误: ${error.message}`;
+        }
+    } finally {
+        console.log("script.js: EVENT HANDLER - 进入 finally 块。");
+        dealButton.disabled = false;
+        // updateButtonStates(); // 你需要实现或恢复这个函数
+        if (typeof updateButtonStates === 'function') {
+             updateButtonStates();
+        } else {
+             console.warn("script.js: EVENT HANDLER - updateButtonStates 函数未定义或未实现。");
+        }
+        messageArea.textContent += " (操作结束)";
+        console.log("script.js: EVENT HANDLER - dealButton 事件处理结束。");
+        console.log("================================================");
+    }
 });
+console.log("script.js: dealButton 点击事件监听器已成功绑定。");
 
-// 这个日志在 DOMContentLoaded 之前执行
-console.log("script.js: 文件加载结束（但在 DOMContentLoaded 事件触发前）。");
+// ... (你需要确保 displayHand 和 updateButtonStates 函数是存在的，
+// 或者至少先注释掉对它们的调用，以避免新的 undefined function 错误)
+// 为了测试，可以先放两个空函数占位：
+function displayHand() { console.log("displayHand (占位函数) 被调用。"); }
+function updateButtonStates() { console.log("updateButtonStates (占位函数) 被调用。"); }
+// ...
