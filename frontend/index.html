@@ -1,52 +1,40 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水（完善交互）</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>十三张扑克游戏</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+  <script src="assets/getCardImage.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>十三水</h1>
-        </header>
-        <main>
-            <section id="game-status">
-                <p id="message-area">请点击“发牌”按钮。发牌后，点击手牌，再点击目标牌道进行摆牌。</p>
-            </section>
-
-            <section id="player-hand-area">
-                <h2>我的手牌 (<span id="hand-card-count">0</span>/13)</h2>
-                <div id="player-hand" class="card-container hand-zone">
-                    <!-- 手牌会显示在这里 -->
-                </div>
-            </section>
-
-            <section id="arrangement-area">
-                <h2>摆牌区</h2>
-                <div class="arrangement-row">
-                    <h3>头道 (<span class="arranged-count" data-lane="head">0</span>/3) <span class="lane-type" id="head-type-display"></span></h3>
-                    <div id="arranged-head" class="card-container drop-zone" data-lane="head" data-max-cards="3"></div>
-                </div>
-                <div class="arrangement-row">
-                    <h3>中道 (<span class="arranged-count" data-lane="middle">0</span>/5) <span class="lane-type" id="middle-type-display"></span></h3>
-                    <div id="arranged-middle" class="card-container drop-zone" data-lane="middle" data-max-cards="5"></div>
-                </div>
-                <div class="arrangement-row">
-                    <h3>尾道 (<span class="arranged-count" data-lane="tail">0</span>/5) <span class="lane-type" id="tail-type-display"></span></h3>
-                    <div id="arranged-tail" class="card-container drop-zone" data-lane="tail" data-max-cards="5"></div>
-                </div>
-            </section>
-
-            <section id="controls">
-                <button id="dealButton">发牌</button>
-                <button id="submitButton" disabled>确定牌型</button>
-                <button id="resetArrangementButton" disabled>重置摆牌</button>
-            </section>
-        </main>
+  <div id="main-container">
+    <h1>十三张扑克摆牌游戏</h1>
+    <div id="message-area">请点击“发牌”。</div>
+    <div class="toolbar">
+      <button id="dealButton">发牌</button>
+      <button id="sortHandButton">一键排序</button>
+      <button id="resetArrangementButton" disabled>重置摆牌</button>
+      <button id="submitButton" disabled>提交摆牌</button>
+      <span id="hand-card-hint">手牌剩余：<span id="hand-card-count">0</span></span>
     </div>
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+    <div id="player-hand" class="card-zone"></div>
+    <div id="arrangement-container">
+      <div class="arrangement-zone" id="arranged-head" data-lane="head" data-max-cards="3">
+        <div class="zone-title">头道 <span class="arranged-count" data-lane="head">0</span>/3</div>
+        <div id="head-type-display" class="type-display"></div>
+      </div>
+      <div class="arrangement-zone" id="arranged-middle" data-lane="middle" data-max-cards="5">
+        <div class="zone-title">中道 <span class="arranged-count" data-lane="middle">0</span>/5</div>
+        <div id="middle-type-display" class="type-display"></div>
+      </div>
+      <div class="arrangement-zone" id="arranged-tail" data-lane="tail" data-max-cards="5">
+        <div class="zone-title">尾道 <span class="arranged-count" data-lane="tail">0</span>/5</div>
+        <div id="tail-type-display" class="type-display"></div>
+      </div>
+    </div>
+    <div id="result-area"></div>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
