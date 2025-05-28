@@ -1,31 +1,65 @@
 <?php
 class Card {
-    public $suit; // H (Hearts), D (Diamonds), C (Clubs), S (Spades)
-    public $rank; // 2-10, J, Q, K, A
+    public $suit; // clubs, spades, diamonds, hearts
+    public $rank; // ace, king, queen, jack, 10, 9, ..., 2
 
-    public function __construct($suit, $rank) {
-        $this->suit = $suit;
-        $this->rank = $rank;
+    // 为了牌型比较，我们可能还是需要内部的数值表示
+    public $suitInternal; // H, D, C, S
+    public $rankInternal; // A, K, Q, J, T, 9, ..., 2
+
+    private static $rankMap = [
+        'A' => 'ace', 'K' => 'king', 'Q' => 'queen', 'J' => 'jack',
+        'T' => '10', '9' => '9', '8' => '8', '7' => '7',
+        '6' => '6', '5' => '5', '4' => '4', '3' => '3', '2' => '2'
+    ];
+
+    private static $suitMap = [
+        'S' => 'spades', 'H' => 'hearts', 'D' => 'diamonds', 'C' => 'clubs'
+    ];
+
+    public function __construct($internalSuit, $internalRank) {
+        $this->suitInternal = $internalSuit;
+        $this->rankInternal = $internalRank;
+
+        if (!isset(self::$suitMap[$internalSuit]) || !isset(self::$rankMap[$internalRank])) {
+            throw new InvalidArgumentException("Invalid card suit or rank: {$internalSuit}{$internalRank}");
+        }
+
+        $this->suit = self::$suitMap[$internalSuit];
+        $this->rank = self::$rankMap[$internalRank];
     }
 
-    public function toString() {
-        return $this->rank . $this->suit;
+    /**
+     * Returns a string representation for image mapping, e.g., "spades_ace"
+     */
+    public function toStringForImage() {
+        return $this->suit . '_' . $this->rank;
+    }
+
+    /**
+     * Optional: A more traditional string representation, e.g., "AS" or "KH"
+     * You might still want this for internal logic or debugging
+     */
+    public function toStringShort() {
+        return $this->rankInternal . $this->suitInternal;
     }
 }
 
 class ThirteenWaters {
     private $deck = [];
-    private $players = []; // ['player1' => ['hand' => [], 'score' => 0]]
+    private $players = [];
 
     public function __construct() {
         $this->initializeDeck();
     }
 
     private function initializeDeck() {
-        $suits = ['H', 'D', 'C', 'S'];
-        $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']; // T for 10
-        foreach ($suits as $suit) {
-            foreach ($ranks as $rank) {
+        $this->deck = []; // Clear deck before initializing
+        $internalSuits = ['S', 'H', 'D', 'C']; // Spades, Hearts, Diamonds, Clubs
+        $internalRanks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']; // T for 10
+
+        foreach ($internalSuits as $suit) {
+            foreach ($internalRanks as $rank) {
                 $this->deck[] = new Card($suit, $rank);
             }
         }
@@ -43,25 +77,37 @@ class ThirteenWaters {
         }
 
         $playerIndex = 0;
+        $cardsDealt = 0;
+        $totalCardsToDeal = $numPlayers * 13;
+
+        // Make sure deck has enough cards
+        if (count($this->deck) < $totalCardsToDeal) {
+            // This shouldn't happen with a standard 52 card deck and up to 4 players
+            // but good to be aware of if deck size changes or player count is very high.
+            error_log("Not enough cards in deck to deal.");
+            return;
+        }
+
         foreach ($this->deck as $card) {
-            if (count($this->players['player' . ($playerIndex % $numPlayers + 1)]['hand']) < 13) {
-                $this->players['player' . ($playerIndex % $numPlayers + 1)]['hand'][] = $card;
-            }
-            $playerIndex++;
-            if ($playerIndex >= $numPlayers * 13) break; // Deal 13 cards per player
+            if ($cardsDealt >= $totalCardsToDeal) break;
+
+            $currentPlayerKey = 'player' . (($cardsDealt % $numPlayers) + 1);
+            $this->players[$currentPlayerKey]['hand'][] = $card;
+            $cardsDealt++;
         }
     }
+
 
     public function getPlayerHand($playerId) {
         return isset($this->players[$playerId]) ? $this->players[$playerId]['hand'] : null;
     }
 
     public function getGameState() {
-        // Convert card objects to strings for JSON output
         $state = [];
         foreach ($this->players as $playerId => $playerData) {
             $state[$playerId] = [
-                'hand' => array_map(function($card) { return $card->toString(); }, $playerData['hand']),
+                // Use toStringForImage() for the frontend
+                'hand' => array_map(function($card) { /** @var Card $card */ return $card->toStringForImage(); }, $playerData['hand']),
                 'score' => $playerData['score'],
                 'played_hands' => $playerData['played_hands']
             ];
@@ -69,9 +115,6 @@ class ThirteenWaters {
         return $state;
     }
 
-    // TODO: Add logic for submitting hands, validating hands, scoring, etc.
-    // Example: public function submitHand($playerId, $front, $middle, $back)
-    // Example: private function isValidHandCombination($front, $middle, $back)
-    // Example: private function compareHandsAndScore()
+    // ... (Rest of the ThirteenWaters class: submitHand, isValidHandCombination, compareHandsAndScore etc.)
 }
 ?>
