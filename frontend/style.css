@@ -17,3 +17,29 @@ body { font-family: sans-serif; margin: 20px; background-color: #eee; }
     box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
 }
 #controls button { padding: 10px 20px; cursor: pointer; }
+/* frontend/style.css (追加/修改) */
+/* ... (保留你之前的样式) ... */
+
+.card.selected-from-hand { /* 手牌中被选中的牌的样式 */
+    border: 2px solid dodgerblue;
+    box-shadow: 0 0 8px dodgerblue;
+    transform: translateY(-5px); /* 稍微向上移动一点以示选中 */
+}
+
+.drop-zone.can-drop { /* 当有牌被选中，可以放置牌的区域高亮 */
+    background-color: #e6ffe6; /* 淡绿色背景 */
+    border-style: dashed;
+    border-color: #33cc33;
+}
+
+.card-container { /* 给牌道一些最小高度，即使是空的 */
+    min-height: 110px;
+}
+.hand-zone .card:hover { /* 手牌区的牌悬停效果 */
+    transform: scale(1.05);
+    cursor: pointer;
+}
+.drop-zone .card:hover { /* 摆牌区的牌悬停效果 (用于移回) */
+    transform: scale(1.05);
+    cursor: pointer;
+}
