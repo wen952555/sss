@@ -1,4 +1,3 @@
-// frontend/script.js (Using suit_rank.png naming, CHECK IMAGE SERVER CORS!)
 console.log("script.js: CORS_CHECK_DEBUG - 文件开始加载。");
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -6,8 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const messageArea = document.getElementById('message-area');
     const dealButton = document.getElementById('dealButton');
+    const sortHandButton = document.getElementById('sortHandButton');
     const playerHandDiv = document.getElementById('player-hand');
-    // ... (其他DOM元素获取，与上一版带交互逻辑的一致)
     const submitButton = document.getElementById('submitButton');
     const resetArrangementButton = document.getElementById('resetArrangementButton');
     const handCardCountSpan = document.getElementById('hand-card-count');
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
         middle: { div: document.getElementById('arranged-middle'), countSpan: document.querySelector('.arranged-count[data-lane="middle"]'), typeDisplay: document.getElementById('middle-type-display') },
         tail: { div: document.getElementById('arranged-tail'), countSpan: document.querySelector('.arranged-count[data-lane="tail"]'), typeDisplay: document.getElementById('tail-type-display') }
     };
-
 
     if (!messageArea || !dealButton || !playerHandDiv || !submitButton || !resetArrangementButton || !handCardCountSpan ||
         !arrangementZones.head.div || !arrangementZones.middle.div || !arrangementZones.tail.div) {
@@ -32,37 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
         messageArea.textContent = "前端配置错误！"; dealButton.disabled = true; return;
     }
     const API_BASE_URL = CONFIG.API_BASE_URL;
-    const IMAGE_SERVER_BASE_URL = CONFIG.IMAGE_SERVER_BASE_URL; // 应为 https://xxx.9525.ip-ddns.com/assets/images/
-    console.log("script.js: CORS_CHECK_DEBUG - 配置: API_URL=", API_BASE_URL, "IMAGE_URL=", IMAGE_SERVER_BASE_URL);
+    const IMAGE_SERVER_BASE_URL = CONFIG.IMAGE_SERVER_BASE_URL;
 
     let originalHandData = [];
     let currentHandElements = {};
     let arrangedCardsData = { head: [], middle: [], tail: [] };
     let selectedCardElement = null;
 
-    // --- 卡牌图片路径转换 (rank_of_suit.png 格式) ---
+    // --- 卡牌图片路径转换 ---
     function getCardImagePath(card) {
-        if (!card || typeof card.suit !== 'string' || typeof card.rank !== 'string') {
-            return IMAGE_SERVER_BASE_URL + "placeholder_error.png";
-        }
-        const suitMap = {
-            's': 'spades',
-            'h': 'hearts',
-            'd': 'diamonds',
-            'c': 'clubs'
-        };
-        let rankName = String(card.rank).toLowerCase();
-        if (rankName === 'a') rankName = 'ace';
-        else if (rankName === 'k') rankName = 'king';
-        else if (rankName === 'q') rankName = 'queen';
-        else if (rankName === 'j') rankName = 'jack';
-        else if (rankName === 't') rankName = '10'; // 'T' 转换为 "10"
-        // 允许 rank 传数字
-        if (rankName === '1') rankName = 'ace';
-        if (rankName.length === 1 && '23456789'.includes(rankName)) rankName = rankName;
-        const suitName = suitMap[String(card.suit).toLowerCase()] || card.suit.toLowerCase();
-        const finalPath = `${IMAGE_SERVER_BASE_URL}${rankName}_of_${suitName}.png`;
-        return finalPath;
+        return getCardImage(card);
     }
 
     function renderCardElement(cardData, isInHand = true) {
@@ -77,17 +54,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const imagePath = getCardImagePath(cardData);
         cardDiv.style.backgroundImage = `url('${imagePath}')`;
 
-        const cardText = `${cardData.rank.toUpperCase()}${cardData.suit.toUpperCase().charAt(0)}`;
+        const cardText = `${cardData.rank.toString().toUpperCase()}${cardData.suit.toString().toUpperCase().charAt(0)}`;
         cardDiv.textContent = cardText;
         cardDiv.style.color = 'transparent';
 
         const imgTest = new Image();
         imgTest.src = imagePath;
         imgTest.onload = () => {
-            console.log(`script.js: CORS_CHECK_SUCCESS - Img loaded: ${imagePath}`);
+            // 成功加载
         };
         imgTest.onerror = () => {
-            console.warn(`script.js: CORS_CHECK_FAIL - Img fail: ${imagePath}. Showing text: ${cardText}. CHECK IMAGE SERVER CORS HEADERS!`);
             cardDiv.style.backgroundImage = 'none';
             cardDiv.style.color = 'black';
         };
@@ -100,8 +76,28 @@ document.addEventListener('DOMContentLoaded', () => {
         return cardDiv;
     }
 
-    // --- handleHandCardClick, handleArrangedCardClick, 牌道点击事件, updateCountsAndStates, resetGame, resetArrangementButton 事件 ---
-    // 这些交互函数与上一版带交互逻辑的一致
+    // 排序功能
+    function sortHandByRankAndSuit() {
+      if (!originalHandData || !Array.isArray(originalHandData)) return;
+      originalHandData.sort((a, b) => {
+        const rankOrder = (rank) => {
+          if (typeof rank === "string") rank = rank.toUpperCase();
+          if (rank === 'A') return 14;
+          if (rank === 'K') return 13;
+          if (rank === 'Q') return 12;
+          if (rank === 'J') return 11;
+          if (rank === 'T') return 10;
+          return Number(rank);
+        };
+        const suitOrder = { s: 4, h: 3, d: 2, c: 1 };
+        if (rankOrder(a.rank) !== rankOrder(b.rank)) {
+          return rankOrder(b.rank) - rankOrder(a.rank);
+        }
+        return (suitOrder[a.suit] || 0) - (suitOrder[b.suit] || 0);
+      });
+      displayHand();
+    }
+    sortHandButton.addEventListener('click', sortHandByRankAndSuit);
 
     function updateCountsAndStates() {
         let handCount = Object.keys(currentHandElements).length;
@@ -257,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...card,
                     id: card.id || `card-${Date.now()}-${index}`
                 }));
-                console.log("script.js: CORS_CHECK_DEBUG - 原始手牌数据:", originalHandData.slice(0,3));
                 displayHand();
             } else {
                 const errorMsg = (data && data.message) ? data.message : "手牌数据格式不正确。";
@@ -270,6 +265,9 @@ document.addEventListener('DOMContentLoaded', () => {
             dealButton.disabled = false;
         }
     });
+
+    // 可扩展：提交摆牌、判型、动画、音效等
+
     console.log("script.js: CORS_CHECK_DEBUG - 初始化完成。");
     updateCountsAndStates();
 });
