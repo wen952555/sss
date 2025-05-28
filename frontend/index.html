@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>十三张扑克游戏</title>
+  <title>十三张扑克摆牌游戏</title>
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
   <script src="assets/getCardImage.js"></script>
@@ -10,27 +10,15 @@
 </head>
 <body>
   <div id="main-container">
-    <h1>十三张扑克摆牌游戏</h1>
-    <div id="message-area">请点击“发牌”。</div>
-    <div class="toolbar">
-      <button id="dealButton">发牌</button>
-      <button id="sortHandButton">一键排序</button>
-      <button id="resetArrangementButton" disabled>重置摆牌</button>
-      <button id="submitButton" disabled>提交摆牌</button>
-      <button id="aiSuggestButton">AI参考</button>
-      <button id="aiAutoButton">AI托管</button>
-      <button id="aiReleaseButton" style="display:none;">解除托管</button>
-      <span id="hand-card-hint">手牌剩余：<span id="hand-card-count">0</span></span>
-    </div>
-    <div id="player-hand" class="card-zone"></div>
+    <div id="message-area">请点击“发牌”或“自动匹配”开始。</div>
     <div id="arrangement-container">
       <div class="arrangement-zone" id="arranged-head" data-lane="head" data-max-cards="3">
         <div class="zone-title">头道 <span class="arranged-count" data-lane="head">0</span>/3</div>
         <div id="head-type-display" class="type-display"></div>
       </div>
-      <div class="arrangement-zone" id="arranged-middle" data-lane="middle" data-max-cards="5">
-        <div class="zone-title">中道 <span class="arranged-count" data-lane="middle">0</span>/5</div>
-        <div id="middle-type-display" class="type-display"></div>
+      <div class="arrangement-zone" id="arranged-hand" data-lane="hand" data-max-cards="5">
+        <div class="zone-title">手牌 <span class="arranged-count" data-lane="hand">0</span>/5</div>
+        <div id="hand-type-display" class="type-display"></div>
       </div>
       <div class="arrangement-zone" id="arranged-tail" data-lane="tail" data-max-cards="5">
         <div class="zone-title">尾道 <span class="arranged-count" data-lane="tail">0</span>/5</div>
@@ -38,6 +26,16 @@
       </div>
     </div>
     <div id="result-area"></div>
+    <div class="toolbar toolbar-bottom">
+      <button id="dealButton">发牌</button>
+      <button id="matchButton">自动匹配</button>
+      <button id="resetArrangementButton" disabled>重置摆牌</button>
+      <button id="submitButton" disabled>提交摆牌</button>
+      <button id="aiSuggestButton">AI参考</button>
+      <button id="aiAutoButton">AI托管</button>
+      <button id="aiReleaseButton" style="display:none;">解除托管</button>
+      <span id="hand-card-hint">手牌剩余：<span id="hand-card-count">0</span></span>
+    </div>
   </div>
   <script src="script.js"></script>
 </body>
