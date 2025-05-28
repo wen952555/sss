@@ -1,0 +1,20 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Node.js (if you ever decide to use npm for frontend tools)
+frontend/node_modules/
+frontend/package-lock.json
+frontend/yarn.lock
+frontend/dist/
+frontend/build/
+
+# PHP / Composer (if used for backend)
+backend/vendor/
+backend/composer.lock
+backend/.env
+
+# IDE specific
+.idea/
+.vscode/
+*.swp
