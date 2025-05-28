@@ -1,187 +1,190 @@
 // frontend/script.js
-console.log("script.js: 文件开始加载。");
+console.log("script.js: DEBUG - 文件开始加载。");
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("script.js: DOMContentLoaded 事件已触发。");
+    console.log("script.js: DEBUG - DOMContentLoaded 事件已触发。");
 
-    let messageArea = document.getElementById('message-area');
-    let dealButton = document.getElementById('dealButton');
-    let playerHandDiv = document.getElementById('player-hand'); // 获取手牌显示区域
-    // 摆牌区的div也需要获取，但我们先专注于显示手牌
-    let arrangedHeadDiv = document.getElementById('arranged-head');
-    let arrangedMiddleDiv = document.getElementById('arranged-middle');
-    let arrangedTailDiv = document.getElementById('arranged-tail');
+    // --- DOM 元素获取 ---
+    const messageArea = document.getElementById('message-area');
+    const dealButton = document.getElementById('dealButton');
+    const playerHandDiv = document.getElementById('player-hand');
 
-    let API_BASE_URL = '';
-    let CARD_IMAGE_PATH = './assets/images/'; // 默认值
-
-    // 检查和设置CONFIG
-    if (typeof CONFIG !== 'undefined' && CONFIG) {
-        if (typeof CONFIG.API_BASE_URL === 'string' && CONFIG.API_BASE_URL.trim() !== '') {
-            API_BASE_URL = CONFIG.API_BASE_URL;
-            console.log("script.js: API_BASE_URL 已确认:", API_BASE_URL);
-        } else {
-            console.error("script.js: 严重错误 - CONFIG.API_BASE_URL 无效！");
-            if(messageArea) messageArea.textContent = "错误：API基础URL配置无效！";
-            if(dealButton) dealButton.disabled = true;
-            return;
-        }
-        if (typeof CONFIG.CARD_IMAGE_PATH === 'string') {
-            CARD_IMAGE_PATH = CONFIG.CARD_IMAGE_PATH;
-        }
-    } else {
-        console.error("script.js: 严重错误 - CONFIG 对象未定义！");
-        if(messageArea) messageArea.textContent = "错误：前端配置 (CONFIG) 未加载！";
-        if(dealButton) dealButton.disabled = true;
+    if (!messageArea || !dealButton || !playerHandDiv) {
+        console.error("script.js: FATAL ERROR - 一个或多个必需的DOM元素未找到。请检查HTML的ID。");
+        if (messageArea) messageArea.textContent = "页面初始化错误：关键元素缺失！";
+        alert("页面初始化错误：关键元素缺失！请检查HTML。");
         return;
     }
+    console.log("script.js: DEBUG - 必需的DOM元素已获取。");
+    messageArea.textContent = "请点击“发牌”按钮。";
 
-    let currentHand = []; // 存储当前手牌
-    // let arrangedCards = { head: [], middle: [], tail: [] }; // 暂时不用
+    // --- 配置获取 ---
+    if (typeof CONFIG === 'undefined' || CONFIG === null || typeof CONFIG.API_BASE_URL !== 'string' || CONFIG.API_BASE_URL.trim() === '') {
+        console.error("script.js: FATAL ERROR - CONFIG对象或API_BASE_URL无效。请检查config.js。");
+        messageArea.textContent = "前端配置错误：API信息无效！";
+        alert("前端配置错误：API信息无效！请检查config.js。");
+        dealButton.disabled = true;
+        return;
+    }
+    const API_BASE_URL = CONFIG.API_BASE_URL;
+    const CARD_IMAGE_PATH = (typeof CONFIG.CARD_IMAGE_PATH === 'string' && CONFIG.CARD_IMAGE_PATH.trim() !== '') ? CONFIG.CARD_IMAGE_PATH : './assets/images/';
+    console.log("script.js: DEBUG - 配置加载: API_BASE_URL=", API_BASE_URL, "CARD_IMAGE_PATH=", CARD_IMAGE_PATH);
+
+    let currentHand = [];
 
     // --- 卡牌图片路径转换 ---
     function getCardImagePath(card) {
         if (!card || typeof card.suit !== 'string' || typeof card.rank !== 'string') {
-            return '';
+            console.warn("script.js: getCardImagePath - 收到无效的card对象:", card);
+            return CARD_IMAGE_PATH + "placeholder_error.svg"; // 返回一个明确的错误占位符
         }
-        const suitName = card.suit.toLowerCase();
-        let rankName = card.rank.toLowerCase();
+        const suitName = String(card.suit).toLowerCase(); // 确保是字符串并转小写
+        let rankName = String(card.rank).toLowerCase();   // 确保是字符串并转小写
+
         if (rankName === 'a') rankName = 'ace';
         else if (rankName === 'k') rankName = 'king';
         else if (rankName === 'q') rankName = 'queen';
         else if (rankName === 'j') rankName = 'jack';
         else if (rankName === 't') rankName = '10';
-        return `${CARD_IMAGE_PATH}${suitName}_${rankName}.svg`;
+        // 对于数字 2-9，保持它们的原样
+
+        const finalPath = `${CARD_IMAGE_PATH}${suitName}_${rankName}.svg`;
+        // console.log(`script.js: DEBUG - getCardImagePath for ${card.suit}${card.rank} -> ${finalPath}`); // 可选的详细日志
+        return finalPath;
     }
 
-    // --- 渲染单张卡牌 ---
+    // --- 渲染单张卡牌到HTML元素 ---
     function renderCardElement(cardData) {
         const cardDiv = document.createElement('div');
-        cardDiv.classList.add('card');
-        // 为卡牌添加数据属性，方便后续操作
-        cardDiv.dataset.id = cardData.id || `${cardData.suit}-${cardData.rank}`; // 如果后端没给ID，前端简单生成一个
-        cardDiv.dataset.suit = cardData.suit;
-        cardDiv.dataset.rank = cardData.rank;
+        cardDiv.classList.add('card'); // 应用CSS样式
+
+        // 为调试目的，也为卡牌元素添加数据属性
+        if (cardData && cardData.suit && cardData.rank) {
+            cardDiv.dataset.suit = cardData.suit;
+            cardDiv.dataset.rank = cardData.rank;
+            cardDiv.dataset.cardKey = `${cardData.suit}-${cardData.rank}`; // 组合键
+        } else {
+            console.error("script.js: renderCardElement - 收到无效的 cardData:", cardData);
+            cardDiv.textContent = "ERR"; // 显示错误文本
+            cardDiv.style.backgroundColor = "red"; // 标记错误卡牌
+            return cardDiv;
+        }
 
         const imagePath = getCardImagePath(cardData);
-        cardDiv.style.backgroundImage = `url('${imagePath}')`;
-        // 后备文本，以防图片加载失败
-        cardDiv.textContent = `${cardData.rank}${cardData.suit.charAt(0).toUpperCase()}`;
-        cardDiv.style.color = 'transparent'; // 使文字在图片加载成功时不可见
+        console.log(`script.js: DEBUG - renderCardElement - 尝试为牌 ${cardData.suit}${cardData.rank} 设置背景图: url('${imagePath}')`);
 
-        // 【TODO】: 在这里可以为卡牌添加点击或拖拽事件监听器
-        // cardDiv.draggable = true;
-        // cardDiv.addEventListener('dragstart', handleDragStart);
-        // cardDiv.addEventListener('click', handleCardClick);
+        // 设置背景图片
+        cardDiv.style.backgroundImage = `url('${imagePath}')`;
+
+        // 设置后备文本 (如果图片加载失败会尝试显示这个)
+        const cardText = `${cardData.rank.toUpperCase()}${cardData.suit.toUpperCase().charAt(0)}`;
+        cardDiv.textContent = cardText;
+        cardDiv.style.color = 'transparent'; // 默认将文本设为透明，优先显示背景图
+
+        // 使用一个临时的Image对象来检测图片是否加载成功
+        // 这有助于我们知道是图片路径问题还是CSS显示问题
+        const imgTest = new Image();
+        imgTest.src = imagePath;
+
+        imgTest.onload = function() {
+            // 图片成功加载 (或者至少浏览器认为它可以获取这个资源)
+            // 背景图片应该已经通过 cardDiv.style.backgroundImage 设置并显示了
+            console.log(`script.js: DEBUG - 图片似乎已成功加载 (onload触发): ${imagePath} for card ${cardText}`);
+            // 如果图片是透明的或者非常小，可能还是看不到，但路径是对的
+        };
+
+        imgTest.onerror = function() {
+            // 图片加载失败 (路径错误、文件损坏、网络问题等)
+            console.warn(`script.js: WARNING - 图片加载失败 (onerror触发): ${imagePath} for card ${cardText}. 将显示后备文本.`);
+            cardDiv.style.backgroundImage = 'none'; // 清除失败的背景图
+            cardDiv.style.color = 'black';      // 使后备文本可见
+        };
+
+        // 【TODO】在这里可以为卡牌添加点击或拖拽事件监听器
+        // cardDiv.addEventListener('click', () => { console.log('Card clicked:', cardData); });
 
         return cardDiv;
     }
 
-    // --- 显示手牌 ---
+    // --- 显示手牌到页面 ---
     function displayHand() {
-        console.log("script.js: displayHand() 被调用. currentHand:", currentHand);
+        console.log("script.js: DEBUG - displayHand() 被调用. currentHand (前5张):", currentHand.slice(0,5));
         if (!playerHandDiv) {
-            console.error("script.js: displayHand - playerHandDiv 未找到!");
+            console.error("script.js: FATAL ERROR - displayHand - playerHandDiv 未找到!");
             return;
         }
-        playerHandDiv.innerHTML = ''; // 清空旧的手牌显示
-        if (currentHand && Array.isArray(currentHand)) {
-            currentHand.forEach(card => {
+        playerHandDiv.innerHTML = ''; // 清空旧的手牌
+
+        if (currentHand && Array.isArray(currentHand) && currentHand.length > 0) {
+            currentHand.forEach((card, index) => {
+                console.log(`script.js: DEBUG - displayHand - 正在渲染第 ${index + 1} 张牌:`, card);
                 const cardElement = renderCardElement(card);
                 playerHandDiv.appendChild(cardElement);
             });
-            console.log("script.js: displayHand - 已渲染", currentHand.length, "张牌到playerHandDiv。");
+            console.log("script.js: DEBUG - displayHand - 已尝试渲染", currentHand.length, "张牌。");
+            if (messageArea) messageArea.textContent = "手牌已在下方显示！";
         } else {
-            console.error("script.js: displayHand - currentHand 无效或不是数组:", currentHand);
+            console.warn("script.js: DEBUG - displayHand - currentHand 为空或无效，不渲染牌。");
+            if (messageArea) messageArea.textContent = "未能获取到有效手牌数据来显示。";
         }
     }
 
-    // --- API 调用封装 (保持和上一版能工作的 verySimpleFetchTest 一致) ---
-    async function verySimpleFetchTest(endpoint) {
+    // --- 发牌按钮的点击事件处理 ---
+    dealButton.addEventListener('click', async () => {
+        console.log("script.js: DEBUG - 发牌按钮被点击！");
+        dealButton.disabled = true;
+        if (messageArea) messageArea.textContent = "正在从服务器获取手牌...";
+
+        const endpoint = 'deal_cards.php'; // 后端API的发牌端点
         const fullApiUrl = `${API_BASE_URL}/${endpoint}`;
-        console.log(`script.js: verySimpleFetchTest - 准备请求 URL: ${fullApiUrl}`);
-        if(messageArea) messageArea.textContent = `正在尝试连接: ${fullApiUrl}`;
+        console.log(`script.js: DEBUG - 准备请求API: ${fullApiUrl}`);
+
         try {
             const response = await fetch(fullApiUrl);
-            console.log(`script.js: verySimpleFetchTest - 收到响应对象 for ${fullApiUrl}:`, response);
-            if(messageArea) messageArea.textContent = `收到服务器响应 (状态: ${response.status})。正在解析...`;
+            console.log(`script.js: DEBUG - 收到API响应对象:`, response);
 
             if (!response.ok) {
-                const errorText = `HTTP error! Status: ${response.status} for ${fullApiUrl}`;
-                console.error("script.js: verySimpleFetchTest - HTTP 错误:", errorText);
-                if(messageArea) messageArea.textContent = `连接错误: ${errorText}`;
-                throw new Error(errorText);
+                let errorDetail = `(状态码: ${response.status})`;
+                try { errorDetail = await response.text(); } catch (e) {}
+                const errorMsg = `API请求失败! ${errorDetail.substring(0,150)}`;
+                console.error("script.js: ERROR - ", errorMsg, "完整响应:", response);
+                if (messageArea) messageArea.textContent = errorMsg;
+                currentHand = []; displayHand();
+                throw new Error(errorMsg);
             }
+
             const data = await response.json();
-            console.log(`script.js: verySimpleFetchTest - JSON 解析成功 for ${fullApiUrl}:`, data);
-            // messageArea 更新移到调用处，以便根据具体业务逻辑显示消息
-            return data;
-        } catch (error) {
-            console.error(`script.js: verySimpleFetchTest - 请求 ${fullApiUrl} 失败:`, error);
-            if(messageArea) messageArea.textContent = `请求失败: ${error.message}`;
-            throw error;
-        }
-    }
+            console.log("script.js: DEBUG - API响应JSON解析成功:", data);
 
-    // --- 发牌按钮事件监听器 ---
-    if (dealButton) {
-        dealButton.addEventListener('click', async () => {
-            console.log("================================================");
-            console.log("script.js: EVENT HANDLER - dealButton 被点击！(时间戳:", Date.now(), ")");
-            if(messageArea) messageArea.textContent = "发牌按钮事件处理开始...";
-
-            try {
-                dealButton.disabled = true;
-                if(messageArea) messageArea.textContent = "正在从服务器获取手牌...";
-
-                const endpoint = 'deal_cards.php';
-                console.log(`script.js: EVENT HANDLER - 准备调用 verySimpleFetchTest for endpoint: ${endpoint}`);
-                const data = await verySimpleFetchTest(endpoint);
-                console.log("script.js: EVENT HANDLER - verySimpleFetchTest 调用已完成。返回的data:", data);
-
-                if (data && data.success === true && data.hand && Array.isArray(data.hand)) {
-                    console.log("script.js: EVENT HANDLER - 成功获取到手牌数据:", data.hand);
-                    // 给每张牌添加一个前端唯一的ID，如果后端没提供的话
-                    currentHand = data.hand.map((card, index) => ({
-                        ...card,
-                        id: card.id || `card-${Date.now()}-${index}`
-                    }));
-                    console.log("script.js: EVENT HANDLER - currentHand 处理完毕:", currentHand);
-
-                    if(messageArea) messageArea.textContent = data.message || "手牌已获取，正在显示...";
-                    displayHand(); // 【调用函数显示手牌】
-
-                } else {
-                    let errorMsg = "发牌失败或返回数据格式不正确。";
-                    if (data && data.message) { errorMsg = data.message; }
-                    else if (data) { errorMsg += " 原始数据: " + JSON.stringify(data).substring(0,100); }
-                    console.error("script.js: EVENT HANDLER - ", errorMsg, "完整data:", data);
-                    if(messageArea) messageArea.textContent = errorMsg;
-                    currentHand = []; // 清空手牌
-                    displayHand();    // 清空显示
-                }
-
-            } catch (error) {
-                console.error("script.js: EVENT HANDLER - try 块捕获到错误:", error);
-                // messageArea 的更新已在 verySimpleFetchTest 的 catch 中部分处理
-                currentHand = []; // 出错时清空手牌
-                displayHand();    // 清空显示
-            } finally {
-                console.log("script.js: EVENT HANDLER - 进入 finally 块。");
-                dealButton.disabled = false;
-                // updateButtonStates(); // 稍后恢复
-                if(messageArea) messageArea.textContent += " (发牌操作结束)";
-                console.log("script.js: EVENT HANDLER - dealButton 事件处理结束。");
-                console.log("================================================");
+            if (data && data.success === true && data.hand && Array.isArray(data.hand)) {
+                if (messageArea) messageArea.textContent = data.message || "手牌数据已获取，正在处理...";
+                currentHand = data.hand.map((card, index) => ({
+                    ...card,
+                    id: card.id || `card-${Date.now()}-${index}` // 为每张牌确保有唯一ID
+                }));
+                console.log("script.js: DEBUG - currentHand 已更新，准备显示。");
+                displayHand(); // 【调用函数显示手牌】
+            } else {
+                const errorMsg = (data && data.message) ? data.message : "从API获取的手牌数据格式不正确或操作失败。";
+                console.error("script.js: ERROR - ", errorMsg, "完整数据:", data);
+                if (messageArea) messageArea.textContent = errorMsg;
+                currentHand = []; displayHand();
             }
-        });
-        console.log("script.js: dealButton 点击事件监听器已成功绑定。");
-    } else {
-        console.error("script.js: 严重错误 - dealButton 未找到！");
-    }
+        } catch (error) {
+            console.error("script.js: ERROR - 发牌操作中捕获到顶层错误:", error);
+            if (messageArea && !messageArea.textContent.includes("API请求失败") && !messageArea.textContent.includes("手牌数据格式不正确")) {
+                 if (messageArea) messageArea.textContent = `发牌请求意外失败: ${String(error.message).substring(0,100)}`;
+            }
+            currentHand = []; displayHand();
+        } finally {
+            dealButton.disabled = false;
+            console.log("script.js: DEBUG - 发牌按钮事件处理结束 (finally块)。");
+        }
+    });
+    console.log("script.js: DEBUG - 发牌按钮事件监听器已绑定。");
 
-    if(messageArea) messageArea.textContent = "页面和脚本初始化完成。请点击“发牌”按钮。";
-    console.log("script.js: 脚本主逻辑执行完毕。");
+    if (messageArea) messageArea.textContent = "页面和脚本初始化完成。请点击“发牌”按钮。";
+    console.log("script.js: DEBUG - 脚本初始化逻辑执行完毕。");
 });
 
-console.log("script.js: 文件加载结束。");
+console.log("script.js: DEBUG - 文件加载结束。");
