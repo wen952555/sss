@@ -6,7 +6,6 @@
         {{ isCreating ? '创建中...' : '创建新房间' }}
       </button>
     </div>
-    <!-- Display createError if it's set -->
     <div v-if="createError" class="error-message">{{ createError }}</div>
 
     <hr>
@@ -19,11 +18,13 @@
     </div>
     <div v-if="joinError" class="error-message">{{ joinError }}</div>
 
+    <!-- 房间列表功能可以后续添加 -->
+    <!-- <p v-if="isLoadingRooms">加载房间列表中...</p> ... -->
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue'; // onMounted might be used if you add fetchRooms
 import { useRouter } from 'vue-router';
 import api from '../services/api';
 
@@ -36,34 +37,38 @@ const joinError = ref('');
 const isJoining = ref(false);
 
 const handleCreateRoom = async () => {
-  createError.value = ''; // Clear previous error
+  createError.value = '';
   isCreating.value = true;
+  console.log("[RoomListView] Attempting to create room...");
   try {
-    const response = await api.createRoom(); // POST /rooms/create
-
-    // Log the entire response for debugging
-    console.log("API createRoom response:", response);
+    const response = await api.createRoom();
+    console.log("[RoomListView] API createRoom raw response:", JSON.parse(JSON.stringify(response))); // Deep copy for logging
 
     if (response && response.data && response.data.room_id) {
       const roomId = response.data.room_id;
-      // Navigate to GameView, using roomId as the initial identifier
-      router.push({ name: 'Game', params: { gameId: roomId.toString() } });
+      const roomCode = response.data.room_code; // Assuming backend returns this too
+      console.log(`[RoomListView] Room created successfully. Room ID: ${roomId}, Room Code: ${roomCode}`);
+      console.log(`[RoomListView] Attempting to navigate to Game view with gameId (using roomId): ${roomId.toString()}`);
+      try {
+        // Using await here ensures we see any navigation errors if they are promise rejections
+        await router.push({ name: 'Game', params: { gameId: roomId.toString() } });
+        console.log(`[RoomListView] Navigation to Game view for roomId: ${roomId} initiated successfully.`);
+      } catch (navigationError) {
+        console.error("[RoomListView] Error during navigation to Game view:", navigationError);
+        createError.value = `创建房间成功 (ID: ${roomId}), 但导航到游戏界面失败: ${navigationError.message}`;
+      }
     } else {
-      // This is where your current error message comes from
-      createError.value = "创建房间后未能获取房间信息。";
-      // Log the problematic response data to see why room_id is missing
-      console.error("Create Room Failed - Response data missing room_id. Actual response.data:", response?.data);
-      // If there's an error message from backend, display it
+      createError.value = "创建房间后未能获取房间信息（room_id缺失）。";
+      console.error("[RoomListView] Create Room Failed - Response data missing room_id. Actual response.data:", response?.data);
       if (response?.data?.error) {
         createError.value += " 后端错误: " + response.data.error;
       }
     }
   } catch (err) {
-    // This block handles network errors or if the server responds with 4xx/5xx without a JSON body axios can parse well
+    console.error("[RoomListView] Create Room API Network/Server Error:", err.response || err);
     createError.value = err.response?.data?.error || err.message || '创建房间请求失败。';
-    console.error("Create Room API Network/Server Error:", err.response || err);
-     if (err.response?.data?.error) {
-        createError.value = "创建房间失败: " + err.response.data.error; // More specific
+    if (err.response?.data?.error) {
+        createError.value = "创建房间失败: " + err.response.data.error;
     }
   } finally {
     isCreating.value = false;
@@ -72,26 +77,38 @@ const handleCreateRoom = async () => {
 
 const handleJoinRoomInput = async () => {
   joinError.value = '';
-  if (!roomCodeToJoin.value.trim()) {
+  const codeToJoin = roomCodeToJoin.value.trim().toUpperCase();
+  if (!codeToJoin) {
     joinError.value = '请输入房间号。';
     return;
   }
   isJoining.value = true;
+  console.log(`[RoomListView] Attempting to join room: ${codeToJoin}`);
   try {
-    const response = await api.joinRoom(roomCodeToJoin.value.trim().toUpperCase());
-    console.log("API joinRoom response:", response);
+    const response = await api.joinRoom(codeToJoin);
+    console.log("[RoomListView] API joinRoom raw response:", JSON.parse(JSON.stringify(response)));
+
     if (response.data && response.data.room_id) {
-      router.push({ name: 'Game', params: { gameId: response.data.room_id.toString() } });
+      const roomId = response.data.room_id;
+      console.log(`[RoomListView] Joined room successfully. Room ID: ${roomId}`);
+      console.log(`[RoomListView] Attempting to navigate to Game view with gameId (using roomId): ${roomId.toString()}`);
+      try {
+        await router.push({ name: 'Game', params: { gameId: roomId.toString() } });
+        console.log(`[RoomListView] Navigation to Game view for roomId (after join): ${roomId} initiated successfully.`);
+      } catch (navigationError) {
+        console.error("[RoomListView] Error during navigation to Game view (after join):", navigationError);
+        joinError.value = `加入房间成功 (ID: ${roomId}), 但导航到游戏界面失败: ${navigationError.message}`;
+      }
     } else {
-      joinError.value = '加入房间后未能获取房间信息。';
-       console.error("Join Room Failed - Response data missing room_id. Actual response.data:", response?.data);
+      joinError.value = '加入房间后未能获取房间信息（room_id缺失）。';
+       console.error("[RoomListView] Join Room Failed - Response data missing room_id. Actual response.data:", response?.data);
        if (response?.data?.error) {
         joinError.value += " 后端错误: " + response.data.error;
       }
     }
   } catch (err) {
-    joinError.value = err.response?.data?.error || err.message || `加入房间 ${roomCodeToJoin.value} 失败。`;
-    console.error("Join Room API Network/Server Error:", err.response || err);
+    console.error("[RoomListView] Join Room API Network/Server Error:", err.response || err);
+    joinError.value = err.response?.data?.error || err.message || `加入房间 ${codeToJoin} 失败。`;
     if (err.response?.data?.error) {
         joinError.value = "加入房间失败: " + err.response.data.error;
     }
@@ -100,32 +117,65 @@ const handleJoinRoomInput = async () => {
   }
 };
 
-// onMounted(fetchRooms); // Room listing can be added later
+// Example: If you wanted to fetch rooms (you'd need a backend endpoint for this)
+// const rooms = ref([]);
+// const isLoadingRooms = ref(false);
+// const fetchRooms = async () => {
+//   isLoadingRooms.value = true;
+//   try {
+//     console.log("[RoomListView] Fetching rooms...");
+//     // const response = await api.listRooms(); // Assuming api.js has listRooms
+//     // rooms.value = response.data.rooms || [];
+//     console.log("[RoomListView] Room listing functionality not fully implemented yet.");
+//   } catch (fetchErr) {
+//     console.error("[RoomListView] Failed to fetch rooms:", fetchErr);
+//     createError.value = "获取房间列表失败。"; // Use createError or a dedicated error ref
+//   } finally {
+//     isLoadingRooms.value = false;
+//   }
+// };
+// onMounted(() => {
+//   // fetchRooms();
+// });
 </script>
 
 <style scoped>
 .room-list-view {
   padding: 1rem; max-width: 500px; margin: auto;
+  font-family: sans-serif;
 }
 .actions button, .room-list-view div button {
   padding: 0.8rem 1.2rem;
   font-size: 1rem;
   margin: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+}
+.actions button:disabled, .room-list-view div button:disabled {
+  background-color: #ccc;
 }
 input[type="text"] {
   padding: 0.8rem;
   font-size: 1rem;
   margin-right: 0.5rem;
-  width: calc(100% - 150px); /* Adjust width as needed */
-  min-width: 150px;
-}
-.error-message { /*统一错误样式类名*/
-  color: red;
-  margin-top: 1rem;
-  padding: 0.5rem;
-  border: 1px solid red;
+  border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: #ffebeb;
+  width: calc(100% - 160px); /* Adjust based on button width */
+  min-width: 120px;
 }
-hr { margin: 20px 0; }
+.error-message {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: .75rem 1.25rem;
+  margin-top: 1rem;
+  border-radius: .25rem;
+}
+hr { margin: 20px 0; border: 0; border-top: 1px solid #eee; }
+h2, h3 {
+  color: #333;
+}
 </style>
