@@ -1,0 +1,23 @@
+RewriteEngine On
+
+# Optional: If your .htaccess is in a subdirectory (e.g., /backend/)
+# and your server isn't configured to handle it automatically,
+# you might need a RewriteBase. But often, relative paths in RewriteRule work.
+# RewriteBase /backend/
+
+# CORS Headers - Updated for your frontend domain
+Header set Access-Control-Allow-Origin "https://xxx.9525.ip-ddns.com"
+Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Cache-Control"
+Header set Access-Control-Allow-Credentials "true"
+
+# Handle OPTIONS requests for preflight
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Rewrite all requests that are not actual files or directories under /backend/
+# to the api/index.php script.
+# Example: /backend/auth/login -> /backend/api/index.php?path=auth/login
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ api/index.php?path=$1 [L,QSA]
