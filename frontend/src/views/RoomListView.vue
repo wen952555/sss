@@ -6,7 +6,8 @@
         {{ isCreating ? '创建中...' : '创建新房间' }}
       </button>
     </div>
-    <div v-if="createError" class="error">{{ createError }}</div>
+    <!-- Display createError if it's set -->
+    <div v-if="createError" class="error-message">{{ createError }}</div>
 
     <hr>
     <h3>加入房间</h3>
@@ -16,10 +17,8 @@
         {{ isJoining ? '加入中...' : '加入房间' }}
       </button>
     </div>
-    <div v-if="joinError" class="error">{{ joinError }}</div>
+    <div v-if="joinError" class="error-message">{{ joinError }}</div>
 
-    <!-- 房间列表功能可以后续添加 -->
-    <!-- <p v-if="isLoadingRooms">加载房间列表中...</p> ... -->
   </div>
 </template>
 
@@ -37,20 +36,35 @@ const joinError = ref('');
 const isJoining = ref(false);
 
 const handleCreateRoom = async () => {
-  createError.value = '';
+  createError.value = ''; // Clear previous error
   isCreating.value = true;
   try {
     const response = await api.createRoom(); // POST /rooms/create
-    if (response.data && response.data.room_id) {
+
+    // Log the entire response for debugging
+    console.log("API createRoom response:", response);
+
+    if (response && response.data && response.data.room_id) {
       const roomId = response.data.room_id;
-      // 创建房间成功后，导航到 GameView，并将 roomId 作为参数
-      // GameView 将负责处理 "游戏未开始/等待玩家" 的状态，并提供开始游戏的按钮（如果用户是房主）
-      router.push({ name: 'Game', params: { gameId: roomId.toString() } }); // 使用 roomId 作为 GameView 的初始 ID
+      // Navigate to GameView, using roomId as the initial identifier
+      router.push({ name: 'Game', params: { gameId: roomId.toString() } });
     } else {
+      // This is where your current error message comes from
       createError.value = "创建房间后未能获取房间信息。";
+      // Log the problematic response data to see why room_id is missing
+      console.error("Create Room Failed - Response data missing room_id. Actual response.data:", response?.data);
+      // If there's an error message from backend, display it
+      if (response?.data?.error) {
+        createError.value += " 后端错误: " + response.data.error;
+      }
     }
   } catch (err) {
-    createError.value = err.response?.data?.error || err.message || '创建房间失败。';
+    // This block handles network errors or if the server responds with 4xx/5xx without a JSON body axios can parse well
+    createError.value = err.response?.data?.error || err.message || '创建房间请求失败。';
+    console.error("Create Room API Network/Server Error:", err.response || err);
+     if (err.response?.data?.error) {
+        createError.value = "创建房间失败: " + err.response.data.error; // More specific
+    }
   } finally {
     isCreating.value = false;
   }
@@ -65,24 +79,28 @@ const handleJoinRoomInput = async () => {
   isJoining.value = true;
   try {
     const response = await api.joinRoom(roomCodeToJoin.value.trim().toUpperCase());
-    // 加入成功后，后端应该返回 roomId 或 gameId
-    // 假设 joinRoom 成功后，也导航到 GameView
-    // 后端 joinRoom 接口需要返回一个明确的 ID (roomId 或 gameId) 以便导航
-    if (response.data && response.data.room_id) { // 或者 response.data.game_id
-      // GameView 将需要处理这个ID代表的是一个已加入的房间（可能已开始，可能未开始）
+    console.log("API joinRoom response:", response);
+    if (response.data && response.data.room_id) {
       router.push({ name: 'Game', params: { gameId: response.data.room_id.toString() } });
     } else {
       joinError.value = '加入房间后未能获取房间信息。';
+       console.error("Join Room Failed - Response data missing room_id. Actual response.data:", response?.data);
+       if (response?.data?.error) {
+        joinError.value += " 后端错误: " + response.data.error;
+      }
     }
   } catch (err) {
     joinError.value = err.response?.data?.error || err.message || `加入房间 ${roomCodeToJoin.value} 失败。`;
+    console.error("Join Room API Network/Server Error:", err.response || err);
+    if (err.response?.data?.error) {
+        joinError.value = "加入房间失败: " + err.response.data.error;
+    }
   } finally {
     isJoining.value = false;
   }
 };
 
-// 获取房间列表的逻辑可以后续添加
-// onMounted(fetchRooms);
+// onMounted(fetchRooms); // Room listing can be added later
 </script>
 
 <style scoped>
@@ -98,10 +116,16 @@ input[type="text"] {
   padding: 0.8rem;
   font-size: 1rem;
   margin-right: 0.5rem;
+  width: calc(100% - 150px); /* Adjust width as needed */
+  min-width: 150px;
 }
-.error {
+.error-message { /*统一错误样式类名*/
   color: red;
   margin-top: 1rem;
+  padding: 0.5rem;
+  border: 1px solid red;
+  border-radius: 4px;
+  background-color: #ffebeb;
 }
 hr { margin: 20px 0; }
 </style>
