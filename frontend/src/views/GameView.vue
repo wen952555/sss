@@ -1,51 +1,80 @@
 <template>
   <div class="game-view">
-    <h2>游戏桌 - {{ gameId }}</h2>
-    <div v-if="isLoading">加载游戏状态...</div>
-    <div v-if="error" class="error">{{ error }}</div>
+    <div v-if="isLoading">正在加载房间/游戏状态...</div>
+    <div v-if="error" class="error-message">错误: {{ error }}</div>
 
-    <div v-if="gameState">
-      <p>游戏状态: {{ gameState.gameInfo?.game_status }}</p>
-      <p>当前回合: {{ gameState.gameInfo?.current_round }}</p>
+    <div v-if="!isLoading && !error && roomState">
+      <h2>房间号: {{ roomState.roomInfo?.room_code || initialId }}</h2>
+      <p>状态: {{ translatedGameStatus }}</p>
 
-      <!-- Player's Hand -->
-      <div v-if="myHand && !hasSubmittedArrangement" class="my-hand-section">
-        <h3>我的手牌:</h3>
-        <div class="cards-display">
-          <Card v-for="card in myHand" :key="card" :card="card" @click="selectCard(card)"
-                :class="{selected: isCardSelectedForArrangement(card)}"/>
-        </div>
-        <div class="arrangement-form">
-          <h4>摆牌区:</h4>
-          <div>头道 (3张): <span class="arranged-cards">{{ arrangedFront.join(', ') }}</span></div>
-          <div>中道 (5张): <span class="arranged-cards">{{ arrangedMiddle.join(', ') }}</span></div>
-          <div>尾道 (5张): <span class="arranged-cards">{{ arrangedBack.join(', ') }}</span></div>
-          <button @click="addToFront" :disabled="arrangedFront.length >= 3 || selectedCardsArrangement.length === 0">添加到头道</button>
-          <button @click="addToMiddle" :disabled="arrangedMiddle.length >= 5 || selectedCardsArrangement.length === 0">添加到中道</button>
-          <button @click="addToBack" :disabled="arrangedBack.length >= 5 || selectedCardsArrangement.length === 0">添加到尾道</button>
-          <button @click="clearSelectedCardsArrangement">清空已选</button>
-          <button @click="resetArrangement">重置墩牌</button>
-          <button @click="submitArrangement"
-                  :disabled="arrangedFront.length !== 3 || arrangedMiddle.length !== 5 || arrangedBack.length !== 5 || isSubmitting">
-            {{ isSubmitting ? '提交中...' : '提交牌型' }}
-          </button>
-        </div>
+      <!-- 等待玩家/游戏未开始 界面 -->
+      <div v-if="isGameWaitingToStart">
+        <h3>当前玩家 ({{ roomState.players?.length || 0 }}/{{ MAX_PLAYERS }}):</h3>
+        <ul>
+          <li v-for="player in roomState.players" :key="player.userId">
+            {{ player.username }}
+            <span v-if="player.userId === authStore.user?.userId"> (你)</span>
+            <span v-if="player.userId === roomState.roomInfo?.creator_id"> (房主)</span>
+          </li>
+        </ul>
+        <p v-if="(roomState.players?.length || 0) < MIN_PLAYERS_TO_START">
+          至少需要 {{ MIN_PLAYERS_TO_START }} 名玩家才能开始游戏。
+        </p>
+        <button
+          v-if="isCurrentUserCreator && (roomState.players?.length || 0) >= MIN_PLAYERS_TO_START"
+          @click="handleStartGame"
+          :disabled="isStartingGame">
+          {{ isStartingGame ? '开始游戏中...' : '开始游戏' }}
+        </button>
+        <p v-if="!isCurrentUserCreator && (roomState.players?.length || 0) >= MIN_PLAYERS_TO_START">
+          等待房主开始游戏...
+        </p>
       </div>
-      <div v-if="hasSubmittedArrangement && !gameState.allSubmitted">等待其他玩家摆牌...</div>
 
-      <!-- Display all players and their status/hands after game completion or all submitted -->
-      <div class="players-info">
-        <h3>玩家信息:</h3>
-        <div v-for="player in gameState.players" :key="player.userId" class="player-info">
-          <p><strong>{{ player.username }}</strong> (ID: {{ player.userId }})
-            - {{ player.hasSubmitted ? '已提交' : '等待提交' }}
-          </p>
-          <div v-if="gameState.allSubmitted && player.arrangement">
-            <p>头道: <Card v-for="c in player.arrangement.front" :key="c" :card="c" small /> </p>
-            <p>中道: <Card v-for="c in player.arrangement.middle" :key="c" :card="c" small /> </p>
-            <p>尾道: <Card v-for="c in player.arrangement.back" :key="c" :card="c" small /> </p>
-            <p>得分: {{ player.score }}</p>
+      <!-- 游戏进行中 界面 (摆牌等) -->
+      <div v-else-if="isGameInProgress">
+        <p>当前回合: {{ roomState.gameInfo?.current_round }}</p>
+        <div v-if="myHand.length > 0 && !hasSubmittedArrangement" class="my-hand-section">
+          <h3>我的手牌 ({{ myHand.length }} 张):</h3>
+          <!-- (摆牌相关 UI 和逻辑，之前已提供，此处为简化示意) -->
+          <div class="cards-display">
+             <Card v-for="card in myHand" :key="card" :card="card" @click="selectCardForArrangement(card)"
+                  :class="{selected: isCardSelectedForArrangement(card)}"/>
           </div>
+          <div v-if="selectedForArrangement.length > 0">已选: {{ selectedForArrangement.join(', ') }}</div>
+          <!-- 摆牌墩位和提交按钮 -->
+          <div class="arrangement-piles">
+            <div>头道 (3): <span class="pile-cards">{{ arrangedFront.join(', ') }}</span> <button @click="assignToPile('front')" :disabled="selectedForArrangement.length === 0">设置头道</button></div>
+            <div>中道 (5): <span class="pile-cards">{{ arrangedMiddle.join(', ') }}</span> <button @click="assignToPile('middle')" :disabled="selectedForArrangement.length === 0">设置中道</button></div>
+            <div>尾道 (5): <span class="pile-cards">{{ arrangedBack.join(', ') }}</span> <button @click="assignToPile('back')" :disabled="selectedForArrangement.length === 0">设置尾道</button></div>
+            <button @click="clearArrangement">清空墩牌</button>
+            <button @click="submitArrangement" :disabled="!canSubmitArrangement || isSubmittingArrangement">
+              {{ isSubmittingArrangement ? '提交中...' : '提交牌型' }}
+            </button>
+          </div>
+          <p v-if="arrangementError" class="error-message">{{ arrangementError }}</p>
+        </div>
+        <div v-if="hasSubmittedArrangement && !roomState.allSubmittedThisRound">等待其他玩家摆牌...</div>
+      </div>
+
+      <!-- 游戏结束/比牌结果 界面 -->
+      <div v-if="isGameFinishedOrComparing">
+         <h3>比牌结果 / 游戏结束</h3>
+         <!-- (显示所有玩家的牌和得分，之前已提供，此处为简化示意) -->
+      </div>
+
+      <!-- 显示所有玩家信息 (通用，也可按状态细化) -->
+      <div class="players-info-section" v-if="roomState.players && roomState.players.length > 0 && (isGameInProgress || isGameFinishedOrComparing)">
+        <h4>玩家信息:</h4>
+        <div v-for="player in roomState.players" :key="player.userId" class="player-status">
+          <p><strong>{{ player.username }}</strong>
+            <span v-if="player.userId === authStore.user?.userId"> (你)</span>:
+            <span v-if="isGameInProgress">{{ player.hasSubmittedThisRound ? '已摆牌' : '摆牌中...' }}</span>
+            <span v-if="isGameFinishedOrComparing && player.arrangement">
+              得分: {{ player.scoreThisRound }}
+              <!-- 可以显示牌型 -->
+            </span>
+          </p>
         </div>
       </div>
     </div>
@@ -57,11 +86,14 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import Card from '../components/Card.vue'; // Create this component
+import Card from '../components/Card.vue'; // 假设 Card.vue 存在
+
+const MAX_PLAYERS = 4; // 可配置
+const MIN_PLAYERS_TO_START = 2; // 可配置
 
 const props = defineProps({
-  gameId: {
-    type: [String, Number],
+  gameId: { // 这个 ID 初期可能是 roomId，开始游戏后可能是真正的 gameId
+    type: String,
     required: true
   }
 });
@@ -70,188 +102,261 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
-const gameState = ref(null);
 const isLoading = ref(true);
 const error = ref('');
-const isSubmitting = ref(false);
+const roomState = ref(null); // 将持有从 /game/{id}/state 获取的完整状态
 
-const myHand = ref([]); // Player's own 13 cards
+const isStartingGame = ref(false); // 开始游戏按钮的状态
+let pollInterval = null;
+
+// 初始 ID (可能是 roomId)
+const initialId = computed(() => props.gameId);
+// 真正的 gameId，在游戏开始后由后端返回并设置
+const activeGameId = ref(null);
+
+// --- 摆牌相关状态 ---
+const myHand = ref([]);
 const arrangedFront = ref([]);
 const arrangedMiddle = ref([]);
 const arrangedBack = ref([]);
-const selectedCardsArrangement = ref([]); // Cards selected by clicking, before assigning to a segment
+const selectedForArrangement = ref([]); // 当前点击选中的牌
+const isSubmittingArrangement = ref(false);
+const arrangementError = ref('');
+// --- 结束摆牌相关状态 ---
 
-let pollInterval = null;
+const fetchRoomOrGameState = async () => {
+  // 优先使用 activeGameId (如果游戏已开始)，否则使用 initialId (可能是roomId)
+  const idToFetch = activeGameId.value || initialId.value;
+  if (!idToFetch) {
+    error.value = "无效的房间或游戏ID。";
+    isLoading.value = false;
+    return;
+  }
 
-const currentUserId = computed(() => authStore.user?.userId);
-
-const hasSubmittedArrangement = computed(() => {
-  if (!gameState.value || !currentUserId.value) return false;
-  const me = gameState.value.players.find(p => p.userId === currentUserId.value);
-  return me ? me.hasSubmitted : false;
-});
-
-const fetchGameState = async () => {
-  if (!props.gameId) return;
   try {
-    const response = await api.getGameState(props.gameId);
-    gameState.value = response.data;
+    // 后端 /game/{id}/state 接口需要能处理两种情况：
+    // 1. id 是 roomId，游戏未开始：返回房间信息、玩家列表、状态'waiting'等
+    // 2. id 是 gameId，游戏已开始：返回游戏信息、玩家手牌（对自己）、玩家状态等
+    const response = await api.getGameState(idToFetch);
+    roomState.value = response.data;
 
-    // Update myHand if it's not set yet and player has a hand in gameState
-    if (myHand.value.length === 0 && response.data.currentUser?.id) {
-        const me = response.data.players.find(p => p.userId === response.data.currentUser.id);
-        if (me && me.hand && !me.hasSubmitted) { // Only load hand if not submitted yet from game state
-            myHand.value = me.hand;
-        }
+    if (response.data?.gameInfo?.id && response.data?.gameInfo?.status !== 'waiting') {
+      activeGameId.value = response.data.gameInfo.id.toString(); // 游戏已开始，记录真正的 gameId
     }
+
+    // 更新当前玩家手牌 (仅当游戏进行中且是自己且未提交时)
+    const currentUserData = roomState.value?.players?.find(p => p.userId === authStore.user?.userId);
+    if (currentUserData?.hand && !currentUserData?.hasSubmittedThisRound && isGameInProgress.value) {
+        myHand.value = currentUserData.hand;
+    }
+
+
     isLoading.value = false;
     error.value = '';
 
-    // If all submitted, stop polling or poll less frequently
-    if (response.data.allSubmitted && pollInterval) {
-        // Potentially clear interval or reduce frequency
-        // For now, we keep polling to see comparison results
+    // 如果游戏结束，可以停止轮询
+    if (roomState.value?.gameInfo?.status === 'finished') {
+      stopPolling();
     }
 
   } catch (err) {
-    console.error("Error fetching game state:", err);
-    error.value = err.response?.data?.error || err.message || '无法加载游戏状态。';
-    // If game not found or critical error, redirect or stop polling
-    if (err.response?.status === 404) {
-        clearInterval(pollInterval);
-        // router.push('/rooms'); // Example redirect
+    console.error("获取房间/游戏状态失败:", err);
+    error.value = err.response?.data?.error || err.message || '无法加载房间/游戏状态。';
+    if (err.response?.status === 404 && pollInterval) { // 房间/游戏不存在
+        stopPolling();
+        // router.push({ name: 'RoomList' }); // 可选：跳转回房间列表
     }
     isLoading.value = false;
   }
 };
 
-// Fetch initial hand for the player (could also be part of gameState)
-const fetchMyHand = async () => {
-    if (myHand.value.length > 0 || hasSubmittedArrangement.value) return; // Don't fetch if already have hand or submitted
-    try {
-        const response = await api.getPlayerHand(props.gameId);
-        myHand.value = response.data.hand || [];
-    } catch (err) {
-        console.error("Error fetching player hand:", err);
-        // error.value = "无法获取您的手牌。"; // This might overwrite gameState error
+const stopPolling = () => {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+};
+
+const isCurrentUserCreator = computed(() => {
+  return roomState.value?.roomInfo?.creator_id === authStore.user?.userId;
+});
+
+const translatedGameStatus = computed(() => {
+  const status = roomState.value?.gameInfo?.status || roomState.value?.room_status; // 兼容房间状态和游戏状态
+  if (!status) return '未知';
+  switch (status.toLowerCase()) {
+    case 'waiting': return '等待玩家加入/开始';
+    case 'dealing': return '发牌中';
+    case 'arranging': return '摆牌中';
+    case 'comparing': return '比牌中';
+    case 'finished': return '游戏结束';
+    case 'playing': return '游戏中 (可能是概括状态)'; // 如果后端用 playing
+    default: return status;
+  }
+});
+
+const isGameWaitingToStart = computed(() => {
+  // 游戏未开始的条件：roomState 存在，但 activeGameId 未设置，
+  // 或者 gameInfo.status 是 'waiting'
+  return roomState.value && (!activeGameId.value || roomState.value?.gameInfo?.status === 'waiting');
+});
+
+const isGameInProgress = computed(() => {
+  const status = roomState.value?.gameInfo?.status;
+  return status === 'dealing' || status === 'arranging';
+});
+
+const isGameFinishedOrComparing = computed(() => {
+  const status = roomState.value?.gameInfo?.status;
+  return status === 'comparing' || status === 'finished';
+});
+
+
+const handleStartGame = async () => {
+  if (!isCurrentUserCreator.value) return;
+  isStartingGame.value = true;
+  error.value = '';
+  try {
+    // 使用 initialId (即 roomId) 来调用 startGame
+    const response = await api.startGame(initialId.value);
+    // startGame 成功后，后端会返回 gameId
+    if (response.data && response.data.game_id) {
+      activeGameId.value = response.data.game_id.toString(); // 更新 activeGameId
+      // 立即获取一次最新状态，而不是等下一次轮询
+      await fetchRoomOrGameState();
+    } else {
+      error.value = response.data?.error || "开始游戏失败，未返回游戏ID。";
+    }
+  } catch (err) {
+    error.value = err.response?.data?.error || err.message || '开始游戏失败。';
+  } finally {
+    isStartingGame.value = false;
+  }
+};
+
+
+// --- 摆牌逻辑简化版 ---
+const selectCardForArrangement = (card) => {
+    if (arrangedFront.value.includes(card) || arrangedMiddle.value.includes(card) || arrangedBack.value.includes(card)) return;
+    const index = selectedForArrangement.value.indexOf(card);
+    if (index > -1) {
+        selectedForArrangement.value.splice(index, 1);
+    } else {
+        selectedForArrangement.value.push(card);
     }
 };
+const isCardSelectedForArrangement = (card) => selectedForArrangement.value.includes(card);
 
-const selectCard = (card) => {
-  if (arrangedFront.value.includes(card) || arrangedMiddle.value.includes(card) || arrangedBack.value.includes(card)) return; // Card already placed
+const assignToPile = (pileName) => {
+    if (selectedForArrangement.value.length === 0) return;
+    let targetPile;
+    let maxSize;
+    if (pileName === 'front') { targetPile = arrangedFront; maxSize = 3; }
+    else if (pileName === 'middle') { targetPile = arrangedMiddle; maxSize = 5; }
+    else if (pileName === 'back') { targetPile = arrangedBack; maxSize = 5; }
+    else return;
 
-  const index = selectedCardsArrangement.value.indexOf(card);
-  if (index > -1) {
-    selectedCardsArrangement.value.splice(index, 1);
-  } else {
-    selectedCardsArrangement.value.push(card);
-  }
+    const currentPileCards = new Set([...arrangedFront.value, ...arrangedMiddle.value, ...arrangedBack.value]);
+    const cardsToAdd = [];
+    for (const card of selectedForArrangement.value) {
+        if (cardsToAdd.length + targetPile.value.length >= maxSize) break;
+        if (!currentPileCards.has(card)) { //确保牌未被用于其他墩
+            cardsToAdd.push(card);
+        }
+    }
+    targetPile.value.push(...cardsToAdd);
+    // 从myHand视觉移除或标记 (更复杂)，或仅从selectedForArrangement移除
+    selectedForArrangement.value = selectedForArrangement.value.filter(c => !cardsToAdd.includes(c));
 };
 
-const isCardSelectedForArrangement = (card) => {
-  return selectedCardsArrangement.value.includes(card);
-};
-
-const clearSelectedCardsArrangement = () => {
-  selectedCardsArrangement.value = [];
-}
-
-const addToSegment = (segment, maxSize) => {
-  if (segment.value.length < maxSize) {
-    const cardsToAdd = selectedCardsArrangement.value.slice(0, maxSize - segment.value.length);
-    segment.value.push(...cardsToAdd);
-    // Remove added cards from myHand (visual cue) or selectedCards
-    cardsToAdd.forEach(c => {
-        const idx = selectedCardsArrangement.value.indexOf(c);
-        if(idx > -1) selectedCardsArrangement.value.splice(idx, 1);
-    });
-  }
-};
-const addToFront = () => addToSegment(arrangedFront, 3);
-const addToMiddle = () => addToSegment(arrangedMiddle, 5);
-const addToBack = () => addToSegment(arrangedBack, 5);
-
-const resetArrangement = () => {
+const clearArrangement = () => {
     arrangedFront.value = [];
     arrangedMiddle.value = [];
     arrangedBack.value = [];
-    selectedCardsArrangement.value = []; // Clear selections too
-    // Potentially re-fetch myHand if it was modified visually
+    selectedForArrangement.value = [];
+    arrangementError.value = '';
 };
 
+const canSubmitArrangement = computed(() => {
+    return arrangedFront.value.length === 3 &&
+           arrangedMiddle.value.length === 5 &&
+           arrangedBack.value.length === 5;
+});
+
+const hasSubmittedArrangement = computed(() => {
+    const me = roomState.value?.players?.find(p => p.userId === authStore.user?.userId);
+    return me?.hasSubmittedThisRound || false; // 或 has_submitted
+});
 
 const submitArrangement = async () => {
-  if (arrangedFront.value.length !== 3 || arrangedMiddle.value.length !== 5 || arrangedBack.value.length !== 5) {
-    alert("牌墩数量不正确！头道3张，中道5张，尾道5张。");
-    return;
-  }
-  // Basic check for unique cards in arrangement (more robust validation server-side)
-  const allArranged = [...arrangedFront.value, ...arrangedMiddle.value, ...arrangedBack.value];
-  if (new Set(allArranged).size !== 13) {
-      alert("墩牌中的牌必须是您手牌中不重复的13张牌！");
-      return;
-  }
-
-  isSubmitting.value = true;
-  error.value = '';
-  try {
-    const arrangementPayload = {
-      front: arrangedFront.value,
-      middle: arrangedMiddle.value,
-      back: arrangedBack.value,
-    };
-    await api.submitArrangement(props.gameId, arrangementPayload);
-    // After successful submission, gameState poll will update 'hasSubmitted'
-    // Optionally, clear local arrangement form or show a success message
-    alert("牌型已提交！");
-    await fetchGameState(); // Fetch state immediately to reflect submission
-  } catch (err) {
-    console.error("Error submitting arrangement:", err);
-    error.value = err.response?.data?.error || err.message || '提交牌型失败。';
-  } finally {
-    isSubmitting.value = false;
-  }
+    if (!canSubmitArrangement.value) {
+        arrangementError.value = "墩牌数量不正确！";
+        return;
+    }
+    isSubmittingArrangement.value = true;
+    arrangementError.value = '';
+    try {
+        const payload = {
+            front: arrangedFront.value,
+            middle: arrangedMiddle.value,
+            back: arrangedBack.value,
+        };
+        // 使用 activeGameId (如果已开始游戏)
+        await api.submitArrangement(activeGameId.value || initialId.value, payload);
+        // 提交成功后，轮询会更新状态
+        // myHand.value = []; // 清空手牌，因为已提交
+        clearArrangement(); // 清空摆牌区
+        await fetchRoomOrGameState(); // 立即获取一次状态
+    } catch (err) {
+        arrangementError.value = err.response?.data?.error || err.message || "提交牌型失败。";
+    } finally {
+        isSubmittingArrangement.value = false;
+    }
 };
+// --- 结束摆牌逻辑 ---
+
 
 onMounted(async () => {
-  await authStore.checkAuthStatus(); // Ensure auth is resolved
-  if (!currentUserId.value) {
-    router.push({name: 'Login', query: { redirect: route.fullPath }});
+  await authStore.checkAuthStatus();
+  if (!authStore.isLoggedIn) {
+    router.push({ name: 'Login', query: { redirect: route.fullPath } });
     return;
   }
-  await fetchGameState(); // Initial fetch
-  if (!hasSubmittedArrangement.value) { // Only fetch hand if not submitted
-      await fetchMyHand();
-  }
-  pollInterval = setInterval(fetchGameState, 5000); // Poll every 5 seconds
+  await fetchRoomOrGameState(); // 初始加载
+  pollInterval = setInterval(fetchRoomOrGameState, 5000); // 每5秒轮询
 });
 
 onUnmounted(() => {
-  if (pollInterval) {
-    clearInterval(pollInterval);
-  }
+  stopPolling();
 });
 
-// Watch for game status changes, e.g., when game is 'finished'
-watch(() => gameState.value?.gameInfo?.game_status, (newStatus) => {
-    if (newStatus === 'finished' && pollInterval) {
-        // Optionally stop polling or poll less frequently once game is truly over
-        // clearInterval(pollInterval);
-        // alert("游戏结束！");
-    }
+// 当路由参数变化时 (例如，从一个游戏跳到另一个游戏，虽然本应用不常见)
+watch(() => props.gameId, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    isLoading.value = true;
+    roomState.value = null;
+    activeGameId.value = null; // 重置
+    myHand.value = [];
+    clearArrangement();
+    stopPolling(); // 停止旧的轮询
+    await fetchRoomOrGameState(); // 用新ID获取状态
+    pollInterval = setInterval(fetchRoomOrGameState, 5000); // 开始新的轮询
+  }
 });
 
 </script>
 
 <style scoped>
 .game-view { padding: 1rem; }
-.error { color: red; margin-bottom: 1rem; }
-.my-hand-section, .players-info { margin-top: 1.5rem; }
-.cards-display { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1rem; }
-.card.selected { border: 2px solid blue; } /* Style for selected cards */
-.arrangement-form div { margin-bottom: 0.5rem; }
-.arrangement-form button { margin-right: 5px; margin-top: 5px; }
-.arranged-cards { font-weight: bold; margin-left: 5px; }
-.player-info { border: 1px solid #eee; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 4px;}
-.player-info p { margin: 0.2rem 0;}
+.error-message { color: red; margin-bottom: 1rem; }
+.my-hand-section, .players-info-section, .arrangement-piles { margin-top: 1.5rem; }
+.cards-display { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1rem; cursor: pointer; }
+.card.selected { border: 2px solid blue; box-shadow: 0 0 5px blue; }
+.arrangement-piles div { margin-bottom: 0.5rem; }
+.arrangement-piles button { margin-left: 10px; }
+.pile-cards { font-weight: bold; margin-left: 5px; color: #333; }
+.player-status { border-bottom: 1px solid #eee; padding: 5px 0; }
+ul { list-style-type: none; padding-left: 0; }
+li { margin-bottom: 5px; }
+button:disabled { background-color: #ccc; cursor: not-allowed; }
 </style>
