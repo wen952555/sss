@@ -1,111 +1,111 @@
 import { defineStore } from 'pinia';
 import api from '../services/api';
-// import router from '../router'; // Usually router is not needed inside store, handle navigation in components or router guards
+// import router from '../router'; // Router should not be a direct dependency of a store
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null, // Should be object { userId, username } or null
+    user: null, // Will hold { userId, username } or be null
     isLoggedIn: false,
-    isAuthStatusResolved: false, // To track if initial checkAuthStatus is done
-    authError: null, // Store auth related errors
+    isAuthStatusResolved: false, // Tracks if initial auth check is done
+    authError: null, // To store any authentication errors
   }),
   actions: {
     async login(credentials) {
-      console.log("[AuthStore] login action called with:", credentials);
-      this.authError = null;
+      console.log("[AuthStore] login action called with credentials:", credentials?.username);
+      this.authError = null; // Clear previous errors
+      this.isAuthStatusResolved = false; // Reset resolved status during login attempt
+
       try {
         const response = await api.login(credentials);
-        console.log("[AuthStore] login API response:", response);
+        console.log("[AuthStore] login API response:", JSON.parse(JSON.stringify(response.data))); // Log data part
+
         if (response.data && response.data.userId && response.data.username) {
           this.user = { userId: response.data.userId, username: response.data.username };
           this.isLoggedIn = true;
-          console.log("[AuthStore] Login successful. User set to:", JSON.parse(JSON.stringify(this.user)));
+          console.log("[AuthStore] Login successful. User state set:", JSON.parse(JSON.stringify(this.user)), "isLoggedIn:", this.isLoggedIn);
         } else {
-          // This case should ideally be an error from API, but handle unexpected success structure
           this.user = null;
           this.isLoggedIn = false;
-          this.authError = '登录响应格式不正确。';
-          console.error("[AuthStore] Login response missing userId or username:", response.data);
+          this.authError = response.data?.error || '登录响应无效或缺少用户信息。';
+          console.error("[AuthStore] Login failed due to invalid response structure:", response.data);
           throw new Error(this.authError);
         }
-        return response.data;
+        this.isAuthStatusResolved = true;
+        return response.data; // Return data for component to handle (e.g., navigation)
       } catch (error) {
         this.user = null;
         this.isLoggedIn = false;
-        this.authError = error.response?.data?.error || error.message || '登录失败。';
-        console.error("[AuthStore] Login failed:", this.authError, error.response || error);
-        throw new Error(this.authError); // Re-throw for component to catch
-      } finally {
-        this.isAuthStatusResolved = true; // Mark auth as resolved after login attempt
+        // Prefer error from backend if available, else use network error or generic message
+        this.authError = error.response?.data?.error || error.message || '登录过程中发生网络或服务器错误。';
+        console.error("[AuthStore] Login action failed:", this.authError, error.response || error);
+        this.isAuthStatusResolved = true;
+        throw new Error(this.authError); // Re-throw for component to display
       }
     },
 
     async register(credentials) {
-      // ... (register logic, ensure it doesn't set loggedIn state, just returns success/error)
-      console.log("[AuthStore] register action called");
+      console.log("[AuthStore] register action called with credentials:", credentials?.username);
       this.authError = null;
       try {
         const response = await api.register(credentials);
-        console.log("[AuthStore] register API response:", response);
-        return response.data; // Typically just a success message
+        console.log("[AuthStore] register API response:", JSON.parse(JSON.stringify(response.data)));
+        // Registration typically doesn't log the user in automatically here,
+        // it just confirms success or failure.
+        return response.data;
       } catch (error) {
         this.authError = error.response?.data?.error || error.message || '注册失败。';
-        console.error("[AuthStore] Registration failed:", this.authError, error.response || error);
+        console.error("[AuthStore] Registration action failed:", this.authError, error.response || error);
         throw new Error(this.authError);
       }
     },
 
-    logoutAction() { // Renamed to avoid conflict with potential 'logout' getter/state
-      console.log("[AuthStore] logoutAction called");
-      this.authError = null;
-      // No need to call api.logout() here if it's handled in App.vue or component
-      // This action is primarily for clearing client-side state.
+    // This action should be called by components AFTER a successful API logout call
+    processUserLogout() {
+      console.log("[AuthStore] processUserLogout action called.");
       this.user = null;
       this.isLoggedIn = false;
-      this.isAuthStatusResolved = true; // Auth state is known (logged out)
-      console.log("[AuthStore] User logged out from store. isLoggedIn:", this.isLoggedIn, "User:", this.user);
+      this.isAuthStatusResolved = true; // Auth state is now resolved to logged out
+      this.authError = null;
+      console.log("[AuthStore] User state cleared. isLoggedIn:", this.isLoggedIn, "User:", this.user);
     },
 
-    async checkAuthStatus() {
-      console.log("[AuthStore] checkAuthStatus called. Current resolved status:", this.isAuthStatusResolved);
-      // Avoid re-checking if already resolved, unless forced
-      // if (this.isAuthStatusResolved && from !== 'force') return;
-
+    async checkAuthStatus(forceCheck = false) {
+      if (this.isAuthStatusResolved && !forceCheck) {
+        console.log("[AuthStore] checkAuthStatus: Auth status already resolved, skipping API call unless forced. LoggedIn:", this.isLoggedIn);
+        return;
+      }
+      console.log("[AuthStore] checkAuthStatus: Initiating API call to check status. Force check:", forceCheck);
+      this.isAuthStatusResolved = false; // Indicate that we are currently checking
       this.authError = null;
+
       try {
-        console.log("[AuthStore] checkAuthStatus: Calling api.checkAuthStatus...");
         const response = await api.checkAuthStatus();
-        console.log("[AuthStore] checkAuthStatus API response:", response);
+        console.log("[AuthStore] checkAuthStatus API response:", JSON.parse(JSON.stringify(response.data)));
         if (response.data && response.data.loggedIn && response.data.userId && response.data.username) {
           this.user = { userId: response.data.userId, username: response.data.username };
           this.isLoggedIn = true;
-          console.log("[AuthStore] checkAuthStatus: User is logged in. User set to:", JSON.parse(JSON.stringify(this.user)));
+          console.log("[AuthStore] checkAuthStatus: User IS logged in. User state:", JSON.parse(JSON.stringify(this.user)));
         } else {
           this.user = null;
           this.isLoggedIn = false;
-          console.log("[AuthStore] checkAuthStatus: User is NOT logged in or response invalid. isLoggedIn:", this.isLoggedIn);
+          console.log("[AuthStore] checkAuthStatus: User is NOT logged in (or invalid response).");
         }
       } catch (error) {
         this.user = null;
         this.isLoggedIn = false;
-        this.authError = error.response?.data?.error || error.message || '检查登录状态失败。';
+        this.authError = error.response?.data?.error || error.message || '检查登录状态时发生网络或服务器错误。';
         console.warn("[AuthStore] checkAuthStatus API call failed:", this.authError, error.response || error);
       } finally {
         this.isAuthStatusResolved = true;
-        console.log("[AuthStore] checkAuthStatus completed. isAuthStatusResolved:", this.isAuthStatusResolved);
+        console.log("[AuthStore] checkAuthStatus completed. isAuthStatusResolved:", this.isAuthStatusResolved, "isLoggedIn:", this.isLoggedIn);
       }
-    },
-    // Action to be called after successful logout API call by component
-    processLogout() {
-        console.log("[AuthStore] processLogout called by component after API logout.");
-        this.user = null;
-        this.isLoggedIn = false;
-        this.isAuthStatusResolved = true;
     }
   },
   getters: {
+    // Using getters for components to reactively access state
     currentUser: (state) => state.user,
     isAuthenticated: (state) => state.isLoggedIn,
-    isAuthReady: (state) => state.isAuthStatusResolved,
+    authReady: (state) => state.isAuthStatusResolved, // Getter for resolved status
+    getAuthError: (state) => state.authError,
   }
 });
