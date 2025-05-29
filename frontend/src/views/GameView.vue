@@ -1,82 +1,94 @@
 <template>
   <div class="game-view">
-    <div v-if="isLoading">正在加载房间/游戏状态...</div>
-    <div v-if="error" class="error-message">错误: {{ error }}</div>
+    <div v-if="isLoadingInitial" class="loading-state">正在加载房间/游戏状态... (ID: {{ initialId }})</div>
+    <div v-if="pageError" class="error-message global-error">页面错误: {{ pageError }}</div>
 
-    <div v-if="!isLoading && !error && roomState">
-      <h2>房间号: {{ roomState.roomInfo?.room_code || initialId }}</h2>
-      <p>状态: {{ translatedGameStatus }}</p>
+    <div v-if="!isLoadingInitial && !pageError && currentRoomState">
+      <h2>房间号: {{ currentRoomState.gameInfo?.room_code || initialId }}</h2>
+      <p>当前状态: <span :class="statusClass">{{ translatedGameStatus }}</span></p>
+      <p v-if="currentRoomState.gameInfo?.id">游戏ID: {{ currentRoomState.gameInfo.id }}</p>
 
       <!-- 等待玩家/游戏未开始 界面 -->
-      <div v-if="isGameWaitingToStart">
-        <h3>当前玩家 ({{ roomState.players?.length || 0 }}/{{ MAX_PLAYERS }}):</h3>
-        <ul>
-          <li v-for="player in roomState.players" :key="player.userId">
+      <div v-if="isGameWaitingToStart" class="waiting-lobby">
+        <h3>当前玩家 ({{ currentRoomState.players?.length || 0 }}/{{ MAX_PLAYERS_CONST_FE }}):</h3>
+        <ul v-if="currentRoomState.players && currentRoomState.players.length > 0">
+          <li v-for="player in currentRoomState.players" :key="player.userId">
             {{ player.username }}
             <span v-if="player.userId === authStore.user?.userId"> (你)</span>
-            <span v-if="player.userId === roomState.roomInfo?.creator_id"> (房主)</span>
+            <span v-if="player.userId === currentRoomState.gameInfo?.creator_id" class="creator-tag"> (房主)</span>
           </li>
         </ul>
-        <p v-if="(roomState.players?.length || 0) < MIN_PLAYERS_TO_START">
-          至少需要 {{ MIN_PLAYERS_TO_START }} 名玩家才能开始游戏。
+        <p v-else>房间内暂无玩家。</p>
+
+        <p v-if="(currentRoomState.players?.length || 0) < MIN_PLAYERS_TO_START_CONST_FE" class="info-text">
+          至少需要 {{ MIN_PLAYERS_TO_START_CONST_FE }} 名玩家才能开始游戏。
         </p>
         <button
-          v-if="isCurrentUserCreator && (roomState.players?.length || 0) >= MIN_PLAYERS_TO_START"
+          v-if="isCurrentUserCreator && (currentRoomState.players?.length || 0) >= MIN_PLAYERS_TO_START_CONST_FE"
           @click="handleStartGame"
-          :disabled="isStartingGame">
-          {{ isStartingGame ? '开始游戏中...' : '开始游戏' }}
+          :disabled="isStartingGame || isLoadingState"
+          class="start-game-button">
+          {{ isStartingGame ? '开始游戏中...' : `开始游戏 (${currentRoomState.players?.length || 0}人)` }}
         </button>
-        <p v-if="!isCurrentUserCreator && (roomState.players?.length || 0) >= MIN_PLAYERS_TO_START">
+        <p v-if="!isCurrentUserCreator && (currentRoomState.players?.length || 0) >= MIN_PLAYERS_TO_START_CONST_FE && currentRoomState.gameInfo?.status === 'waiting'" class="info-text">
           等待房主开始游戏...
         </p>
+        <div v-if="startGameError" class="error-message">{{ startGameError }}</div>
       </div>
 
       <!-- 游戏进行中 界面 (摆牌等) -->
-      <div v-else-if="isGameInProgress">
-        <p>当前回合: {{ roomState.gameInfo?.current_round }}</p>
-        <div v-if="myHand.length > 0 && !hasSubmittedArrangement" class="my-hand-section">
-          <h3>我的手牌 ({{ myHand.length }} 张):</h3>
-          <!-- (摆牌相关 UI 和逻辑，之前已提供，此处为简化示意) -->
+      <div v-else-if="isGameInProgress" class="game-in-progress">
+        <p>当前回合: {{ currentRoomState.gameInfo?.current_round }}</p>
+        <div v-if="myHandDisplay.length > 0 && !hasSubmittedArrangement" class="my-hand-section">
+          <h3>我的手牌 ({{ myHandDisplay.length }} 张):</h3>
           <div class="cards-display">
-             <Card v-for="card in myHand" :key="card" :card="card" @click="selectCardForArrangement(card)"
+             <Card v-for="card in myHandDisplay" :key="card" :card="card" @click="selectCardForArrangement(card)"
                   :class="{selected: isCardSelectedForArrangement(card)}"/>
           </div>
-          <div v-if="selectedForArrangement.length > 0">已选: {{ selectedForArrangement.join(', ') }}</div>
-          <!-- 摆牌墩位和提交按钮 -->
+          <div v-if="selectedForArrangement.length > 0" class="selected-cards-info">已选: {{ selectedForArrangement.join(', ') }}</div>
           <div class="arrangement-piles">
-            <div>头道 (3): <span class="pile-cards">{{ arrangedFront.join(', ') }}</span> <button @click="assignToPile('front')" :disabled="selectedForArrangement.length === 0">设置头道</button></div>
-            <div>中道 (5): <span class="pile-cards">{{ arrangedMiddle.join(', ') }}</span> <button @click="assignToPile('middle')" :disabled="selectedForArrangement.length === 0">设置中道</button></div>
-            <div>尾道 (5): <span class="pile-cards">{{ arrangedBack.join(', ') }}</span> <button @click="assignToPile('back')" :disabled="selectedForArrangement.length === 0">设置尾道</button></div>
-            <button @click="clearArrangement">清空墩牌</button>
-            <button @click="submitArrangement" :disabled="!canSubmitArrangement || isSubmittingArrangement">
+            <div>头道 (3): <span class="pile-cards">{{ arrangedFront.join(', ') }}</span> <button @click="assignToPile('front')" :disabled="selectedForArrangement.length === 0 || arrangedFront.length >=3">设置头道</button></div>
+            <div>中道 (5): <span class="pile-cards">{{ arrangedMiddle.join(', ') }}</span> <button @click="assignToPile('middle')" :disabled="selectedForArrangement.length === 0 || arrangedMiddle.length >=5">设置中道</button></div>
+            <div>尾道 (5): <span class="pile-cards">{{ arrangedBack.join(', ') }}</span> <button @click="assignToPile('back')" :disabled="selectedForArrangement.length === 0 || arrangedBack.length >=5">设置尾道</button></div>
+            <button @click="clearArrangement" class="clear-button">重置墩牌</button>
+            <button @click="submitArrangement" :disabled="!canSubmitArrangement || isSubmittingArrangement" class="submit-button">
               {{ isSubmittingArrangement ? '提交中...' : '提交牌型' }}
             </button>
           </div>
-          <p v-if="arrangementError" class="error-message">{{ arrangementError }}</p>
+          <div v-if="arrangementError" class="error-message">{{ arrangementError }}</div>
         </div>
-        <div v-if="hasSubmittedArrangement && !roomState.allSubmittedThisRound">等待其他玩家摆牌...</div>
+        <div v-if="hasSubmittedArrangement && currentRoomState.players && !currentRoomState.allSubmittedThisRound" class="info-text">等待其他玩家摆牌...</div>
+         <div v-if="currentRoomState.allSubmittedThisRound && currentRoomState.gameInfo?.status === 'arranging'" class="info-text">所有玩家已摆牌，准备比牌...</div>
       </div>
 
       <!-- 游戏结束/比牌结果 界面 -->
-      <div v-if="isGameFinishedOrComparing">
-         <h3>比牌结果 / 游戏结束</h3>
-         <!-- (显示所有玩家的牌和得分，之前已提供，此处为简化示意) -->
+      <div v-if="isGameFinishedOrComparing" class="game-results">
+         <h3>{{ currentRoomState.gameInfo?.status === 'comparing' ? '比牌中...' : '游戏结束' }}</h3>
+         <!-- TODO: Display all players' arranged hands and scores -->
+         <div v-for="player in currentRoomState.players" :key="'res_'+player.userId" class="player-result">
+            <h4>{{player.username}} {{ player.userId === authStore.user?.userId ? '(你)' : '' }}</h4>
+            <div v-if="player.arrangement">
+                <p>头道: <Card v-for="c in player.arrangement.front" :key="c+'f'" :card="c" small /> </p>
+                <p>中道: <Card v-for="c in player.arrangement.middle" :key="c+'m'" :card="c" small /> </p>
+                <p>尾道: <Card v-for="c in player.arrangement.back" :key="c+'b'" :card="c" small /> </p>
+                <p>本局得分: {{ player.scoreThisRound }}</p>
+            </div>
+            <p v-else-if="currentRoomState.gameInfo?.status === 'comparing'">等待 {{player.username}} 的牌...</p>
+         </div>
       </div>
 
-      <!-- 显示所有玩家信息 (通用，也可按状态细化) -->
-      <div class="players-info-section" v-if="roomState.players && roomState.players.length > 0 && (isGameInProgress || isGameFinishedOrComparing)">
-        <h4>玩家信息:</h4>
-        <div v-for="player in roomState.players" :key="player.userId" class="player-status">
-          <p><strong>{{ player.username }}</strong>
-            <span v-if="player.userId === authStore.user?.userId"> (你)</span>:
+      <!-- 通用玩家信息展示 (可选，如果上面各状态已包含) -->
+      <div class="players-info-section" v-if="currentRoomState.players && currentRoomState.players.length > 0 && (isGameInProgress || isGameFinishedOrComparing)">
+        <h4>其他玩家状态:</h4>
+        <div v-for="player in currentRoomState.players.filter(p => p.userId !== authStore.user?.userId)" :key="'status_'+player.userId" class="player-status-others">
+          <p><strong>{{ player.username }}</strong>:
             <span v-if="isGameInProgress">{{ player.hasSubmittedThisRound ? '已摆牌' : '摆牌中...' }}</span>
-            <span v-if="isGameFinishedOrComparing && player.arrangement">
-              得分: {{ player.scoreThisRound }}
-              <!-- 可以显示牌型 -->
-            </span>
           </p>
         </div>
       </div>
+    </div>
+    <div v-else-if="!isLoadingInitial && !pageError && !currentRoomState">
+        <p>无法获取房间信息，请尝试返回房间列表。</p>
     </div>
   </div>
 </template>
@@ -86,13 +98,13 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import Card from '../components/Card.vue'; // 假设 Card.vue 存在
+import Card from '../components/Card.vue';
 
-const MAX_PLAYERS = 4; // 可配置
-const MIN_PLAYERS_TO_START = 2; // 可配置
+const MAX_PLAYERS_CONST_FE = 4;
+const MIN_PLAYERS_TO_START_CONST_FE = 2;
 
 const props = defineProps({
-  gameId: { // 这个 ID 初期可能是 roomId，开始游戏后可能是真正的 gameId
+  gameId: {
     type: String,
     required: true
   }
@@ -102,71 +114,79 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
-const isLoading = ref(true);
-const error = ref('');
-const roomState = ref(null); // 将持有从 /game/{id}/state 获取的完整状态
+const isLoadingInitial = ref(true); // For initial load
+const isLoadingState = ref(false); // For subsequent poll updates
+const pageError = ref(''); // General page error
+const currentRoomState = ref(null);
+const startGameError = ref('');
 
-const isStartingGame = ref(false); // 开始游戏按钮的状态
+const isStartingGame = ref(false);
 let pollInterval = null;
 
-// 初始 ID (可能是 roomId)
-const initialId = computed(() => props.gameId);
-// 真正的 gameId，在游戏开始后由后端返回并设置
-const activeGameId = ref(null);
+const initialId = computed(() => props.gameId); // This is initially roomId
+const activeGameIdInternal = ref(null); // Stores the actual game_id once game starts
 
 // --- 摆牌相关状态 ---
-const myHand = ref([]);
+const myHandDisplay = ref([]);
 const arrangedFront = ref([]);
 const arrangedMiddle = ref([]);
 const arrangedBack = ref([]);
-const selectedForArrangement = ref([]); // 当前点击选中的牌
+const selectedForArrangement = ref([]);
 const isSubmittingArrangement = ref(false);
 const arrangementError = ref('');
 // --- 结束摆牌相关状态 ---
 
-const fetchRoomOrGameState = async () => {
-  // 优先使用 activeGameId (如果游戏已开始)，否则使用 initialId (可能是roomId)
-  const idToFetch = activeGameId.value || initialId.value;
+const fetchRoomOrGameState = async (isInitialLoad = false) => {
+  if (!isInitialLoad) isLoadingState.value = true; // For poll updates
+  const idToFetch = activeGameIdInternal.value || initialId.value;
+  console.log(`[GameView] fetchRoomOrGameState called. ID to fetch: ${idToFetch}, InitialLoad: ${isInitialLoad}`);
+
   if (!idToFetch) {
-    error.value = "无效的房间或游戏ID。";
-    isLoading.value = false;
+    pageError.value = "无效的房间或游戏ID。";
+    if (isInitialLoad) isLoadingInitial.value = false;
+    isLoadingState.value = false;
+    console.error("[GameView] fetchRoomOrGameState: No ID to fetch.");
     return;
   }
 
   try {
-    // 后端 /game/{id}/state 接口需要能处理两种情况：
-    // 1. id 是 roomId，游戏未开始：返回房间信息、玩家列表、状态'waiting'等
-    // 2. id 是 gameId，游戏已开始：返回游戏信息、玩家手牌（对自己）、玩家状态等
     const response = await api.getGameState(idToFetch);
-    roomState.value = response.data;
+    console.log("[GameView] api.getGameState response:", JSON.parse(JSON.stringify(response.data)));
+    currentRoomState.value = response.data;
 
-    if (response.data?.gameInfo?.id && response.data?.gameInfo?.status !== 'waiting') {
-      activeGameId.value = response.data.gameInfo.id.toString(); // 游戏已开始，记录真正的 gameId
+    if (currentRoomState.value?.gameInfo?.id && currentRoomState.value?.gameInfo?.status !== 'waiting') {
+      activeGameIdInternal.value = currentRoomState.value.gameInfo.id.toString();
+      console.log("[GameView] Active game ID set to:", activeGameIdInternal.value);
     }
 
-    // 更新当前玩家手牌 (仅当游戏进行中且是自己且未提交时)
-    const currentUserData = roomState.value?.players?.find(p => p.userId === authStore.user?.userId);
-    if (currentUserData?.hand && !currentUserData?.hasSubmittedThisRound && isGameInProgress.value) {
-        myHand.value = currentUserData.hand;
+    const currentUserData = currentRoomState.value?.players?.find(p => p.userId === authStore.user?.userId);
+    if (currentUserData?.hand && currentRoomState.value?.gameInfo?.status === 'arranging' && !currentUserData?.hasSubmittedThisRound) {
+        myHandDisplay.value = currentUserData.hand;
+        console.log("[GameView] My hand updated:", myHandDisplay.value);
+    } else if (currentRoomState.value?.gameInfo?.status !== 'arranging' || currentUserData?.hasSubmittedThisRound) {
+        // Clear hand if not in arranging phase or already submitted
+        // myHandDisplay.value = []; // Or keep showing if needed for review after submit
     }
 
 
-    isLoading.value = false;
-    error.value = '';
+    if (isInitialLoad) isLoadingInitial.value = false;
+    isLoadingState.value = false;
+    pageError.value = ''; // Clear previous page errors on successful fetch
 
-    // 如果游戏结束，可以停止轮询
-    if (roomState.value?.gameInfo?.status === 'finished') {
+    if (currentRoomState.value?.gameInfo?.status === 'finished') {
       stopPolling();
+      console.log("[GameView] Game finished, polling stopped.");
     }
 
   } catch (err) {
-    console.error("获取房间/游戏状态失败:", err);
-    error.value = err.response?.data?.error || err.message || '无法加载房间/游戏状态。';
-    if (err.response?.status === 404 && pollInterval) { // 房间/游戏不存在
+    console.error("[GameView] 获取房间/游戏状态失败:", err.response || err);
+    pageError.value = err.response?.data?.error || err.message || '无法加载房间/游戏状态。';
+    if (err.response?.status === 404 && pollInterval) {
         stopPolling();
-        // router.push({ name: 'RoomList' }); // 可选：跳转回房间列表
+        console.log("[GameView] Room/Game not found (404), polling stopped.");
     }
-    isLoading.value = false;
+    if (isInitialLoad) isLoadingInitial.value = false;
+    isLoadingState.value = false;
   }
 };
 
@@ -174,107 +194,147 @@ const stopPolling = () => {
   if (pollInterval) {
     clearInterval(pollInterval);
     pollInterval = null;
+    console.log("[GameView] Polling interval cleared.");
   }
 };
 
 const isCurrentUserCreator = computed(() => {
-  return roomState.value?.roomInfo?.creator_id === authStore.user?.userId;
+  if (!currentRoomState.value || !authStore.user) return false;
+  return currentRoomState.value.gameInfo?.creator_id === authStore.user.userId;
 });
 
 const translatedGameStatus = computed(() => {
-  const status = roomState.value?.gameInfo?.status || roomState.value?.room_status; // 兼容房间状态和游戏状态
-  if (!status) return '未知';
+  const status = currentRoomState.value?.gameInfo?.status;
+  if (!status) return '获取中...';
   switch (status.toLowerCase()) {
-    case 'waiting': return '等待玩家加入/开始';
-    case 'dealing': return '发牌中';
-    case 'arranging': return '摆牌中';
-    case 'comparing': return '比牌中';
-    case 'finished': return '游戏结束';
-    case 'playing': return '游戏中 (可能是概括状态)'; // 如果后端用 playing
+    case 'waiting': return '等待玩家加入或房主开始';
+    case 'dealing': return '发牌中...';
+    case 'arranging': return '请摆牌';
+    case 'comparing': return '比牌中...';
+    case 'finished': return '本局游戏结束';
     default: return status;
   }
 });
+const statusClass = computed(() => {
+    return `status-${currentRoomState.value?.gameInfo?.status?.toLowerCase() || 'unknown'}`;
+});
+
 
 const isGameWaitingToStart = computed(() => {
-  // 游戏未开始的条件：roomState 存在，但 activeGameId 未设置，
-  // 或者 gameInfo.status 是 'waiting'
-  return roomState.value && (!activeGameId.value || roomState.value?.gameInfo?.status === 'waiting');
+  return currentRoomState.value && currentRoomState.value.gameInfo?.status === 'waiting';
 });
 
 const isGameInProgress = computed(() => {
-  const status = roomState.value?.gameInfo?.status;
+  const status = currentRoomState.value?.gameInfo?.status;
   return status === 'dealing' || status === 'arranging';
 });
 
 const isGameFinishedOrComparing = computed(() => {
-  const status = roomState.value?.gameInfo?.status;
+  const status = currentRoomState.value?.gameInfo?.status;
   return status === 'comparing' || status === 'finished';
 });
 
 
 const handleStartGame = async () => {
-  if (!isCurrentUserCreator.value) return;
+  if (!isCurrentUserCreator.value) {
+    console.warn("[GameView] Non-creator attempted to start game.");
+    return;
+  }
   isStartingGame.value = true;
-  error.value = '';
+  startGameError.value = '';
+  console.log(`[GameView] Attempting to start game with initialId (roomId): ${initialId.value}`);
   try {
-    // 使用 initialId (即 roomId) 来调用 startGame
-    const response = await api.startGame(initialId.value);
-    // startGame 成功后，后端会返回 gameId
+    const response = await api.startGame(initialId.value); // Use initialId (roomId) to start
+    console.log("[GameView] api.startGame response:", JSON.parse(JSON.stringify(response.data)));
     if (response.data && response.data.game_id) {
-      activeGameId.value = response.data.game_id.toString(); // 更新 activeGameId
-      // 立即获取一次最新状态，而不是等下一次轮询
-      await fetchRoomOrGameState();
+      activeGameIdInternal.value = response.data.game_id.toString();
+      console.log("[GameView] Game started successfully. Active game ID:", activeGameIdInternal.value);
+      await fetchRoomOrGameState(true); // Fetch state immediately with new gameId
     } else {
-      error.value = response.data?.error || "开始游戏失败，未返回游戏ID。";
+      startGameError.value = response.data?.error || "开始游戏失败，未返回有效游戏信息。";
+      console.error("[GameView] Start game failed, problematic response:", response.data);
     }
   } catch (err) {
-    error.value = err.response?.data?.error || err.message || '开始游戏失败。';
+    console.error("[GameView] Start game API error:", err.response || err);
+    startGameError.value = err.response?.data?.error || err.message || '开始游戏请求失败。';
   } finally {
     isStartingGame.value = false;
   }
 };
 
-
-// --- 摆牌逻辑简化版 ---
+// --- 摆牌逻辑 ---
 const selectCardForArrangement = (card) => {
-    if (arrangedFront.value.includes(card) || arrangedMiddle.value.includes(card) || arrangedBack.value.includes(card)) return;
-    const index = selectedForArrangement.value.indexOf(card);
-    if (index > -1) {
-        selectedForArrangement.value.splice(index, 1);
-    } else {
-        selectedForArrangement.value.push(card);
+    if (!myHandDisplay.value.includes(card)) {
+        console.warn("[GameView] Attempted to select card not in hand:", card);
+        return;
     }
+    if (arrangedFront.value.includes(card) || arrangedMiddle.value.includes(card) || arrangedBack.value.includes(card)) {
+        console.log("[GameView] Card already placed in a pile, deselecting from pile first if re-arranging is allowed.");
+        // Basic deselect: remove from piles if clicked again (more complex UI needed for robust re-arrangement)
+        let found = false;
+        [arrangedFront, arrangedMiddle, arrangedBack].forEach(pile => {
+            const index = pile.value.indexOf(card);
+            if (index > -1) {
+                pile.value.splice(index, 1);
+                found = true;
+            }
+        });
+        // If it was found and removed from a pile, add it back to selection or hand for re-selection
+        if (found) {
+             if (!selectedForArrangement.value.includes(card)) selectedForArrangement.value.push(card);
+             return;
+        }
+    }
+
+    const indexInSelection = selectedForArrangement.value.indexOf(card);
+    if (indexInSelection > -1) {
+        selectedForArrangement.value.splice(indexInSelection, 1); // Deselect
+    } else {
+        selectedForArrangement.value.push(card); // Select
+    }
+    console.log("[GameView] Selected for arrangement:", selectedForArrangement.value);
 };
 const isCardSelectedForArrangement = (card) => selectedForArrangement.value.includes(card);
 
 const assignToPile = (pileName) => {
-    if (selectedForArrangement.value.length === 0) return;
-    let targetPile;
+    if (selectedForArrangement.value.length === 0) {
+        arrangementError.value = "请先选择要放置的牌。";
+        return;
+    }
+    arrangementError.value = '';
+    let targetPileRef;
     let maxSize;
-    if (pileName === 'front') { targetPile = arrangedFront; maxSize = 3; }
-    else if (pileName === 'middle') { targetPile = arrangedMiddle; maxSize = 5; }
-    else if (pileName === 'back') { targetPile = arrangedBack; maxSize = 5; }
+    if (pileName === 'front') { targetPileRef = arrangedFront; maxSize = 3; }
+    else if (pileName === 'middle') { targetPileRef = arrangedMiddle; maxSize = 5; }
+    else if (pileName === 'back') { targetPileRef = arrangedBack; maxSize = 5; }
     else return;
 
-    const currentPileCards = new Set([...arrangedFront.value, ...arrangedMiddle.value, ...arrangedBack.value]);
-    const cardsToAdd = [];
-    for (const card of selectedForArrangement.value) {
-        if (cardsToAdd.length + targetPile.value.length >= maxSize) break;
-        if (!currentPileCards.has(card)) { //确保牌未被用于其他墩
-            cardsToAdd.push(card);
+    // Filter out cards already in *any* pile from the current selection
+    const cardsAlreadyInAnyPile = new Set([...arrangedFront.value, ...arrangedMiddle.value, ...arrangedBack.value]);
+    const validSelectedCards = selectedForArrangement.value.filter(c => !cardsAlreadyInAnyPile.has(c));
+
+    let addedCount = 0;
+    for (const card of validSelectedCards) {
+        if (targetPileRef.value.length < maxSize) {
+            targetPileRef.value.push(card);
+            addedCount++;
+        } else {
+            arrangementError.value = `此墩已满 (${maxSize}张)。`;
+            break;
         }
     }
-    targetPile.value.push(...cardsToAdd);
-    // 从myHand视觉移除或标记 (更复杂)，或仅从selectedForArrangement移除
-    selectedForArrangement.value = selectedForArrangement.value.filter(c => !cardsToAdd.includes(c));
+    // Remove added cards from the main selection list
+    selectedForArrangement.value = selectedForArrangement.value.filter(c => !targetPileRef.value.includes(c));
+    console.log(`[GameView] Assigned to ${pileName}:`, targetPileRef.value, "Remaining selection:", selectedForArrangement.value);
 };
 
 const clearArrangement = () => {
     arrangedFront.value = [];
     arrangedMiddle.value = [];
     arrangedBack.value = [];
-    selectedForArrangement.value = [];
+    selectedForArrangement.value = []; // Also clear current selection
     arrangementError.value = '';
+    console.log("[GameView] Arrangement cleared.");
 };
 
 const canSubmitArrangement = computed(() => {
@@ -284,30 +344,35 @@ const canSubmitArrangement = computed(() => {
 });
 
 const hasSubmittedArrangement = computed(() => {
-    const me = roomState.value?.players?.find(p => p.userId === authStore.user?.userId);
-    return me?.hasSubmittedThisRound || false; // 或 has_submitted
+    if(!currentRoomState.value || !currentRoomState.value.players || !authStore.user) return false;
+    const me = currentRoomState.value.players.find(p => p.userId === authStore.user.userId);
+    return me?.hasSubmittedThisRound || false;
 });
 
 const submitArrangement = async () => {
     if (!canSubmitArrangement.value) {
-        arrangementError.value = "墩牌数量不正确！";
+        arrangementError.value = "墩牌数量不正确！头道3张，中道5张，尾道5张。";
         return;
     }
+    // TODO: Add "倒水" validation client-side if possible (complex)
     isSubmittingArrangement.value = true;
     arrangementError.value = '';
+    const gameIdForSubmit = activeGameIdInternal.value || initialId.value; // Should be activeGameId by this point
+    console.log(`[GameView] Submitting arrangement for game ID: ${gameIdForSubmit}`);
+
     try {
         const payload = {
             front: arrangedFront.value,
             middle: arrangedMiddle.value,
             back: arrangedBack.value,
         };
-        // 使用 activeGameId (如果已开始游戏)
-        await api.submitArrangement(activeGameId.value || initialId.value, payload);
-        // 提交成功后，轮询会更新状态
-        // myHand.value = []; // 清空手牌，因为已提交
-        clearArrangement(); // 清空摆牌区
-        await fetchRoomOrGameState(); // 立即获取一次状态
+        await api.submitArrangement(gameIdForSubmit, payload);
+        console.log("[GameView] Arrangement submitted successfully.");
+        // Don't clear arrangement here, let state update show it or backend confirm
+        // myHandDisplay.value = []; // Hand is used up
+        await fetchRoomOrGameState(); // Refresh state
     } catch (err) {
+        console.error("[GameView] Submit arrangement API error:", err.response || err);
         arrangementError.value = err.response?.data?.error || err.message || "提交牌型失败。";
     } finally {
         isSubmittingArrangement.value = false;
@@ -315,48 +380,97 @@ const submitArrangement = async () => {
 };
 // --- 结束摆牌逻辑 ---
 
-
 onMounted(async () => {
+  console.log("[GameView] Component onMounted. Initial gameId prop:", props.gameId);
+  isLoadingInitial.value = true; // Set loading true at the very start
+  pageError.value = ''; // Clear previous page errors
   await authStore.checkAuthStatus();
-  if (!authStore.isLoggedIn) {
+  console.log("[GameView] Auth status checked. Logged in:", authStore.isLoggedIn, "User:", authStore.user);
+
+  if (!authStore.isLoggedIn || !authStore.user) { // Also check if user object exists
+    console.warn("[GameView] User not logged in or user data unavailable, redirecting to Login.");
     router.push({ name: 'Login', query: { redirect: route.fullPath } });
+    isLoadingInitial.value = false;
     return;
   }
-  await fetchRoomOrGameState(); // 初始加载
-  pollInterval = setInterval(fetchRoomOrGameState, 5000); // 每5秒轮询
+
+  console.log("[GameView] User logged in. Attempting initial fetchRoomOrGameState...");
+  await fetchRoomOrGameState(true); // Pass true for initial load
+  console.log("[GameView] Initial fetchRoomOrGameState completed. Current state:", JSON.parse(JSON.stringify(currentRoomState.value)));
+
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(fetchRoomOrGameState, 5000);
+  console.log("[GameView] Polling started every 5 seconds.");
 });
 
 onUnmounted(() => {
   stopPolling();
+  console.log("[GameView] Component onUnmounted, polling stopped.");
 });
 
-// 当路由参数变化时 (例如，从一个游戏跳到另一个游戏，虽然本应用不常见)
 watch(() => props.gameId, async (newId, oldId) => {
+  console.log(`[GameView] props.gameId changed from ${oldId} to ${newId}`);
   if (newId && newId !== oldId) {
-    isLoading.value = true;
-    roomState.value = null;
-    activeGameId.value = null; // 重置
-    myHand.value = [];
+    console.log("[GameView] Game ID prop changed. Resetting state and fetching new data...");
+    isLoadingInitial.value = true;
+    pageError.value = '';
+    currentRoomState.value = null;
+    activeGameIdInternal.value = null;
+    myHandDisplay.value = [];
     clearArrangement();
-    stopPolling(); // 停止旧的轮询
-    await fetchRoomOrGameState(); // 用新ID获取状态
-    pollInterval = setInterval(fetchRoomOrGameState, 5000); // 开始新的轮询
+    stopPolling();
+    await fetchRoomOrGameState(true); // Fetch with new ID as initial load
+    if (!pageError.value) { // Only restart polling if fetch was successful
+        pollInterval = setInterval(fetchRoomOrGameState, 5000);
+        console.log("[GameView] Polling restarted for new gameId.");
+    }
   }
-});
+}, { immediate: false }); // 'immediate: false' to avoid running on initial mount if not needed
 
 </script>
 
 <style scoped>
-.game-view { padding: 1rem; }
-.error-message { color: red; margin-bottom: 1rem; }
-.my-hand-section, .players-info-section, .arrangement-piles { margin-top: 1.5rem; }
-.cards-display { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1rem; cursor: pointer; }
-.card.selected { border: 2px solid blue; box-shadow: 0 0 5px blue; }
-.arrangement-piles div { margin-bottom: 0.5rem; }
-.arrangement-piles button { margin-left: 10px; }
-.pile-cards { font-weight: bold; margin-left: 5px; color: #333; }
-.player-status { border-bottom: 1px solid #eee; padding: 5px 0; }
+.game-view { padding: 1rem; font-family: sans-serif; color: #333; }
+.loading-state, .info-text { margin: 20px; text-align: center; color: #666; }
+.error-message {
+  color: #D8000C; background-color: #FFD2D2; border: 1px solid #D8000C;
+  padding: 10px; margin: 10px 0; border-radius: 4px;
+}
+.global-error { font-size: 1.2em; text-align: center; }
+h2, h3, h4 { color: #1a59a7; margin-top: 1.5em; margin-bottom: 0.5em;}
+h2 { font-size: 1.8em; text-align: center; }
+h3 { font-size: 1.4em; }
 ul { list-style-type: none; padding-left: 0; }
-li { margin-bottom: 5px; }
+li { background-color: #f9f9f9; padding: 8px; margin-bottom: 5px; border-radius: 3px; border-left: 3px solid #007bff; }
+.creator-tag { font-weight: bold; color: #28a745; margin-left: 5px; }
+button {
+  padding: 10px 15px; font-size: 1em; cursor: pointer;
+  background-color: #007bff; color: white; border: none; border-radius: 4px;
+  margin: 5px; transition: background-color 0.2s ease;
+}
+button:hover { background-color: #0056b3; }
 button:disabled { background-color: #ccc; cursor: not-allowed; }
+.start-game-button { background-color: #28a745; }
+.start-game-button:hover { background-color: #1e7e34; }
+.clear-button { background-color: #ffc107; color: #212529; }
+.clear-button:hover { background-color: #e0a800; }
+.submit-button { background-color: #17a2b8; }
+.submit-button:hover { background-color: #117a8b; }
+
+.my-hand-section, .arrangement-piles {
+  border: 1px solid #ddd; padding: 15px; margin-top: 20px; border-radius: 5px; background-color: #fff;
+}
+.cards-display { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; padding: 10px; background-color: #e9ecef; border-radius: 4px;}
+.selected-cards-info { margin-bottom: 10px; font-style: italic; color: #555; }
+.arrangement-piles div { margin-bottom: 10px; display: flex; align-items: center; }
+.arrangement-piles div button { margin-left: auto; } /* Push buttons to the right */
+.pile-cards { font-weight: bold; margin-left: 8px; min-width: 150px; /* Ensure space for cards */ }
+
+.status-waiting { color: #ffc107; font-weight: bold; }
+.status-arranging { color: #17a2b8; font-weight: bold; }
+.status-comparing { color: #fd7e14; font-weight: bold; }
+.status-finished { color: #28a745; font-weight: bold; }
+.status-unknown { color: #6c757d; }
+
+.player-result, .player-status-others { border: 1px solid #eee; padding: 10px; margin-bottom: 10px; border-radius: 4px;}
 </style>
