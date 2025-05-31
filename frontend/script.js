@@ -1,125 +1,215 @@
-// frontend/script.js (部分修改和新增)
+// frontend/script.js
+document.addEventListener('DOMContentLoaded', () => {
+    const dealButton = document.getElementById('dealButton');
+    const playerHandDiv = document.getElementById('playerHand');
+    const frontHandDiv = document.getElementById('frontHand');
+    const middleHandDiv = document.getElementById('middleHand');
+    const backHandDiv = document.getElementById('backHand');
+    const dropZones = [frontHandDiv, middleHandDiv, backHandDiv];
+    const messageArea = document.getElementById('messageArea');
+    const cardCountSpan = document.getElementById('card-count');
+    const submitArrangementButton = document.getElementById('submitArrangement');
 
-// ... (之前的JS代码) ...
+    // 重要：部署后，将 'http://9525.ip-ddns.com/api.php' 替换为你的实际后端API地址
+    const BACKEND_API_URL = 'http://9525.ip-ddns.com/api.php';
+    const CARD_IMAGE_BASE_PATH = './cards/'; // SVG图片相对于index.html的路径
 
-    let currentArrangement = { front: null, middle: null, rear: null, isValid: false };
+    let currentHand = []; // 存储当前手牌数据
+    let draggedCard = null; // 当前拖动的卡牌元素
+    let draggedCardData = null; // 当前拖动卡牌的数据
 
-    async function updateAndEvaluateSets() {
-        const frontSetCards = getCardsFromDiv(frontSetDiv);
-        const middleSetCards = getCardsFromDiv(middleSetDiv);
-        const rearSetCards = getCardsFromDiv(rearSetDiv);
+    dealButton.addEventListener('click', fetchNewHand);
+    submitArrangementButton.addEventListener('click', handleSubmitArrangement);
 
-        document.getElementById('frontSetType').textContent = `(${frontSetCards.length}张)`;
-        document.getElementById('middleSetType').textContent = `(${middleSetCards.length}张)`;
-        document.getElementById('rearSetType').textContent = `(${rearSetCards.length}张)`;
+    async function fetchNewHand() {
+        messageArea.textContent = '正在发牌...';
+        messageArea.className = ''; // 清除样式
+        dealButton.disabled = true;
+        submitArrangementButton.style.display = 'none';
 
-        if (frontSetCards.length === 3 && middleSetCards.length === 5 && rearSetCards.length === 5) {
-            try {
-                const data = await apiRequest('evaluate_player_sets', {
-                    front: frontSetCards,
-                    middle: middleSetCards,
-                    rear: rearSetCards
-                }, 'POST', true);
+        // 清空所有区域
+        playerHandDiv.innerHTML = '';
+        dropZones.forEach(zone => zone.innerHTML = '');
+        cardCountSpan.textContent = '0';
 
-                if (data.success) {
-                    currentArrangement.front = data.front_set;
-                    currentArrangement.middle = data.middle_set;
-                    currentArrangement.rear = data.rear_set;
-                    currentArrangement.isValid = data.is_valid;
-
-                    document.getElementById('frontSetType').textContent = data.front_set.name;
-                    document.getElementById('middleSetType').textContent = data.middle_set.name;
-                    document.getElementById('rearSetType').textContent = data.rear_set.name;
-                    
-                    showMessage(arrangementMessage, data.message, data.is_valid);
-                } else {
-                    showMessage(arrangementMessage, data.error || '评估失败', false);
-                    currentArrangement.isValid = false;
-                }
-            } catch (error) {
-                showMessage(arrangementMessage, `评估请求错误: ${error.message}`, false);
-                currentArrangement.isValid = false;
+        try {
+            const response = await fetch(BACKEND_API_URL);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        } else {
-            currentArrangement.isValid = false; // Not a full arrangement
-             if (frontSetCards.length > 0 || middleSetCards.length > 0 || rearSetCards.length > 0) {
-                // Only clear message if user actually started arranging
-                showMessage(arrangementMessage, '请正确摆放三道牌 (3-5-5)。', false);
-            }
+            const data = await response.json();
+            currentHand = data.hand;
+            displayHand(currentHand);
+            messageArea.textContent = '发牌完成！请将手牌拖拽到对应牌墩。';
+            messageArea.className = 'success';
+        } catch (error) {
+            console.error('获取手牌失败:', error);
+            messageArea.textContent = `获取手牌失败: ${error.message}. 请检查后端服务是否运行正常，以及CORS设置是否正确。`;
+            messageArea.className = 'error';
+        } finally {
+            dealButton.disabled = false;
         }
-        validateSetsState(); // Re-validate submit button state
     }
 
-    // Modify enableDragAndDrop to call updateAndEvaluateSets on drop
-    function enableDragAndDrop() {
-        // ... (dragstart, dragend, dragover, dragleave are the same) ...
-        droppableAreas.forEach(area => {
-            // ... (dragover, dragleave are the same) ...
-            area.addEventListener('drop', (e) => {
-                e.preventDefault();
-                area.classList.remove('drag-over');
-                if (draggedCard) {
-                    const maxCards = parseInt(area.dataset.maxCards) || Infinity;
-                    if (area.children.length < maxCards || (area.id === 'playerHand' && !area.contains(draggedCard))) {
-                        if (draggedCard.parentElement !== area) {
-                             if (area.id === 'playerHand' || area.classList.contains('set-area')) {
-                                area.appendChild(draggedCard);
-                            }
-                        }
-                    } else if (area.children.length >= maxCards && area.id !== 'playerHand') {
-                         showMessage(arrangementMessage, `${area.id === 'frontSet' ? '头道' : area.id === 'middleSet' ? '中道' : '尾道'} 已满!`, false);
+    function displayHand(hand) {
+        playerHandDiv.innerHTML = ''; // 清空现有手牌
+        hand.forEach(cardData => {
+            const cardElement = createCardElement(cardData);
+            playerHandDiv.appendChild(cardElement);
+        });
+        updateCardCount();
+        checkArrangementCompletion();
+    }
+
+    function createCardElement(cardData) {
+        const img = document.createElement('img');
+        img.src = `${CARD_IMAGE_BASE_PATH}${cardData.image_file}`;
+        img.alt = `${cardData.rank} of ${cardData.suit}`;
+        img.classList.add('card');
+        img.draggable = true; // 使卡牌可拖动
+        img.dataset.cardId = cardData.card_id; // 存储唯一标识
+
+        // 存储卡牌数据到元素上，方便拖拽时获取
+        img.cardData = cardData; 
+
+        // 拖拽事件监听
+        img.addEventListener('dragstart', (event) => {
+            draggedCard = event.target;
+            draggedCardData = event.target.cardData;
+            event.target.classList.add('dragging');
+            // event.dataTransfer.setData('text/plain', cardData.card_id); // 可以不设置，因为我们直接用全局变量
+        });
+
+        img.addEventListener('dragend', (event) => {
+            event.target.classList.remove('dragging');
+            draggedCard = null;
+            draggedCardData = null;
+        });
+        return img;
+    }
+
+    // 为放置区域添加拖放事件监听
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', (event) => {
+            event.preventDefault(); // 必须阻止默认行为才能触发drop
+            const maxCards = parseInt(zone.dataset.maxCards);
+            if (zone.children.length < maxCards) {
+                zone.classList.add('over');
+            }
+        });
+
+        zone.addEventListener('dragleave', (event) => {
+            zone.classList.remove('over');
+        });
+
+        zone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            zone.classList.remove('over');
+            const maxCards = parseInt(zone.dataset.maxCards);
+
+            if (draggedCard && zone.children.length < maxCards) {
+                // 检查是否是从其他牌墩拖过来的，如果是，先从原父节点移除
+                if (draggedCard.parentElement !== playerHandDiv && draggedCard.parentElement !== zone) {
+                     // 如果是从其他墩拖拽过来的，并且不是playerHand
+                    if (dropZones.includes(draggedCard.parentElement)) {
+                        draggedCard.parentElement.removeChild(draggedCard);
                     }
                 }
-                // Call evaluation after a drop occurs and DOM is updated
-                updateAndEvaluateSets(); // ⭐ NEW: Evaluate after drop
-            });
+                // 如果是从手牌区拖过来的，也移除
+                else if (draggedCard.parentElement === playerHandDiv) {
+                     playerHandDiv.removeChild(draggedCard);
+                }
+
+
+                zone.appendChild(draggedCard); // 将拖动的卡牌添加到放置区
+                updateCardCount();
+                checkArrangementCompletion();
+            } else if (draggedCard) {
+                messageArea.textContent = `这个牌墩已满 (${maxCards}张)!`;
+                messageArea.className = 'error';
+            }
         });
-        // Initial call if cards might already be in sets (e.g., after AI arrange)
-        updateAndEvaluateSets();
+    });
+    
+    // 允许从牌墩拖回手牌区
+    playerHandDiv.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        playerHandDiv.classList.add('over');
+    });
+    playerHandDiv.addEventListener('dragleave', (event) => {
+        playerHandDiv.classList.remove('over');
+    });
+    playerHandDiv.addEventListener('drop', (event) => {
+        event.preventDefault();
+        playerHandDiv.classList.remove('over');
+        if (draggedCard && draggedCard.parentElement !== playerHandDiv) {
+            // 从原父节点移除
+            if (dropZones.includes(draggedCard.parentElement)) {
+                draggedCard.parentElement.removeChild(draggedCard);
+            }
+            playerHandDiv.appendChild(draggedCard);
+            updateCardCount();
+            checkArrangementCompletion();
+        }
+    });
+
+
+    function updateCardCount() {
+        cardCountSpan.textContent = playerHandDiv.children.length;
     }
 
-    function validateSetsState() {
-        const frontCardsCount = frontSetDiv.children.length;
-        const middleCardsCount = middleSetDiv.children.length;
-        const rearCardsCount = rearSetDiv.children.length;
-        const totalInSets = frontCardsCount + middleCardsCount + rearCardsCount;
-        const handCardsCount = playerHandDiv.children.length;
+    function checkArrangementCompletion() {
+        const frontCount = frontHandDiv.children.length;
+        const middleCount = middleHandDiv.children.length;
+        const backCount = backHandDiv.children.length;
 
-        if (totalInSets === 13 && handCardsCount === 0 &&
-            frontCardsCount === 3 && middleCardsCount === 5 && rearCardsCount === 5 &&
-            currentArrangement.isValid) { // ⭐ Check if arrangement is valid (not "倒水")
-            submitHandButton.disabled = false;
-            // Message is already handled by updateAndEvaluateSets
+        if (frontCount === 3 && middleCount === 5 && backCount === 5) {
+            submitArrangementButton.style.display = 'block';
+            messageArea.textContent = '牌已摆好，可以确认牌型了！';
+            messageArea.className = 'success';
         } else {
-            submitHandButton.disabled = true;
-            if (totalInSets + handCardsCount === 13 && handCardsCount > 0) {
-                 if (arrangementMessage.textContent.includes('倒水')) {
-                    // Keep the "倒水" message
-                } else {
-                    showMessage(arrangementMessage, '请将所有13张牌放入三道中。', false);
-                }
-            } else if (totalInSets === 13 && handCardsCount === 0 && (frontCardsCount !== 3 || middleCardsCount !== 5 || rearCardsCount !== 5)) {
-                showMessage(arrangementMessage, '请确保头道3张，中道5张，尾道5张。', false);
-            } else if (totalInSets === 13 && handCardsCount === 0 && !currentArrangement.isValid && !arrangementMessage.textContent.includes('评估失败')) {
-                // Message about "倒水" should already be there from updateAndEvaluateSets
-                // If not, it means evaluation hasn't run or there's another issue
-            }
+            submitArrangementButton.style.display = 'none';
         }
     }
+    
+    function handleSubmitArrangement() {
+        // 这里可以添加牌型比较和计分逻辑
+        // 目前只是一个占位符
+        const frontCards = Array.from(frontHandDiv.children).map(c => c.cardData.card_id);
+        const middleCards = Array.from(middleHandDiv.children).map(c => c.cardData.card_id);
+        const backCards = Array.from(backHandDiv.children).map(c => c.cardData.card_id);
 
-    // In fetchAndDisplayHand, after displaying cards:
-    async function fetchAndDisplayHand() {
-        // ... (dealButton disabled, clear old stuff) ...
-        try {
-            const data = await apiRequest('deal', {}, 'GET', true);
-            if (data.hand && data.image_base_path) {
-                currentHand = data.hand;
-                displayCards(currentHand, data.image_base_path, playerHandDiv);
-                enableDragAndDrop(); // This will also call updateAndEvaluateSets initially
-                autoArrangeButton.disabled = false;
-            } else { /* ... error handling ... */ }
-        } catch (error) { /* ... error handling ... */ }
-        finally { /* ... dealButton enabled ... */ }
+        console.log("头墩:", frontCards);
+        console.log("中墩:", middleCards);
+        console.log("尾墩:", backCards);
+
+        // 简单的规则校验示例 (实际十三水规则更复杂)
+        if (frontCards.length !== 3 || middleCards.length !== 5 || backCards.length !== 5) {
+             messageArea.textContent = '牌墩数量不正确！头墩3张，中墩5张，尾墩5张。';
+             messageArea.className = 'error';
+             return;
+        }
+
+        // 接下来可以发送这些牌墩到后端进行计分，或者在前端实现计分逻辑
+        // 例如：
+        // validateAndScore(frontCards, middleCards, backCards);
+
+        messageArea.textContent = '牌型已确认！(计分逻辑待实现)';
+        messageArea.className = 'success';
+        // 可以在这里禁用拖拽或发新牌
+        dealButton.disabled = true;
+        submitArrangementButton.disabled = true;
+
+        // 演示：3秒后可以重新发牌
+        setTimeout(() => {
+            dealButton.disabled = false;
+            submitArrangementButton.disabled = false;
+            submitArrangementButton.style.display = 'none';
+            messageArea.textContent = '可以重新发牌开始新的一局。';
+            messageArea.className = '';
+        }, 3000);
     }
 
-// ... (rest of script.js)
+    // 初始加载时可以尝试发一次牌
+    // fetchNewHand(); // 或者让用户点击按钮开始
+});
