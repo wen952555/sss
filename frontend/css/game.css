@@ -1,0 +1,16 @@
+/* game.css */
+.game-area { border-top: 2px solid #337ab7; padding-top: 20px; margin-top: 20px; }
+.hand-container { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; min-height: 110px; margin: 10px 0; padding: 10px; border: 1px dashed #aaa; border-radius: 4px; background-color: #f9f9f9; }
+.dun-cards { background-color: #eef; }
+.card { width: 70px; height: 100px; margin: 3px; border: 1px solid #999; border-radius: 5px; box-shadow: 1px 1px 3px rgba(0,0,0,0.2); background-color: white; display: flex; justify-content: center; align-items: center; cursor: grab; }
+.card img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; /* Prevent img from being drag target */ }
+.card.dragging { opacity: 0.5; border-style: dashed; } /* 拖拽中的卡牌样式 */
+.droppable-area.drag-over { background-color: #d0e0d0; border-style: solid; border-color: #4cae4c; } /* 拖拽悬停区域高亮 */
+
+.arrangement-duns { display: flex; justify-content: space-around; margin-bottom: 20px; }
+.dun-section { width: 30%; text-align: center; }
+.dun-type-display { font-size: 0.8em; color: #555; }
+.game-actions { text-align: center; margin-top: 15px; }
+.other-players-game-status { margin-top: 20px; padding: 10px; background: #f0f8ff; border-radius: 4px; }
+.game-result-area { margin-top: 30px; padding: 20px; background: #fff8dc; border: 1px solid #eee8aa; border-radius: 5px; }
+.game-result-area h2 { text-align: center; }
