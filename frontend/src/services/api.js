@@ -1,13 +1,14 @@
-const API_BASE_URL = 'https://9525.ip-ddns.com/api';
+// 使用环境变量配置API地址
+const API_BASE_URL = process.env.REACT_APP_API_BASE || 'https://9525.ip-ddns.com/api';
 
 export const recognizeCard = async (filename) => {
   try {
+    const formData = new FormData();
+    formData.append('filename', filename);
+
     const response = await fetch(`${API_BASE_URL}/recognize_card.php`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `filename=${encodeURIComponent(filename)}`
+      body: formData
     });
     
     if (!response.ok) {
@@ -17,8 +18,9 @@ export const recognizeCard = async (filename) => {
     return await response.json();
   } catch (error) {
     console.error('识别扑克牌出错:', error);
-    throw error;
+    return {
+      success: false,
+      message: '网络请求失败: ' + error.message
+    };
   }
 };
-
-// 其他游戏API函数可以在这里添加
