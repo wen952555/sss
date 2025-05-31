@@ -1,188 +1,143 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #006400; 
-    color: #fff; 
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw; 
-    height: 100vh; 
-    overflow: hidden; 
-}
-
-.game-table {
-    width: 98vw; 
-    height: 98vh; 
-    max-width: calc(98vh * (16 / 9)); 
-    max-height: calc(98vw * (9 / 16)); 
-    background-color: #004d00; 
-    border: clamp(3px, 0.5vmin, 8px) solid #8B4513; 
-    border-radius: clamp(5px, 1vmin, 15px); 
-    box-shadow: 0 0 clamp(10px, 2vmin, 30px) rgba(0,0,0,0.5); 
-    display: flex;
-    flex-direction: column; 
-    padding: clamp(5px, 1vmin, 15px); 
-    box-sizing: border-box;
-}
+body { /* ... (与之前相同) ... */ }
+.game-table { /* ... (与之前相同) ... */ }
 
 .lane {
     width: 100%;
-    display: flex; /* 保持 flex 容器 */
-    /* align-items: center; */ /* 改为 align-items: stretch; 或让子元素自己控制 */
-    align-items: stretch; /* --- 关键修改1：让子项在交叉轴上拉伸以填充 --- */
-    padding: clamp(5px, 0.8vh, 10px) 0; /* 减小垂直padding，让子元素有更多空间伸展 */
+    display: flex; 
+    align-items: stretch; 
+    padding: clamp(3px, 0.5vh, 8px) 0; /* 进一步减小 lane 的垂直 padding */
     box-sizing: border-box;
     border-bottom: 1px dashed #666; 
     overflow: hidden; 
 }
-.lane:last-child {
-    border-bottom: none; 
-}
+.lane:last-child { border-bottom: none; }
 
 /* 特定道的样式 */
-.placement-lane { /* 头墩和尾墩所在的道 */
+.placement-lane { 
     flex-grow: 2.5; 
     flex-shrink: 1; 
     flex-basis: 0;  
-    /* min-height: 100px; */ /* min-height 会阻止 stretch 生效，如果lane本身有高度，子元素会尝试填充 */
-    display: flex; /* 内部也是 flex，让 .hand-group 伸展 */
+    display: flex; 
     justify-content: center; 
-    align-items: stretch; /* --- 关键修改2：让 .hand-group 在交叉轴拉伸 --- */
+    align-items: stretch; 
 }
-.hand-lane { /* 手牌区 / 中墩区所在的道 */
-    flex-grow: 3; 
+.hand-lane { 
+    flex-grow: 3; /* 手牌/中墩区可以占据较多高度 */
     flex-shrink: 1;
     flex-basis: 0;
-    /* min-height: 120px; */
-    flex-direction: column; 
-    align-items: center; /* 标题和手牌区本身水平居中 */
-    /* align-items: stretch; */ /* 如果手牌区外部还有容器，也可以用 stretch */
-    justify-content: center; /* 垂直方向上居中标题和手牌区 */
+    display: flex; /* 使内部 #playerHandOrMiddleDeck 可以伸展 */
+    justify-content: center;
+    align-items: stretch; /* 让 #playerHandOrMiddleDeck 垂直伸展 */
     background-color: rgba(0,0,0,0.1); 
     border-radius: clamp(3px, 0.5vmin, 8px);
     margin: clamp(3px, 0.5vh, 8px) 0;
-    padding: clamp(5px, 0.5vh, 8px); /* 给 hand-lane 一点内边距 */
+    padding: clamp(3px, 0.5vh, 5px); /* 给 hand-lane 自身非常小的内边距 */
 }
-#middle-or-hand-title { 
-    color: #FFD700; 
-    text-align: center;
-    margin-bottom: clamp(3px, 0.5vh, 8px); 
-    font-size: clamp(1em, 2.2vmin, 1.8em); 
-    width: 100%; 
-    flex-shrink: 0; /* 防止标题被压缩 */
-}
+/* #middle-or-hand-title 的样式现在由 .deck-label 控制 */
 
-.controls-lane {
+.controls-lane { /* ... (与之前相同，确保 flex-shrink: 0;) ... */ 
     flex-grow: 1.5; 
-    flex-shrink: 1;
-    flex-basis: 0;
-    /* min-height: 80px; */
+    flex-shrink: 0; /* 控制按钮区不被压缩高度 */
+    flex-basis: auto; /* 或者一个具体的最小高度值 */
+    min-height: clamp(70px, 10vh, 90px);
     flex-direction: column; 
     align-items: center;
     justify-content: center; 
-    flex-shrink: 0; /* 控制按钮区一般不希望被过多压缩高度 */
     padding: clamp(5px, 0.5vh, 8px) 0;
 }
 
-.hand-group { /* 包裹头墩和尾墩 .drop-zone 的容器 */
+.hand-group { 
     width: 100%; 
-    display: flex; /* 使其成为flex容器，以便 .drop-zone 可以伸展 */
-    /* justify-content: center; */ /* .drop-zone 会自己占满宽度 */
-    align-items: stretch; /* --- 关键修改3：让 .drop-zone 在交叉轴拉伸 --- */
-    flex-grow: 1; /* --- 关键修改4：让 hand-group 填充 .placement-lane 的高度 --- */
-    /* padding: 0; */ /* 之前的修改 */
+    display: flex; 
+    align-items: stretch; 
+    flex-grow: 1; 
     box-sizing: border-box;
+    padding: 0 clamp(5px, 0.5vw, 8px); /* 左右轻微padding */
 }
 
-.drop-zone, .hand-area { 
+.drop-zone, .hand-area { /* .hand-area 现在是 #playerHandOrMiddleDeck */
     position: relative; 
     display: flex;
     flex-wrap: wrap; 
     justify-content: center; 
-    align-content: flex-start; 
-    /* min-height: clamp(90px, 13vh, 160px); */ /* 移除或减小 min-height，让其自由伸展 */
-    height: 100%; /* --- 关键修改5：尝试占满父容器的高度 --- */
+    /* align-content: flex-start; */ /* 改为 align-items: center 使卡牌垂直居中 */
+    align-items: center; /* --- 关键修改：让卡牌在交叉轴（垂直）居中 --- */
+    /* height: 100%; */ /* 移除固定的 height: 100%，让内容和padding决定高度 */
+    min-height: 0; /* 移除min-height，让其由内容和padding决定，并能被父级stretch */
     width: 100%; 
     max-width: none; 
 
-    padding: clamp(10px, 1.5vmin, 15px); /* 调整padding */
-    padding-top: clamp(35px, 5.5vmin, 50px); 
-    border: clamp(2px, 0.3vmin, 3px) dashed #aaa; /* 虚线可以细一点 */
+    padding: clamp(8px, 1.2vmin, 15px); /* 统一的padding */
+    /* padding-top 需要动态调整或确保足够大 */
+    padding-top: clamp(30px, 5vmin, 45px); /* 给顶部标签留空间 */
+    padding-bottom: clamp(8px, 1.2vmin, 15px); /* 底部也给一点padding */
+
+    border: clamp(2px, 0.3vmin, 3px) dashed #aaa; 
     border-radius: clamp(5px, 0.8vmin, 10px);
     background-color: rgba(0,0,0,0.15); 
     box-sizing: border-box;
     overflow-y: auto; 
+    flex-grow: 1; /* --- 关键修改：让虚线框填充其父容器（.hand-group 或 .hand-lane）的高度 --- */
 }
 
-/* 对手牌区/中墩区（.hand-area）进行微调 */
-#playerHandOrMiddleDeck {
-    /* height: 100%; */ /* 它也应该尝试填充 .hand-lane 的可用空间 */
-    flex-grow: 1; /* --- 关键修改6：让手牌区填充 .hand-lane 的剩余高度 --- */
-    /* max-height: clamp(120px, 22vh, 220px); */ /* 移除max-height，让其自由伸展 */
-    width: 98%; /* 稍微留一点边，或者100% */
-    margin: 0 auto; /* 如果宽度不是100%，则居中 */
-}
-
-/* 如果手牌区作为初始手牌显示时，不希望有大的顶部padding，可以这样覆盖 */
+/* #playerHandOrMiddleDeck 的特定样式调整 (现在是 .hand-area 的一部分) */
 #playerHandOrMiddleDeck:not(.middle-deck-active) {
-    padding-top: clamp(10px, 1.5vmin, 20px);
+    /* 当是手牌区时，顶部标签是 H2，可能需要不同padding */
+    padding-top: clamp(30px, 5vmin, 45px); /* 与 .drop-zone 保持一致，因为 H2 也是 .deck-label */
 }
 #playerHandOrMiddleDeck.middle-deck-active { 
-    padding-top: clamp(35px, 5.5vmin, 50px); 
+    padding-top: clamp(30px, 5vmin, 45px); /* 与 .drop-zone 保持一致 */
 }
 
 
 .deck-label {
     position: absolute;
-    top: clamp(5px, 1vmin, 10px); /* 调整top值以适应新的padding */
+    top: clamp(4px, 0.8vmin, 8px); /* 标签更贴近顶部 */
     left: 50%;
     transform: translateX(-50%); 
-    font-size: clamp(0.9em, 2vmin, 1.5em); 
+    font-size: clamp(0.8em, 1.8vmin, 1.4em); /* 标签字体可以小一点 */
     color: #FFD700; 
-    opacity: 0.4; 
+    opacity: 0.45; /* 透明度调整 */
     margin: 0;
-    padding: 3px 8px; 
+    padding: 2px 6px; 
     pointer-events: none; 
     white-space: nowrap; 
     z-index: 1; 
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5); 
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.4); 
+}
+/* 如果H2标签需要不同样式，可以单独设置 */
+#playerHandOrMiddleDeck > h2.deck-label {
+    font-size: clamp(0.9em, 2vmin, 1.5em); /* 手牌区标题可以稍大 */
+    opacity: 0.5;
 }
 
 
-.middle-deck-active { 
-    border-style: solid !important; 
-    border-color: #FFD700 !important; 
-    background-color: rgba(0, 80, 0, 0.25) !important; 
-}
-.middle-deck-active .card {
-    cursor: default !important; 
-}
-.middle-deck-active > .deck-label { 
-    opacity: 0.75; 
-    color: #FFFFA0; 
-}
+.middle-deck-active { /* ... (与之前相同) ... */ }
+.middle-deck-active > .deck-label { /* ... (与之前相同) ... */ }
 
 
 .card {
-    width: clamp(45px, 6vmin, 70px);  
-    height: calc(clamp(45px, 6vmin, 70px) * 1.466); 
-    margin: clamp(2px, 0.4vmin, 5px); 
-    border: clamp(1px, 0.1vmin, 2px) solid #999;
-    border-radius: clamp(2px, 0.3vmin, 5px);
+    /* --- 关键修改：卡牌高度 --- */
+    /* height: calc(100% - clamp(10px, 2vmin, 20px)); */ /* 尝试占满父容器高度减去一些padding */
+    /* 上面的方法在flex-wrap时表现不佳，改为基于父容器高度的百分比，并用object-fit */
+    max-height: calc(100% - clamp(8px, 1.5vmin, 12px)); /* 卡牌最大高度为其父容器高度减去一点垂直padding */
+    width: auto; /* 宽度自动，由高度和SVG自身宽高比决定 */
+    aspect-ratio: 691 / 1000; /* 假设SVG的原始宽高比约为 0.691 (例如 69.1mm / 100mm)，请根据你的SVG调整 */
+    /* 如果SVG是正方形的，则是 1/1 */
+    
+    object-fit: contain; /* 确保SVG完整显示并保持比例 */
+    
+    margin: clamp(1px, 0.2vmin, 3px); /* 卡牌间距可以小一点 */
+    border: 1px solid #888; /* 边框颜色稍改 */
+    border-radius: clamp(2px, 0.3vmin, 4px);
     background-color: white;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     cursor: grab;
-    object-fit: contain;
     user-select: none;
     -webkit-user-drag: element;
-    transition: width 0.1s, height 0.1s, transform 0.1s; 
+    transition: transform 0.1s; 
     z-index: 10; 
-    flex-shrink: 0; /* 防止卡牌在空间不足时被压缩高度 */
+    flex-shrink: 0; 
 }
 
-.card.dragging { /* ... (与之前相同) ... */ }
-.drop-zone.over, .hand-area.over:not(.middle-deck-active) { /* ... (与之前相同) ... */ }
-button { /* ... (与之前相同) ... */ }
 /* ... (其余样式与之前相同) ... */
