@@ -6,52 +6,49 @@
     <title>十三水 - 房间</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/room.css">
-    <link rel="stylesheet" href="css/game.css"> <!-- 游戏界面样式 -->
+    <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
     <header>
-        <h1 id="roomTitle">房间: 等待加载...</h1>
+        <h1 id="roomTitle">房间: 加载中...</h1>
         <div class="user-info">
             <span id="currentUserNickname">玩家</span>
-            <button id="leaveRoomButton">离开房间</button>
+            <button id="leaveRoomButton">离开/返回大厅</button> <!-- 文本根据情况改变 -->
         </div>
     </header>
 
     <main class="room-game-container">
+        <!-- 试玩房间的特殊信息和后台匹配按钮 -->
+        <div id="trialRoomInfoPanel" class="trial-info-panel" style="display:none;">
+            <p><strong>您当前在AI试玩房。</strong></p>
+            <button id="trialToggleMatchmakingButton">开始后台匹配</button>
+            <span id="trialMatchmakingStatus" style="display:none;">后台匹配中...</span>
+        </div>
+
+        <!-- 真实房间信息 (试玩时可能隐藏或简化) -->
         <div id="roomInfoPanel">
             <p>房主: <span id="roomOwner"></span></p>
-            <p>房间号: <span id="roomCodeDisplay"></span> (邀请好友加入)</p>
+            <p>房间号: <span id="roomCodeDisplay"></span></p>
             <p>当前人数: <span id="currentPlayerCount">0</span> / <span id="maxPlayerCount">0</span></p>
             <div id="roomMessageArea" class="message-area"></div>
         </div>
 
-        <!-- 玩家座位区 -->
+        <!-- 玩家座位区 (试玩时只显示自己和AI) -->
         <div id="playerSeatsArea" class="player-seats">
-            <!-- 座位将由JS动态生成 -->
-            <!-- 示例座位结构:
-            <div class="player-seat" data-seat-number="1">
-                <div class="player-avatar"></div>
-                <div class="player-name">玩家1昵称</div>
-                <div class="player-status">准备/未准备</div>
-                <div class="player-points">积分: XXX</div>
-            </div>
-             -->
+            <!-- 座位JS动态生成 -->
         </div>
 
-        <!-- 游戏控制区 (房间内等待时) -->
-        <div id="roomControlsPanel" class="room-controls">
+        <!-- 游戏控制区 (真实房间等待时) -->
+        <div id="roomControlsPanel" class="room-controls" style="display:none;">
             <button id="playerReadyButton">准备</button>
             <button id="startGameButton" style="display:none;">开始游戏 (房主)</button>
         </div>
 
-        <!-- 游戏进行区 (游戏开始后显示) -->
+        <!-- 游戏进行区 -->
         <div id="gameArea" class="game-area" style="display:none;">
             <h2>我的手牌 (13张)</h2>
-            <div id="myHandDisplay" class="hand-container droppable-area" data-area-name="hand">
-                <!-- 初始手牌 -->
-            </div>
-
-            <h3>摆牌区 (拖拽到下方)</h3>
+            <div id="myHandDisplay" class="hand-container droppable-area" data-area-name="hand"></div>
+            <h3>摆牌区</h3>
             <div class="arrangement-duns">
                 <div class="dun-section">
                     <h4>头墩 (3张) <span id="headDunType" class="dun-type-display"></span></h4>
@@ -70,33 +67,36 @@
             <div class="game-actions">
                 <button id="aiArrangeButton">AI辅助摆牌</button>
                 <button id="submitArrangementButton">提交摆牌</button>
-                <!-- <button id="ai托管Button">AI托管</button> -->
             </div>
             <div id="gameMessageArea" class="message-area"></div>
-
-            <!-- 其他玩家状态/摆牌预览区 (简化) -->
-            <div id="otherPlayersGameStatus" class="other-players-game-status">
-                <h4>其他玩家状态:</h4>
-                <!-- JS动态填充 -->
-            </div>
+            <div id="otherPlayersGameStatus" class="other-players-game-status"></div>
         </div>
 
-        <!-- 游戏结算区 (游戏结束后显示) -->
+        <!-- 游戏结算区 -->
         <div id="gameResultArea" class="game-result-area" style="display:none;">
             <h2>本局结算</h2>
-            <div id="settlementDetails">
-                <!-- JS动态填充详细结算信息 -->
-            </div>
-            <button id="nextRoundButton" style="display:none;">再来一局 (房主)</button>
+            <div id="settlementDetails"></div>
+            <button id="nextRoundButton" style="display:none;">再来一局 (房主/试玩)</button>
             <button id="backToLobbyButton">返回大厅</button>
+        </div>
+
+        <!-- 匹配成功弹窗 -->
+        <div id="matchSuccessModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <h3>匹配成功！</h3>
+                <p>已为您找到对局，房间号: <strong id="matchedRoomCode"></strong></p>
+                <p>将在 <span id="matchRedirectTimer">5</span> 秒后自动跳转...</p>
+                <button id="joinMatchedGameNowButton">立即加入</button>
+                <button id="cancelMatchRedirectButton">取消跳转 (返回大厅)</button>
+            </div>
         </div>
 
     </main>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
-    <script src="js/cardUtils.js"></script> <!-- 前端牌型显示/简单判断 -->
-    <script src="js/room.js"></script>
-    <script src="js/game.js"></script> <!-- game.js 会被 room.js 在适当时候调用或交互 -->
+    <script src="js/cardUtils.js"></script>
+    <script src="js/room.js"></script> <!-- room.js 现在会处理试玩和真实房间的初始化 -->
+    <script src="js/game.js"></script>
 </body>
 </html>
