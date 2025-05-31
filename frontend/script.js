@@ -1,81 +1,125 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const dealButton = document.getElementById('dealButton');
-    const playerHandDiv = document.getElementById('playerHand');
-    const loadingDiv = document.getElementById('loading');
-    
-    // ⭐ 后端API的URL
-    // 确保这里的路径与你 Serv00 部署的 PHP 文件路径一致
-    const backendApiUrl = 'http://9525.ip-ddns.com/thirteen_water_api/api.php?action=deal'; 
-    // 如果你的Serv00支持HTTPS并且你配置了，那么这里应该用 https
-    // const backendApiUrl = 'https://9525.ip-ddns.com/thirteen_water_api/api.php?action=deal';
+// frontend/script.js (部分修改和新增)
 
-    // 显示配置信息
-    document.getElementById('backendUrlDisplay').textContent = backendApiUrl;
+// ... (之前的JS代码) ...
 
+    let currentArrangement = { front: null, middle: null, rear: null, isValid: false };
 
-    dealButton.addEventListener('click', fetchAndDisplayHand);
+    async function updateAndEvaluateSets() {
+        const frontSetCards = getCardsFromDiv(frontSetDiv);
+        const middleSetCards = getCardsFromDiv(middleSetDiv);
+        const rearSetCards = getCardsFromDiv(rearSetDiv);
 
-    async function fetchAndDisplayHand() {
-        dealButton.disabled = true;
-        loadingDiv.style.display = 'block';
-        playerHandDiv.innerHTML = ''; // 清空旧牌
+        document.getElementById('frontSetType').textContent = `(${frontSetCards.length}张)`;
+        document.getElementById('middleSetType').textContent = `(${middleSetCards.length}张)`;
+        document.getElementById('rearSetType').textContent = `(${rearSetCards.length}张)`;
 
-        try {
-            const response = await fetch(backendApiUrl);
-            if (!response.ok) {
-                let errorMsg = `HTTP error! status: ${response.status}`;
-                try {
-                    const errData = await response.json();
-                    errorMsg += ` - ${errData.error || 'Unknown server error'}`;
-                } catch (e) { /* ignore if response not json */ }
-                throw new Error(errorMsg);
+        if (frontSetCards.length === 3 && middleSetCards.length === 5 && rearSetCards.length === 5) {
+            try {
+                const data = await apiRequest('evaluate_player_sets', {
+                    front: frontSetCards,
+                    middle: middleSetCards,
+                    rear: rearSetCards
+                }, 'POST', true);
+
+                if (data.success) {
+                    currentArrangement.front = data.front_set;
+                    currentArrangement.middle = data.middle_set;
+                    currentArrangement.rear = data.rear_set;
+                    currentArrangement.isValid = data.is_valid;
+
+                    document.getElementById('frontSetType').textContent = data.front_set.name;
+                    document.getElementById('middleSetType').textContent = data.middle_set.name;
+                    document.getElementById('rearSetType').textContent = data.rear_set.name;
+                    
+                    showMessage(arrangementMessage, data.message, data.is_valid);
+                } else {
+                    showMessage(arrangementMessage, data.error || '评估失败', false);
+                    currentArrangement.isValid = false;
+                }
+            } catch (error) {
+                showMessage(arrangementMessage, `评估请求错误: ${error.message}`, false);
+                currentArrangement.isValid = false;
             }
-
-            const data = await response.json();
-
-            if (data.error) {
-                throw new Error(`API Error: ${data.error}`);
+        } else {
+            currentArrangement.isValid = false; // Not a full arrangement
+             if (frontSetCards.length > 0 || middleSetCards.length > 0 || rearSetCards.length > 0) {
+                // Only clear message if user actually started arranging
+                showMessage(arrangementMessage, '请正确摆放三道牌 (3-5-5)。', false);
             }
+        }
+        validateSetsState(); // Re-validate submit button state
+    }
 
-            if (data.hand && data.image_base_path) {
-                displayCards(data.hand, data.image_base_path);
-                document.getElementById('imageBasePathDisplay').textContent = data.image_base_path; // 显示图片路径
-            } else {
-                throw new Error('Invalid data structure from API.');
+    // Modify enableDragAndDrop to call updateAndEvaluateSets on drop
+    function enableDragAndDrop() {
+        // ... (dragstart, dragend, dragover, dragleave are the same) ...
+        droppableAreas.forEach(area => {
+            // ... (dragover, dragleave are the same) ...
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('drag-over');
+                if (draggedCard) {
+                    const maxCards = parseInt(area.dataset.maxCards) || Infinity;
+                    if (area.children.length < maxCards || (area.id === 'playerHand' && !area.contains(draggedCard))) {
+                        if (draggedCard.parentElement !== area) {
+                             if (area.id === 'playerHand' || area.classList.contains('set-area')) {
+                                area.appendChild(draggedCard);
+                            }
+                        }
+                    } else if (area.children.length >= maxCards && area.id !== 'playerHand') {
+                         showMessage(arrangementMessage, `${area.id === 'frontSet' ? '头道' : area.id === 'middleSet' ? '中道' : '尾道'} 已满!`, false);
+                    }
+                }
+                // Call evaluation after a drop occurs and DOM is updated
+                updateAndEvaluateSets(); // ⭐ NEW: Evaluate after drop
+            });
+        });
+        // Initial call if cards might already be in sets (e.g., after AI arrange)
+        updateAndEvaluateSets();
+    }
+
+    function validateSetsState() {
+        const frontCardsCount = frontSetDiv.children.length;
+        const middleCardsCount = middleSetDiv.children.length;
+        const rearCardsCount = rearSetDiv.children.length;
+        const totalInSets = frontCardsCount + middleCardsCount + rearCardsCount;
+        const handCardsCount = playerHandDiv.children.length;
+
+        if (totalInSets === 13 && handCardsCount === 0 &&
+            frontCardsCount === 3 && middleCardsCount === 5 && rearCardsCount === 5 &&
+            currentArrangement.isValid) { // ⭐ Check if arrangement is valid (not "倒水")
+            submitHandButton.disabled = false;
+            // Message is already handled by updateAndEvaluateSets
+        } else {
+            submitHandButton.disabled = true;
+            if (totalInSets + handCardsCount === 13 && handCardsCount > 0) {
+                 if (arrangementMessage.textContent.includes('倒水')) {
+                    // Keep the "倒水" message
+                } else {
+                    showMessage(arrangementMessage, '请将所有13张牌放入三道中。', false);
+                }
+            } else if (totalInSets === 13 && handCardsCount === 0 && (frontCardsCount !== 3 || middleCardsCount !== 5 || rearCardsCount !== 5)) {
+                showMessage(arrangementMessage, '请确保头道3张，中道5张，尾道5张。', false);
+            } else if (totalInSets === 13 && handCardsCount === 0 && !currentArrangement.isValid && !arrangementMessage.textContent.includes('评估失败')) {
+                // Message about "倒水" should already be there from updateAndEvaluateSets
+                // If not, it means evaluation hasn't run or there's another issue
             }
-
-        } catch (error) {
-            console.error('Error fetching hand:', error);
-            playerHandDiv.innerHTML = `<p style="color: red;">加载手牌失败: ${error.message}</p><p>请检查后端API是否正确运行，CORS设置是否正确，以及网络连接。</p>`;
-        } finally {
-            dealButton.disabled = false;
-            loadingDiv.style.display = 'none';
         }
     }
 
-    function displayCards(hand, imageBasePath) {
-        hand.forEach(card => {
-            const cardDiv = document.createElement('div');
-            cardDiv.classList.add('card');
-
-            const img = document.createElement('img');
-            // 拼接完整的图片URL (相对于前端根目录)
-            // 例如: images/cards/ace_of_spades.svg
-            const imageUrl = `${imageBasePath}${card.image}`;
-            img.src = imageUrl;
-            img.alt = `${card.value} of ${card.suit}`;
-            
-            // 处理图片加载失败的情况
-            img.onerror = function() {
-                cardDiv.innerHTML = `<span class="missing-image-text">${card.value.charAt(0).toUpperCase()}${card.suit.charAt(0).toUpperCase()}<br>(no img)</span>`;
-                console.warn(`Image not found: ${imageUrl}`);
-            };
-
-            cardDiv.appendChild(img);
-            playerHandDiv.appendChild(cardDiv);
-        });
+    // In fetchAndDisplayHand, after displaying cards:
+    async function fetchAndDisplayHand() {
+        // ... (dealButton disabled, clear old stuff) ...
+        try {
+            const data = await apiRequest('deal', {}, 'GET', true);
+            if (data.hand && data.image_base_path) {
+                currentHand = data.hand;
+                displayCards(currentHand, data.image_base_path, playerHandDiv);
+                enableDragAndDrop(); // This will also call updateAndEvaluateSets initially
+                autoArrangeButton.disabled = false;
+            } else { /* ... error handling ... */ }
+        } catch (error) { /* ... error handling ... */ }
+        finally { /* ... dealButton enabled ... */ }
     }
 
-    // 初始加载一次 (可选)
-    // fetchAndDisplayHand(); 
-});
+// ... (rest of script.js)
