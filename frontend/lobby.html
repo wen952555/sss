@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>十三水 - 游戏大厅</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/lobby.css">
+    <link rel="stylesheet" href="css/lobby.css"> <!-- lobby.css 也需要相应简化 -->
 </head>
 <body>
     <header>
-        <h1>十三水大厅</h1>
+        <h1>十三水自动匹配</h1> <!-- 或者你之前的 "十三水大厅" -->
         <div class="user-info">
             欢迎, <span id="userNickname">玩家</span>! (积分: <span id="userPoints">0</span>)
             <button id="logoutButton">登出</button>
@@ -22,14 +22,15 @@
             <button id="enterTrialRoomButton" class="action-button secondary">进入试玩房 (VS AI)</button>
         </section>
 
+        <!-- 这个 section 包裹了取消按钮和状态显示 -->
         <section id="matchmakingSection" style="display:none;">
             <button id="cancelMatchmakingButton" class="action-button danger">取消匹配</button>
-            <div id="matchmakingStatusArea" class="message-area">
-                正在匹配中，请稍候... (已等待 <span id="matchmakingTime">0</span> 秒)
+            <div id="matchmakingStatusArea" class="message-area"> <!-- matchmakingStatusArea 是一个 div -->
+                正在匹配中，请稍候... (已等待 <span id="matchmakingTime">0</span> 秒) <!-- matchmakingTime 是一个 span -->
             </div>
         </section>
 
-        <div id="lobbyMessage" class="message-area"></div>
+        <div id="lobbyMessage" class="message-area"></div> <!-- 用于显示一般错误或成功消息 -->
 
     </main>
 
