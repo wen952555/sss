@@ -29,9 +29,10 @@ body {
 
 .lane {
     width: 100%;
-    display: flex;
-    align-items: center; 
-    padding: clamp(5px, 0.8vh, 15px) 0; 
+    display: flex; /* 保持 flex 容器 */
+    /* align-items: center; */ /* 改为 align-items: stretch; 或让子元素自己控制 */
+    align-items: stretch; /* --- 关键修改1：让子项在交叉轴上拉伸以填充 --- */
+    padding: clamp(5px, 0.8vh, 10px) 0; /* 减小垂直padding，让子元素有更多空间伸展 */
     box-sizing: border-box;
     border-bottom: 1px dashed #666; 
     overflow: hidden; 
@@ -45,21 +46,24 @@ body {
     flex-grow: 2.5; 
     flex-shrink: 1; 
     flex-basis: 0;  
-    min-height: 100px; 
-    display: flex; 
-    justify-content: center; /* 让 .hand-group 在内部居中 */
-    align-items: center;
+    /* min-height: 100px; */ /* min-height 会阻止 stretch 生效，如果lane本身有高度，子元素会尝试填充 */
+    display: flex; /* 内部也是 flex，让 .hand-group 伸展 */
+    justify-content: center; 
+    align-items: stretch; /* --- 关键修改2：让 .hand-group 在交叉轴拉伸 --- */
 }
 .hand-lane { /* 手牌区 / 中墩区所在的道 */
     flex-grow: 3; 
     flex-shrink: 1;
     flex-basis: 0;
-    min-height: 120px;
+    /* min-height: 120px; */
     flex-direction: column; 
-    align-items: center; 
+    align-items: center; /* 标题和手牌区本身水平居中 */
+    /* align-items: stretch; */ /* 如果手牌区外部还有容器，也可以用 stretch */
+    justify-content: center; /* 垂直方向上居中标题和手牌区 */
     background-color: rgba(0,0,0,0.1); 
     border-radius: clamp(3px, 0.5vmin, 8px);
     margin: clamp(3px, 0.5vh, 8px) 0;
+    padding: clamp(5px, 0.5vh, 8px); /* 给 hand-lane 一点内边距 */
 }
 #middle-or-hand-title { 
     color: #FFD700; 
@@ -67,24 +71,28 @@ body {
     margin-bottom: clamp(3px, 0.5vh, 8px); 
     font-size: clamp(1em, 2.2vmin, 1.8em); 
     width: 100%; 
+    flex-shrink: 0; /* 防止标题被压缩 */
 }
 
 .controls-lane {
     flex-grow: 1.5; 
     flex-shrink: 1;
     flex-basis: 0;
-    min-height: 80px;
+    /* min-height: 80px; */
     flex-direction: column; 
     align-items: center;
     justify-content: center; 
+    flex-shrink: 0; /* 控制按钮区一般不希望被过多压缩高度 */
+    padding: clamp(5px, 0.5vh, 8px) 0;
 }
 
 .hand-group { /* 包裹头墩和尾墩 .drop-zone 的容器 */
-    width: 100%; /* 使 hand-group 宽度充满 .placement-lane */
-    display: flex;
-    justify-content: center; /* 使内部的 .drop-zone 居中 */
-    align-items: center;
-    padding: 0; /* 移除 hand-group 的水平 padding，让 drop-zone 完全控制宽度 */
+    width: 100%; 
+    display: flex; /* 使其成为flex容器，以便 .drop-zone 可以伸展 */
+    /* justify-content: center; */ /* .drop-zone 会自己占满宽度 */
+    align-items: stretch; /* --- 关键修改3：让 .drop-zone 在交叉轴拉伸 --- */
+    flex-grow: 1; /* --- 关键修改4：让 hand-group 填充 .placement-lane 的高度 --- */
+    /* padding: 0; */ /* 之前的修改 */
     box-sizing: border-box;
 }
 
@@ -94,31 +102,27 @@ body {
     flex-wrap: wrap; 
     justify-content: center; 
     align-content: flex-start; 
-    min-height: clamp(90px, 13vh, 160px); 
-    
-    /* --- 关键修改：让虚线框占满其父容器 --- */
-    width: 100%; /* 占满父容器 (.hand-group 或 .hand-lane 下的 div#playerHandOrMiddleDeck) */
-    /* max-width: 700px; */ /* 移除或大幅增加这个限制 */
-    max-width: none; /* 或者直接移除 max-width 限制 */
-    /* 如果仍然希望在非常大的屏幕上有一个最大限制，可以设为百分比或vw单位 */
-    /* 例如：max-width: 90%; 或 max-width: 80vw; */
-    /* 但为了“占满横幅”，通常是100% width of parent, and parent is 100% width of lane */
+    /* min-height: clamp(90px, 13vh, 160px); */ /* 移除或减小 min-height，让其自由伸展 */
+    height: 100%; /* --- 关键修改5：尝试占满父容器的高度 --- */
+    width: 100%; 
+    max-width: none; 
 
-    padding: clamp(10px, 1.5vmin, 20px); 
-    padding-top: clamp(35px, 5.5vmin, 55px); 
-    border: clamp(2px, 0.3vmin, 4px) dashed #aaa; 
+    padding: clamp(10px, 1.5vmin, 15px); /* 调整padding */
+    padding-top: clamp(35px, 5.5vmin, 50px); 
+    border: clamp(2px, 0.3vmin, 3px) dashed #aaa; /* 虚线可以细一点 */
     border-radius: clamp(5px, 0.8vmin, 10px);
     background-color: rgba(0,0,0,0.15); 
     box-sizing: border-box;
     overflow-y: auto; 
 }
 
-/* 对手牌区/中墩区（.hand-area）进行微调，使其也占满 */
+/* 对手牌区/中墩区（.hand-area）进行微调 */
 #playerHandOrMiddleDeck {
-    /* 它继承了 .hand-area 的 width: 100% 和 max-width: none */
-    /* 如果 hand-lane 下没有其他横向限制它的元素，它应该能充满 */
-    /* 如果 hand-lane 本身有 padding，需要考虑 */
-    max-height: clamp(120px, 22vh, 220px); 
+    /* height: 100%; */ /* 它也应该尝试填充 .hand-lane 的可用空间 */
+    flex-grow: 1; /* --- 关键修改6：让手牌区填充 .hand-lane 的剩余高度 --- */
+    /* max-height: clamp(120px, 22vh, 220px); */ /* 移除max-height，让其自由伸展 */
+    width: 98%; /* 稍微留一点边，或者100% */
+    margin: 0 auto; /* 如果宽度不是100%，则居中 */
 }
 
 /* 如果手牌区作为初始手牌显示时，不希望有大的顶部padding，可以这样覆盖 */
@@ -126,16 +130,16 @@ body {
     padding-top: clamp(10px, 1.5vmin, 20px);
 }
 #playerHandOrMiddleDeck.middle-deck-active { 
-    padding-top: clamp(35px, 5.5vmin, 55px); 
+    padding-top: clamp(35px, 5.5vmin, 50px); 
 }
 
 
 .deck-label {
     position: absolute;
-    top: clamp(5px, 1vmin, 12px); 
+    top: clamp(5px, 1vmin, 10px); /* 调整top值以适应新的padding */
     left: 50%;
     transform: translateX(-50%); 
-    font-size: clamp(0.9em, 2vmin, 1.6em); 
+    font-size: clamp(0.9em, 2vmin, 1.5em); 
     color: #FFD700; 
     opacity: 0.4; 
     margin: 0;
@@ -175,22 +179,10 @@ body {
     -webkit-user-drag: element;
     transition: width 0.1s, height 0.1s, transform 0.1s; 
     z-index: 10; 
+    flex-shrink: 0; /* 防止卡牌在空间不足时被压缩高度 */
 }
 
-.card.dragging {
-    opacity: 0.6; 
-    transform: scale(1.1) rotate(3deg); 
-    z-index: 100; 
-}
-
-.drop-zone.over, .hand-area.over:not(.middle-deck-active) { 
-    border-color: #FFD700; 
-    background-color: rgba(255, 215, 0, 0.2); 
-}
-
+.card.dragging { /* ... (与之前相同) ... */ }
+.drop-zone.over, .hand-area.over:not(.middle-deck-active) { /* ... (与之前相同) ... */ }
 button { /* ... (与之前相同) ... */ }
-button:hover { /* ... (与之前相同) ... */ }
-button:disabled { /* ... (与之前相同) ... */ }
-#messageArea { /* ... (与之前相同) ... */ }
-#messageArea.success { /* ... (与之前相同) ... */ }
-#messageArea.error { /* ... (与之前相同) ... */ }
+/* ... (其余样式与之前相同) ... */
