@@ -1,31 +1,26 @@
 // frontend/js/scoreCalculator.js
-import { HAND_TYPES } from './constants.js';
-import { compareSingleHands, checkOverallSpecialHand } from './handEvaluator.js'; // 需要引入比较函数
+import { HAND_TYPES, SHOOTING_BENCHMARK, DUN_IDS } from './constants.js'; // 引入 SHOOTING_BENCHMARK
+import { compareSingleHands, checkOverallSpecialHand } from './handEvaluator.js';
 
-// 计算单局得分
-// playerHandResults: { front: evaluateHandResult, middle: evaluateHandResult, back: evaluateHandResult }
-// opponentHandResults: (可选) 对手的牌墩结果，用于打枪等比较
-// allPlayerCards: 玩家的13张原始手牌数据，用于判断整手特殊牌型
 export function calculateRoundScore(playerHandResults, allPlayerCards, opponentHandResults = null) {
     let score = 0;
     let messageLog = [];
     let isDaoshui = false;
+    let finalOverallHandType = null; // 用于记录最终生效的整体特殊牌型
 
     const { front: pFront, middle: pMiddle, back: pBack } = playerHandResults;
 
-    // 0. 检查是否有整手牌的特殊牌型 (一条龙等)
-    const overallSpecial = checkOverallSpecialHand(allPlayerCards, pFront, pMiddle, pBack);
-    if (overallSpecial && overallSpecial.isOverallSpecial) {
-        messageLog.push(`特殊牌型: ${overallSpecial.name}!`);
-        score += overallSpecial.score;
-        // 通常特殊牌型直接结算，不进行后续墩位比较和计分
-        // (但不同规则处理方式不同，这里我们简单地加上分数)
-        // 如果需要覆盖其他分数，可以在这里返回
-        // return { score, messageLog, isDaoshui: false, finalOverallHandType: overallSpecial };
+    // 0. 检查是否有整手牌的特殊牌型
+    finalOverallHandType = checkOverallSpecialHand(allPlayerCards, pFront, pMiddle, pBack);
+    if (finalOverallHandType && finalOverallHandType.isOverallSpecial) {
+        messageLog.push(`恭喜! 特殊牌型: ${finalOverallHandType.name}!`);
+        score = finalOverallHandType.score; // 特殊牌型直接计分
+        // 一般特殊牌型会覆盖墩位比较和打枪，直接结算
+        messageLog.push(`特殊牌型得分: ${score}`);
+        return { score, messageLog, isDaoshui: false, finalOverallHandType };
     }
 
-
-    // 1. 检查倒水 (自己的牌墩顺序)
+    // 1. 检查倒水
     if (compareSingleHands(pFront, pMiddle) > 0) {
         isDaoshui = true;
         messageLog.push("倒水：头墩大于中墩!");
@@ -35,76 +30,68 @@ export function calculateRoundScore(playerHandResults, allPlayerCards, opponentH
     }
 
     if (isDaoshui) {
-        score = HAND_TYPES.DAO_SHUI.score; // 倒水罚固定分
+        score = HAND_TYPES.DAO_SHUI.score;
         messageLog.push(`倒水罚分: ${score}`);
-        return { score, messageLog, isDaoshui, finalOverallHandType: overallSpecial };
+        return { score, messageLog, isDaoshui, finalOverallHandType };
     }
 
-    // 2. 计算各墩基础分 (如果不是因为整手特殊牌型而提前结束)
-    // 确保取的是牌型对象中的score
-    score += pFront.type.score || 0;
-    score += pMiddle.type.score || 0;
-    score += pBack.type.score || 0;
-    messageLog.push(`头墩 (${pFront.type.name}): ${pFront.type.score || 0}分`);
-    messageLog.push(`中墩 (${pMiddle.type.name}): ${pMiddle.type.score || 0}分`);
-    messageLog.push(`尾墩 (${pBack.type.name}): ${pBack.type.score || 0}分`);
+    // 2. 计算各墩基础分 (如果不是整体特殊牌型或倒水)
+    let dunScores = {
+        front: pFront.type.score || 0,
+        middle: pMiddle.type.score || 0,
+        back: pBack.type.score || 0,
+    };
+    score = dunScores.front + dunScores.middle + dunScores.back;
+
+    messageLog.push(`头墩 (${pFront.type.name}): ${dunScores.front}分`);
+    messageLog.push(`中墩 (${pMiddle.type.name}): ${dunScores.middle}分`);
+    messageLog.push(`尾墩 (${pBack.type.name}): ${dunScores.back}分`);
+    messageLog.push(`牌墩基础总分: ${score}`);
+
+    // 3. 模拟打枪 (非常简化版：三墩都比预设基准大)
+    // 实际打枪是和对手比，这里仅作演示
+    // 并且实际打枪是赢了对手的墩位分之后再翻倍，而不是总分翻倍
+    // 这里为了简化，我们先判断是否三墩都“赢了空气”（即牌型分都>0或比某个基准大）
+    
+    let playerWinsFront = compareSingleHands(pFront, {type: HAND_TYPES[Object.keys(HAND_TYPES).find(k => HAND_TYPES[k].value === SHOOTING_BENCHMARK[DUN_IDS.FRONT])], mainValue: 0 /*dummy*/ }) > 0;
+    let playerWinsMiddle = compareSingleHands(pMiddle, {type: HAND_TYPES[Object.keys(HAND_TYPES).find(k => HAND_TYPES[k].value === SHOOTING_BENCHMARK[DUN_IDS.MIDDLE])], mainValue: 0 }) > 0;
+    let playerWinsBack = compareSingleHands(pBack, {type: HAND_TYPES[Object.keys(HAND_TYPES).find(k => HAND_TYPES[k].value === SHOOTING_BENCHMARK[DUN_IDS.BACK])], mainValue: 0 }) > 0;
+
+    // 另一种简化打枪：如果三墩牌型分数都大于0 (即不是乌龙或0分牌型)
+    // playerWinsFront = dunScores.front > 0;
+    // playerWinsMiddle = dunScores.middle > 0;
+    // playerWinsBack = dunScores.back > 0;
 
 
-    // 3. 与对手比较，计算打枪 (目前简化，假设单人游戏或与一个标准对手)
-    // 在实际多人游戏中，这里会循环对比每个对手
-    if (opponentHandResults) { // 如果有对手数据
+    if (opponentHandResults) { // 如果有对手数据，按真实比较
         const { front: oFront, middle: oMiddle, back: oBack } = opponentHandResults;
-        let winCount = 0;
-        let loseCount = 0;
-        let drawCount = 0;
-        let roundVsOpponentScore = 0;
-
-        const compareAndScoreDun = (playerDun, opponentDun, dunName) => {
-            const comparison = compareSingleHands(playerDun, opponentDun);
-            let dunScore = 0;
-            if (comparison > 0) { // 玩家胜
-                dunScore = playerDun.type.score || 1; // 至少赢1分
-                messageLog.push(`${dunName}: 胜 (+${dunScore})`);
-                winCount++;
-            } else if (comparison < 0) { // 玩家负
-                dunScore = -(opponentDun.type.score || 1); // 至少输1分
-                messageLog.push(`${dunName}: 负 (${dunScore})`);
-                loseCount++;
-            } else { // 平
-                messageLog.push(`${dunName}: 平`);
-                drawCount++;
-            }
-            return dunScore;
-        };
+        playerWinsFront = compareSingleHands(pFront, oFront) > 0;
+        playerWinsMiddle = compareSingleHands(pMiddle, oMiddle) > 0;
+        playerWinsBack = compareSingleHands(pBack, oBack) > 0;
         
-        // 这里暂时不使用墩位分，直接比较输赢墩，每墩1分，打枪翻倍
-        // 实际十三水比法是，先算各墩牌型对应分数，再按输赢墩数结算
-        let frontDunPoints = compareSingleHands(pFront, oFront) > 0 ? 1 : (compareSingleHands(pFront, oFront) < 0 ? -1 : 0);
-        let middleDunPoints = compareSingleHands(pMiddle, oMiddle) > 0 ? 1 : (compareSingleHands(pMiddle, oMiddle) < 0 ? -1 : 0);
-        let backDunPoints = compareSingleHands(pBack, oBack) > 0 ? 1 : (compareSingleHands(pBack, oBack) < 0 ? -1 : 0);
+        const opponentLosesFront = compareSingleHands(pFront, oFront) < 0;
+        const opponentLosesMiddle = compareSingleHands(pMiddle, oMiddle) < 0;
+        const opponentLosesBack = compareSingleHands(pBack, oBack) < 0;
 
-        // 根据墩位牌型加分
-        if (frontDunPoints > 0) frontDunPoints += (pFront.type.score || 0);
-        else if (frontDunPoints < 0) frontDunPoints -= (oFront.type.score || 0);
-        // ... (middle 和 back 类似)
-        // 简化版，先不把这个加回去，十三水计分很复杂
-
-        roundVsOpponentScore = frontDunPoints + middleDunPoints + backDunPoints;
-
-
-        if (winCount === 3) { // 打枪
-            messageLog.push("打枪! 得分翻倍!");
-            roundVsOpponentScore *= 2; // 假设打枪翻倍
-        } else if (loseCount === 3) { // 被打枪
-            messageLog.push("被对手打枪! 失分翻倍!");
-            roundVsOpponentScore *= 2; //
+        if (playerWinsFront && playerWinsMiddle && playerWinsBack) {
+            messageLog.push("打枪对手! 本局墩位得分翻倍!");
+            score *= 2; // 假设打枪是总墩位分翻倍 (实际规则可能更复杂)
+        } else if (opponentLosesFront && opponentLosesMiddle && opponentLosesBack) {
+            messageLog.push("被对手打枪! 本局墩位失分翻倍 (或罚分)!");
+            // 如果是负分，翻倍会更负。如果是正分，说明逻辑有误。
+            // 真实打枪是按墩结算，然后输家给赢家特定倍数。
+            // 这里简化：如果被打枪，分数清零或罚固定分
+            score = -Math.abs(score) * 2; // 简单示例
         }
-        score += roundVsOpponentScore; // 将与对手比较的得分加入总分
-    } else {
-        // 单人游戏，没有对手，得分就是牌型分总和
-        messageLog.push(`牌型总基础分: ${score}`);
+
+    } else { // 单人模式，模拟打枪空气
+        if (playerWinsFront && playerWinsMiddle && playerWinsBack) {
+            messageLog.push("完美牌型 (模拟打枪)! 墩位基础总分翻倍!");
+            score *= 2; 
+        }
     }
+    
+    messageLog.push(`最终得分: ${score}`);
 
-
-    return { score, messageLog, isDaoshui, finalOverallHandType: overallSpecial };
+    return { score, messageLog, isDaoshui, finalOverallHandType };
 }
