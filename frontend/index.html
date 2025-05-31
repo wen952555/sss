@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>十三水游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>十三水发牌器</h1>
+        <button id="dealButton">发牌</button>
+        <div id="loading" style="display: none;">正在从后端获取牌组...</div>
+        
+        <h2>你的手牌 (13张):</h2>
+        <div id="playerHand" class="hand-display">
+            <!-- 卡片将在这里显示 -->
+        </div>
+
+        <h2>提示：</h2>
+        <p>这仅仅是一个发牌演示。你需要将扑克牌SVG图片 (例如 <code>ace_of_spades.svg</code>, <code>10_of_clubs.svg</code>) 放入 <code>images/cards/</code> 目录下。</p>
+        <p>后端API地址: <code id="backendUrlDisplay"></code></p>
+        <p>图片基路径: <code id="imageBasePathDisplay"></code></p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
