@@ -9,70 +9,28 @@
 </head>
 <body>
     <header>
-        <h1>十三水游戏大厅</h1>
+        <h1>十三水大厅</h1>
         <div class="user-info">
             欢迎, <span id="userNickname">玩家</span>! (积分: <span id="userPoints">0</span>)
             <button id="logoutButton">登出</button>
         </div>
     </header>
 
-    <main class="lobby-main">
-        <section class="room-actions">
-            <button id="createRoomButton">创建房间</button>
-            <!-- *** 修改：加入房间部分用form包裹 *** -->
-            <form id="joinRoomForm" class="join-room-section" onsubmit="return false;">
-                <input type="text" id="joinRoomCodeInput" placeholder="输入房间号加入">
-                <input type="password" id="joinRoomPasswordInput" placeholder="房间密码 (可选)" autocomplete="off"> <!-- autocomplete="off" for room passwords -->
-                <button type="button" id="joinRoomButton">加入房间</button>
-            </form>
+    <main class="lobby-main auto-match-lobby">
+        <section class="lobby-actions">
+            <button id="startMatchmakingButton" class="action-button primary">开始匹配</button>
+            <button id="enterTrialRoomButton" class="action-button secondary">进入试玩房 (VS AI)</button>
         </section>
+
+        <section id="matchmakingSection" style="display:none;">
+            <button id="cancelMatchmakingButton" class="action-button danger">取消匹配</button>
+            <div id="matchmakingStatusArea" class="message-area">
+                正在匹配中，请稍候... (已等待 <span id="matchmakingTime">0</span> 秒)
+            </div>
+        </section>
+
         <div id="lobbyMessage" class="message-area"></div>
 
-        <section class="room-list-section">
-            <h2>可用房间列表</h2>
-            <button id="refreshRoomListButton">刷新列表</button>
-            <table id="roomListTable">
-                <!-- ... (table astructure unchanged) ... -->
-                <thead>
-                    <tr>
-                        <th>房间号</th>
-                        <th>房间名</th>
-                        <th>房主</th>
-                        <th>人数</th>
-                        <th>状态</th>
-                        <th>密码</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- 房间列表将通过JS动态填充 -->
-                </tbody>
-            </table>
-            <p id="noRoomsMessage" style="display:none;">当前没有可加入的房间。</p>
-        </section>
-
-        <!-- 创建房间弹窗 (Modal) -->
-        <div id="createRoomModal" class="modal" style="display:none;">
-            <div class="modal-content">
-                <span class="close-button" id="closeCreateRoomModal">×</span>
-                <h3>创建新房间</h3>
-                <!-- *** 修改：创建房间表单内容用form包裹 *** -->
-                <form id="createRoomActualForm" onsubmit="return false;">
-                    <label for="createRoomName">房间名称:</label>
-                    <input type="text" id="createRoomName" placeholder="默认房间名">
-                    <label for="createRoomMaxPlayers">最大人数:</label>
-                    <select id="createRoomMaxPlayers">
-                        <option value="2">2人</option>
-                        <option value="3">3人</option>
-                        <option value="4" selected>4人</option>
-                    </select>
-                    <label for="createRoomPassword">房间密码 (可选):</label>
-                    <input type="password" id="createRoomPassword" autocomplete="new-password"> <!-- Use new-password for creation -->
-                    <button type="button" id="confirmCreateRoomButton">确认创建</button>
-                </form>
-                <div id="createRoomError" class="error-message"></div>
-            </div>
-        </div>
     </main>
 
     <footer>
