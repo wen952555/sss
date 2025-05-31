@@ -3,30 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水游戏</title>
-    <link rel="stylesheet" href="style.css">
+    <title>十三水 - 登录</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
-    <div class="container">
-        <h1>十三水游戏</h1>
-
-        <div class="controls">
-            <button id="dealButton">发牌</button>
-            <button id="checkBackendButton">测试后端连接</button>
+    <div class="auth-container">
+        <div id="loginForm" class="form-active">
+            <h2>登录十三水</h2>
+            <input type="text" id="loginPhone" placeholder="手机号" required>
+            <input type="password" id="loginPassword" placeholder="密码" required>
+            <button id="loginButton">登录</button>
+            <p>还没有账户? <a href="#" id="showRegister">立即注册</a></p>
+            <div id="loginError" class="error-message"></div>
         </div>
 
-        <h2>我的手牌 (13张):</h2>
-        <div id="playerHand" class="hand-container">
-            <!-- 卡牌会在这里显示 -->
+        <div id="registerForm" style="display:none;">
+            <h2>注册新账户</h2>
+            <input type="text" id="registerPhone" placeholder="手机号" required>
+            <input type="password" id="registerPassword" placeholder="密码 (至少6位)" required>
+            <input type="password" id="registerConfirmPassword" placeholder="确认密码" required>
+            <input type="text" id="registerNickname" placeholder="昵称 (2-15字符)" required>
+            <button id="registerButton">注册</button>
+            <p>已有账户? <a href="#" id="showLogin">返回登录</a></p>
+            <div id="registerError" class="error-message"></div>
         </div>
-
-        <h2>牌型识别示例 (根据文件名):</h2>
-        <div id="recognitionResult"></div>
-
-        <div id="backendStatus">后端状态: 未连接</div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
 </body>
 </html>
