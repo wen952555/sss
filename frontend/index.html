@@ -7,18 +7,11 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>十三水</h1>
-        
-        <button id="dealButton">发牌</button>
-
-        <h2>我的手牌 (<span id="card-count">0</span>/13):</h2>
-        <div id="playerHand" class="hand-area">
-            <!-- 卡牌将在这里显示 -->
-        </div>
-
-        <h2>牌墩 (拖拽到这里摆牌)</h2>
-        <div class="arranged-hands">
+    <div class="game-table">
+        <!-- 第一道：头墩、中墩置牌区 (合并头墩和中墩，因为十三水通常是三墩) -->
+        <!-- 或者，如果严格按四道，头道可以是头墩，尾道是中墩和尾墩 -->
+        <!-- 这里我们按十三水习惯，上面是头墩、中墩，下面是尾墩 -->
+        <div class="lane placement-lane-top">
             <div class="hand-group">
                 <h3>头墩 (3张)</h3>
                 <div id="frontHand" class="drop-zone" data-max-cards="3"></div>
@@ -27,15 +20,30 @@
                 <h3>中墩 (5张)</h3>
                 <div id="middleHand" class="drop-zone" data-max-cards="5"></div>
             </div>
+        </div>
+
+        <!-- 第二道：手牌区 -->
+        <div class="lane hand-lane">
+            <h2>我的手牌 (<span id="card-count">0</span>/13)</h2>
+            <div id="playerHand" class="hand-area drop-zone-player-hand">
+                <!-- 卡牌将在这里显示 -->
+            </div>
+        </div>
+
+        <!-- 第三道：尾墩置牌区 -->
+        <div class="lane placement-lane-bottom">
             <div class="hand-group">
                 <h3>尾墩 (5张)</h3>
                 <div id="backHand" class="drop-zone" data-max-cards="5"></div>
             </div>
         </div>
         
-        <button id="submitArrangement" style="display:none;">确认牌型</button>
-        <div id="messageArea"></div>
-
+        <!-- 第四道：按钮区和消息区 -->
+        <div class="lane controls-lane">
+            <button id="dealButton">发牌</button>
+            <button id="submitArrangement" style="display:none;">确认牌型</button>
+            <div id="messageArea"></div>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>
