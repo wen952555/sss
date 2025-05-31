@@ -1,0 +1,8 @@
+.lobby-main { padding: 20px; }
+.room-actions { margin-bottom: 20px; display: flex; gap: 15px; align-items: center; }
+.join-room-section { display: flex; gap: 5px; }
+.room-list-section h2 { margin-bottom: 10px; }
+#roomListTable { width: 100%; border-collapse: collapse; margin-top: 10px; }
+#roomListTable th, #roomListTable td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+#roomListTable th { background-color: #f0f0f0; }
+#roomListTable button { font-size: 0.9em; padding: 5px 10px; }
