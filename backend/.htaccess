@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# API路由
+RewriteRule ^api/(.*)$ api/$1 [L]
+
+# 允许跨域
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type"
