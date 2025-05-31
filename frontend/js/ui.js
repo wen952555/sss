@@ -23,7 +23,7 @@ function showMessage(elementOrId, message, type = 'info') {
     const element = typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
     if (element) {
         element.textContent = message;
-        element.className = `message-area ${type}`; // 假设有CSS类 .message-area.success 等
+        element.className = `message-area ${type}`;
         element.style.display = message ? 'block' : 'none';
     }
 }
@@ -31,7 +31,7 @@ function showMessage(elementOrId, message, type = 'info') {
 
 /**
  * 创建卡牌的DOM元素
- * @param {object} cardData - { rank, suit, imageName, displayRank, displaySuit }
+ * @param {object} cardData - { rank, suit, imageName, displayRank, displaySuit, string }
  * @param {boolean} isDraggable - 卡牌是否可拖拽
  * @returns {HTMLDivElement} 卡牌的div元素
  */
@@ -41,40 +41,63 @@ function createCardElement(cardData, isDraggable = true) {
     if (isDraggable) {
         cardDiv.draggable = true;
     }
-    // 使用卡牌的唯一标识符，例如 "AS" (Ace of Spades) 或后端生成的ID
-    // cardData.string 来源于 Card.php -> toArray() -> 'string'
-    cardDiv.dataset.cardId = cardData.string || `${cardData.rank}_of_${cardData.suit}`; // 确保有唯一ID
+    // cardData.string 通常是 "AS", "KH" 等，后端 Card->toArray() 中应该提供
+    // 如果后端没有提供 string，则用 rank 和 suit 拼接，但要注意 "10" 的情况
+    let cardIdentifier = cardData.string;
+    if (!cardIdentifier) {
+        let rankForId = cardData.rank === '10' ? 'T' : cardData.rank.charAt(0); // 简化10为T，或者保持10
+        cardIdentifier = `${rankForId}${cardData.suit.charAt(0)}`.toUpperCase();
+        // 或者更可靠的是 cardData.rank.toUpperCase() + cardData.suit.toUpperCase();
+        // 但 cardData.string 是最好的，如果后端能提供的话
+    }
+    // 确保 dataset.cardId 是一个有效的、唯一的字符串
+    cardDiv.dataset.cardId = cardIdentifier || `${cardData.rank}_of_${cardData.suit}`;
+
 
     const img = document.createElement('img');
-    // 从 config.js 获取路径
-    img.src = `${CARD_IMAGE_PATH}${cardData.imageName || (cardData.string ? cardData.string.toLowerCase().replace(/^([a-z\d]+)([hsdc])$/, (match,p1,p2) => `${p1}_of_${suitLetterToName(p2)}.svg`) : `${cardData.rank.toLowerCase()}_of_${cardData.suit.toLowerCase()}.svg`)}`;
-    // 辅助函数将 suit 字母转为全名
-    function suitLetterToName(letter) {
-        const map = { H: 'hearts', S: 'spades', D: 'diamonds', C: 'clubs'};
-        return map[letter.toUpperCase()] || letter.toLowerCase();
+    // CARD_IMAGE_PATH 来自 config.js，确保 config.js 在 ui.js 之前加载
+    // 并且 cardData.imageName 由后端提供，格式如 "ace_of_spades.svg"
+
+    let imageName = cardData.imageName; // 优先使用后端提供的 imageName
+    if (!imageName) {
+        // 如果后端没提供 imageName，尝试根据 rank 和 suit 生成
+        // 注意：这需要你的图片文件名与这个生成规则完全匹配
+        const rankLower = cardData.rank.toLowerCase();
+        const suitLower = cardData.suit.toLowerCase(); // 假设后端suit是 "hearts", "spades"
+                                                     // 如果后端suit是 "H", "S"，需要转换
+        const suitFullName = {
+            'H': 'hearts', 'S': 'spades', 'D': 'diamonds', 'C': 'clubs',
+            'HEARTS': 'hearts', 'SPADES': 'spades', 'DIAMONDS': 'diamonds', 'CLUBS': 'clubs'
+        }[suitLower.toUpperCase()] || suitLower; // 容错处理
+
+        imageName = `${rankLower}_of_${suitFullName}.svg`;
     }
 
-    img.alt = cardData.displayRank ? `${cardData.displayRank}${cardData.displaySuit}` : `${cardData.rank}${cardData.suit}`;
+    img.src = `${CARD_IMAGE_PATH}${imageName}`;
+
+    img.alt = cardData.displayRank && cardData.displaySuit ? `${cardData.displayRank}${cardData.displaySuit}` : `${cardData.rank}${cardData.suit}`;
     img.title = img.alt;
     cardDiv.appendChild(img);
     return cardDiv;
 }
 
-// 更多UI辅助函数...
-// 例如：清空元素内容，显示/隐藏加载指示器，渲染列表等
 function clearElement(elementOrId) {
     const element = typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
     if(element) element.innerHTML = '';
 }
 
-function showLoading(elementOrId, show = true) {
-    // 简单的实现：可以添加一个 .loading 类或直接修改文本
+function showLoading(elementOrId, show = true, message = '加载中...') {
     const element = typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
     if (element) {
         if (show) {
-            element.textContent = '加载中...'; // 或者插入一个spinner元素
+            element.textContent = message;
             element.style.display = 'block';
         } else {
+            // 如果只是隐藏加载，最好不要清空可能存在的其他错误或消息
+            // 除非这个元素专门用于加载提示
+            if (element.textContent === message) { // 只在内容是加载信息时清空
+                element.textContent = '';
+            }
             element.style.display = 'none';
         }
     }
@@ -86,7 +109,11 @@ function showLoading(elementOrId, show = true) {
  * @param {any} value
  */
 function setTempState(key, value) {
-    sessionStorage.setItem(key, JSON.stringify(value));
+    try {
+        sessionStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+        console.error("Error saving to sessionStorage:", e);
+    }
 }
 
 /**
@@ -95,14 +122,19 @@ function setTempState(key, value) {
  * @returns {any|null}
  */
 function getTempState(key) {
-    const item = sessionStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
+    try {
+        const item = sessionStorage.getItem(key);
+        return item ? JSON.parse(item) : null;
+    } catch (e) {
+        console.error("Error reading from sessionStorage:", e);
+        return null;
+    }
 }
 
 /**
  * 清除临时状态
  * @param {string} key
  */
-functionclearTempState(key) {
+function clearTempState(key) { // *** 注意这里的空格：function 和 clearTempState 之间 ***
     sessionStorage.removeItem(key);
 }
