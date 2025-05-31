@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水游戏 - 进阶版</title>
+    <title>十三水游戏 - 模块化进阶版</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
         
         <div class="controls">
             <button id="dealButton">发牌</button>
-            <button id="sortHandButton" style="margin-left: 10px;">手牌排序</button> <!-- 添加ID -->
+            <button id="sortHandButton" style="margin-left: 10px;">手牌排序</button>
         </div>
 
         <h2>我的手牌 (<span id="card-count">0</span>/13):</h2>
@@ -40,10 +40,13 @@
         
         <div id="gameInfo">
             <div id="messageArea">请点击发牌开始游戏。</div>
-            <div id="scoreArea" style="margin-top: 10px; font-weight: bold;">总分: 0</div> <!-- 新增得分区域 -->
+            <div id="scoreArea" style="margin-top: 10px; font-weight: bold;">总分: 0</div>
+            <div id="roundLogArea" style="margin-top: 10px; text-align: left; max-height: 150px; overflow-y: auto; border-top: 1px solid #4a6278; padding-top:10px; display:none;">
+                <!-- 本局详情将显示在这里 -->
+            </div>
         </div>
-
     </div>
-    <script src="script.js"></script>
+    <!-- 使用 type="module" 来加载 ES6 模块 -->
+    <script type="module" src="./js/main.js"></script>
 </body>
 </html>
