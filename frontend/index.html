@@ -8,30 +8,24 @@
 </head>
 <body>
     <div class="game-table">
-        <!-- 第一道：头墩、中墩置牌区 (合并头墩和中墩，因为十三水通常是三墩) -->
-        <!-- 或者，如果严格按四道，头道可以是头墩，尾道是中墩和尾墩 -->
-        <!-- 这里我们按十三水习惯，上面是头墩、中墩，下面是尾墩 -->
-        <div class="lane placement-lane-top">
+        <!-- 第一道：头墩置牌区 -->
+        <div id="lane-front" class="lane placement-lane">
             <div class="hand-group">
                 <h3>头墩 (3张)</h3>
                 <div id="frontHand" class="drop-zone" data-max-cards="3"></div>
             </div>
-            <div class="hand-group">
-                <h3>中墩 (5张)</h3>
-                <div id="middleHand" class="drop-zone" data-max-cards="5"></div>
-            </div>
         </div>
 
-        <!-- 第二道：手牌区 -->
-        <div class="lane hand-lane">
-            <h2>我的手牌 (<span id="card-count">0</span>/13)</h2>
-            <div id="playerHand" class="hand-area drop-zone-player-hand">
-                <!-- 卡牌将在这里显示 -->
+        <!-- 第二道：手牌区 / 动态转为中墩区 -->
+        <div id="lane-middle-or-hand" class="lane hand-lane">
+            <h2 id="middle-or-hand-title">我的手牌 (<span id="card-count">0</span>/13)</h2>
+            <div id="playerHandOrMiddleDeck" class="hand-area drop-zone-player-hand">
+                <!-- 卡牌将在这里显示，或作为中墩 -->
             </div>
         </div>
 
         <!-- 第三道：尾墩置牌区 -->
-        <div class="lane placement-lane-bottom">
+        <div id="lane-back" class="lane placement-lane">
             <div class="hand-group">
                 <h3>尾墩 (5张)</h3>
                 <div id="backHand" class="drop-zone" data-max-cards="5"></div>
