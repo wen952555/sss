@@ -3,54 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水游戏</title>
+    <title>十三水游戏 - 进阶版</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-table">
-        <!-- 第一道：头墩置牌区 -->
-        <div id="lane-front" class="lane placement-lane">
-            <div class="hand-group">
-                <div id="frontHand" class="drop-zone" data-max-cards="3">
-                    <h3 class="deck-label">头墩 (3张)</h3>
-                    <!-- 卡牌将在这里显示 -->
-                </div>
-            </div>
+    <div class="container">
+        <h1>十三水游戏</h1>
+        
+        <div class="controls">
+            <button id="dealButton">发牌</button>
+            <button id="sortHandButton" style="margin-left: 10px;">手牌排序</button> <!-- 添加ID -->
         </div>
 
-        <!-- 第二道：手牌区 / 动态转为中墩区 -->
-        <div id="lane-middle-or-hand" class="lane hand-lane">
-            <div id="playerHandOrMiddleDeck" class="hand-area drop-zone-player-hand">
-                <h2 id="middle-or-hand-title" class="deck-label">我的手牌 (<span id="card-count">0</span>/13)</h2>
-                <h3 id="middleDeckLabel" class="deck-label" style="display: none;">中墩 (5张)</h3>
-                <!-- 卡牌将在这里显示，或作为中墩 -->
-            </div>
+        <h2>我的手牌 (<span id="card-count">0</span>/13):</h2>
+        <div id="playerHand" class="hand-area">
+            <!-- 卡牌将在这里显示 -->
         </div>
 
-        <!-- 第三道：尾墩置牌区 -->
-        <div id="lane-back" class="lane placement-lane">
+        <h2>牌墩 (拖拽到这里摆牌)</h2>
+        <div class="arranged-hands">
             <div class="hand-group">
-                <div id="backHand" class="drop-zone" data-max-cards="5">
-                    <h3 class="deck-label">尾墩 (5张)</h3>
-                    <!-- 卡牌将在这里显示 -->
-                </div>
+                <h3>头墩 (3张)</h3> 
+                <div id="frontHand" class="drop-zone" data-max-cards="3"></div>
+            </div>
+            <div class="hand-group">
+                <h3>中墩 (5张)</h3>
+                <div id="middleHand" class="drop-zone" data-max-cards="5"></div>
+            </div>
+            <div class="hand-group">
+                <h3>尾墩 (5张)</h3>
+                <div id="backHand" class="drop-zone" data-max-cards="5"></div>
             </div>
         </div>
         
-        <!-- 第四道：按钮区和消息区 -->
-        <div class="lane controls-lane">
-            <button id="dealButton">发牌</button>
-            <button id="aiArrangeButton" style="display: none;">AI分牌</button>
-            <button id="ai托管Button" style="display: none;">AI托管</button>
-            <select id="ai托管Rounds" style="display: none;">
-                <option value="3">托管3局</option>
-                <option value="5">托管5局</option>
-                <option value="10">托管10局</option>
-                <option value="0">取消托管</option> 
-            </select>
-            <button id="submitArrangement" style="display:none;">确认牌型</button>
-            <div id="messageArea"></div>
+        <button id="submitArrangement" style="display:none;">确认牌型</button>
+        
+        <div id="gameInfo">
+            <div id="messageArea">请点击发牌开始游戏。</div>
+            <div id="scoreArea" style="margin-top: 10px; font-weight: bold;">总分: 0</div> <!-- 新增得分区域 -->
         </div>
+
     </div>
     <script src="script.js"></script>
 </body>
