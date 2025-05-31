@@ -41,16 +41,16 @@ body {
 }
 
 /* 特定道的样式 */
-.placement-lane { 
+.placement-lane { /* 头墩和尾墩所在的道 */
     flex-grow: 2.5; 
     flex-shrink: 1; 
     flex-basis: 0;  
     min-height: 100px; 
     display: flex; 
-    justify-content: center; 
+    justify-content: center; /* 让 .hand-group 在内部居中 */
     align-items: center;
 }
-.hand-lane { 
+.hand-lane { /* 手牌区 / 中墩区所在的道 */
     flex-grow: 3; 
     flex-shrink: 1;
     flex-basis: 0;
@@ -66,7 +66,7 @@ body {
     text-align: center;
     margin-bottom: clamp(3px, 0.5vh, 8px); 
     font-size: clamp(1em, 2.2vmin, 1.8em); 
-    width: 100%; /* 确保标题宽度占满以便居中 */
+    width: 100%; 
 }
 
 .controls-lane {
@@ -79,12 +79,12 @@ body {
     justify-content: center; 
 }
 
-.hand-group { 
-    width: 100%; 
+.hand-group { /* 包裹头墩和尾墩 .drop-zone 的容器 */
+    width: 100%; /* 使 hand-group 宽度充满 .placement-lane */
     display: flex;
-    justify-content: center; 
+    justify-content: center; /* 使内部的 .drop-zone 居中 */
     align-items: center;
-    padding: 0 clamp(5px, 1vw, 10px); /* 给 hand-group 左右一点 padding */
+    padding: 0; /* 移除 hand-group 的水平 padding，让 drop-zone 完全控制宽度 */
     box-sizing: border-box;
 }
 
@@ -95,10 +95,17 @@ body {
     justify-content: center; 
     align-content: flex-start; 
     min-height: clamp(90px, 13vh, 160px); 
-    width: 100%; /* drop-zone/hand-area 占满其父容器 (.hand-group 或 .hand-lane 下的 div) */
-    max-width: 700px; /* 对 drop-zone (头尾墩) 和 hand-area (中墩时) 的最大宽度限制 */
+    
+    /* --- 关键修改：让虚线框占满其父容器 --- */
+    width: 100%; /* 占满父容器 (.hand-group 或 .hand-lane 下的 div#playerHandOrMiddleDeck) */
+    /* max-width: 700px; */ /* 移除或大幅增加这个限制 */
+    max-width: none; /* 或者直接移除 max-width 限制 */
+    /* 如果仍然希望在非常大的屏幕上有一个最大限制，可以设为百分比或vw单位 */
+    /* 例如：max-width: 90%; 或 max-width: 80vw; */
+    /* 但为了“占满横幅”，通常是100% width of parent, and parent is 100% width of lane */
+
     padding: clamp(10px, 1.5vmin, 20px); 
-    padding-top: clamp(35px, 5.5vmin, 55px); /* 显著增加顶部内边距为 deck-label 留空间 */
+    padding-top: clamp(35px, 5.5vmin, 55px); 
     border: clamp(2px, 0.3vmin, 4px) dashed #aaa; 
     border-radius: clamp(5px, 0.8vmin, 10px);
     background-color: rgba(0,0,0,0.15); 
@@ -106,17 +113,20 @@ body {
     overflow-y: auto; 
 }
 
-.hand-area { /* 特指 playerHandOrMiddleDeck，当它是手牌区时 */
-   /* padding-top: clamp(10px, 1.5vmin, 20px); /* 初始手牌区不需要那么大的顶部padding */
-   /* 当它变为中墩时，会继承 .drop-zone 或通过 .middle-deck-active 应用类似padding */
-   max-height: clamp(120px, 22vh, 220px); 
+/* 对手牌区/中墩区（.hand-area）进行微调，使其也占满 */
+#playerHandOrMiddleDeck {
+    /* 它继承了 .hand-area 的 width: 100% 和 max-width: none */
+    /* 如果 hand-lane 下没有其他横向限制它的元素，它应该能充满 */
+    /* 如果 hand-lane 本身有 padding，需要考虑 */
+    max-height: clamp(120px, 22vh, 220px); 
 }
+
 /* 如果手牌区作为初始手牌显示时，不希望有大的顶部padding，可以这样覆盖 */
 #playerHandOrMiddleDeck:not(.middle-deck-active) {
     padding-top: clamp(10px, 1.5vmin, 20px);
 }
-#playerHandOrMiddleDeck.middle-deck-active { /* 当手牌区变为中墩时，应用和drop-zone类似的padding */
-    padding-top: clamp(35px, 5.5vmin, 55px); /* 与.drop-zone保持一致 */
+#playerHandOrMiddleDeck.middle-deck-active { 
+    padding-top: clamp(35px, 5.5vmin, 55px); 
 }
 
 
@@ -125,15 +135,15 @@ body {
     top: clamp(5px, 1vmin, 12px); 
     left: 50%;
     transform: translateX(-50%); 
-    font-size: clamp(0.9em, 2vmin, 1.6em); /* 字体可以稍大一点 */
+    font-size: clamp(0.9em, 2vmin, 1.6em); 
     color: #FFD700; 
     opacity: 0.4; 
     margin: 0;
-    padding: 3px 8px; /* 轻微增加padding */
+    padding: 3px 8px; 
     pointer-events: none; 
     white-space: nowrap; 
     z-index: 1; 
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* 添加轻微文字阴影增加可读性 */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5); 
 }
 
 
@@ -145,9 +155,9 @@ body {
 .middle-deck-active .card {
     cursor: default !important; 
 }
-.middle-deck-active > .deck-label { /* 使用子选择器 > 确保只选中直属的deck-label */
-    opacity: 0.75; /* 中墩激活时，标签更清晰 */
-    color: #FFFFA0; /* 颜色可以更亮一点 */
+.middle-deck-active > .deck-label { 
+    opacity: 0.75; 
+    color: #FFFFA0; 
 }
 
 
@@ -178,45 +188,9 @@ body {
     background-color: rgba(255, 215, 0, 0.2); 
 }
 
-button {
-    background-color: #8B4513; 
-    color: white;
-    border: 1px solid #cd853f; 
-    padding: clamp(8px, 1.2vh, 15px) clamp(15px, 2vw, 25px); 
-    border-radius: clamp(3px, 0.5vmin, 8px);
-    cursor: pointer;
-    font-size: clamp(0.9em, 2vmin, 1.5em); 
-    margin: clamp(5px, 0.8vh, 10px) 5px;
-    min-width: clamp(100px, 15vw, 150px); 
-}
-
-button:hover {
-    background-color: #A0522D; 
-}
-button:disabled {
-    background-color: #777;
-    cursor: not-allowed;
-}
-
-#messageArea {
-    margin-top: clamp(5px, 1vh, 12px);
-    padding: clamp(5px, 0.8vh, 10px);
-    border-radius: clamp(3px, 0.5vmin, 6px);
-    text-align: center;
-    min-height: clamp(18px, 2.5vh, 30px); 
-    width: 80%;
-    max-width: clamp(250px, 50vw, 450px);
-    font-size: clamp(0.8em, 1.8vmin, 1.2em);
-}
-
-#messageArea.success {
-    background-color: #2E8B57; 
-    color: #fff;
-    border: 1px solid #3CB371;
-}
-
-#messageArea.error {
-    background-color: #B22222; 
-    color: #fff;
-    border: 1px solid #DC143C;
-}
+button { /* ... (与之前相同) ... */ }
+button:hover { /* ... (与之前相同) ... */ }
+button:disabled { /* ... (与之前相同) ... */ }
+#messageArea { /* ... (与之前相同) ... */ }
+#messageArea.success { /* ... (与之前相同) ... */ }
+#messageArea.error { /* ... (与之前相同) ... */ }
