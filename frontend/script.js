@@ -10,8 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardCountSpan = document.getElementById('card-count');
     const submitArrangementButton = document.getElementById('submitArrangement');
 
-    // 重要：部署后，将 'http://9525.ip-ddns.com/api.php' 替换为你的实际后端API地址
-    const BACKEND_API_URL = 'http://9525.ip-ddns.com/api.php';
+    // ================== 主要修改点 ==================
+    // 将 'http://' 修改为 'https://'
+    // 请确保 'https://9525.ip-ddns.com/api.php' 是您后端API实际可访问的HTTPS地址
+    const BACKEND_API_URL = 'https://9525.ip-ddns.com/api.php'; 
+    // ================================================
+
     const CARD_IMAGE_BASE_PATH = './cards/'; // SVG图片相对于index.html的路径
 
     let currentHand = []; // 存储当前手牌数据
@@ -33,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cardCountSpan.textContent = '0';
 
         try {
-            const response = await fetch(BACKEND_API_URL);
+            const response = await fetch(BACKEND_API_URL); // 现在使用 HTTPS 地址
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -44,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
             messageArea.className = 'success';
         } catch (error) {
             console.error('获取手牌失败:', error);
-            messageArea.textContent = `获取手牌失败: ${error.message}. 请检查后端服务是否运行正常，以及CORS设置是否正确。`;
+            // 错误信息现在会更准确地反映 fetch 失败的原因 (如果仍有问题)
+            messageArea.textContent = `获取手牌失败: ${error.message}. 请检查后端API (${BACKEND_API_URL}) 是否可以通过HTTPS正常访问，以及CORS设置是否正确。`;
             messageArea.className = 'error';
         } finally {
             dealButton.disabled = false;
@@ -66,18 +71,14 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = `${CARD_IMAGE_BASE_PATH}${cardData.image_file}`;
         img.alt = `${cardData.rank} of ${cardData.suit}`;
         img.classList.add('card');
-        img.draggable = true; // 使卡牌可拖动
-        img.dataset.cardId = cardData.card_id; // 存储唯一标识
-
-        // 存储卡牌数据到元素上，方便拖拽时获取
+        img.draggable = true; 
+        img.dataset.cardId = cardData.card_id; 
         img.cardData = cardData; 
 
-        // 拖拽事件监听
         img.addEventListener('dragstart', (event) => {
             draggedCard = event.target;
             draggedCardData = event.target.cardData;
             event.target.classList.add('dragging');
-            // event.dataTransfer.setData('text/plain', cardData.card_id); // 可以不设置，因为我们直接用全局变量
         });
 
         img.addEventListener('dragend', (event) => {
@@ -88,10 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return img;
     }
 
-    // 为放置区域添加拖放事件监听
     dropZones.forEach(zone => {
         zone.addEventListener('dragover', (event) => {
-            event.preventDefault(); // 必须阻止默认行为才能触发drop
+            event.preventDefault(); 
             const maxCards = parseInt(zone.dataset.maxCards);
             if (zone.children.length < maxCards) {
                 zone.classList.add('over');
@@ -108,20 +108,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const maxCards = parseInt(zone.dataset.maxCards);
 
             if (draggedCard && zone.children.length < maxCards) {
-                // 检查是否是从其他牌墩拖过来的，如果是，先从原父节点移除
                 if (draggedCard.parentElement !== playerHandDiv && draggedCard.parentElement !== zone) {
-                     // 如果是从其他墩拖拽过来的，并且不是playerHand
                     if (dropZones.includes(draggedCard.parentElement)) {
                         draggedCard.parentElement.removeChild(draggedCard);
                     }
                 }
-                // 如果是从手牌区拖过来的，也移除
                 else if (draggedCard.parentElement === playerHandDiv) {
                      playerHandDiv.removeChild(draggedCard);
                 }
-
-
-                zone.appendChild(draggedCard); // 将拖动的卡牌添加到放置区
+                zone.appendChild(draggedCard); 
                 updateCardCount();
                 checkArrangementCompletion();
             } else if (draggedCard) {
@@ -131,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // 允许从牌墩拖回手牌区
     playerHandDiv.addEventListener('dragover', (event) => {
         event.preventDefault();
         playerHandDiv.classList.add('over');
@@ -143,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         playerHandDiv.classList.remove('over');
         if (draggedCard && draggedCard.parentElement !== playerHandDiv) {
-            // 从原父节点移除
             if (dropZones.includes(draggedCard.parentElement)) {
                 draggedCard.parentElement.removeChild(draggedCard);
             }
@@ -152,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
             checkArrangementCompletion();
         }
     });
-
 
     function updateCardCount() {
         cardCountSpan.textContent = playerHandDiv.children.length;
@@ -173,8 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function handleSubmitArrangement() {
-        // 这里可以添加牌型比较和计分逻辑
-        // 目前只是一个占位符
         const frontCards = Array.from(frontHandDiv.children).map(c => c.cardData.card_id);
         const middleCards = Array.from(middleHandDiv.children).map(c => c.cardData.card_id);
         const backCards = Array.from(backHandDiv.children).map(c => c.cardData.card_id);
@@ -183,24 +173,17 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("中墩:", middleCards);
         console.log("尾墩:", backCards);
 
-        // 简单的规则校验示例 (实际十三水规则更复杂)
         if (frontCards.length !== 3 || middleCards.length !== 5 || backCards.length !== 5) {
              messageArea.textContent = '牌墩数量不正确！头墩3张，中墩5张，尾墩5张。';
              messageArea.className = 'error';
              return;
         }
 
-        // 接下来可以发送这些牌墩到后端进行计分，或者在前端实现计分逻辑
-        // 例如：
-        // validateAndScore(frontCards, middleCards, backCards);
-
         messageArea.textContent = '牌型已确认！(计分逻辑待实现)';
         messageArea.className = 'success';
-        // 可以在这里禁用拖拽或发新牌
         dealButton.disabled = true;
         submitArrangementButton.disabled = true;
 
-        // 演示：3秒后可以重新发牌
         setTimeout(() => {
             dealButton.disabled = false;
             submitArrangementButton.disabled = false;
@@ -209,7 +192,4 @@ document.addEventListener('DOMContentLoaded', () => {
             messageArea.className = '';
         }, 3000);
     }
-
-    // 初始加载时可以尝试发一次牌
-    // fetchNewHand(); // 或者让用户点击按钮开始
 });
