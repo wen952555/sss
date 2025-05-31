@@ -11,8 +11,10 @@
         <!-- 第一道：头墩置牌区 -->
         <div id="lane-front" class="lane placement-lane">
             <div class="hand-group">
-                <h3>头墩 (3张)</h3>
-                <div id="frontHand" class="drop-zone" data-max-cards="3"></div>
+                <div id="frontHand" class="drop-zone" data-max-cards="3">
+                    <h3 class="deck-label">头墩 (3张)</h3>
+                    <!-- 卡牌将在这里显示 -->
+                </div>
             </div>
         </div>
 
@@ -20,6 +22,7 @@
         <div id="lane-middle-or-hand" class="lane hand-lane">
             <h2 id="middle-or-hand-title">我的手牌 (<span id="card-count">0</span>/13)</h2>
             <div id="playerHandOrMiddleDeck" class="hand-area drop-zone-player-hand">
+                <h3 id="middleDeckLabel" class="deck-label" style="display: none;">中墩 (5张)</h3>
                 <!-- 卡牌将在这里显示，或作为中墩 -->
             </div>
         </div>
@@ -27,8 +30,10 @@
         <!-- 第三道：尾墩置牌区 -->
         <div id="lane-back" class="lane placement-lane">
             <div class="hand-group">
-                <h3>尾墩 (5张)</h3>
-                <div id="backHand" class="drop-zone" data-max-cards="5"></div>
+                <div id="backHand" class="drop-zone" data-max-cards="5">
+                    <h3 class="deck-label">尾墩 (5张)</h3>
+                    <!-- 卡牌将在这里显示 -->
+                </div>
             </div>
         </div>
         
