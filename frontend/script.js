@@ -15,9 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitArrangementButton = document.getElementById('submitArrangement');
     
     // --- 状态变量 ---
-    let currentHandRawData = []; // 存储从后端获取并处理后的卡牌数据对象数组
-    let draggedCardElement = null; // 当前拖动的卡牌DOM元素
-    // let draggedCardData = null; // 这个可以从 draggedCardElement.cardData 获取
+    let currentHandRawData = []; 
+    let draggedCardElement = null; 
     let isMiddleDeckActive = false;
 
     // --- 辅助函数：在区域内重建标签 ---
@@ -54,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (!data || !Array.isArray(data.hand)) throw new Error('后端返回手牌数据无效');
             
-            currentHandRawData = data.hand.map(card => { // 处理并存储卡牌数据
+            currentHandRawData = data.hand.map(card => { 
                 if (card && typeof card === 'object') {
                     return {
                         ...card,
@@ -62,8 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         suitValue: card.suitValue !== undefined ? card.suitValue : getSuitValue(card.suit)
                     };
                 }
-                return null; // 或抛出错误
-            }).filter(card => card && card.rank && card.suit); // 过滤无效卡牌
+                return null; 
+            }).filter(card => card && card.rank && card.suit); 
 
             if (currentHandRawData.length !== 13) {
                 console.warn("FN: Fetched hand does not contain 13 valid cards.", currentHandRawData);
@@ -72,13 +71,19 @@ document.addEventListener('DOMContentLoaded', () => {
             displayAndSortHand(currentHandRawData); 
             messageArea.textContent = '发牌完成！请将手牌拖拽到头墩或尾墩。';
             messageArea.className = 'success';
-        } catch (error) { /* ... (错误处理) ... */ } 
-        finally { dealButton.disabled = false; updateUIT состояния(); }
+        } catch (error) { 
+            console.error('获取手牌失败:', error);
+            messageArea.textContent = `获取手牌失败: ${error.message}.`;
+            messageArea.className = 'error';
+        } 
+        finally { 
+            dealButton.disabled = false; 
+            updateUIState(); // 使用修正后的函数名
+        }
     }
 
     function displayAndSortHand(handDataArray) {
         console.log("DSS: Sorting and displaying hand. isMiddleDeckActive:", isMiddleDeckActive);
-        // 1. 清空现有卡牌 (保留标签)
         const handTitleEl = playerHandOrMiddleDeckDiv.querySelector('#middle-or-hand-title');
         const middleLabelEl = playerHandOrMiddleDeckDiv.querySelector('#middleDeckLabel');
         Array.from(playerHandOrMiddleDeckDiv.children).forEach(child => {
@@ -87,37 +92,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 2. 排序卡牌数据
         const sortedHandData = [...handDataArray].sort((a, b) => {
             if (b.value !== a.value) return b.value - a.value;
             return b.suitValue - a.suitValue; 
         });
         console.log("DSS: Sorted hand data:", sortedHandData);
 
-        // 3. 根据排序后的数据创建并添加卡牌元素
         sortedHandData.forEach(cardData => {
-            // 对于初始手牌，它们总是可拖动的，因为 isMiddleDeckActive 此时应为 false
             const cardElement = createCardElement(cardData, true); 
             if (cardElement instanceof Node) {
                 playerHandOrMiddleDeckDiv.appendChild(cardElement); 
             }
         });
-        updateUIT состояния(); 
+        updateUIState(); // 使用修正后的函数名
     }
 
-    function createCardElement(cardData, draggable) { // draggable 参数现在直接决定是否添加拖拽功能
+    function createCardElement(cardData, draggable) { 
         const img = document.createElement('img');
-        if (!cardData) { /* ... (处理无效 cardData) ... */ return img; }
-        // ... (设置 img 属性: src, alt, classList, dataset) ...
+        if (!cardData) { 
+            console.error("CCE: Invalid cardData", cardData);
+            img.alt = "无效"; return img; 
+        }
         img.src = `${CARD_IMAGE_BASE_PATH}${cardData.image_file || 'placeholder.svg'}`;
         img.alt = `${cardData.rank || 'N/A'} of ${cardData.suit || 'N/A'}`;
         img.classList.add('card');
         img.dataset.cardId = cardData.card_id || `invalid-${Date.now()}`;
-        img.cardData = cardData; // 将完整数据对象附加到元素上
+        img.cardData = cardData; 
 
-        console.log(`CCE: Creating card ${cardData.card_id}. Requested draggable: ${draggable}. Current isMiddleDeckActive: ${isMiddleDeckActive}`);
+        console.log(`CCE: Card ${cardData.card_id}. Draggable: ${draggable}. isMiddleDeckActive: ${isMiddleDeckActive}`);
 
-        if (draggable) { // 只看传入的 draggable 参数
+        if (draggable) { 
             console.log(`CCE: Setting draggable=true for ${cardData.card_id}`);
             img.draggable = true;
             img.addEventListener('dragstart', handleDragStart);
@@ -125,14 +129,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             console.log(`CCE: Setting draggable=false for ${cardData.card_id}`);
             img.draggable = false;
-            // 确保移除可能存在的旧监听器 (如果元素被复用而不是替换)
-            // 但由于我们通常是replaceChild，所以新元素不会有旧监听器
         }
         return img;
     }
 
     function handleDragStart(event) {
-        // 阻止从中墩拖拽的逻辑应该在这里，基于全局状态和父元素
         if (isMiddleDeckActive && event.target.parentElement === playerHandOrMiddleDeckDiv) {
             console.log("DRAGSTART: Prevented drag from active middle deck.");
             event.preventDefault();
@@ -141,18 +142,16 @@ document.addEventListener('DOMContentLoaded', () => {
         draggedCardElement = event.target;
         console.log("DRAGSTART: Card:", draggedCardElement.cardData.card_id);
         draggedCardElement.classList.add('dragging');
-        // event.dataTransfer.setData('text/plain', draggedCardElement.cardData.card_id); // 可选
     }
 
     function handleDragEnd(event) {
-        if (draggedCardElement) { // 确保 draggedCardElement 存在
+        if (draggedCardElement) { 
             console.log("DRAGEND: Card:", draggedCardElement.cardData.card_id);
             draggedCardElement.classList.remove('dragging');
         }
         draggedCardElement = null;
     }
     
-    // 为所有放置区（包括手牌区自身）添加拖放监听器
     [frontHandDiv, playerHandOrMiddleDeckDiv, backHandDiv].forEach(zone => {
         addDropZoneListeners(zone, zone === playerHandOrMiddleDeckDiv);
     });
@@ -161,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
         zone.addEventListener('dragover', (event) => {
             event.preventDefault(); 
             if (isMiddleDeckActive && zone === playerHandOrMiddleDeckDiv) return; 
-            // ... (maxCards 和 over 类的处理，确保计算牌数时排除标签) ...
             const cardElementsInZone = Array.from(zone.children).filter(el => el.classList.contains('card')).length;
             const maxCards = zone.dataset.maxCards ? parseInt(zone.dataset.maxCards) : Infinity;
             if ((cardElementsInZone < maxCards || (draggedCardElement && draggedCardElement.parentElement === zone)) || (isPlayerHandZone && !isMiddleDeckActive)) {
@@ -174,27 +172,21 @@ document.addEventListener('DOMContentLoaded', () => {
             zone.classList.remove('over');
             if (isMiddleDeckActive && zone === playerHandOrMiddleDeckDiv && draggedCardElement.parentElement !== zone) return; 
             if (!draggedCardElement) return;
-
-            const targetZone = zone; // drop 事件的目标区域
+            const targetZone = zone; 
             const sourceZone = draggedCardElement.parentElement;
-
-            // ... (maxCards 和牌数检查，确保计算牌数时排除标签) ...
             const cardElementsInTargetZone = Array.from(targetZone.children).filter(el => el.classList.contains('card')).length;
             const maxCards = targetZone.dataset.maxCards ? parseInt(targetZone.dataset.maxCards) : Infinity;
-
             if (targetZone !== sourceZone && cardElementsInTargetZone >= maxCards && !isPlayerHandZone) {
                  messageArea.textContent = `这个牌墩已满 (${maxCards}张)!`; messageArea.className = 'error'; return;
             }
-            
-            // 移动DOM元素
-            if (targetZone !== sourceZone) { // 只有当目标和源不同时才移动
+            if (targetZone !== sourceZone) { 
                 targetZone.appendChild(draggedCardElement); 
             }
-            updateUIT состояния();
+            updateUIState(); // 使用修正后的函数名
         });
     }
 
-    function updateUIT состояния() { // 重命名以避免与JS内置函数冲突的可能
+    function updateUIState() { // <--- 修正函数名
         const countCardsInZone = (zone) => Array.from(zone.children).filter(el => el.classList.contains('card')).length;
         const frontCount = countCardsInZone(frontHandDiv);
         const backCount = countCardsInZone(backHandDiv);
@@ -207,32 +199,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const prevIsMiddleDeckActive = isMiddleDeckActive;
         
-        // 更新 isMiddleDeckActive 状态
         if (frontCount === 3 && backCount === 5 && handCardsCount === 5) {
             isMiddleDeckActive = true;
         } else {
             isMiddleDeckActive = false;
         }
 
-        // 根据 isMiddleDeckActive 更新UI和卡牌拖拽性
         if (isMiddleDeckActive) {
             if (handTitleEl) handTitleEl.style.display = 'none'; 
             if (middleLabelEl) middleLabelEl.style.display = 'block'; 
             playerHandOrMiddleDeckDiv.classList.add('middle-deck-active');
             submitArrangementButton.style.display = 'block';
             submitArrangementButton.disabled = false;
-            if (!prevIsMiddleDeckActive) { // 仅当状态从非激活变为激活时
+            if (!prevIsMiddleDeckActive) { 
                 messageArea.textContent = '牌已摆好，中墩形成！可以确认牌型了！';
                 messageArea.className = 'success';
-                // 将中墩的牌设为不可拖动
                 console.log("UIUpdate: Setting middle deck cards to NOT draggable.");
                 Array.from(playerHandOrMiddleDeckDiv.children).filter(el => el.classList.contains('card')).forEach(cardEl => {
-                    const cardData = cardEl.cardData; // 获取数据
+                    const cardData = cardEl.cardData; 
                     const newCardEl = createCardElement(cardData, false); 
                     playerHandOrMiddleDeckDiv.replaceChild(newCardEl, cardEl);
                 });
             }
-        } else { // Not middle deck active
+        } else { 
             if (handTitleEl) {
                 handTitleEl.innerHTML = `我的手牌 (<span id="card-count">${handCardsCount}</span>/13)`;
                 handTitleEl.style.display = 'block';
@@ -241,30 +230,65 @@ document.addEventListener('DOMContentLoaded', () => {
             playerHandOrMiddleDeckDiv.classList.remove('middle-deck-active');
             submitArrangementButton.style.display = 'none';
             submitArrangementButton.disabled = true;
-            if (prevIsMiddleDeckActive) { // 仅当状态从激活变为非激活时
-                 messageArea.textContent = '牌墩数量变化，请重新摆牌。'; // 或其他合适的消息
-                 messageArea.className = 'info'; // 或 'error'
-                // 将手牌区的牌设为可拖动
+            if (prevIsMiddleDeckActive) { 
+                 messageArea.textContent = '牌墩数量变化，请重新摆牌。'; 
+                 messageArea.className = 'info'; 
                 console.log("UIUpdate: Setting player hand cards to draggable.");
                 Array.from(playerHandOrMiddleDeckDiv.children).filter(el => el.classList.contains('card')).forEach(cardEl => {
-                    const cardData = cardEl.cardData; // 获取数据
+                    const cardData = cardEl.cardData; 
                     const newCardEl = createCardElement(cardData, true); 
                     playerHandOrMiddleDeckDiv.replaceChild(newCardEl, cardEl);
                 });
             }
         }
+        // 这个条件判断应该在 isMiddleDeckActive 状态确定之后
+        if (isMiddleDeckActive && (frontCount !== 3 || backCount !== 5 || handCardsCount !== 5 )) {
+            // 这种情况理论上不应该发生，因为一旦isMiddleDeckActive为true，牌不可拖动
+            // 但如果发生了，应该重置 isMiddleDeckActive 状态
+            console.warn("UIUpdate: Middle deck active but counts are wrong. Re-evaluating.");
+            isMiddleDeckActive = false; // 强制重置
+            // 重新调用一次以更新UI到非激活状态
+            updateUIState(); 
+            return; // 避免执行下面的消息
+        }
     }
     
-    function handleSubmitArrangement() { /* ... (与之前相同，确保结束时重置 isMiddleDeckActive 和标签状态) ... */ }
-    function getCardValue(rank) { /* ... (与之前相同) ... */ }
+    function handleSubmitArrangement() { /* ... (与之前相同，确保调用 updateUIState() 而不是旧名称) ... */ 
+        if (!isMiddleDeckActive) { /* ... */ return; }
+        // ... (获取牌数据和牌型) ...
+        // ... (显示结果) ...
+        setTimeout(() => {
+            dealButton.disabled = false;
+            messageArea.textContent = '可以重新发牌开始新的一局。';
+            messageArea.className = '';
+            isMiddleDeckActive = false; // 重置状态
+            // 重建标签和清空卡牌
+            const recreateLabelsInZone = (zone, mainLabelHTML, secondaryLabelHTML = '') => {
+                 zone.innerHTML = mainLabelHTML + secondaryLabelHTML;
+            };
+            recreateLabelsInZone(frontHandDiv, '<h3 class="deck-label">头墩 (3张)</h3>');
+            recreateLabelsInZone(playerHandOrMiddleDeckDiv, 
+                `<h2 id="middle-or-hand-title" class="deck-label">我的手牌 (<span id="card-count">0</span>/13)</h2>`,
+                `<h3 id="middleDeckLabel" class="deck-label" style="display: none;">中墩 (5张)</h3>`
+            );
+            recreateLabelsInZone(backHandDiv, '<h3 class="deck-label">尾墩 (5张)</h3>');
+            
+            const resetHandTitle = playerHandOrMiddleDeckDiv.querySelector('#middle-or-hand-title');
+            const resetMiddleLbl = playerHandOrMiddleDeckDiv.querySelector('#middleDeckLabel');
+            if (resetHandTitle) resetHandTitle.style.display = 'block';
+            if (resetMiddleLbl) resetMiddleLbl.style.display = 'none';
+            playerHandOrMiddleDeckDiv.classList.remove('middle-deck-active');
+            submitArrangementButton.style.display = 'none'; 
+        }, 7000); 
+    }
+
+    function getCardValue(rank) { /* ... */ }
     function getSuitValue(suit) { return SUIT_VALUES[suit.toLowerCase()] || 0; }
-    function getHandDetails(cardsData) { /* ... (与之前相同) ... */ }
-    function compareHands(hand1Details, hand2Details) { /* ... (与之前相同) ... */ }
+    function getHandDetails(cardsData) { /* ... */ }
+    function compareHands(hand1Details, hand2Details) { /* ... */ }
     
-    // --- 事件绑定 ---
     dealButton.addEventListener('click', fetchNewHand);
     submitArrangementButton.addEventListener('click', handleSubmitArrangement);
 
-    // --- 初始调用 ---
-    updateUIT состояния(); // 确保函数名正确
+    updateUIState(); // 使用修正后的函数名
 });
