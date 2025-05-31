@@ -11,11 +11,9 @@
     <div class="auth-container">
         <div id="loginForm" class="form-active">
             <h2>登录十三水</h2>
-            <!-- *** 添加 form 标签 *** -->
-            <form id="loginActualForm" onsubmit="return false;"> <!-- onsubmit="return false;" 进一步防止意外提交 -->
+            <form id="loginActualForm" onsubmit="return false;">
                 <input type="text" id="loginPhone" placeholder="手机号" required autocomplete="username">
                 <input type="password" id="loginPassword" placeholder="密码" required autocomplete="current-password">
-                <!-- *** 修改按钮 type="button" *** -->
                 <button type="button" id="loginButton">登录</button>
             </form>
             <p>还没有账户? <a href="#" id="showRegister">立即注册</a></p>
@@ -24,13 +22,11 @@
 
         <div id="registerForm" style="display:none;">
             <h2>注册新账户</h2>
-            <!-- *** 添加 form 标签 *** -->
             <form id="registerActualForm" onsubmit="return false;">
                 <input type="text" id="registerPhone" placeholder="手机号" required autocomplete="username">
                 <input type="password" id="registerPassword" placeholder="密码 (至少6位)" required autocomplete="new-password">
                 <input type="password" id="registerConfirmPassword" placeholder="确认密码" required autocomplete="new-password">
                 <input type="text" id="registerNickname" placeholder="昵称 (2-15字符)" required autocomplete="nickname">
-                <!-- *** 修改按钮 type="button" *** -->
                 <button type="button" id="registerButton">注册</button>
             </form>
             <p>已有账户? <a href="#" id="showLogin">返回登录</a></p>
@@ -38,8 +34,10 @@
         </div>
     </div>
 
+    <!-- *** 确保脚本加载顺序正确 *** -->
     <script src="js/config.js"></script>
-    <script src="js/api.js"></script>   <!-- 确保 api.js 路径正确 -->
-    <script src="js/auth.js"></script>  <!-- 确保 auth.js 路径正确 -->
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>      <!-- ui.js 必须在 auth.js 之前 -->
+    <script src="js/auth.js"></script>
 </body>
 </html>
