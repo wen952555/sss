@@ -15,17 +15,46 @@ body {
     border-bottom: 1px dashed #666; overflow: hidden; 
     flex-grow: 1; flex-basis: 0;
 }
-.lane:last-child { border-bottom: none; flex-grow: 0.8; flex-shrink: 0; }
+.lane:last-child { 
+    border-bottom: none; 
+    /* flex-grow: 0.8;  让按钮区根据内容自适应，或给一个固定比例 */
+    /* flex-shrink: 0; */
+}
+.placement-lane { /* 由 .lane 的 flex-grow 控制高度 */ }
 .hand-lane { 
     display: flex; justify-content: center; align-items: stretch; 
     background-color: rgba(0,0,0,0.1); border-radius: clamp(3px, 0.5vmin, 8px);
     margin: clamp(3px, 0.5vh, 8px) 0; padding: clamp(3px, 0.5vh, 5px); 
 }
 .controls-lane {
-    flex-shrink: 0; min-height: clamp(70px, 10vh, 90px);
-    flex-direction: column; align-items: center; justify-content: center; 
+    flex-grow: 0; /* 不参与flex-grow的平均分配，高度由内容或min-height决定 */
+    flex-shrink: 0; 
+    min-height: clamp(70px, 12vh, 100px); /* 给按钮区一个合适的最小高度 */
+    flex-direction: row; /* 让按钮和select水平排列 */
+    align-items: center;
+    justify-content: center; 
     padding: clamp(5px, 0.5vh, 8px) 0;
+    flex-wrap: wrap; /* 允许换行 */
 }
+.controls-lane button, .controls-lane select {
+    margin: clamp(3px, 0.5vh, 6px) clamp(3px, 0.5vw, 6px); /* 减小按钮间距 */
+}
+#aiArrangeButton, #ai托管Button {
+    background-color: #2E8B57; 
+}
+#aiArrangeButton:hover, #ai托管Button:hover {
+    background-color: #3CB371;
+}
+#ai托管Rounds {
+    padding: clamp(6px, 1vh, 10px);
+    border-radius: clamp(3px, 0.5vmin, 6px);
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+    min-width: clamp(100px, 15vw, 130px);
+    font-size: clamp(0.8em, 1.8vmin, 1.3em);
+}
+
 .hand-group { 
     width: 100%; display: flex; align-items: stretch; 
     flex-grow: 1; box-sizing: border-box; padding: 0 clamp(5px, 0.5vw, 8px); 
@@ -54,7 +83,7 @@ body {
 .middle-deck-active > #middleDeckLabel.deck-label { opacity: 0.75; color: #FFFFA0; }
 .card {
     max-height: calc(100% - clamp(6px, 1.2vmin, 10px)); width: auto; 
-    aspect-ratio: 63 / 88; /* !!! 标准扑克牌比例，请根据你的SVG修改 !!! */
+    aspect-ratio: 63 / 88; /* 标准扑克牌比例，请根据你的SVG修改 */
     object-fit: contain; margin: clamp(1px, 0.2vmin, 3px); 
     border: 1px solid #777; border-radius: clamp(2px, 0.3vmin, 4px);
     background-color: white; box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
@@ -63,5 +92,24 @@ body {
 }
 .card.dragging { opacity: 0.6; transform: scale(1.1) rotate(3deg); z-index: 100; }
 .drop-zone.over, .hand-area.over:not(.middle-deck-active) { border-color: #FFD700; background-color: rgba(255, 215, 0, 0.2); }
-button { /* ... (与之前相同) ... */ }
-/* ... (其余 messageArea 等样式与之前相同) ... */
+button {
+    background-color: #8B4513; color: white; border: 1px solid #cd853f; 
+    padding: clamp(8px, 1.2vh, 12px) clamp(12px, 1.8vw, 20px); /* 调整按钮padding */
+    border-radius: clamp(3px, 0.5vmin, 8px); cursor: pointer;
+    font-size: clamp(0.85em, 1.8vmin, 1.4em); /* 调整按钮字体 */
+    min-width: clamp(90px, 12vw, 120px); /* 调整按钮最小宽度 */
+}
+button:hover { background-color: #A0522D; }
+button:disabled { background-color: #777; cursor: not-allowed; }
+#messageArea {
+    margin-top: clamp(5px, 1vh, 10px); /* 消息区与按钮的间距 */
+    padding: clamp(5px, 0.8vh, 10px);
+    border-radius: clamp(3px, 0.5vmin, 6px); text-align: center;
+    min-height: clamp(18px, 2.5vh, 30px); width: 90%; /* 消息区宽度 */
+    max-width: clamp(300px, 60vw, 500px); font-size: clamp(0.8em, 1.8vmin, 1.2em);
+    /* 清除按钮区的flex-direction:column后，消息区需要自己控制位置 */
+    order: 10; /* 让消息区排在按钮之后，如果按钮换行 */
+    flex-basis: 100%; /* 独占一行，如果按钮区换行 */
+}
+#messageArea.success { background-color: #2E8B57; color: #fff; border: 1px solid #3CB371; }
+#messageArea.error { background-color: #B22222; color: #fff; border: 1px solid #DC143C; }
