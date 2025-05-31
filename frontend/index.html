@@ -8,38 +8,38 @@
 </head>
 <body>
     <div class="game-table">
-        <!-- 第一道：头墩置牌区 -->
+        <!-- ... (头墩、手牌/中墩、尾墩区域与之前相同) ... -->
         <div id="lane-front" class="lane placement-lane">
             <div class="hand-group">
                 <div id="frontHand" class="drop-zone" data-max-cards="3">
                     <h3 class="deck-label">头墩 (3张)</h3>
-                    <!-- 卡牌将在这里显示 -->
                 </div>
             </div>
         </div>
-
-        <!-- 第二道：手牌区 / 动态转为中墩区 -->
         <div id="lane-middle-or-hand" class="lane hand-lane">
             <div id="playerHandOrMiddleDeck" class="hand-area drop-zone-player-hand">
                 <h2 id="middle-or-hand-title" class="deck-label">我的手牌 (<span id="card-count">0</span>/13)</h2>
                 <h3 id="middleDeckLabel" class="deck-label" style="display: none;">中墩 (5张)</h3>
-                <!-- 卡牌将在这里显示，或作为中墩 -->
             </div>
         </div>
-
-        <!-- 第三道：尾墩置牌区 -->
         <div id="lane-back" class="lane placement-lane">
             <div class="hand-group">
                 <div id="backHand" class="drop-zone" data-max-cards="5">
                     <h3 class="deck-label">尾墩 (5张)</h3>
-                    <!-- 卡牌将在这里显示 -->
                 </div>
             </div>
         </div>
         
-        <!-- 第四道：按钮区和消息区 -->
         <div class="lane controls-lane">
             <button id="dealButton">发牌</button>
+            <button id="aiArrangeButton" style="display: none;">AI分牌</button> <!-- 新增AI分牌按钮 -->
+            <button id="ai托管Button" style="display: none;">AI托管</button>  <!-- 新增AI托管按钮 -->
+            <select id="ai托管Rounds" style="display: none;">        <!-- 新增托管局数选择 -->
+                <option value="3">托管3局</option>
+                <option value="5">托管5局</option>
+                <option value="10">托管10局</option>
+                <option value="0">取消托管</option> 
+            </select>
             <button id="submitArrangement" style="display:none;">确认牌型</button>
             <div id="messageArea"></div>
         </div>
