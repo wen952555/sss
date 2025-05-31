@@ -1,17 +1,17 @@
 // frontend/js/cardUtils.js
 import { CARD_IMAGE_BASE_PATH, RANK_DISPLAY_MAP, SUIT_DISPLAY_MAP, CARD_RANKS_MAP, CARD_SUITS_MAP } from './constants.js';
 
-export function createCardElement(cardData, isDraggable = true, isGameOver = false) {
+export function createCardElement(cardData) { // **修改点：移除了 isDraggable 和 isGameOver 参数**
     const img = document.createElement('img');
     img.src = `${CARD_IMAGE_BASE_PATH}${cardData.image_file}`;
     const displayName = `${SUIT_DISPLAY_MAP[cardData.suit]}${RANK_DISPLAY_MAP[cardData.rank]}`;
     img.alt = displayName;
     img.title = displayName;
     img.classList.add('card');
-    img.draggable = isDraggable && !isGameOver;
-    img.dataset.cardId = cardData.id || cardData.card_id; // 确保有id
-    img.cardData = cardData; // 附加完整数据
-    img.style.cursor = (isDraggable && !isGameOver) ? 'grab' : 'default';
+    img.draggable = true; // 卡牌创建时默认可拖动，由 makeAllCardsStatic 控制最终状态
+    img.dataset.cardId = cardData.id || cardData.card_id;
+    img.cardData = cardData;
+    img.style.cursor = 'grab'; // 默认光标，由 makeAllCardsStatic 控制最终状态
     return img;
 }
 
@@ -20,35 +20,44 @@ export function getCardDataFromElement(cardElement) {
 }
 
 export function getCardsFromZone(zoneElement) {
-    return Array.from(zoneElement.children).map(getCardDataFromElement);
+    if (!zoneElement || !zoneElement.children) return [];
+    return Array.from(zoneElement.children).map(getCardDataFromElement).filter(Boolean); // filter(Boolean) 移除 undefined
 }
 
-// 卡牌排序函数
-// aceLowForStraightEval: 在判断A2345顺子时，A作为1来比较大小，但在牌面值中A依然是14
 export function sortCards(cards, aceLowForStraightEval = false) {
+    if (!Array.isArray(cards)) return [];
     return [...cards].sort((a, b) => {
+        // 健壮性：确保 a 和 b 以及它们的属性存在
+        if (!a || !b || typeof a.rankValue === 'undefined' || typeof b.rankValue === 'undefined' ||
+            typeof a.suitValue === 'undefined' || typeof b.suitValue === 'undefined') {
+            return 0; // 或者进行错误处理
+        }
+
         let rankA = a.rankValue;
         let rankB = b.rankValue;
+        const aceRank = CARD_RANKS_MAP.ace; // 从常量获取
 
-        // 为了A2345顺子判断，将A的点数临时视为1
         if (aceLowForStraightEval) {
-            if (rankA === CARD_RANKS_MAP.ace) rankA = 1; // ace的值为14，临时变成1
-            if (rankB === CARD_RANKS_MAP.ace) rankB = 1;
+            if (rankA === aceRank) rankA = 1;
+            if (rankB === aceRank) rankB = 1;
         }
 
         if (rankB === rankA) {
-            return b.suitValue - a.suitValue; // 花色大优先 (黑桃4 > 红桃3 > 梅花2 > 方块1)
+            return b.suitValue - a.suitValue;
         }
-        return rankB - rankA; // 点数大优先
+        return rankB - rankA;
     });
 }
 
-// 将从后端获取的原始牌数据转换为包含 rankValue 和 suitValue 的格式
 export function processRawHandData(rawHand) {
-    return rawHand.map(card => ({
-        ...card,
-        id: card.card_id, // 统一使用id
-        rankValue: CARD_RANKS_MAP[card.rank],
-        suitValue: CARD_SUITS_MAP[card.suit]
-    }));
+    if (!Array.isArray(rawHand)) return [];
+    return rawHand.map(card => {
+        if (!card || !card.rank || !card.suit) return null; // 处理无效卡牌数据
+        return {
+            ...card,
+            id: card.card_id,
+            rankValue: CARD_RANKS_MAP[card.rank],
+            suitValue: CARD_SUITS_MAP[card.suit]
+        };
+    }).filter(Boolean); // 移除null
 }
