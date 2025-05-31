@@ -3,125 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水 AI对战版</title>
+    <title>十三水游戏</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
-        <header class="game-header">
-            <h1>十三水 AI对战</h1>
-            <div class="game-controls">
-                <button id="dealButton">开始游戏</button>
-                <button id="sortHandButton">手牌排序</button>
-                <button id="rulesButton">游戏规则</button>
-                <button id="settingsButton">设置</button>
-            </div>
-        </header>
+    <div class="container">
+        <h1>十三水游戏</h1>
 
-        <main class="game-board">
-            <!-- AI 区域 -->
-            <section class="player-area ai-area">
-                <h2>AI 对手 <span id="aiStatus"></span></h2>
-                <div class="arranged-hands" id="aiHandsContainer">
-                    <div class="hand-group">
-                        <h3>头墩 (3张) <span class="hand-type-ai" id="aiFrontHandType"></span></h3>
-                        <div id="aiFrontHand" class="drop-zone ai-dun"></div>
-                    </div>
-                    <div class="hand-group">
-                        <h3>中墩 (5张) <span class="hand-type-ai" id="aiMiddleHandType"></span></h3>
-                        <div id="aiMiddleHand" class="drop-zone ai-dun"></div>
-                    </div>
-                    <div class="hand-group">
-                        <h3>尾墩 (5张) <span class="hand-type-ai" id="aiBackHandType"></span></h3>
-                        <div id="aiBackHand" class="drop-zone ai-dun"></div>
-                    </div>
-                </div>
-            </section>
-
-            <hr class="divider">
-
-            <!-- 玩家区域 -->
-            <section class="player-area human-player-area">
-                <h2>我的手牌 (<span id="card-count">0</span>/13):</h2>
-                <div id="playerHand" class="hand-area player-cards-container">
-                    <!-- 卡牌将在这里显示 -->
-                </div>
-                <h2>我的牌墩:</h2>
-                <div class="arranged-hands" id="playerHandsContainer">
-                    <div class="hand-group">
-                        <h3>头墩 (3张) <span class="hand-type-player" id="playerFrontHandType"></span></h3>
-                        <div id="frontHand" class="drop-zone player-dun" data-max-cards="3"></div>
-                    </div>
-                    <div class="hand-group">
-                        <h3>中墩 (5张) <span class="hand-type-player" id="playerMiddleHandType"></span></h3>
-                        <div id="middleHand" class="drop-zone player-dun" data-max-cards="5"></div>
-                    </div>
-                    <div class="hand-group">
-                        <h3>尾墩 (5张) <span class="hand-type-player" id="playerBackHandType"></span></h3>
-                        <div id="backHand" class="drop-zone player-dun" data-max-cards="5"></div>
-                    </div>
-                </div>
-                <button id="submitArrangementButton" style="display:none;">确认牌型</button>
-            </section>
-        </main>
-
-        <footer class="game-footer">
-            <div id="gameInfo">
-                <div id="messageArea">请点击“开始游戏”。</div>
-                <div id="scoreArea">总分: 0 | 最高分: <span id="highScore">0</span></div>
-            </div>
-            <div id="roundLogArea" style="display:none;">
-                <h4>本局详情:</h4>
-                <!-- 日志内容 -->
-            </div>
-        </footer>
-    </div>
-
-    <!-- 规则弹窗 -->
-    <div id="rulesModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close-button" id="closeRulesModal">×</span>
-            <h2>十三水游戏规则</h2>
-            <div id="rulesContent">
-                <p><strong>目标：</strong>将13张手牌摆成三墩：头墩3张，中墩5张，尾墩5张。</p>
-                <p><strong>比牌顺序：</strong>尾墩 ≥ 中墩 ≥ 头墩 (牌力比较)。不符合此规则为“倒水”，判输。</p>
-                <p><strong>牌型大小 (从大到小)：</strong>同花顺 > 铁支 > 葫芦 > 同花 > 顺子 > 三条 > 两对 > 一对 > 乌龙。</p>
-                <p><strong>特殊牌型：</strong>一条龙、六对半、三同花、三顺子等，有额外计分或直接获胜。</p>
-                <p><strong>计分：</strong>与AI逐墩比较，每墩根据牌型和胜负计分。三墩全胜为“打枪”，得分加倍。</p>
-                <p><em>(具体牌型分数和特殊牌型请参考游戏内提示或详细规则)</em></p>
-            </div>
+        <div class="controls">
+            <button id="dealButton">发牌</button>
+            <button id="checkBackendButton">测试后端连接</button>
         </div>
-    </div>
 
-    <!-- 设置弹窗 -->
-    <div id="settingsModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close-button" id="closeSettingsModal">×</span>
-            <h2>游戏设置</h2>
-            <div>
-                <label for="soundToggle">音效:</label>
-                <input type="checkbox" id="soundToggle" checked>
-            </div>
-            <div>
-                <label for="aiDifficulty">AI难度:</label>
-                <select id="aiDifficulty">
-                    <option value="easy">简单</option>
-                    <option value="medium" selected>中等</option>
-                    <!-- <option value="hard">困难</option> -->
-                </select>
-            </div>
-            <button id="resetHighScoreButton">重置最高分</button>
+        <h2>我的手牌 (13张):</h2>
+        <div id="playerHand" class="hand-container">
+            <!-- 卡牌会在这里显示 -->
         </div>
+
+        <h2>牌型识别示例 (根据文件名):</h2>
+        <div id="recognitionResult"></div>
+
+        <div id="backendStatus">后端状态: 未连接</div>
     </div>
 
-    <!-- 用于音效的Audio元素 -->
-    <audio id="dealSound" src="sounds/deal.mp3" preload="auto"></audio>
-    <audio id="clickSound" src="sounds/click.mp3" preload="auto"></audio>
-    <audio id="winSound" src="sounds/win.mp3" preload="auto"></audio>
-    <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
-    <audio id="errorSound" src="sounds/error.mp3" preload="auto"></audio>
-
-
-    <script type="module" src="./js/main.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
