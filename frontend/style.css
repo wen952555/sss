@@ -7,22 +7,32 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    overflow: hidden; 
+    width: 100vw; /* 视窗宽度 */
+    height: 100vh; /* 视窗高度 */
+    overflow: hidden; /* 防止牌桌内容溢出时出现滚动条 */
 }
 
 .game-table {
-    width: 100%;
-    max-width: 900px; /* 可以适当调整最大宽度 */
-    height: 95vh; 
-    max-height: 700px; 
+    width: 98vw; /* 牌桌宽度，略小于视窗宽度以留边 */
+    height: 98vh; /* 牌桌高度，略小于视窗高度以留边 */
+    
+    /* 设置最大宽高，防止在非常大的屏幕上过度拉伸，保持一定比例感 */
+    /* 例如，假设我们希望牌桌大致是 4:3 或 16:9 的感觉 */
+    /* 如果屏幕很宽，限制高度；如果屏幕很高，限制宽度 */
+    max-width: calc(98vh * (16 / 9)); /* 假设最大宽高比为16:9，高度决定宽度 */
+    max-height: calc(98vw * (9 / 16)); /* 宽度决定高度 */
+    /* 如果希望总是尽可能填满，可以去掉或调整 max-width/max-height */
+    /* 或者用一个固定的最大值，如 max-width: 1200px; max-height: 800px; */
+
+
     background-color: #004d00; 
-    border: 5px solid #8B4513; 
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    border: clamp(3px, 0.5vmin, 8px) solid #8B4513; /* 边框大小也自适应，vmin是vw和vh中较小的值*/
+    border-radius: clamp(5px, 1vmin, 15px); /* 圆角自适应 */
+    box-shadow: 0 0 clamp(10px, 2vmin, 30px) rgba(0,0,0,0.5); /* 阴影自适应 */
+    
     display: flex;
     flex-direction: column; 
-    padding: 10px;
+    padding: clamp(5px, 1vmin, 15px); /* 内边距自适应 */
     box-sizing: border-box;
 }
 
@@ -31,33 +41,43 @@ body {
     display: flex;
     align-items: center; 
     justify-content: center;
-    padding: 10px 0; 
+    padding: clamp(5px, 0.8vh, 15px) 0; /* 上下padding，基于视窗高度 */
     box-sizing: border-box;
-    border-bottom: 1px dashed #ccc; 
+    border-bottom: 1px dashed #666; /* 分隔线颜色调深一点 */
+    overflow: hidden; /* 防止内部内容溢出lane本身 */
 }
 .lane:last-child {
     border-bottom: none; 
 }
 
-/* 特定道的样式 - 平均分配，但手牌/中墩区可以稍大 */
-.placement-lane { /* 头墩和尾墩区 */
-    flex: 2.5; /* 或者根据内容调整，例如 flex-grow: 1; flex-basis: 0; */
-    display: flex; /* 确保内部 hand-group 居中 */
+/* 特定道的样式 - 使用flex-grow和flex-basis来更灵活地分配空间 */
+.placement-lane { 
+    flex-grow: 2.5; /* 允许增长的比例 */
+    flex-shrink: 1; /* 允许收缩 */
+    flex-basis: 0;  /* 初始大小为0，让flex-grow决定 */
+    min-height: 100px; /* 保证一个最小高度 */
+    display: flex; 
     justify-content: center;
     align-items: center;
 }
-.hand-lane { /* 手牌区 / 中墩区 */
-    flex: 3; /* 给予更多空间 */
+.hand-lane { 
+    flex-grow: 3; 
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-height: 120px;
     flex-direction: column; 
     background-color: rgba(0,0,0,0.1); 
-    border-radius: 5px;
-    margin: 5px 0;
+    border-radius: clamp(3px, 0.5vmin, 8px);
+    margin: clamp(3px, 0.5vh, 8px) 0;
 }
 .controls-lane {
-    flex: 1.5; /* 按钮区 */
+    flex-grow: 1.5; 
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-height: 80px;
     flex-direction: column; 
     align-items: center;
-    justify-content: center; /* 按钮也居中 */
+    justify-content: center; 
 }
 
 
@@ -65,74 +85,77 @@ h2, h3 {
     color: #FFD700; 
     text-align: center;
     margin-top: 0;
-    margin-bottom: 8px; 
+    margin-bottom: clamp(4px, 0.5vh, 10px); 
     width: 100%;
+    font-size: clamp(1em, 2.2vmin, 1.8em); /* 字体大小自适应 */
 }
-.hand-lane h2 { /* #middle-or-hand-title */
-     margin-bottom: 5px;
+.hand-lane h2 { 
+     margin-bottom: clamp(3px, 0.5vh, 8px);
 }
 
 
 .hand-group {
-    width: 100%; /* 墩区占满其lane */
-    max-width: 400px; /* 给墩区一个最大宽度，避免过宽 */
+    width: 100%; 
+    max-width: clamp(200px, 40vw, 500px); /* 墩区最大宽度也自适应 */
     text-align: center;
-    padding: 5px;
+    padding: clamp(3px, 0.5vmin, 8px);
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.drop-zone, .hand-area { /* .drop-zone 是 frontHand 和 backHand, .hand-area 是 playerHandOrMiddleDeck */
+.drop-zone, .hand-area { 
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* 允许卡牌换行 */
     justify-content: center; 
-    align-items: flex-start; 
-    min-height: 110px; 
+    align-content: flex-start; /* 多行内容时从顶部开始对齐 */
+    min-height: clamp(80px, 12vh, 150px); /* 最小高度自适应 */
     width: 100%; 
-    padding: 8px;
-    border: 2px dashed #aaa;
-    border-radius: 5px;
+    padding: clamp(4px, 0.8vmin, 10px);
+    border: clamp(1px, 0.2vmin, 3px) dashed #aaa;
+    border-radius: clamp(3px, 0.5vmin, 8px);
     background-color: rgba(255,255,255,0.05); 
     box-sizing: border-box;
+    overflow-y: auto; /* 如果内部内容过多，允许滚动 */
 }
 
 .hand-area { /* 特指 playerHandOrMiddleDeck */
-   overflow-y: auto; 
-   max-height: 150px; 
+   /* overflow-y: auto; 已经统一在上面设置 */
+   max-height: clamp(100px, 20vh, 200px); /* 手牌区最大高度自适应 */
 }
 
-/* 当 playerHandOrMiddleDeck 变成中墩时的特殊样式 (可选) */
 .middle-deck-active {
-    border-style: solid !important; /* 边框变实线 */
-    border-color: #FFD700 !important; /* 金色边框 */
-    background-color: rgba(0, 80, 0, 0.2) !important; /* 更深的背景 */
+    border-style: solid !important; 
+    border-color: #FFD700 !important; 
+    background-color: rgba(0, 80, 0, 0.2) !important; 
 }
 .middle-deck-active .card {
-    cursor: default !important; /* 中墩的牌不可再拖动 */
+    cursor: default !important; 
 }
 
 
 .card {
-    width: 60px;  
-    height: 88px; 
-    margin: 4px;
-    border: 1px solid #999;
-    border-radius: 4px;
+    /* 卡牌大小使用 vmin 或固定值配合 max-width/height 组合 */
+    width: clamp(45px, 6vmin, 70px);  /* 卡牌宽度自适应 */
+    height: calc(clamp(45px, 6vmin, 70px) * 1.466); /*保持宽高比约 70/103 或 60/88 */
+    margin: clamp(2px, 0.4vmin, 5px); /* 外边距自适应 */
+    border: clamp(1px, 0.1vmin, 2px) solid #999;
+    border-radius: clamp(2px, 0.3vmin, 5px);
     background-color: white;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
     cursor: grab;
     object-fit: contain;
     user-select: none;
     -webkit-user-drag: element;
+    transition: width 0.1s, height 0.1s; /* 轻微过渡效果 */
 }
 
 .card.dragging {
     opacity: 0.5;
-    border: 2px dashed red;
+    transform: scale(1.05); /* 拖动时轻微放大 */
 }
 
-.drop-zone.over, .hand-area.over:not(.middle-deck-active) { /* 只有在非中墩状态下，手牌区才有over效果 */
+.drop-zone.over, .hand-area.over:not(.middle-deck-active) { 
     border-color: #FFD700; 
     background-color: rgba(255, 215, 0, 0.1); 
 }
@@ -141,12 +164,12 @@ button {
     background-color: #8B4513; 
     color: white;
     border: 1px solid #cd853f; 
-    padding: 12px 20px;
-    border-radius: 5px;
+    padding: clamp(8px, 1.2vh, 15px) clamp(15px, 2vw, 25px); /* 内边距自适应 */
+    border-radius: clamp(3px, 0.5vmin, 8px);
     cursor: pointer;
-    font-size: 16px;
-    margin: 8px 5px;
-    min-width: 120px;
+    font-size: clamp(0.9em, 2vmin, 1.5em); /* 字体大小自适应 */
+    margin: clamp(5px, 0.8vh, 10px) 5px;
+    min-width: clamp(100px, 15vw, 150px); /* 最小宽度自适应 */
 }
 
 button:hover {
@@ -158,13 +181,14 @@ button:disabled {
 }
 
 #messageArea {
-    margin-top: 10px;
-    padding: 8px;
-    border-radius: 4px;
+    margin-top: clamp(5px, 1vh, 12px);
+    padding: clamp(5px, 0.8vh, 10px);
+    border-radius: clamp(3px, 0.5vmin, 6px);
     text-align: center;
-    min-height: 20px; 
+    min-height: clamp(18px, 2.5vh, 30px); 
     width: 80%;
-    max-width: 400px;
+    max-width: clamp(250px, 50vw, 450px);
+    font-size: clamp(0.8em, 1.8vmin, 1.2em);
 }
 
 #messageArea.success {
@@ -179,28 +203,7 @@ button:disabled {
     border: 1px solid #DC143C;
 }
 
-@media (max-width: 768px) {
-    .game-table {
-        height: auto; 
-        min-height: 90vh;
-        padding: 5px;
-    }
-    .lane {
-        padding: 5px 0;
-    }
-     .card {
-        width: 50px;
-        height: 73px;
-        margin: 3px;
-    }
-    .drop-zone, .hand-area {
-        min-height: 90px;
-    }
-    .hand-area {
-        max-height: 120px;
-    }
-    button {
-        padding: 10px 15px;
-        font-size: 14px;
-    }
-}
+/* 
+   移除了之前的 @media query，因为 clamp() 和视窗单位提供了更流畅的自适应。
+   如果需要在特定断点做布局结构大调整，可以再加回来。
+*/
