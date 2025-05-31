@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ================== 主要修改点 ==================
     // 将 'http://' 修改为 'https://'
     // 请确保 'https://9525.ip-ddns.com/api.php' 是您后端API实际可访问的HTTPS地址
-    const BACKEND_API_URL = 'https://9525.ip-ddns.com/api.php'; 
+    const BACKEND_API_URL = 'https://9525.ip-ddns.com/backend/api.php'; 
     // ================================================
 
     const CARD_IMAGE_BASE_PATH = './cards/'; // SVG图片相对于index.html的路径
