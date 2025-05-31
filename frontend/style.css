@@ -1,72 +1,128 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: #006400; /* 深绿色，类似牌桌颜色 */
+    color: #fff; /* 白色文字，对比深色背景 */
     margin: 0;
-    padding: 20px;
+    padding: 0; /* 移除默认padding */
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* 改为flex-start以容纳更多内容 */
+    align-items: center; /* 垂直居中整个牌桌 */
     min-height: 100vh;
+    overflow: hidden; /* 防止牌桌过大时出现滚动条 */
 }
 
-.container {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    width: 90%;
-    max-width: 900px; /* 增加最大宽度 */
-}
-
-h1, h2, h3 {
-    color: #2c3e50;
-    text-align: center;
-}
-
-button {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    margin: 10px 5px;
-    display: block; /* 让发牌按钮独占一行 */
-    margin-left: auto;
-    margin-right: auto;
-}
-
-button:hover {
-    background-color: #2980b9;
-}
-
-.hand-area, .drop-zone {
+.game-table {
+    width: 100%;
+    max-width: 1000px; /* 牌桌最大宽度 */
+    height: 95vh; /* 牌桌高度，占视窗的95% */
+    max-height: 700px; /* 牌桌最大高度 */
+    background-color: #004d00; /* 稍浅一点的绿色作为牌桌内部 */
+    border: 5px solid #8B4513; /* 棕色边框，像木质桌边 */
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
     display: flex;
-    flex-wrap: wrap; /* 允许换行 */
-    justify-content: center; /* 居中卡牌 */
-    align-items: flex-start; /* 顶部对齐 */
-    min-height: 100px; /* 给放置区域一些初始高度 */
-    padding: 10px;
-    border: 2px dashed #ccc;
+    flex-direction: column; /* 横幅垂直排列 */
+    padding: 10px; /* 内边距 */
+    box-sizing: border-box;
+}
+
+.lane {
+    width: 100%;
+    display: flex;
+    align-items: center; /* 垂直居中道内内容 */
+    justify-content: center; /* 水平居中道内内容 */
+    padding: 10px 0; /* 上下padding */
+    box-sizing: border-box;
+    border-bottom: 1px dashed #ccc; /* 可选：道之间的分隔线 */
+}
+.lane:last-child {
+    border-bottom: none; /* 最后一道不需要分隔线 */
+}
+
+/* 特定道的样式 */
+.placement-lane-top {
+    flex: 3; /* 占据更多空间，因为有两个墩 */
+    display: flex;
+    justify-content: space-around; /* 均匀分布头墩和中墩 */
+}
+.placement-lane-bottom {
+    flex: 2; /* 尾墩区域 */
+}
+.hand-lane {
+    flex: 2.5; /* 手牌区 */
+    flex-direction: column; /* 标题和牌区垂直排列 */
+    background-color: rgba(0,0,0,0.1); /* 轻微背景区分手牌区 */
     border-radius: 5px;
-    margin-bottom: 20px;
-    background-color: #e8f5e9; /* 淡绿色背景 */
+    margin: 5px 0;
+}
+.controls-lane {
+    flex: 1; /* 按钮区较小 */
+    flex-direction: column; /* 按钮和消息垂直排列 */
+    align-items: center;
+}
+
+
+h2, h3 {
+    color: #FFD700; /* 金色标题 */
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 8px; /* 减小标题和牌区之间的间距 */
+    width: 100%;
+}
+.hand-lane h2 {
+     margin-bottom: 5px;
+}
+
+
+.hand-group {
+    /* width: 45%; */ /* 在 placement-lane-top 中，每个墩占近一半 */
+    text-align: center;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.placement-lane-top .hand-group {
+    width: auto; /* 根据内容自动宽度 */
+    min-width: 200px; /* 保证墩区有最小宽度 */
+}
+.placement-lane-bottom .hand-group {
+    width: 100%;
+}
+
+
+.drop-zone, .hand-area {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; 
+    align-items: flex-start; 
+    min-height: 110px; /* 确保有足够高度放牌 */
+    width: 100%; /* 占满其父容器 .hand-group 或 .hand-lane 的宽度 */
+    padding: 8px;
+    border: 2px dashed #aaa;
+    border-radius: 5px;
+    background-color: rgba(255,255,255,0.05); /* 淡背景 */
+    box-sizing: border-box;
+}
+
+.hand-area { /* 特指 playerHand */
+   /* background-color: #e8f5e9; */ /* 之前手牌区的颜色 */
+   overflow-y: auto; /* 如果牌多，允许手牌区内部滚动 */
+   max-height: 150px; /* 手牌区最大高度，防止牌太多撑开布局 */
 }
 
 .card {
-    width: 70px;  /* 调整卡牌大小 */
-    height: 100px; /* 调整卡牌大小 */
-    margin: 5px;
-    border: 1px solid #aaa;
-    border-radius: 5px;
+    width: 60px;  /* 稍微缩小卡牌，以适应新布局 */
+    height: 88px; /* 保持比例 */
+    margin: 4px;
+    border: 1px solid #999;
+    border-radius: 4px;
     background-color: white;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-    cursor: grab; /* 表明可拖动 */
-    object-fit: contain; /* 确保SVG完整显示并保持比例 */
-    user-select: none; /* 防止拖动时选中文本 */
-    -webkit-user-drag: element; /* 确保拖动的是元素本身 */
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    cursor: grab;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: element;
 }
 
 .card.dragging {
@@ -74,37 +130,84 @@ button:hover {
     border: 2px dashed red;
 }
 
-.arranged-hands {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 20px;
+.drop-zone.over, .hand-area.over {
+    border-color: #FFD700; /* 金色高亮 */
+    background-color: rgba(255, 215, 0, 0.1); /* 淡黄色背景 */
 }
 
-.hand-group {
-    width: 30%;
-    text-align: center;
+button {
+    background-color: #8B4513; /* 棕色按钮 */
+    color: white;
+    border: 1px solid #cd853f; /* 稍亮的棕色边框 */
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 8px 5px;
+    min-width: 120px;
 }
 
-.drop-zone.over {
-    border-color: #3498db;
-    background-color: #cceeff;
+button:hover {
+    background-color: #A0522D; /* 悬停时深一点的棕色 */
+}
+button:disabled {
+    background-color: #777;
+    cursor: not-allowed;
 }
 
 #messageArea {
-    margin-top: 20px;
-    padding: 10px;
+    margin-top: 10px;
+    padding: 8px;
     border-radius: 4px;
     text-align: center;
+    min-height: 20px; /* 给消息区一点高度 */
+    width: 80%;
+    max-width: 400px;
 }
 
 #messageArea.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background-color: #2E8B57; /* 海绿色 */
+    color: #fff;
+    border: 1px solid #3CB371;
 }
 
 #messageArea.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background-color: #B22222; /* 耐火砖色 */
+    color: #fff;
+    border: 1px solid #DC143C;
+}
+
+/* 响应式调整，如果屏幕过小 */
+@media (max-width: 768px) {
+    .game-table {
+        height: auto; /* 小屏幕时高度自动 */
+        min-height: 90vh;
+        padding: 5px;
+    }
+    .lane {
+        padding: 5px 0;
+    }
+    .placement-lane-top {
+        flex-direction: column; /* 小屏幕时头墩和中墩垂直排列 */
+        align-items: center;
+    }
+    .placement-lane-top .hand-group {
+        width: 90%; /* 墩区占满宽度 */
+        margin-bottom: 10px;
+    }
+     .card {
+        width: 50px;
+        height: 73px;
+        margin: 3px;
+    }
+    .drop-zone, .hand-area {
+        min-height: 90px;
+    }
+    .hand-area {
+        max-height: 120px;
+    }
+    button {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
 }
