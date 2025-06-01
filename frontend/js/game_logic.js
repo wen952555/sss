@@ -1,329 +1,260 @@
 // frontend/js/game_logic.js
+console.log("[GameLogic.js] Loaded");
 
-// (依赖 card_defs.js 中的 SUITS, RANKS, RANK_VALUES, HAND_TYPES, createCardObject)
+// (依赖 card_defs.js: SUITS, RANKS, createCard, RANK_VALUES, HAND_TYPE_NAMES)
 
 /**
- * 生成一副标准的52张扑克牌
- * @returns {object[]} 返回包含52个卡牌对象的数组
+ * 创建并返回一副洗好的牌
+ * @returns {object[]} 卡牌对象数组
  */
-function createDeck() {
+function getShuffledDeck() {
     const deck = [];
     SUITS.forEach(suit => {
         RANKS.forEach(rank => {
-            deck.push(createCardObject(rank, suit));
+            const card = createCard(rank, suit);
+            if (card) deck.push(card);
         });
     });
+
+    // Fisher-Yates Shuffle
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    // console.log("[GameLogic.js] Deck created and shuffled:", deck.length, "cards");
     return deck;
 }
 
 /**
- * 洗牌 (Fisher-Yates shuffle)
- * @param {object[]} deck - 要洗的牌堆数组 (会直接修改原数组)
+ * 从牌堆发牌给指定数量的玩家，每人13张
+ * @param {object[]} deck - 洗好的牌堆 (会被修改，牌从末尾发出)
+ * @param {number} numPlayers
+ * @returns {object[][]} 玩家手牌数组
  */
-function shuffleDeck(deck) {
-    for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]]; // ES6解构赋值交换
-    }
-}
+function dealCardsToPlayers(deck, numPlayers) {
+    const hands = Array.from({ length: numPlayers }, () => []);
+    const cardsPerHand = 13;
 
-/**
- * 发牌给指定数量的玩家，每人13张
- * @param {object[]} deck - 已经洗好的牌堆
- * @param {number} numPlayers - 玩家数量
- * @returns {object[][]} 返回一个二维数组，每个子数组是一个玩家的13张手牌
- *                       如果牌不够，则返回空数组或部分手牌
- */
-function dealHands(deck, numPlayers = 4) {
-    const hands = [];
-    const cardsPerPlayer = 13;
-    if (deck.length < numPlayers * cardsPerPlayer) {
-        console.error("Not enough cards in deck to deal.");
-        return []; // 或者可以处理部分发牌
+    if (deck.length < numPlayers * cardsPerHand) {
+        console.error("[GameLogic.js] Not enough cards in deck to deal!");
+        return hands; // 返回空手牌或部分手牌
     }
-    for (let i = 0; i < numPlayers; i++) {
-        hands.push([]);
-    }
-    for (let i = 0; i < cardsPerPlayer; i++) {
+
+    for (let i = 0; i < cardsPerHand; i++) {
         for (let j = 0; j < numPlayers; j++) {
-            hands[j].push(deck.pop()); // 从牌堆末尾取牌
+            if (deck.length > 0) {
+                hands[j].push(deck.pop());
+            }
         }
     }
+    // console.log("[GameLogic.js] Hands dealt:", hands);
     return hands;
 }
 
-// --- 牌型判断核心逻辑 ---
-// 这部分会比较复杂，我们先实现基础的，十三水具体规则很多
-// 返回对象: { type: HAND_TYPES.X, score: number, name: string, highCards: number[] (用于同牌型比较) }
 
-/**
- * 评估一手牌 (3张或5张)
- * @param {object[]} hand - 卡牌对象数组
- * @returns {object} 牌型评估结果 { typeScore, name, relevantCardValues }
- */
-function evaluateHand(hand) {
-    if (!hand || (hand.length !== 3 && hand.length !== 5)) {
-        return { typeScore: 0, name: '无效墩', relevantCardValues: [] };
+// --- 牌型判断 (简化版，核心逻辑) ---
+function evaluatePokerHand(handCards) { // handCards是Card对象数组
+    if (!handCards || (handCards.length !== 3 && handCards.length !== 5)) {
+        return { score: 0, name: '-', valuesForTieBreak: [] }; // 无效墩
     }
 
-    // 按牌值降序排序 (value在card_defs.js中定义)
-    const sortedHand = [...hand].sort((a, b) => b.value - a.value);
+    const sortedHand = [...handCards].sort((a, b) => b.value - a.value); // 按牌值降序
     const values = sortedHand.map(c => c.value);
     const suits = sortedHand.map(c => c.suit);
-    const ranks = sortedHand.map(c => c.rank); // '2', 'ace'等
+    const ranks = sortedHand.map(c => c.rank);
 
     const isFlush = new Set(suits).size === 1;
-    const straightCheck = checkStraight(values); // {isStraight, highCard, isAceLow}
-    const isStraight = straightCheck.isStraight;
+    let isStraight = false;
+    let straightHighCard = 0;
+    let isAceLowStraight = false;
 
-    const rankCounts = {};
-    ranks.forEach(rank => { rankCounts[rank] = (rankCounts[rank] || 0) + 1; });
-    const counts = Object.values(rankCounts).sort((a,b) => b-a); // [4,1], [3,2], [3,1,1], [2,2,1], [2,1,1,1]
+    // 检查顺子 (需要唯一牌值)
+    const uniqueValues = [...new Set(values)].sort((a,b) => b-a); // 降序的唯一牌值
+    if (uniqueValues.length === sortedHand.length) { // 必须没有重复牌值才能是顺子
+        if (uniqueValues.length >= 3) { // 顺子至少3张 (虽然十三水墩是3或5)
+             // A2345 (values: 14,5,4,3,2)
+            if (uniqueValues.length === 5 && uniqueValues[0] === 14 && uniqueValues[1] === 5 && uniqueValues[2] === 4 && uniqueValues[3] === 3 && uniqueValues[4] === 2) {
+                isStraight = true;
+                straightHighCard = 5; // A2345顺子以5为最大
+                isAceLowStraight = true;
+            } else {
+                let consecutive = true;
+                for (let i = 0; i < uniqueValues.length - 1; i++) {
+                    if (uniqueValues[i] - uniqueValues[i+1] !== 1) {
+                        consecutive = false;
+                        break;
+                    }
+                }
+                if (consecutive) {
+                    isStraight = true;
+                    straightHighCard = uniqueValues[0];
+                }
+            }
+        }
+    }
 
-    let type = HAND_TYPES.HIGH_CARD;
-    let relevantCardValues = [...values]; // 默认比较所有牌
 
-    if (hand.length === 5) {
-        if (isStraight && isFlush) {
-            type = HAND_TYPES.STRAIGHT_FLUSH;
-            relevantCardValues = [straightCheck.highCard, ...values]; // 顺子最大牌优先，然后是其他牌
-            if(straightCheck.isAceLow) relevantCardValues = [5, 4, 3, 2, 1]; // A2345的比较值
-        } else if (counts[0] === 4) {
-            type = HAND_TYPES.FOUR_OF_A_KIND;
-            const fourRank = Object.keys(rankCounts).find(r => rankCounts[r] === 4);
-            const kickerRank = Object.keys(rankCounts).find(r => rankCounts[r] === 1);
-            relevantCardValues = [RANK_VALUES[fourRank], RANK_VALUES[kickerRank]];
-        } else if (counts[0] === 3 && counts[1] === 2) {
-            type = HAND_TYPES.FULL_HOUSE;
-            const threeRank = Object.keys(rankCounts).find(r => rankCounts[r] === 3);
-            const pairRank = Object.keys(rankCounts).find(r => rankCounts[r] === 2);
-            relevantCardValues = [RANK_VALUES[threeRank], RANK_VALUES[pairRank]];
-        } else if (isFlush) {
-            type = HAND_TYPES.FLUSH;
-            relevantCardValues = values; // 比较所有牌
-        } else if (isStraight) {
-            type = HAND_TYPES.STRAIGHT;
-            relevantCardValues = [straightCheck.highCard, ...values];
-            if(straightCheck.isAceLow) relevantCardValues = [5, 4, 3, 2, 1];
-        } else if (counts[0] === 3) {
-            type = HAND_TYPES.THREE_OF_A_KIND;
-            const threeRank = Object.keys(rankCounts).find(r => rankCounts[r] === 3);
-            const kickers = ranks.filter(r => r !== threeRank).map(r => RANK_VALUES[r]).sort((a,b)=>b-a);
-            relevantCardValues = [RANK_VALUES[threeRank], ...kickers.slice(0,2)];
-        } else if (counts[0] === 2 && counts[1] === 2) {
-            type = HAND_TYPES.TWO_PAIR;
-            const pairRanks = Object.keys(rankCounts).filter(r => rankCounts[r] === 2);
+    const rankCounts = {}; // {'ace':1, '10':2, ...}
+    ranks.forEach(r => { rankCounts[r] = (rankCounts[r] || 0) + 1; });
+    const counts = Object.values(rankCounts).sort((a,b) => b-a); // [4,1], [3,2], ...
+
+    let handType = { score: 1, name: HAND_TYPE_NAMES.HIGH_CARD, valuesForTieBreak: values };
+
+    if (handCards.length === 5) {
+        if (isStraight && isFlush) handType = { score: 9, name: HAND_TYPE_NAMES.STRAIGHT_FLUSH, valuesForTieBreak: isAceLowStraight ? [5,4,3,2,1] : [straightHighCard, ...values.filter(v => v !== straightHighCard && !isAceLowStraight)] };
+        else if (counts[0] === 4) {
+            const fourRank = Object.keys(rankCounts).find(r => rankCounts[r]===4);
+            const kicker = values.find(v => v !== RANK_VALUES[fourRank]);
+            handType = { score: 8, name: HAND_TYPE_NAMES.FOUR_OF_A_KIND, valuesForTieBreak: [RANK_VALUES[fourRank], kicker] };
+        }
+        else if (counts[0] === 3 && counts[1] === 2) {
+             const threeRank = Object.keys(rankCounts).find(r => rankCounts[r]===3);
+             const pairRank = Object.keys(rankCounts).find(r => rankCounts[r]===2);
+             handType = { score: 7, name: HAND_TYPE_NAMES.FULL_HOUSE, valuesForTieBreak: [RANK_VALUES[threeRank], RANK_VALUES[pairRank]] };
+        }
+        else if (isFlush) handType = { score: 6, name: HAND_TYPE_NAMES.FLUSH, valuesForTieBreak: values };
+        else if (isStraight) handType = { score: 5, name: HAND_TYPE_NAMES.STRAIGHT, valuesForTieBreak: isAceLowStraight ? [5,4,3,2,1] : [straightHighCard, ...values.filter(v => v !== straightHighCard && !isAceLowStraight)] };
+        else if (counts[0] === 3) {
+            const threeRank = Object.keys(rankCounts).find(r => rankCounts[r]===3);
+            const kickers = values.filter(v => v !== RANK_VALUES[threeRank]).sort((a,b)=>b-a);
+            handType = { score: 4, name: HAND_TYPE_NAMES.THREE_OF_A_KIND, valuesForTieBreak: [RANK_VALUES[threeRank], ...kickers.slice(0,2)] };
+        }
+        else if (counts[0] === 2 && counts[1] === 2) {
+            const pairRanks = Object.keys(rankCounts).filter(r => rankCounts[r]===2);
             const pairValues = pairRanks.map(r => RANK_VALUES[r]).sort((a,b)=>b-a);
-            const kickerRank = Object.keys(rankCounts).find(r => rankCounts[r] === 1);
-            relevantCardValues = [...pairValues, RANK_VALUES[kickerRank]];
+            const kicker = values.find(v => !pairValues.includes(v));
+            handType = { score: 3, name: HAND_TYPE_NAMES.TWO_PAIR, valuesForTieBreak: [...pairValues, kicker] };
+        }
+        else if (counts[0] === 2) {
+            const pairRank = Object.keys(rankCounts).find(r => rankCounts[r]===2);
+            const kickers = values.filter(v => v !== RANK_VALUES[pairRank]).sort((a,b)=>b-a);
+            handType = { score: 2, name: HAND_TYPE_NAMES.ONE_PAIR, valuesForTieBreak: [RANK_VALUES[pairRank], ...kickers.slice(0,3)] };
+        }
+    } else if (handCards.length === 3) { // 头墩
+        if (counts[0] === 3) {
+            const threeRank = Object.keys(rankCounts).find(r => rankCounts[r]===3);
+            handType = { score: 4, name: HAND_TYPE_NAMES.THREE_OF_A_KIND, valuesForTieBreak: [RANK_VALUES[threeRank]] }; // 头冲三通常比普通三条大，但基础分一样
         } else if (counts[0] === 2) {
-            type = HAND_TYPES.ONE_PAIR;
-            const pairRank = Object.keys(rankCounts).find(r => rankCounts[r] === 2);
-            const kickers = ranks.filter(r => r !== pairRank).map(r => RANK_VALUES[r]).sort((a,b)=>b-a);
-            relevantCardValues = [RANK_VALUES[pairRank], ...kickers.slice(0,3)];
-        }
-    } else if (hand.length === 3) { // 头墩
-        if (counts[0] === 3) { // 冲三
-            type = HAND_TYPES.THREE_OF_A_KIND; // 特殊的三条
-            const threeRank = Object.keys(rankCounts).find(r => rankCounts[r] === 3);
-            relevantCardValues = [RANK_VALUES[threeRank]];
-        } else if (counts[0] === 2) { // 一对
-            type = HAND_TYPES.ONE_PAIR;
-            const pairRank = Object.keys(rankCounts).find(r => rankCounts[r] === 2);
-            const kickerRank = Object.keys(rankCounts).find(r => rankCounts[r] === 1);
-            relevantCardValues = [RANK_VALUES[pairRank], RANK_VALUES[kickerRank]];
-        }
-        // 乌龙牌 relevantCardValues 已经是 values
-    }
-
-    return {
-        typeScore: type.score,
-        name: type.name,
-        relevantCardValues: relevantCardValues // 用于同牌型比较的值，已排序
-    };
-}
-
-function checkStraight(sortedValuesDesc) { // values: [14, 10, 9, 8, 7]
-    if (sortedValuesDesc.length < 3) return { isStraight: false }; // 至少3张，十三水顺子通常5张
-    // A2345 (牌值为 14,5,4,3,2)
-    if (sortedValuesDesc.length === 5 &&
-        sortedValuesDesc[0] === 14 && sortedValuesDesc[1] === 5 && sortedValuesDesc[2] === 4 &&
-        sortedValuesDesc[3] === 3 && sortedValuesDesc[4] === 2) {
-        return { isStraight: true, highCard: 5, isAceLow: true }; // A2345顺子以5为最大牌
-    }
-    // 普通顺子
-    for (let i = 0; i < sortedValuesDesc.length - 1; i++) {
-        if (sortedValuesDesc[i] - sortedValuesDesc[i+1] !== 1) {
-            return { isStraight: false };
+            const pairRank = Object.keys(rankCounts).find(r => rankCounts[r]===2);
+            const kicker = values.find(v => v !== RANK_VALUES[pairRank]);
+            handType = { score: 2, name: HAND_TYPE_NAMES.ONE_PAIR, valuesForTieBreak: [RANK_VALUES[pairRank], kicker] };
         }
     }
-    return { isStraight: true, highCard: sortedValuesDesc[0], isAceLow: false };
+    // console.log(`[GameLogic.js] Evaluated hand: ${handCards.map(c=>c.id).join(',')}`, handType);
+    return handType;
 }
 
 /**
- * 比较两手牌的评估结果
- * @param {object} eval1 - 第一个牌的评估结果
- * @param {object} eval2 - 第二个牌的评估结果
- * @returns {number} 1 if eval1 > eval2, -1 if eval1 < eval2, 0 if equal
+ * 比较两个已评估的墩
+ * @returns 1 if hand1Eval > hand2Eval, -1 if hand1Eval < hand2Eval, 0 if equal
  */
-function compareEvaluatedHands(eval1, eval2) {
-    if (eval1.typeScore > eval2.typeScore) return 1;
-    if (eval1.typeScore < eval2.typeScore) return -1;
-
-    // 牌型相同，比较 relevantCardValues
-    for (let i = 0; i < Math.min(eval1.relevantCardValues.length, eval2.relevantCardValues.length); i++) {
-        if (eval1.relevantCardValues[i] > eval2.relevantCardValues[i]) return 1;
-        if (eval1.relevantCardValues[i] < eval2.relevantCardValues[i]) return -1;
+function compareDuns(dun1Eval, dun2Eval) {
+    if (dun1Eval.score > dun2Eval.score) return 1;
+    if (dun1Eval.score < dun2Eval.score) return -1;
+    // 同牌型比大小
+    const v1 = dun1Eval.valuesForTieBreak;
+    const v2 = dun2Eval.valuesForTieBreak;
+    for (let i = 0; i < Math.min(v1.length, v2.length); i++) {
+        if (v1[i] > v2[i]) return 1;
+        if (v1[i] < v2[i]) return -1;
     }
-    return 0; // 完全相同
+    return 0;
 }
 
 /**
- * 检查三墩是否倒水
- * @param {object} headEval
- * @param {object} middleEval
- * @param {object} tailEval
- * @returns {boolean} true if 倒水, false otherwise
+ * 检查玩家摆的牌是否倒水
  */
-function isDaoshui(headEval, middleEval, tailEval) {
-    if (compareEvaluatedHands(headEval, middleEval) > 0) return true; // 头 > 中
-    if (compareEvaluatedHands(middleEval, tailEval) > 0) return true; // 中 > 尾
+function checkDaoshui(headCards, middleCards, tailCards) {
+    const headEval = evaluatePokerHand(headCards);
+    const middleEval = evaluatePokerHand(middleCards);
+    const tailEval = evaluatePokerHand(tailCards);
+
+    if (compareDuns(headEval, middleEval) > 0) return true; // 头 > 中
+    if (compareDuns(middleEval, tailEval) > 0) return true; // 中 > 尾
     return false;
 }
 
-
-// --- 简单AI摆牌逻辑 ---
-// (这是一个非常基础的AI，只为让游戏能进行)
 /**
- * AI 自动摆牌 (简化版)
- * @param {object[]} hand - AI的13张手牌
- * @returns {object|null} { head: [], middle: [], tail: [], headEval:{}, middleEval:{}, tailEval:{}, isDaoshui: bool } 或 null
+ * AI 极简摆牌：按牌值大小顺序摆，小的放头，大的放尾
+ * (这通常不是好牌，但能保证不倒水)
+ * @param {object[]} aiHand - AI的13张手牌
+ * @returns {object} { head: Card[], middle: Card[], tail: Card[] }
  */
-function getAIArrangement(hand) {
-    if (hand.length !== 13) return null;
-
-    // 策略：尝试所有组合太慢，用一个启发式方法
-    // 1. 尝试找出最大的牌型（如同花顺、铁支、葫芦）放在尾墩
-    // 2. 然后用剩下的牌在中墩组最好的牌
-    // 3. 最后头墩
-    // 4. 如果倒水，则调整（例如，降级尾墩或中墩的牌型）
-    //
-    // 极简化：直接按牌值大小分配，确保不倒水
-    // (这通常不是好牌，但能保证不倒水)
-    const sortedHand = [...hand].sort((a, b) => a.value - b.value); // 升序
-
-    const potentialArrangements = [];
-
-    // 尝试不同的分割点，这里只是一种非常简单的尝试
-    // 实际上，一个好的AI需要枚举更多有意义的组合或使用更复杂的策略
-    function tryArrangement(h, m, t) {
-        const headCards = h;
-        const middleCards = m;
-        const tailCards = t;
-
-        const headEval = evaluateHand(headCards);
-        const middleEval = evaluateHand(middleCards);
-        const tailEval = evaluateHand(tailCards);
-        const daoshui = isDaoshui(headEval, middleEval, tailEval);
-
-        if (!daoshui) {
-            // 计算一个简单的分数来评估这个摆法，例如三墩牌型分之和
-            const score = (headEval.typeScore || 0) + (middleEval.typeScore || 0) * 1.1 + (tailEval.typeScore || 0) * 1.2; // 给中尾墩稍高权重
-            potentialArrangements.push({
-                head: headCards, middle: middleCards, tail: tailCards,
-                headEval, middleEval, tailEval, isDaoshui: daoshui, score
-            });
-        }
-    }
-
-    // 这是一个非常暴力的全组合尝试，对于纯前端可能会非常慢，需要优化
-    // C(13,3) * C(10,5) = 72072 种
-    // 为了演示，我们只做一个保底策略
-    const head = sortedHand.slice(0, 3);
-    const middle = sortedHand.slice(3, 8);
-    const tail = sortedHand.slice(8, 13);
-    tryArrangement(head, middle, tail);
-
-
-    // 如果没有找到不倒水的（理论上上面那个保底会找到）
-    // 或者想找“更好”的，就需要更多组合尝试和评分
-    if (potentialArrangements.length > 0) {
-        // 简单返回第一个不倒水的，或者可以根据score排序选最好的
-        potentialArrangements.sort((a,b) => b.score - a.score); // 按评估分降序
-        return potentialArrangements[0];
-    }
-
-
-    // 绝对保底 (如果上面逻辑出问题)
-    const fallbackHead = sortedHand.slice(0, 3);
-    const fallbackMiddle = sortedHand.slice(3, 8);
-    const fallbackTail = sortedHand.slice(8, 13);
-    const hE = evaluateHand(fallbackHead);
-    const mE = evaluateHand(fallbackMiddle);
-    const tE = evaluateHand(fallbackTail);
-
+function getSimpleAIArrangement(aiHand) {
+    const sortedHand = [...aiHand].sort((a, b) => a.value - b.value); // 牌值升序
     return {
-        head: fallbackHead, middle: fallbackMiddle, tail: fallbackTail,
-        headEval: hE, middleEval: mE, tailEval: tE,
-        isDaoshui: isDaoshui(hE, mE, tE), // 应该不会倒水
-        score: (hE.typeScore || 0) + (mE.typeScore || 0) + (tE.typeScore || 0)
+        head: sortedHand.slice(0, 3),
+        middle: sortedHand.slice(3, 8),
+        tail: sortedHand.slice(8, 13)
     };
 }
 
-// --- 比牌逻辑 (纯前端，简化版，只比较道数) ---
 /**
- * 比较两个玩家摆好的牌，计算得分
- * @param {object} player1Arrangement - 玩家1的摆牌结果 (同 getAIArrangement 返回的结构)
- * @param {object} player2Arrangement - 玩家2的摆牌结果
- * @returns {object} { player1Score: number, player2Score: number, details: string[] }
+ * 计算玩家与单个AI的比牌结果（道数）
+ * @param {object} playerArrangement - { head, middle, tail } 玩家的牌
+ * @param {object} aiArrangement - { head, middle, tail } AI的牌
+ * @returns {object} { playerScoreChange: number, details: string[] }
  */
-function comparePlayerHands(player1Arrangement, player2Arrangement) {
-    let p1Score = 0;
+function calculateScoreAgainstAI(playerArrangement, aiArrangement) {
+    const playerHeadEval = evaluatePokerHand(playerArrangement.head);
+    const playerMiddleEval = evaluatePokerHand(playerArrangement.middle);
+    const playerTailEval = evaluatePokerHand(playerArrangement.tail);
+
+    const aiHeadEval = evaluatePokerHand(aiArrangement.head);
+    const aiMiddleEval = evaluatePokerHand(aiArrangement.middle);
+    const aiTailEval = evaluatePokerHand(aiArrangement.tail);
+
+    const playerIsDaoshui = checkDaoshui(playerArrangement.head, playerArrangement.middle, playerArrangement.tail);
+    const aiIsDaoshui = checkDaoshui(aiArrangement.head, aiArrangement.middle, aiArrangement.tail);
+
+    let playerScoreChange = 0;
     const details = [];
 
-    if (player1Arrangement.isDaoshui && player2Arrangement.isDaoshui) {
-        details.push("双方都倒水，平局。");
-    } else if (player1Arrangement.isDaoshui) {
-        p1Score -= 6; // 假设倒水输6道 (打枪)
-        details.push("玩家1倒水，输6道。");
-    } else if (player2Arrangement.isDaoshui) {
-        p1Score += 6; // 玩家2倒水，赢6道
-        details.push("AI倒水，玩家1赢6道。");
+    details.push(`你的牌: 头(${playerHeadEval.name}) 中(${playerMiddleEval.name}) 尾(${playerTailEval.name}) ${playerIsDaoshui ? '[倒水!]' : ''}`);
+    details.push(`AI的牌: 头(${aiHeadEval.name}) 中(${aiMiddleEval.name}) 尾(${aiTailEval.name}) ${aiIsDaoshui ? '[倒水!]' : ''}`);
+
+
+    if (playerIsDaoshui && aiIsDaoshui) {
+        details.push("双方都倒水，本轮平手。");
+    } else if (playerIsDaoshui) {
+        playerScoreChange = -6; // 简化：倒水输6道（算被打枪）
+        details.push("你倒水了，输 6 道。");
+    } else if (aiIsDaoshui) {
+        playerScoreChange = 6;
+        details.push("AI倒水了，你赢 6 道。");
     } else {
-        // 逐墩比较
-        const headComp = compareEvaluatedHands(player1Arrangement.headEval, player2Arrangement.headEval);
-        let headPoints = headComp;
-        // 头冲三算3道
-        if (headComp > 0 && player1Arrangement.headEval.typeScore === HAND_TYPES.THREE_OF_A_KIND.score) headPoints = 3;
-        if (headComp < 0 && player2Arrangement.headEval.typeScore === HAND_TYPES.THREE_OF_A_KIND.score) headPoints = -3;
-        p1Score += headPoints;
-        details.push(`头墩: ${headPoints > 0 ? '赢' : (headPoints < 0 ? '输' : '平')} ${Math.abs(headPoints)} 道 (${player1Arrangement.headEval.name} vs ${player2Arrangement.headEval.name})`);
+        let headScore = 0;
+        const headComp = compareDuns(playerHeadEval, aiHeadEval);
+        if (headComp !== 0) headScore = headComp > 0 ? 1 : -1;
+        // 头冲三特殊算分
+        if (playerHeadEval.name === HAND_TYPE_NAMES.THREE_OF_A_KIND && headComp > 0) headScore = 3;
+        if (aiHeadEval.name === HAND_TYPE_NAMES.THREE_OF_A_KIND && headComp < 0) headScore = -3;
+        details.push(`头墩: ${headScore > 0 ? '赢' : (headScore < 0 ? '输' : '平')} ${Math.abs(headScore)} 道`);
+        playerScoreChange += headScore;
 
-        const middleComp = compareEvaluatedHands(player1Arrangement.middleEval, player2Arrangement.middleEval);
-        // 中墩铁支、同花顺有额外道数，这里简化，只算1道
-        p1Score += middleComp;
-        details.push(`中墩: ${middleComp > 0 ? '赢' : (middleComp < 0 ? '输' : '平')} ${Math.abs(middleComp)} 道 (${player1Arrangement.middleEval.name} vs ${player2Arrangement.middleEval.name})`);
+        let middleScore = 0;
+        const middleComp = compareDuns(playerMiddleEval, aiMiddleEval);
+        if (middleComp !== 0) middleScore = middleComp > 0 ? 1 : -1;
+        // TODO: 中墩特殊牌型加道 (如铁支、同花顺)
+        details.push(`中墩: ${middleScore > 0 ? '赢' : (middleScore < 0 ? '输' : '平')} ${Math.abs(middleScore)} 道`);
+        playerScoreChange += middleScore;
 
-        const tailComp = compareEvaluatedHands(player1Arrangement.tailEval, player2Arrangement.tailEval);
-        // 尾墩铁支、同花顺有额外道数
-        p1Score += tailComp;
-        details.push(`尾墩: ${tailComp > 0 ? '赢' : (tailComp < 0 ? '输' : '平')} ${Math.abs(tailComp)} 道 (${player1Arrangement.tailEval.name} vs ${player2Arrangement.tailEval.name})`);
+        let tailScore = 0;
+        const tailComp = compareDuns(playerTailEval, aiTailEval);
+        if (tailComp !== 0) tailScore = tailComp > 0 ? 1 : -1;
+        // TODO: 尾墩特殊牌型加道
+        details.push(`尾墩: ${tailScore > 0 ? '赢' : (tailScore < 0 ? '输' : '平')} ${Math.abs(tailScore)} 道`);
+        playerScoreChange += tailScore;
 
-        // 简单打枪判断 (三墩全胜/全输)
-        if (headComp > 0 && middleComp > 0 && tailComp > 0) {
-            p1Score = (Math.abs(headPoints) + Math.abs(middleComp) + Math.abs(tailComp)) * 2; // 道数翻倍
-            details.push("玩家1打枪！得分翻倍。");
-        } else if (headComp < 0 && middleComp < 0 && tailComp < 0) {
-            p1Score = -(Math.abs(headPoints) + Math.abs(middleComp) + Math.abs(tailComp)) * 2;
-            details.push("AI打枪！玩家1失分翻倍。");
+        // 简单打枪判断
+        if (headScore > 0 && middleScore > 0 && tailScore > 0) { // 全赢
+            playerScoreChange = (Math.abs(headScore) + Math.abs(middleScore) + Math.abs(tailScore)) * 2;
+            details.push("打枪！得分翻倍。");
+        } else if (headScore < 0 && middleScore < 0 && tailScore < 0) { // 全输
+            playerScoreChange = -(Math.abs(headScore) + Math.abs(middleScore) + Math.abs(tailScore)) * 2;
+            details.push("被打枪！失分翻倍。");
         }
     }
-
-    // TODO: 实现特殊牌型的额外加分 (如一条龙、三同花等)
-
-    return {
-        player1Score: p1Score, // 这是“道数”变化，不是最终积分
-        player2Score: -p1Score,
-        details: details
-    };
+    details.push(`本轮对该AI总道数变化: ${playerScoreChange > 0 ? '+' : ''}${playerScoreChange}`);
+    return { playerScoreChange, details };
 }
