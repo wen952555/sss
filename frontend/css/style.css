@@ -1,96 +1,64 @@
-/* frontend/css/style.css (增大卡牌并在手牌区完整显示) */
+/* frontend/css/style.css */
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { height: 100%; }
-body {
-    font-family: system-ui, sans-serif;
-    background-color: #f0f2f5;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    min-height: 100%;
-}
-
-main.game-container {
-    max-width: 520px; /* <<--- 尝试稍微增大一点点，为更大的卡牌腾出宽度
-                                例如：如果卡牌目标宽度55px，margin 2px*2=4px，
-                                单张总宽59px，7张需要 7 * 59 = 413px。
-                                容器宽度需要大于 413px + 左右padding。
-                                520px 减去自身padding和子元素padding后，
-                                #myHandDisplay内容区宽度大约是 520-20(main_pad)-0(zone_pad)-0(area_pad)-10(hand_pad) = 490px 左右
-                                这应该能放下7张总宽59px的牌 (7*59=413px)
-                           */
-    width: 100%;
-    margin: 5px auto;
-    padding: 10px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-#gameTable { /* ... (保持不变) ... */ }
-.ai-player-display-area { /* ... (保持不变) ... */ }
-.player-info-box { /* ... (保持不变) ... */ }
-.player-arrangement-zone { /* ... (保持不变，特别是flex-grow:1和min-height) ... */ }
-.dun-section, .human-player-hand-area { /* ... (保持不变，特别是flex-grow/basis和min-height) ... */ }
+/* ... (所有您之前已确认完美的布局CSS，例如：) */
+/* html, body, main.game-container, #gameTable, */
+/* .ai-player-display-area, .player-info-box, */
+/* .player-arrangement-zone, */
+/* .dun-section, .human-player-hand-area, */
+/* .dun-section.top-dun (flex-grow:1, flex-basis:0, min-height), */
+/* .human-player-hand-area (flex-grow:2, flex-basis:0, min-height), */
+/* .dun-section.bottom-dun (flex-grow:1, flex-basis:0, min-height), */
+/* .hand-container (通用样式，特别是 height:100%), */
+/* .hand-container::before (伪元素), */
+/* #headDun.hand-container, #tailDun.hand-container (特定的墩容器样式), */
+/* .feedback-and-actions-area (底部按钮区) */
+/* === 以上所有这些规则，请务必保持为您之前认为布局完美时的状态 === */
 
 
-/* --- 卡牌容器 (手牌区和墩位) --- */
-.hand-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: flex-start;
-    align-content: flex-start;
-    padding: 25px 4px 4px 4px; /* 顶部padding给伪元素, 左右和底部padding可以小 */
-    border: 2px dashed #d1d5db;
-    border-radius: 5px;
-    background-color: #fff;
-    position: relative;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
+/* --- 唯一允许修改的区域 --- */
 
-.hand-container::before { /* ... (保持不变) ... */ }
-
-#headDun.hand-container,
-#tailDun.hand-container {
-    /* 高度和宽度由父级flex和自身内容决定 */
-    min-height: 90px; /* <<--- 根据新的卡牌高度调整 (新牌高约77 + padding) */
-}
-
+/* 1. 确保手牌区允许换行并从顶部开始 */
 #myHandDisplay.hand-container {
-    border-color: #4c66a4;
-    background-color: #eff2f5;
-    min-height: 175px; /* <<--- 调整以适应两行更大的卡牌
-                               (新牌高约77px + 上下margin 2*2=4px => 单行约81px。
-                                两行约 162px。加上容器padding和一些余量)
-                           */
+    /* 保留您此选择器下所有其他您满意的样式 (如 border-color, background-color) */
+    /* === 确保以下属性存在且正确 === */
+    display: flex; /* 应该已经在 .hand-container 通用规则里了 */
+    flex-wrap: wrap;          /* 允许卡牌换行 */
+    align-items: flex-start;  /* 卡牌在交叉轴（垂直）上顶部对齐 */
+    align-content: flex-start;/* 多行内容从容器顶部开始排列 */
+    overflow-x: hidden;       /* 禁止横向滚动条 */
+    overflow-y: auto;         /* 如果牌太多行，允许垂直滚动 */
+    /* === 其他属性如 padding, min-height 等，使用您之前满意的值 === */
+    /* 例如，如果您之前的 padding 是 22px 4px 4px 4px，就保留它 */
+    /* 如果之前的 min-height 是 156px，就保留它 */
 }
-/* is-middle-dun-active 等样式不变 */
-/* #myHandDisplay 的伪元素文字更新逻辑不变 */
 
 
-.droppable-area.drag-over { /* ... */ }
-
-/* === 核心修改：卡牌本身的尺寸和间距 === */
+/* 2. 只修改卡牌本身的尺寸和间距 */
 .card {
-    width: 55px;  /* <<--- 增大宽度 */
-    height: 77px; /* <<--- 按比例增大高度 (约 55 * 1.4) */
-    margin: 2px;  /* <<--- 保持或微调间距 */
-    flex-shrink: 0;
+    /* === 在这里尝试不同的 width, height, margin === */
+    width: 52px;  /* 尝试值1：比46稍大 */
+    height: 73px; /* 保持比例 (52 * 1.4 ≈ 72.8) */
+    margin: 2px;
 
-    /* 其他 .card 样式保持您之前满意的版本 */
+    /* 或者尝试值2： */
+    /* width: 55px; */
+    /* height: 77px; */
+    /* margin: 2px; */
+
+    /* 或者尝试值3 (如果想更紧凑): */
+    /* width: 50px; */
+    /* height: 70px; */
+    /* margin: 1px; */
+
+    /* === 确保这个属性存在 === */
+    flex-shrink: 0; /* 防止卡牌在flex容器中被压缩变形 */
+
+    /* === 以下所有其他 .card 属性，请务必保持为您之前认为完美的版本 === */
+    /* 例如: border, border-radius, box-shadow, background-color, display: flex,
+             justify-content, align-items, cursor, user-select, overflow */
     border: 1px solid #bcc0c4;
-    border-radius: 4px; /* 可以稍微增大一点配合大卡牌 */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    border-radius: 3px; /* 或您之前的值 */
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
     background-color: white;
     display: flex;
     justify-content: center;
@@ -99,12 +67,9 @@ main.game-container {
     user-select: none;
     overflow: hidden;
 }
-/* === 结束核心修改区域 === */
+/* === 结束唯一允许修改的区域 === */
+
 
 .card img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-.card.dragging { /* ... */ }
-.card-error-placeholder, .card-image-error-text { /* ... */ }
-
-/* --- 消息和操作区 --- */
-.feedback-and-actions-area { /* ... (保持不变) ... */ }
-/* ... (其他 message, game-actions, resultDetails 样式不变) ... */
+.card.dragging { opacity: 0.5; transform: scale(0.95); }
+/* ... (其他所有CSS规则，完全保持您之前认为布局完美时的状态) ... */
