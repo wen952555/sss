@@ -3,60 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水 AI试玩 - 精确布局</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>十三水游戏</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main class="game-container">
-        <div id="gameTable">
-            <div class="ai-player-display-area">
-                <div class="player-info-box" id="aiPlayer0Info">AI 1 (已摆牌)</div>
-                <div class="player-info-box" id="aiPlayer1Info">AI 2 (已摆牌)</div>
-                <div class="player-info-box" id="aiPlayer2Info">AI 3 (已摆牌)</div>
-            </div>
+    <div class="container">
+        <h1>十三水扑克</h1>
 
-            <!-- 红框区域 -->
-            <div class="player-arrangement-zone">
-                <!-- 第一份：头墩 -->
-                <div class="dun-section top-dun">
-                    <div id="headDun" class="hand-container dun-cards droppable-area"
-                         data-dun-name="head" data-max-cards="3"
-                         data-dun-label="头墩 (3张)" data-dun-type="(-)"></div>
-                </div>
-
-                <!-- 第二和第三份：手牌区/中墩区 -->
-                <div class="human-player-hand-area central-area">
-                    <div id="myHandDisplay" class="hand-container droppable-area"
-                         data-dun-name="handOrMiddle" data-max-cards="13"
-                         data-dun-label="你的手牌" data-cards-count="13" data-dun-type="(-)">
-                        <!-- 卡牌 -->
-                    </div>
-                </div>
-
-                <!-- 第四份：尾墩 -->
-                <div class="dun-section bottom-dun">
-                    <div id="tailDun" class="hand-container dun-cards droppable-area"
-                         data-dun-name="tail" data-max-cards="5"
-                         data-dun-label="尾墩 (5张)" data-dun-type="(-)"></div>
+        <div class="game-area">
+            <div id="player-hand-area" class="hand-area">
+                <h2>你的手牌 (13张)</h2>
+                <div id="player-hand" class="card-container player-initial-hand drop-zone">
+                    <!-- 卡片将在这里动态生成 -->
                 </div>
             </div>
 
-            <div class="feedback-and-actions-area">
-                <div id="arrangementError" class="message error-message" style="display:none;"></div>
-                <div class="game-actions">
-                    <button id="submitArrangementButton">提交摆牌</button>
-                    <button id="newGameButton">新一局</button>
+            <div class="controls">
+                <button id="deal-button">发牌</button>
+                <button id="reset-button" style="display:none;">重新整理</button>
+                <!-- <button id="compare-hands-button" style="display:none;">比较牌型</button> -->
+            </div>
+
+            <div class="arranged-hands-area">
+                <h2>摆放牌型</h2>
+                <div class="hand-section">
+                    <h3>头道 (3张)</h3>
+                    <div id="front-hand" class="card-container arranged-hand drop-zone" data-hand-name="front" data-max-cards="3"></div>
                 </div>
-                <div id="gameResultArea" class="message result-message" style="display:none;">
-                    <h4>本局结果：</h4><div id="resultDetails"></div>
+                <div class="hand-section">
+                    <h3>中道 (5张)</h3>
+                    <div id="middle-hand" class="card-container arranged-hand drop-zone" data-hand-name="middle" data-max-cards="5"></div>
+                </div>
+                <div class="hand-section">
+                    <h3>尾道 (5张)</h3>
+                    <div id="back-hand" class="card-container arranged-hand drop-zone" data-hand-name="back" data-max-cards="5"></div>
                 </div>
             </div>
+             <p id="status-message" class="status"></p>
         </div>
-    </main>
-    <!-- Scripts -->
-    <script src="js/card_defs.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/game_logic.js"></script>
-    <script src="js/main.js"></script>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
