@@ -1,35 +1,31 @@
 body, html {
     margin: 0;
     padding: 0;
-    height: 100%;
-    font-family: sans-serif;
-    background-color: #2c3e50; /* 深色背景，更沉浸 */
-    color: #ecf0f1; /* 亮色文字 */
-    overflow: hidden; /* 防止任何滚动 */
-    display: flex; /* 使game-wrapper可以垂直居中（如果需要） */
-    justify-content: center;
-    align-items: center;
+    width: 100vw; /* 使用视口宽度 */
+    height: 100vh; /* 使用视口高度 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; /* 更现代的字体栈 */
+    background-color: #22272e; /* 深邃的背景色 */
+    color: #c9d1d9; /* GitHub Dark Mode-like text color */
+    overflow: hidden; /* 严格禁止滚动 */
+    font-size: calc(0.8vw + 0.5vh + 6px); /* 基础字体大小响应式，最小6px */
+    line-height: 1.5;
 }
 
 .game-wrapper {
     width: 100%;
-    max-width: 900px; /* 限制最大宽度，方便大屏幕显示 */
-    height: 95vh; /* 占据大部分视口高度 */
-    max-height: 700px; /* 限制最大高度 */
-    background-color: #34495e; /* 游戏区域背景 */
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    height: 100%;
+    background-color: #2d333b; /* 游戏区域背景 */
     display: flex;
     flex-direction: column;
-    padding: 15px;
+    padding: clamp(10px, 2vh, 20px); /* 响应式内边距 */
     box-sizing: border-box;
 }
 
 .game-container {
-    flex-grow: 1; /* 占据wrapper内除去按钮区的空间 */
+    flex-grow: 1; /* 占据除了按钮区之外的所有垂直空间 */
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* 防止内容溢出 */
+    overflow: hidden; /* 防止内部内容溢出导致滚动 */
 }
 
 /* 理牌区整体容器 */
@@ -37,236 +33,227 @@ body, html {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* 让三个墩在垂直方向均匀分布 */
+    justify-content: space-between; /* 墩在垂直方向上均匀分布 */
+    gap: clamp(5px, 1.5vh, 15px); /* 响应式墩间距 */
 }
 
 /* 单个牌墩横幅 - 通用样式 */
 .pile-banner {
-    background-color: rgba(255, 255, 255, 0.05); /* 半透明背景 */
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    padding: 10px 15px;
+    background-color: rgba(201, 209, 217, 0.07); /* 更柔和的背景 */
+    border: 2px dashed rgba(173, 186, 199, 0.3); /* 更柔和的边框 */
+    border-radius: clamp(6px, 1vw, 10px); /* 响应式圆角 */
+    padding: clamp(8px, 1.5vh, 15px) clamp(10px, 1.5vw, 20px); /* 响应式内边距 */
     display: flex;
-    align-items: center;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    align-items: flex-start; /* 标签和卡牌区都从顶部开始 */
+    transition: border-color 0.2s ease, background-color 0.2s ease;
     flex-shrink: 0;
     box-sizing: border-box;
+    position: relative;
+    overflow: hidden; /* 很重要，防止卡牌视觉上溢出墩 */
 }
 .pile-banner.pile-target:hover {
-    border-color: #3498db;
-    background-color: rgba(52, 152, 219, 0.1);
+    border-color: #58a6ff; /* GitHub-like blue */
+    background-color: rgba(88, 166, 255, 0.1);
 }
 
 /* 特定墩的样式 */
 #headPileArea, #tailPileArea {
-    min-height: 100px; /* 增加头尾墩最小高度以容纳更大的牌 */
-    flex-basis: 22%; /* 调整flex-basis */
+    flex-basis: clamp(80px, 20vh, 150px); /* 响应式基础高度 */
+    min-height: 0; /* 允许flex-basis完全控制高度 */
     cursor: pointer;
 }
-
 #middlePileArea {
-    min-height: 220px; /* 大幅增加中墩/手牌区最小高度 */
-    flex-basis: 56%; /* 调整flex-basis */
+    flex-basis: clamp(120px, 45vh, 300px); /* 中墩占据更多空间 */
+    min-height: 0;
 }
+
 #middlePileArea.is-hand-source {
-    background-color: rgba(255, 255, 255, 0.1); /* 手牌区用更亮的半透明背景 */
-    border-style: solid; /* 手牌区用实线边框 */
+    background-color: rgba(201, 209, 217, 0.1);
+    border-style: solid;
+    border-color: rgba(173, 186, 199, 0.4);
 }
 #middlePileArea.is-middle-pile {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(201, 209, 217, 0.07);
     cursor: default;
 }
 
 
 .pile-label {
-    font-weight: bold;
-    color: #bdc3c7; /* 标签颜色调整 */
-    margin-right: 15px;
+    font-weight: 600; /* 稍粗的字体 */
+    color: #8b949e; /* GitHub-like secondary text color */
+    margin-right: clamp(8px, 1.5vw, 15px);
     white-space: nowrap;
-    font-size: 0.9em;
-    min-width: 70px; /* 给标签一个最小宽度，避免挤压 */
-    text-align: right;
+    font-size: 0.9em; /* 相对于父元素的字体大小 */
+    padding-top: clamp(2px, 0.5vh, 5px);
+    min-width: clamp(50px, 10vw, 75px); /* 响应式最小宽度 */
+    flex-shrink: 0;
+    position: relative; /* 确保 z-index 生效 */
+    z-index: 1; /* 标签在卡牌下方 */
 }
 .pile-label #middlePileTitle.is-hand-source-title {
     font-style: italic;
-    color: #3498db;
+    color: #58a6ff;
 }
 
 .cards-display-area {
     display: flex;
-    flex-wrap: wrap; /* 允许换行 */
-    gap: 8px; /* 卡牌间距 */
+    flex-wrap: wrap;
+    gap: clamp(4px, 0.8vw, 8px); /* 响应式卡牌间距 */
     flex-grow: 1;
-    align-items: center; /* 垂直居中牌（如果只有一行或行高足够） */
-    justify-content: flex-start; /* 默认从左开始 */
-    min-height: 70px; /* 确保有基础高度 */
-}
-
-/* 中墩作为手牌区时的特殊两行布局 */
-#middlePileArea.is-hand-source .middle-hand-source-layout {
-    display: flex;
-    flex-direction: column; /* 内部元素垂直排列（两行） */
-    justify-content: center; /* 垂直居中两行 */
-    align-items: center; /* 水平居中两行整体 */
-    gap: 10px; /* 两行之间的间距 */
+    align-items: flex-start; /* 卡牌从顶部对齐 */
+    justify-content: flex-start; /* 卡牌从左边对齐 */
     width: 100%;
-}
-.middle-hand-source-layout .card-row {
-    display: flex;
-    justify-content: center; /* 行内卡牌居中 */
-    gap: 8px; /* 行内卡牌间距 */
-    width: 100%; /* 允许行根据内容调整宽度，或强制100% */
+    padding-left: 0; /* 卡牌可以从最左边开始，可能会覆盖标签 */
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2; /* 卡牌在标签上方 */
+    /* margin-left: -20px; */ /* 示例：如果想让卡牌区域向左偏移覆盖标签 */
 }
 
+/* 中墩手牌区布局由JS控制其内部结构 (card-row) */
+#middlePileArea.is-hand-source .cards-display-area {
+    /* CSS主要定义当JS不创建row时的回退（宽屏）*/
+    /* align-items: center; */ /* 若为单行且希望垂直居中 */
+}
+
+.card-row { /* JS动态创建的行，用于窄屏 */
+    display: flex;
+    justify-content: flex-start;
+    gap: clamp(4px, 0.8vw, 8px);
+    width: 100%;
+    margin-bottom: clamp(4px, 0.8vh, 8px);
+}
+.card-row:last-child {
+    margin-bottom: 0;
+}
 
 .card-image {
-    /* 尝试动态计算宽度，或设置一个较大的固定值，让其在容器内自适应 */
-    width: calc((100% / 7) - 10px); /* 尝试让7张牌占满一行，减去gap */
-    max-width: 75px; /* 最大牌宽，避免过大 */
-    min-width: 60px; /* 最小牌宽 */
-    height: auto;
-    aspect-ratio: 2.5 / 3.5; /* 标准扑克牌宽高比，确保SVG不变形 */
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 6px; /* 圆角调整 */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    background-color: white; /* SVG背景 */
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    object-fit: contain; /* 确保SVG内容完整显示 */
+    /* 宽度将主要由JS根据容器和数量计算，CSS提供基础和最大/最小限制 */
+    height: auto; /* 高度自适应 */
+    aspect-ratio: 63 / 88; /* 更精确的扑克牌比例 (e.g., 63mm x 88mm) */
+    border: 1px solid rgba(173, 186, 199, 0.5);
+    border-radius: clamp(3px, 0.5vw, 6px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    background-color: white;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    object-fit: contain;
+    cursor: pointer;
+    /* width: clamp(40px, 7vw, 80px); */ /* 示例：CSS控制的基础响应式宽度，JS可覆盖 */
+    /* max-width: 9vh; */ /* 另一种限制方式：不超过视口高度的某个百分比 */
+    position: relative; /* 为了 z-index 和 transform */
 }
 
-/* 卡牌选中时的样式 */
-#middlePileArea.is-hand-source .cards-display-area .selectable-card.selected {
-    border: 3px solid #3498db !important;
-    box-shadow: 0 0 15px rgba(52, 152, 219, 0.5) !important;
-    transform: scale(1.08) translateY(-3px) !important; /* 更明显的选中效果 */
-    z-index: 5; /* 确保选中牌在最上层 */
+.selectable-card.selected {
+    border: 2px solid #58a6ff !important; /* 增加边框宽度 */
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3), 0 4px 12px rgba(0,0,0,0.4) !important;
+    transform: scale(1.1) translateY(calc(-0.5vh - 2px)) !important; /* 响应式上移 */
+    z-index: 10 !important;
 }
-#middlePileArea.is-hand-source .cards-display-area .card-image:hover:not(.selected) {
-    transform: translateY(-5px); /* 悬停效果 */
-    box-shadow: 0 5px 10px rgba(0,0,0,0.2);
-    border-color: rgba(255,255,255,0.5);
+.selectable-card:hover:not(.selected) {
+    transform: translateY(calc(-0.8vh - 1px));
+    box-shadow: 0 6px 15px rgba(0,0,0,0.35);
+    border-color: rgba(173, 186, 199, 0.8);
+    z-index: 5;
 }
 
-
-.pile-card { /* 墩里的牌（非手牌源中的牌） */
-    position: relative;
-}
 .pile-card .remove-card-btn {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    background-color: #e74c3c;
+    top: calc(-1vh - 2px); /* 响应式定位 */
+    right: calc(-0.8vw - 2px);
+    background-color: #f85149; /* GitHub-like danger color */
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
+    width: clamp(16px, 2.5vh, 22px); /* 响应式大小 */
+    height: clamp(16px, 2.5vh, 22px);
+    font-size: calc(0.8em - 1px);
     font-weight: bold;
-    line-height: 20px;
+    line-height: clamp(16px, 2.5vh, 22px);
     text-align: center;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
     display: none;
-    z-index: 10;
+    z-index: 15;
+    border: 1px solid rgba(255,255,255,0.2);
 }
 .pile-card:hover .remove-card-btn {
-    display: block;
+    display: flex; /* Use flex for centering icon if needed */
+    align-items: center;
+    justify-content: center;
 }
-
 
 /* 合并后的底部按钮栏 */
 .controls-footer-merged {
-    background-color: rgba(0,0,0,0.2); /* 半透明深色背景 */
-    padding: 12px 15px;
+    background-color: rgba(34, 39, 46, 0.8); /* 更深的背景，带透明度 */
+    padding: clamp(8px, 1.5vh, 15px) clamp(10px, 2vw, 20px);
     box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    border-bottom-left-radius: 10px; /* 与game-wrapper圆角匹配 */
-    border-bottom-right-radius: 10px;
-    margin-top: 10px; /* 与理牌区一点间距 */
+    gap: clamp(8px, 1.5vw, 15px);
+    border-top: 1px solid rgba(139, 148, 158, 0.2);
+    flex-shrink: 0;
+    position: relative; /* For potential future absolute positioned elements inside */
 }
-
 .controls-footer-merged button {
-    padding: 10px 20px; /* 按钮也增大 */
-    background-color: #3498db;
+    padding: clamp(8px, 1.2vh, 12px) clamp(15px, 2.5vw, 25px);
+    background-color: #388bfd; /* Brighter blue */
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 1em;
-    font-weight: bold;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 0.95em;
+    font-weight: 500;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
 }
-.controls-footer-merged button:hover {
-    background-color: #2980b9;
+.controls-footer-merged button:hover:not(:disabled) {
+    background-color: #409eff;
     transform: translateY(-1px);
 }
+.controls-footer-merged button:active:not(:disabled) {
+    background-color: #2a7ce8;
+    transform: translateY(0px);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,0.1);
+}
 .controls-footer-merged button:disabled {
-    background-color: #7f8c8d;
+    background-color: #525962;
+    color: #8b949e;
     cursor: not-allowed;
     transform: translateY(0);
     box-shadow: none;
 }
-
 .simple-message-footer {
-    color: #bdc3c7;
-    font-size: 0.9em;
-    margin-left: auto; /* 让消息靠右 */
-    /* text-align: right; */ /* 已通过 margin-left: auto 实现 */
+    color: #8b949e;
+    font-size: 0.85em;
+    margin-left: auto;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-left: 15px;
+    padding-left: clamp(10px, 2vw, 15px);
 }
 
-/* 响应式调整：小屏幕下卡牌可能需要进一步缩小 */
-@media (max-width: 700px) {
-    .game-wrapper {
-        height: auto; /* 小屏幕高度自适应 */
-        margin: 10px;
-        padding: 10px;
-    }
-    .card-image {
-        max-width: 60px; /* 进一步缩小牌 */
-        min-width: 45px;
-    }
-    .pile-banner {
-        padding: 8px;
+/* 媒体查询主要用于结构性改变或非常特定的覆盖，大部分自适应由视口单位和flex/grid处理 */
+@media (max-aspect-ratio: 1/1) and (max-width: 600px) { /* 屏幕较窄且偏高（典型手机竖屏） */
+    .controls-footer-merged {
+        flex-direction: column; /* 按钮垂直排列 */
+        gap: clamp(6px, 1vh, 10px);
+        padding-top: clamp(10px, 1.5vh, 12px);
+        padding-bottom: clamp(10px, 1.5vh, 12px);
     }
     .controls-footer-merged button {
-        padding: 8px 12px;
-        font-size: 0.9em;
-    }
-    #middlePileArea {
-        min-height: 180px;
-    }
-}
-@media (max-width: 500px) {
-    .card-image {
-        max-width: 50px;
-        min-width: 40px;
-    }
-     #middlePileArea {
-        min-height: 150px;
-    }
-    .pile-label {
-        font-size: 0.8em;
-        margin-right: 8px;
-        min-width: 55px;
-    }
-     .controls-footer-merged {
-        flex-direction: column; /* 按钮垂直排列 */
-        gap: 8px;
-        padding: 10px;
+        width: 80%; /* 按钮宽度 */
+        max-width: 280px;
     }
     .simple-message-footer {
         margin-left: 0;
         text-align: center;
         width: 100%;
-        margin-top: 5px;
+        margin-top: clamp(5px, 1vh, 8px);
+    }
+    .pile-label {
+         min-width: clamp(40px, 8vw, 60px);
+         font-size: 0.8em;
     }
 }
