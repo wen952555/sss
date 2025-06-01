@@ -3,17 +3,33 @@ body, html {
     padding: 0;
     height: 100%;
     font-family: sans-serif;
-    background-color: #f0f2f5;
-    color: #333;
-    overflow-x: hidden;
+    background-color: #2c3e50; /* 深色背景，更沉浸 */
+    color: #ecf0f1; /* 亮色文字 */
+    overflow: hidden; /* 防止任何滚动 */
+    display: flex; /* 使game-wrapper可以垂直居中（如果需要） */
+    justify-content: center;
+    align-items: center;
+}
+
+.game-wrapper {
+    width: 100%;
+    max-width: 900px; /* 限制最大宽度，方便大屏幕显示 */
+    height: 95vh; /* 占据大部分视口高度 */
+    max-height: 700px; /* 限制最大高度 */
+    background-color: #34495e; /* 游戏区域背景 */
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
 }
 
 .game-container {
+    flex-grow: 1; /* 占据wrapper内除去按钮区的空间 */
     display: flex;
     flex-direction: column;
-    height: calc(100% - 60px); /* 减去底部按钮栏的高度 */
-    padding: 15px;
-    box-sizing: border-box;
+    overflow: hidden; /* 防止内容溢出 */
 }
 
 /* 理牌区整体容器 */
@@ -21,107 +37,114 @@ body, html {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    justify-content: space-between; /* 让三个墩在垂直方向均匀分布 */
 }
 
 /* 单个牌墩横幅 - 通用样式 */
 .pile-banner {
-    background-color: #ffffff;
-    border-left: 2px dashed #adb5bd;
-    border-right: 2px dashed #adb5bd;
-    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.05); /* 半透明背景 */
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px 15px;
     display: flex;
     align-items: center;
     transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
-/* 头尾墩作为目标时的悬浮效果 */
 .pile-banner.pile-target:hover {
-    border-color: #007bff;
-    box-shadow: 0 0 10px rgba(0, 123, 255, 0.1);
-}
-
-/* 中墩作为手牌源时的卡牌样式 */
-#middlePileArea.is-hand-source .cards-display-area .card-image {
-    cursor: pointer;
-}
-#middlePileArea.is-hand-source .cards-display-area .card-image:hover {
-     transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-#middlePileArea.is-hand-source .cards-display-area .selectable-card.selected {
-    border: 3px solid dodgerblue !important; /* 使用 !important 确保覆盖 */
-    box-shadow: 0 0 8px rgba(30, 144, 255, 0.7) !important;
-    transform: scale(1.05) !important;
+    border-color: #3498db;
+    background-color: rgba(52, 152, 219, 0.1);
 }
 
 /* 特定墩的样式 */
-#headPileArea {
-    min-height: 80px; /* 调整为flex-basis定义的比例 */
-    flex-basis: 25%;
-    border-top: 2px dashed #adb5bd;
-    border-bottom: 1px dashed #adb5bd;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    cursor: pointer; /* 作为目标可点击 */
+#headPileArea, #tailPileArea {
+    min-height: 100px; /* 增加头尾墩最小高度以容纳更大的牌 */
+    flex-basis: 22%; /* 调整flex-basis */
+    cursor: pointer;
 }
 
 #middlePileArea {
-    min-height: 150px; /* 调整为flex-basis定义的比例 */
-    flex-basis: 50%;
-    /* 初始作为手牌区时的特殊样式 */
-    /* &.is-hand-source { background-color: #f8f9fa; } */ /* 淡灰色背景 */
+    min-height: 220px; /* 大幅增加中墩/手牌区最小高度 */
+    flex-basis: 56%; /* 调整flex-basis */
 }
 #middlePileArea.is-hand-source {
-    background-color: #f8f9fa; /* 手牌区用不同背景色 */
+    background-color: rgba(255, 255, 255, 0.1); /* 手牌区用更亮的半透明背景 */
+    border-style: solid; /* 手牌区用实线边框 */
 }
 #middlePileArea.is-middle-pile {
-    background-color: #ffffff; /* 转换回中墩时恢复白色背景 */
-    /* flex-basis: 60%; */ /* 如果转换后高度比例不同，在这里调整 */
+    background-color: rgba(255, 255, 255, 0.05);
     cursor: default;
 }
 
-#tailPileArea {
-    min-height: 80px; /* 调整为flex-basis定义的比例 */
-    flex-basis: 25%;
-    border-top: 1px dashed #adb5bd;
-    border-bottom: 2px dashed #adb5bd;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-    cursor: pointer; /* 作为目标可点击 */
-}
 
 .pile-label {
     font-weight: bold;
-    color: #495057;
-    margin-right: 10px;
+    color: #bdc3c7; /* 标签颜色调整 */
+    margin-right: 15px;
     white-space: nowrap;
+    font-size: 0.9em;
+    min-width: 70px; /* 给标签一个最小宽度，避免挤压 */
+    text-align: right;
 }
 .pile-label #middlePileTitle.is-hand-source-title {
     font-style: italic;
-    color: #007bff; /* 手牌区标题用特殊颜色 */
+    color: #3498db;
 }
 
 .cards-display-area {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 8px; /* 卡牌间距 */
     flex-grow: 1;
-    min-height: 65px;
-    align-items: center;
-    justify-content: flex-start; /* 卡牌从左开始排列 */
+    align-items: center; /* 垂直居中牌（如果只有一行或行高足够） */
+    justify-content: flex-start; /* 默认从左开始 */
+    min-height: 70px; /* 确保有基础高度 */
 }
 
-.card-image {
-    width: 55px; /* 卡牌宽度 */
-    height: auto; /* 保持宽高比 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-    background-color: white; /* SVG透明背景时需要 */
-    transition: transform 0.1s ease, box-shadow 0.1s ease; /* 为选中效果添加平滑过渡 */
+/* 中墩作为手牌区时的特殊两行布局 */
+#middlePileArea.is-hand-source .middle-hand-source-layout {
+    display: flex;
+    flex-direction: column; /* 内部元素垂直排列（两行） */
+    justify-content: center; /* 垂直居中两行 */
+    align-items: center; /* 水平居中两行整体 */
+    gap: 10px; /* 两行之间的间距 */
+    width: 100%;
 }
-.card-image.selectable-card { /* 可以被选择的牌才有这个class */
-    /* 在#middlePileArea.is-hand-source中定义具体选中样式 */
+.middle-hand-source-layout .card-row {
+    display: flex;
+    justify-content: center; /* 行内卡牌居中 */
+    gap: 8px; /* 行内卡牌间距 */
+    width: 100%; /* 允许行根据内容调整宽度，或强制100% */
+}
+
+
+.card-image {
+    /* 尝试动态计算宽度，或设置一个较大的固定值，让其在容器内自适应 */
+    width: calc((100% / 7) - 10px); /* 尝试让7张牌占满一行，减去gap */
+    max-width: 75px; /* 最大牌宽，避免过大 */
+    min-width: 60px; /* 最小牌宽 */
+    height: auto;
+    aspect-ratio: 2.5 / 3.5; /* 标准扑克牌宽高比，确保SVG不变形 */
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px; /* 圆角调整 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    background-color: white; /* SVG背景 */
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    object-fit: contain; /* 确保SVG内容完整显示 */
+}
+
+/* 卡牌选中时的样式 */
+#middlePileArea.is-hand-source .cards-display-area .selectable-card.selected {
+    border: 3px solid #3498db !important;
+    box-shadow: 0 0 15px rgba(52, 152, 219, 0.5) !important;
+    transform: scale(1.08) translateY(-3px) !important; /* 更明显的选中效果 */
+    z-index: 5; /* 确保选中牌在最上层 */
+}
+#middlePileArea.is-hand-source .cards-display-area .card-image:hover:not(.selected) {
+    transform: translateY(-5px); /* 悬停效果 */
+    box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+    border-color: rgba(255,255,255,0.5);
 }
 
 
@@ -130,19 +153,19 @@ body, html {
 }
 .pile-card .remove-card-btn {
     position: absolute;
-    top: -7px;
-    right: -7px;
-    background-color: #dc3545;
+    top: -8px;
+    right: -8px;
+    background-color: #e74c3c;
     color: white;
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 11px;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
     font-weight: bold;
-    line-height: 18px;
+    line-height: 20px;
     text-align: center;
     cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     display: none;
     z-index: 10;
 }
@@ -151,48 +174,99 @@ body, html {
 }
 
 
-/* 底部按钮栏 */
-.controls-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: #343a40;
-    padding: 10px 15px;
+/* 合并后的底部按钮栏 */
+.controls-footer-merged {
+    background-color: rgba(0,0,0,0.2); /* 半透明深色背景 */
+    padding: 12px 15px;
     box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-    height: 60px;
+    gap: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-bottom-left-radius: 10px; /* 与game-wrapper圆角匹配 */
+    border-bottom-right-radius: 10px;
+    margin-top: 10px; /* 与理牌区一点间距 */
 }
 
-.controls-footer button {
-    padding: 8px 15px;
-    background-color: #007bff;
+.controls-footer-merged button {
+    padding: 10px 20px; /* 按钮也增大 */
+    background-color: #3498db;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 1em;
-    transition: background-color 0.2s ease;
+    font-weight: bold;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-.controls-footer button:hover {
-    background-color: #0056b3;
+.controls-footer-merged button:hover {
+    background-color: #2980b9;
+    transform: translateY(-1px);
 }
-.controls-footer button:disabled {
-    background-color: #6c757d;
+.controls-footer-merged button:disabled {
+    background-color: #7f8c8d;
     cursor: not-allowed;
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .simple-message-footer {
-    color: #f8f9fa;
+    color: #bdc3c7;
     font-size: 0.9em;
-    margin-left: 15px;
-    flex-grow: 1;
-    text-align: right;
+    margin-left: auto; /* 让消息靠右 */
+    /* text-align: right; */ /* 已通过 margin-left: auto 实现 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding-left: 15px;
+}
+
+/* 响应式调整：小屏幕下卡牌可能需要进一步缩小 */
+@media (max-width: 700px) {
+    .game-wrapper {
+        height: auto; /* 小屏幕高度自适应 */
+        margin: 10px;
+        padding: 10px;
+    }
+    .card-image {
+        max-width: 60px; /* 进一步缩小牌 */
+        min-width: 45px;
+    }
+    .pile-banner {
+        padding: 8px;
+    }
+    .controls-footer-merged button {
+        padding: 8px 12px;
+        font-size: 0.9em;
+    }
+    #middlePileArea {
+        min-height: 180px;
+    }
+}
+@media (max-width: 500px) {
+    .card-image {
+        max-width: 50px;
+        min-width: 40px;
+    }
+     #middlePileArea {
+        min-height: 150px;
+    }
+    .pile-label {
+        font-size: 0.8em;
+        margin-right: 8px;
+        min-width: 55px;
+    }
+     .controls-footer-merged {
+        flex-direction: column; /* 按钮垂直排列 */
+        gap: 8px;
+        padding: 10px;
+    }
+    .simple-message-footer {
+        margin-left: 0;
+        text-align: center;
+        width: 100%;
+        margin-top: 5px;
+    }
 }
