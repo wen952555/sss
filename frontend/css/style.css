@@ -1,0 +1,61 @@
+body {
+    font-family: sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* 改为 flex-start 避免内容过长时垂直居中问题 */
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+.container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 90%;
+    max-width: 800px;
+    text-align: center;
+}
+.controls button {
+    padding: 10px 15px;
+    margin: 5px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.controls button:hover {
+    background-color: #0056b3;
+}
+.hand-area {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.cards-container {
+    display: flex;
+    flex-wrap: wrap; /* 允许卡牌换行 */
+    justify-content: center;
+    gap: 10px; /* 卡牌间距 */
+    min-height: 100px; /* 给卡牌区域一个最小高度 */
+}
+.card-image {
+    width: 70px; /* 根据你的SVG图片大小调整 */
+    height: auto; /* 保持宽高比 */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+.message-area {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    min-height: 40px;
+}
