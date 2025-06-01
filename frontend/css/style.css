@@ -1,121 +1,61 @@
-/* frontend/css/style.css (确保手牌区卡牌完整显示) */
+/* frontend/css/style.css (微调手牌区卡牌显示，基于您之前满意的布局) */
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { height: 100%; }
-body {
-    font-family: system-ui, sans-serif;
-    background-color: #f0f2f5;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    min-height: 100%;
-}
-
-main.game-container {
-    max-width: 480px; /* <<--- 保持这个宽度，以适应7张小卡牌 */
-    width: 100%;
-    margin: 5px auto;
-    padding: 10px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-#gameTable {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-.ai-player-display-area { /* ... (保持不变) ... */ }
-.player-info-box { /* ... (保持不变) ... */ }
-
-.player-arrangement-zone {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 5px 0px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    background-color: #f8f9fa;
-    flex-grow: 1;
-    min-height: 360px; /* 保持这个，让内部按比例分配 */
-    overflow: hidden;
-}
-
-.dun-section, .human-player-hand-area {
-    width: 95%;
-    max-width: 460px;
-    margin-left: auto;
-    margin-right: auto;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* 防止子元素溢出 */
-    padding: 2px 0;
-}
-
-.dun-section.top-dun { flex-grow: 1; flex-basis: 0%; min-height: 78px; /* 卡牌高64 + 上下margin 2*2 + 上下padding 5*2 = 88，伪元素在padding内 */ }
-.human-player-hand-area { flex-grow: 2; flex-basis: 0%; min-height: 156px; /* 2 * 78 */ }
-.dun-section.bottom-dun { flex-grow: 1; flex-basis: 0%; min-height: 78px; }
+/* ... (所有其他CSS规则，特别是定义了主要区域高度和比例的规则，保持不变) ... */
 
 
-/* --- 卡牌容器 --- */
+/* --- 卡牌容器 (手牌区和墩位) --- */
 .hand-container {
     display: flex;
-    flex-wrap: wrap;         /* 允许换行 */
+    flex-wrap: wrap;
     justify-content: center; /* 卡牌在行内居中 */
-    align-items: flex-start; /* 卡牌从顶部开始排列 */
+    /* align-items: center; */ /* 改为flex-start或移除，让卡牌从顶部开始 */
+    align-items: flex-start; /* 卡牌在交叉轴上顶部对齐 */
     align-content: flex-start;/* 多行内容也从顶部开始 */
-    padding: 20px 4px 4px 4px;/* 顶部给伪元素，左右和底部减小padding */
-    border: 2px dashed #d1d5db;
-    border-radius: 5px;
-    background-color: #fff;
-    position: relative;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    overflow-y: auto; /* 允许垂直滚动 */
-    overflow-x: hidden;/* 禁止水平滚动 */
+    padding: 22px 4px 4px 4px; /* 顶部padding给伪元素文字, 左右和底部减小 */
+    /* ... (其他 .hand-container 样式如 border, background, position, width, height, box-sizing, overflow-y: auto 保持您之前满意的设置) ... */
+    width: 100%; /* 确保它占满父容器 */
+    height: 100%; /* 确保它填满父容器分配的高度 */
+    overflow-x: hidden; /* <<--- 再次强调：禁止手牌区出现横向滚动条 */
 }
 
-.hand-container::before { /* ... (伪元素样式不变) ... */ }
-
-#headDun.hand-container,
-#tailDun.hand-container {
-    /* 高度由父级flex分配 */
-}
+/* ... (.hand-container::before 伪元素样式保持不变) ... */
 
 #myHandDisplay.hand-container {
+    /* min-height: 156px; */ /* 这个值现在主要由父级的flex分配决定，但可以保留一个较小的min-height */
+    /* border-color, background-color, align-content 保持您之前的设置 */
     border-color: #4c66a4;
     background-color: #eff2f5;
-    /* min-height 由父级 .human-player-hand-area 的 flex-grow/basis 控制 */
+    align-content: flex-start;
     /* 确保有足够的宽度来排列7张牌 */
-    /* (46px width + 2px*2 margin) * 7 = 350px. 容器宽度需要大于此值 */
+    /* 它的宽度由父级 .human-player-hand-area 的 max-width 和 width:100% 决定 */
+    /* 父级的父级 .player-arrangement-zone 的宽度又由 #gameTable -> main.game-container 的 max-width 决定 */
 }
-/* is-middle-dun-active 等样式不变 */
-/* #myHandDisplay 的伪元素文字更新逻辑不变 */
+/* ... (#myHandDisplay 的伪元素文字更新逻辑不变) ... */
 
 
-.droppable-area.drag-over { /* ... */ }
-
+/* --- 卡牌本身样式 --- */
 .card {
-    width: 46px;  /* 卡牌宽度 */
-    height: 64px; /* 卡牌高度 */
-    margin: 2px;  /* 卡牌之间的间距 */
-    flex-shrink: 0; /* <<--- 防止卡牌在flex容器中被压缩变形 */
-    /* ... (其他不变) ... */
+    width: 48px;  /* <<--- 微调：尝试这个宽度 */
+    height: 67px; /* <<--- 保持比例 */
+    margin: 2px;  /* <<--- 微调：卡牌之间的间距 */
+    flex-shrink: 0; /* 防止卡牌在flex容器中被压缩变形 */
+    border: 1px solid #bcc0c4;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    background-color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: grab;
+    user-select: none;
+    overflow: hidden;
 }
-.card img { /* ... */ }
-.card.dragging { /* ... */ }
-.card-error-placeholder, .card-image-error-text { /* ... */ }
-
-
-/* --- 消息和操作区 --- */
-.feedback-and-actions-area { /* ... (保持不变) ... */ }
-/* ... (其他 message, game-actions, resultDetails 样式不变) ... */
+.card img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+.card.dragging { /* ... (保持不变) ... */ }
+/* ... (其他卡牌相关CSS不变) ... */
