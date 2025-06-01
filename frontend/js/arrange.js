@@ -2,108 +2,96 @@
 import { showGameMessage, configureButton } from './ui.js';
 import { createCardImageElement } from './card.js';
 
-let fullHandData = [];
-let piles = { head: [], middle: [], tail: [] };
+let fullHandData = []; // Array of {rank, suit, id, element, selected, currentPile}
+let piles = { head: [], middle: [], tail: [] }; // Each pile stores full cardData objects
 const pileLimits = { head: 3, middle: 5, tail: 5 };
-let gameState = 'INITIAL';
+let gameState = 'INITIAL'; // 'INITIAL', 'ARRANGING_FROM_MIDDLE', 'ARRANGEMENT_COMPLETE'
 
 const CARD_ASPECT_RATIO = 63 / 88;
 const NARROW_SCREEN_HAND_ROWS = 2;
-const NARROW_SCREEN_BREAKPOINT_WIDTH = 700;
-const MIN_CARD_WIDTH = 40;
-const MAX_CARD_WIDTH = 90;
+const NARROW_SCREEN_BREAKPOINT_WIDTH = 700; // px
+const MIN_CARD_WIDTH = 40; // px
+const MAX_CARD_WIDTH = 90; // px
 
-// Declare DOM element references at the top level, initialize them later
+// Declare DOM element references
 let middlePileAreaDOM, middlePileTitleDOM;
 let pileCardContainers = { head: null, middle: null, tail: null };
 let pileCountDisplays = { head: null, middle: null, tail: null };
 
-// NEW: Function to initialize DOM element references
 export function initializeArrangeUIDependencies() {
     middlePileAreaDOM = document.getElementById('middlePileArea');
     middlePileTitleDOM = document.getElementById('middlePileTitle');
-
     pileCardContainers.head = document.getElementById('headPileCards');
     pileCardContainers.middle = document.getElementById('middlePileCards');
     pileCardContainers.tail = document.getElementById('tailPileCards');
-
     pileCountDisplays.head = document.getElementById('headPileCount');
-    pileCountDisplays.middle = document.getElementById('middlePileCount'); // Crucial
+    pileCountDisplays.middle = document.getElementById('middlePileCount');
     pileCountDisplays.tail = document.getElementById('tailPileCount');
 
-    // Log to confirm they are found (or not)
-    if (!pileCountDisplays.middle) {
-        console.error("ARRANGE.JS ERROR: 'middlePileCount' element NOT FOUND in DOM during initialization!");
-    }
-    if (!middlePileAreaDOM || !middlePileTitleDOM || !pileCardContainers.head || !pileCardContainers.middle || !pileCardContainers.tail || !pileCountDisplays.head || !pileCountDisplays.tail) {
+    if (!pileCountDisplays.middle || !middlePileAreaDOM || !middlePileTitleDOM ||
+        !pileCardContainers.head || !pileCardContainers.middle || !pileCardContainers.tail ||
+        !pileCountDisplays.head || !pileCountDisplays.tail) {
         console.warn("ARRANGE.JS WARN: One or more UI dependencies were not found during initialization. Check HTML IDs.");
     }
 }
 
-
 function calculateCardWidth(containerWidth, numCardsToFitInRow, gap) {
-    if (numCardsToFitInRow <= 0 || !containerWidth) return MAX_CARD_WIDTH; // Added !containerWidth check
-    const totalGapWidth = Math.max(0, (numCardsToFitInRow - 1)) * gap; // Ensure gap isn't negative
+    if (numCardsToFitInRow <= 0 || !containerWidth || containerWidth <=0) return MAX_CARD_WIDTH;
+    const totalGapWidth = Math.max(0, (numCardsToFitInRow - 1)) * gap;
     let cardWidth = (containerWidth - totalGapWidth) / numCardsToFitInRow;
     return Math.max(MIN_CARD_WIDTH, Math.min(cardWidth, MAX_CARD_WIDTH));
 }
 
-export function initializeArrangement(handCards) {
+export function initializeArrangement(handCards) { // handCards is array of {rank, suit}
     fullHandData = handCards.map((card, index) => ({
         ...card, id: `card-${index}-${Date.now()}`, element: null, selected: false, currentPile: 'middle'
     }));
-    piles = { head: [], middle: [...fullHandData], tail: [] };
+    piles = { head: [], middle: [...fullHandData], tail: [] }; // All cards start in middle (as hand source)
     gameState = 'ARRANGING_FROM_MIDDLE';
 
-    setMiddlePileRole(true);
-    renderPile('head'); // Render these after middle pile is set up, if they depend on its size
-    renderPile('tail');
+    setMiddlePileRole(true); // This will render 'middle'
+    renderPile('head');      // Render empty head
+    renderPile('tail');      // Render empty tail
     updateAllPileCounts();
-    checkAndHandleGameStateTransition();
+    checkAndHandleGameStateTransition(); // Probably won't complete yet
     showGameMessage("请从下方“手牌区”选择牌，再点击头墩或尾墩放置。");
 }
 
 function setMiddlePileRole(isHandSource) {
-    if (!middlePileAreaDOM || !middlePileTitleDOM || !pileCountDisplays.middle) { // Guard clause
-        console.error("setMiddlePileRole: Required DOM elements not initialized.");
-        return;
+    if (!middlePileAreaDOM || !middlePileTitleDOM || !pileCountDisplays.middle || !pileCardContainers.middle) {
+        console.error("setMiddlePileRole: Required DOM elements not initialized."); return;
     }
-
     const middleCardsContainer = pileCardContainers.middle;
     if (isHandSource) {
         middlePileAreaDOM.classList.add('is-hand-source');
         middlePileAreaDOM.classList.remove('is-middle-pile');
-        if (middleCardsContainer) middleCardsContainer.classList.add('middle-hand-source-layout'); // Check if exists
+        middleCardsContainer.classList.add('middle-hand-source-layout');
         middlePileTitleDOM.textContent = '手牌区';
         middlePileTitleDOM.classList.add('is-hand-source-title');
         pileCountDisplays.middle.textContent = `${piles.middle.length}/${fullHandData.length}`;
     } else {
         middlePileAreaDOM.classList.remove('is-hand-source');
         middlePileAreaDOM.classList.add('is-middle-pile');
-        if (middleCardsContainer) middleCardsContainer.classList.remove('middle-hand-source-layout'); // Check if exists
+        middleCardsContainer.classList.remove('middle-hand-source-layout');
         middlePileTitleDOM.textContent = '中墩';
         middlePileTitleDOM.classList.remove('is-hand-source-title');
         pileCountDisplays.middle.textContent = `${piles.middle.length}/${pileLimits.middle}`;
     }
-    renderPile('middle');
+    renderPile('middle'); // Re-render middle pile after role change
 }
 
 function renderPile(pileName) {
     const container = pileCardContainers[pileName];
-    if (!container) { // Guard clause
-        console.warn(`renderPile: Container for pile "${pileName}" not found.`);
-        return;
-    }
+    if (!container) { console.warn(`renderPile: Container for pile "${pileName}" not found.`); return; }
     container.innerHTML = '';
     const cardsToRender = piles[pileName];
     if (!cardsToRender) return;
 
     const isHandSourceMiddle = pileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE';
     const isCompletedMiddle = pileName === 'middle' && gameState === 'ARRANGEMENT_COMPLETE';
-    const containerWidth = container.offsetWidth; // Ensure container is visible and has width
+    const containerWidth = container.offsetWidth;
     const gapStyle = getComputedStyle(container).gap;
     const gap = gapStyle && gapStyle !== 'normal' ? parseFloat(gapStyle) : 6;
-
 
     if (isHandSourceMiddle && cardsToRender.length > 0) {
         const isNarrowScreen = window.innerWidth <= NARROW_SCREEN_BREAKPOINT_WIDTH;
@@ -118,7 +106,7 @@ function renderPile(pileName) {
                 const cardWidth = calculateCardWidth(containerWidth, numCardsThisRow, gap);
                 for (let j = 0; j < numCardsThisRow && currentCardIndex < cardsToRender.length; j++) {
                     const cardData = cardsToRender[currentCardIndex++];
-                    const cardElement = createCardImageElement(cardData);
+                    const cardElement = createCardImageElement(cardData); // cardData is {rank, suit, id, ...}
                     cardData.element = cardElement;
                     cardElement.style.width = `${cardWidth}px`;
                     cardElement.dataset.cardId = cardData.id;
@@ -130,7 +118,7 @@ function renderPile(pileName) {
                 container.appendChild(rowContainer);
             }
         } else { // Wide screen
-            const idealCardsInRow = Math.min(cardsToRender.length, 13); // Try to fit up to 13, or all if less
+            const idealCardsInRow = Math.min(cardsToRender.length, 13);
             const cardWidth = calculateCardWidth(containerWidth, idealCardsInRow, gap);
             cardsToRender.forEach(cardData => {
                 const cardElement = createCardImageElement(cardData);
@@ -145,8 +133,10 @@ function renderPile(pileName) {
         }
     } else { // Head, Tail, or Completed Middle pile
         const numCardsToFit = pileName === 'middle' ? pileLimits.middle :
-                              pileName === 'head' ? pileLimits.head : pileLimits.tail;
-        const cardWidth = calculateCardWidth(containerWidth, cardsToRender.length > 0 ? Math.min(numCardsToFit, cardsToRender.length) : numCardsToFit, gap);
+                              (pileName === 'head' ? pileLimits.head : pileLimits.tail);
+        // Calculate width based on number of cards actually in the pile or the pile limit, whichever is smaller and > 0
+        const effectiveCardsInRow = cardsToRender.length > 0 ? Math.min(numCardsToFit, cardsToRender.length) : numCardsToFit;
+        const cardWidth = calculateCardWidth(containerWidth, effectiveCardsInRow, gap);
 
         cardsToRender.forEach(cardData => {
             const cardElement = createCardImageElement(cardData);
@@ -170,29 +160,16 @@ function renderPile(pileName) {
 let resizeTimeout;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        renderAllPiles();
-    }, 200);
+    resizeTimeout = setTimeout(() => { renderAllPiles(); }, 200);
 });
 
-function renderAllPiles() {
-    for (const pileName in piles) {
-        renderPile(pileName);
-    }
-}
-
+function renderAllPiles() { for (const pileName in piles) { renderPile(pileName); } }
 function updatePileCount(pileName) {
-    if (!pileCountDisplays[pileName]) return; // Guard clause
+    if (!pileCountDisplays[pileName]) return;
     let currentCount = piles[pileName] ? piles[pileName].length : 0;
-    let limit;
-    if (pileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') {
-        limit = fullHandData.length;
-    } else {
-        limit = pileLimits[pileName];
-    }
+    let limit = (pileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') ? fullHandData.length : pileLimits[pileName];
     pileCountDisplays[pileName].textContent = `${currentCount}/${limit}`;
 }
-
 function updateAllPileCounts() { for (const pileName in piles) { updatePileCount(pileName); } }
 
 function handleCardSelectionInSource(cardId) {
@@ -210,14 +187,10 @@ function handleCardSelectionInSource(cardId) {
 }
 
 export function addSelectedCardToTargetPile(targetPileName) {
-    if (targetPileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') {
-        showGameMessage("手牌区不能作为目标。"); return;
-    }
+    if (targetPileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') { showGameMessage("手牌区不能作为目标。"); return; }
     const selectedCard = fullHandData.find(c => c.selected && c.currentPile === 'middle');
     if (!selectedCard) { showGameMessage("请先从手牌区选择一张牌。"); return; }
-    if (piles[targetPileName].length >= pileLimits[targetPileName]) {
-        showGameMessage(`${targetPileName.charAt(0).toUpperCase() + targetPileName.slice(1)}墩已满。`); return;
-    }
+    if (piles[targetPileName].length >= pileLimits[targetPileName]) { showGameMessage(`${targetPileName.charAt(0).toUpperCase() + targetPileName.slice(1)}墩已满。`); return; }
     const indexInMiddle = piles.middle.findIndex(c => c.id === selectedCard.id);
     if (indexInMiddle > -1) piles.middle.splice(indexInMiddle, 1);
     selectedCard.currentPile = targetPileName; selectedCard.selected = false;
@@ -227,15 +200,13 @@ export function addSelectedCardToTargetPile(targetPileName) {
 }
 
 function moveCardBackToSource(sourcePileName, cardId) {
-    if (gameState === 'ARRANGEMENT_COMPLETE' && sourcePileName === 'middle') {
-        showGameMessage("牌型已确认，请重置以修改中墩。"); return;
-    }
+    if (gameState === 'ARRANGEMENT_COMPLETE' && sourcePileName === 'middle') { showGameMessage("牌型已确认，请重置以修改中墩。"); return; }
     if (sourcePileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') return;
     const cardIndexInPile = piles[sourcePileName].findIndex(c => c.id === cardId);
     if (cardIndexInPile === -1) return;
     const cardData = piles[sourcePileName].splice(cardIndexInPile, 1)[0];
     cardData.currentPile = 'middle'; cardData.selected = false;
-    piles.middle.push(cardData);
+    piles.middle.push(cardData); // Add back to the 'middle' pile which acts as hand source
     if (gameState === 'ARRANGEMENT_COMPLETE') { gameState = 'ARRANGING_FROM_MIDDLE'; setMiddlePileRole(true); }
     renderPile(sourcePileName); renderPile('middle'); updateAllPileCounts(); checkAndHandleGameStateTransition();
     showGameMessage(`${cardData.element?.alt || '卡牌'} 已从 ${sourcePileName}墩 移回手牌区。`);
@@ -274,6 +245,91 @@ export function getArrangedPilesData() {
     };
 }
 
+// NEW function to apply AI suggestion
+export function applyAISuggestion(arrangementData) { // arrangementData from AI: {head:[{rank,suit},..], middle:.., tail:..}
+    if (!arrangementData || !arrangementData.head || !arrangementData.middle || !arrangementData.tail) {
+        showGameMessage("AI建议数据无效。", "error"); return;
+    }
+    if (arrangementData.head.length !== pileLimits.head ||
+        arrangementData.middle.length !== pileLimits.middle ||
+        arrangementData.tail.length !== pileLimits.tail) {
+        showGameMessage("AI建议的牌墩数量错误。", "error"); return;
+    }
+
+    // Simple way: re-initialize piles directly from AI data, assuming AI data matches original hand cards
+    // This relies on fullHandData being the source of truth for card IDs if needed for `createCardImageElement`
+    // or other operations. We need to map AI's rank/suit back to our `fullHandData` objects.
+
+    // Create a temporary copy of fullHandData to pick from, to ensure each card is used once
+    let availableCards = [...fullHandData]; // Copies of original cardData objects
+
+    function findAndPopMatchingCard(aiCardSimple) { // aiCardSimple is {rank, suit}
+        const index = availableCards.findIndex(origCard =>
+            origCard.rank === aiCardSimple.rank && origCard.suit === aiCardSimple.suit
+        );
+        if (index > -1) {
+            const foundCard = availableCards.splice(index, 1)[0]; // Remove and get
+            return foundCard; // This is the original cardData object from fullHandData
+        }
+        console.warn("AI Suggestion: Could not find original card for", aiCardSimple, "- this shouldn't happen if AI uses the same hand.");
+        // Fallback: create a new card object (loses original ID/element if any)
+        return { ...aiCardSimple, id: `ai-fallback-${Math.random()}`, selected: false, element: null };
+    }
+
+    piles.head = arrangementData.head.map(aiCard => {
+        const matchedCard = findAndPopMatchingCard(aiCard);
+        matchedCard.currentPile = 'head';
+        return matchedCard;
+    });
+    piles.middle = arrangementData.middle.map(aiCard => {
+        const matchedCard = findAndPopMatchingCard(aiCard);
+        matchedCard.currentPile = 'middle';
+        return matchedCard;
+    });
+    piles.tail = arrangementData.tail.map(aiCard => {
+        const matchedCard = findAndPopMatchingCard(aiCard);
+        matchedCard.currentPile = 'tail';
+        return matchedCard;
+    });
+    
+    if (availableCards.length !== 0) {
+        console.error("AI Suggestion: Not all original cards were used by AI, or duplicates in AI suggestion. Remaining:", availableCards);
+        showGameMessage("AI建议与手牌不完全匹配，请检查。", "error");
+        // Optionally, revert to a safe state or just display what was matched.
+        // For now, we proceed with what was matched.
+    }
+
+    // Update fullHandData to reflect new pile assignments for all cards
+    // This ensures that `fullHandData` remains the single source of truth for all 13 card objects.
+    fullHandData.forEach(card => {
+        if (piles.head.find(c => c.id === card.id)) card.currentPile = 'head';
+        else if (piles.middle.find(c => c.id === card.id)) card.currentPile = 'middle';
+        else if (piles.tail.find(c => c.id === card.id)) card.currentPile = 'tail';
+        else {
+            // This case should ideally not happen if mapping is correct
+            console.warn("Card not found in any AI pile after mapping:", card);
+            card.currentPile = null; // Or some default
+        }
+        card.selected = false; // Deselect all cards
+    });
+
+
+    gameState = 'ARRANGEMENT_COMPLETE';
+    setMiddlePileRole(false); // Middle pile is now a formal pile
+
+    renderAllPiles(); // This will use the updated piles object
+    updateAllPileCounts();
+    checkAndHandleGameStateTransition(); // Should confirm completion
+
+    const details = arrangementData.details; // Assuming AI backend sends this
+    if (details && details.head && details.middle && details.tail) {
+        showGameMessage(`AI建议: 头(${details.head.name}), 中(${details.middle.name}), 尾(${details.tail.name})`, "info");
+    } else {
+        showGameMessage("AI已摆牌，请检查。", "info");
+    }
+}
+
+
 export function setupPileClickHandlers() {
     const headPileDOM = document.getElementById('headPileArea');
     const tailPileDOM = document.getElementById('tailPileArea');
@@ -286,17 +342,13 @@ export function clearBoardForNewGame() {
     Object.values(pileCardContainers).forEach(container => {
         if (container) container.innerHTML = '';
     });
-
-    // Ensure setMiddlePileRole is called when its dependencies are available
     if (middlePileAreaDOM && middlePileTitleDOM && pileCountDisplays.middle) {
-         setMiddlePileRole(true); // Set to hand source appearance, but it will be empty
+         setMiddlePileRole(true);
          middlePileTitleDOM.textContent = '手牌区';
          pileCountDisplays.middle.textContent = `0/0`;
-    } else {
-        console.warn("clearBoardForNewGame: Cannot call setMiddlePileRole, DOM elements missing.");
     }
-
-    updateAllPileCounts(); // Will update counts for empty head/tail as well
+    updateAllPileCounts();
     configureButton('submitArrangementBtn', { show: false });
     configureButton('resetArrangementBtn', { show: false });
+    configureButton('aiSuggestBtn', { show: false }); // Hide AI button on new game
 }
