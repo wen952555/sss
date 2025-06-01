@@ -10,105 +10,93 @@ body {
     min-height: 100vh;
 }
 
-.container {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    width: 95%;
-    max-width: 1200px;
-    margin-top: 20px;
-    display: flex;
-    gap: 20px;
-}
-
 .game-title-area {
     width: 100%;
     text-align: center;
     padding-top: 20px;
+    margin-bottom: 10px; /* 标题和容器之间的间距 */
 }
 
 h1 {
     color: #2c3e50;
     text-align: center;
     width: 100%;
-    margin-bottom: 20px;
+    margin: 0; /* H1自身的margin设为0，由父容器控制 */
 }
 
-.main-game-content {
-    flex: 1;
+.container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    width: 90%; /* 宽度调整为更适合单列布局 */
+    max-width: 800px; /* 最大宽度也调整 */
+    margin-top: 0; /* 因为标题区已加margin-bottom */
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* 所有子元素垂直排列 */
+    gap: 20px; /* 各个 section-block 之间的垂直间距 */
 }
 
-.hand-area { /* 初始手牌区 */
-    margin-bottom: 20px;
-    min-height: 200px; /* 横向显示时，高度可以适当减小 */
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #ddd; /* 从父级继承，这里也加上 */
-    border-radius: 5px;
+.section-block { /* 用于主要区块的通用样式 */
+    width: 100%; /* 区块占据容器全部宽度 */
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 15px;
     background-color: #f9f9f9;
-    padding:10px;
+    box-sizing: border-box; /* padding和border不增加宽度 */
 }
-
-.hand-area h2 { /* 手牌区标题样式 */
+.section-block h2 { /* 区块内的H2标题 */
     margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.2em;
+    margin-bottom: 15px;
+    font-size: 1.3em;
     color: #333;
     text-align: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
 }
 
-.player-initial-hand { /* 这是真正放牌的容器 - 修改为横向排列 */
-    display: flex;
-    flex-direction: row;   /* 卡片横向排列 */
-    flex-wrap: wrap;       /* 允许卡片换行 */
-    justify-content: center; /* 水平居中卡片行（如果行未满）或卡片本身（如果只有一行） */
-    align-items: flex-start; /* 顶部对齐，如果卡片高度不一 */
-    gap: 10px;             /* 卡片之间的水平和垂直间隙 */
-    padding: 10px;
-    border: 1px dashed #ccc;
-    border-radius: 4px;
-    min-height: 130px;     /* 至少能容纳一行牌的高度 */
-    /* overflow-y: auto; -- 横向排列时，如果内容超出容器宽度会自动换行，一般不需要y轴滚动条 */
-    flex-grow: 1;
+
+/* 1. 初始手牌区 */
+/* .hand-area class 已被 .section-block 替代部分样式 */
+#player-hand-area { /* 特定ID的样式可以覆盖或补充 .section-block */
+    /* 如果需要特定样式，可以在这里添加 */
 }
 
-.card-container { /* 通用卡片容器样式，例如三道牌的容器 */
+.player-initial-hand { /* 手牌容器 */
     display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
-    gap: 8px;
-    min-height: 100px;
-    padding: 8px;
-    border: 1px dashed #ccc;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border: 1px dashed #ccc; /* 保持内部虚线框 */
     border-radius: 4px;
-    align-items: center;
-    justify-content: flex-start;
+    min-height: 130px; /* 至少能容纳约两行牌 */
+    background-color: #fff; /* 内部牌区的背景色 */
 }
 
+/* 卡片样式 */
 .card {
-    width: 70px;  /* 稍微减小卡片宽度以便在一行内容纳更多 */
-    height: 98px; /* 保持比例 (70 * 1.4) */
+    width: 70px;
+    height: 98px;
     border: 1px solid #b0b0b0;
     border-radius: 6px;
     overflow: hidden;
     cursor: grab;
     background-color: white;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
 }
-
 .card img {
     max-width: 100%;
     max-height: 100%;
     display: block;
     pointer-events: none;
 }
-
 .card.dragging {
     opacity: 0.6;
     transform: scale(1.05) rotate(3deg);
@@ -116,17 +104,14 @@ h1 {
     z-index: 1000;
 }
 
-.drop-zone.drag-over {
-    background-color: #e6ffe6;
-    border-color: #5cb85c;
-}
-
-.controls {
+/* 2. 控制按钮区 */
+.controls { /* .section-block 已处理边框等，这里处理内部 */
     text-align: center;
-    margin-bottom: 15px;
-    padding: 10px 0;
+    padding: 10px 0; /* 减少上下padding，因为section-block已有 */
+    background-color: transparent; /* controls区域可以没有自己的背景和边框 */
+    border: none;
+    box-shadow: none;
 }
-
 .controls button {
     background-color: #3498db;
     color: white;
@@ -138,66 +123,23 @@ h1 {
     margin: 5px;
     transition: background-color 0.3s;
 }
+.controls button:hover { background-color: #2980b9; }
+.controls button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 
-.controls button:hover {
-    background-color: #2980b9;
+/* 3. 摆放牌型区 */
+/* .arranged-hands-area class 已被 .section-block 替代部分样式 */
+#arranged-hands-section {
+    /* 如果需要特定样式，可以在这里添加 */
 }
-
-.controls button:disabled {
-    background-color: #bdc3c7;
-    cursor: not-allowed;
-}
-
-.status {
-    text-align: center;
-    font-size: 1.1em;
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 4px;
-}
-.status.success {
-    color: #27ae60;
-    background-color: #e8f5e9;
-}
-.status.error {
-    color: #c0392b;
-    background-color: #fdedec;
-}
-.status.info {
-    color: #2980b9;
-    background-color: #eaf2f8;
-}
-
-.arranged-hands-area-wrapper {
-    flex: 2;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #ddd; /* 从父级继承，这里也加上 */
-    border-radius: 5px;
-    background-color: #f9f9f9;
-    padding:10px;
-}
-.arranged-hands-area-wrapper h2 { /* 摆放区标题样式 */
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.2em;
-    color: #333;
-    text-align: center;
-}
-
-
-.arranged-hands-area {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    flex-grow: 1;
-}
-
-.hand-section {
-    background-color: #fdfdfd;
+.arranged-hands-area .hand-section { /* 内部的头中尾道 */
+    background-color: #ffffff; /* 每个牌道背景为白色 */
     padding: 10px;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
+    margin-bottom: 10px; /* 道与道之间的间距 */
+}
+.arranged-hands-area .hand-section:last-child {
+    margin-bottom: 0; /* 最后一道牌没有下边距 */
 }
 
 .hand-section h3 {
@@ -209,8 +151,7 @@ h1 {
     justify-content: space-between;
     align-items: center;
 }
-
-.hand-eval-result {
+.hand-eval-result { /* 牌型评估结果标签 */
     font-size: 0.9em;
     color: #16a085;
     font-weight: bold;
@@ -218,29 +159,90 @@ h1 {
     padding: 3px 8px;
     border-radius: 10px;
 }
+.hand-eval-result.error { color: #e74c3c; background-color: #f5b7b1; }
 
-.hand-eval-result.error {
-    color: #e74c3c;
-    background-color: #f5b7b1;
+.card-container.arranged-hand { /* 头中尾道的牌容器 */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 100px; /* 确保拖放区域有足够高度 */
+    padding: 8px;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    align-items: center; /* 卡片在交叉轴上居中 */
+    justify-content: flex-start; /* 卡片从左开始排列 */
 }
 
-/* 响应式调整：小屏幕时，这里不需要大改，因为默认就是横向了 */
-/* 但可以调整卡片大小 */
+/* 拖放区域高亮 */
+.drop-zone.drag-over {
+    background-color: #e6ffe6;
+    border-color: #5cb85c;
+}
+
+/* 4. 状态消息区 */
+.status { /* .section-block 已处理边框等 */
+    text-align: center;
+    font-size: 1.1em;
+    /* margin-top: 0;  由 .container的gap控制 */
+    padding: 10px; /* 内部padding */
+    border-radius: 4px; /* section-block已有，可省略 */
+    background-color: transparent; /* 可以透明，依赖section-block的背景 */
+    border: none; /* 可以无边框，依赖section-block的边框 */
+}
+.status.success { color: #27ae60; background-color: #e8f5e9; }
+.status.error { color: #c0392b; background-color: #fdedec; }
+.status.info { color: #2980b9; background-color: #eaf2f8; }
+
+
+/* 响应式调整：小屏幕时，内容已经是单列，主要调整卡片大小 */
 @media (max-width: 768px) {
     .container {
-        flex-direction: column;
+        width: 95%;
+        padding: 15px;
     }
-    .main-game-content, .arranged-hands-area-wrapper {
-        width: 100%;
+    .section-block {
+        padding: 10px;
     }
-    /* .player-initial-hand 已经是横向了，小屏幕时可能需要让卡片更小 */
-    .player-initial-hand .card { /* 针对初始手牌区的小屏幕卡片 */
-         width: 50px; /* 卡片更小 */
-         height: 70px;
-         gap: 5px; /* 间隙也小一些 */
+    .card {
+        width: 60px;
+        height: 84px;
     }
-    .card { /* 通用卡片在小屏幕时也缩小一点 */
-         width: 60px;
-         height: 84px;
+    .player-initial-hand .card { /* 初始手牌区卡片可以更小一点以容纳更多 */
+         width: 55px;
+         height: 77px;
+         gap: 5px;
+    }
+     .hand-section h3 {
+        font-size: 1em; /* 减小标题字号 */
+    }
+    .controls button {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) { /* 更小屏幕的调整 */
+    .card {
+        width: 50px;
+        height: 70px;
+    }
+     .player-initial-hand .card {
+         width: 45px;
+         height: 63px;
+         gap: 4px;
+    }
+    .arranged-hands-area .hand-section {
+        margin-bottom: 8px;
+    }
+    .hand-section h3 {
+        font-size: 0.9em;
+    }
+    .controls button {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .container {
+        padding: 10px;
+        gap: 15px;
     }
 }
