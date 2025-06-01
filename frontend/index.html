@@ -6,51 +6,50 @@
     <title>十三水 AI对战</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/game.css">
-    <link rel="stylesheet" href="css/modal.css"> <!-- 新增：弹窗样式 -->
+    <link rel="stylesheet" href="css/modal.css">
 </head>
 <body>
     <header class="game-header">
         <h1>十三水 - AI挑战赛</h1>
         <div class="header-actions">
             <span id="loggedInUserDisplay" style="display:none;">欢迎, <strong id="userNicknameDisplay"></strong>! 积分: <span id="userPointsDisplay">0</span></span>
-            <button id="userManagementButton">👤 我的账户</button> <!-- 用户管理按钮 -->
+            <button id="userManagementButton">👤 我的账户</button>
         </div>
     </header>
 
     <main class="game-container">
-        <!-- 游戏牌桌区域 -->
         <div id="gameTable">
-            <!-- AI 玩家区域 (简化显示) -->
+            <!-- AI 玩家区域 -->
             <div class="ai-player-area top-ai">
-                <div class="player-info">AI Alpha <span class="ai-status">(已出牌)</span></div>
-                <div class="player-cards-played"> <!-- 可以显示AI摆好的牌的概要或背面 --> </div>
+                <div class="player-info">AI Alpha <span class="ai-status">(等待...)</span></div>
+                <div class="player-cards-played"></div>
             </div>
             <div class="ai-player-area left-ai">
-                <div class="player-info">AI Beta <span class="ai-status">(已出牌)</span></div>
+                <div class="player-info">AI Beta <span class="ai-status">(等待...)</span></div>
                 <div class="player-cards-played"></div>
             </div>
             <div class="ai-player-area right-ai">
-                <div class="player-info">AI Gamma <span class="ai-status">(已出牌)</span></div>
+                <div class="player-info">AI Gamma <span class="ai-status">(等待...)</span></div>
                 <div class="player-cards-played"></div>
             </div>
 
             <!-- 真人玩家区域 -->
             <div class="human-player-area">
                 <div id="myHandDisplay" class="hand-container droppable-area" data-area-name="hand">
-                    <!-- 初始手牌 -->
+                    <!-- JS Will Fill This -->
                 </div>
                 <h3>摆牌区 (拖拽到下方)</h3>
                 <div class="arrangement-duns">
                     <div class="dun-section">
-                        <h4>头墩 (3张) <span id="headDunType" class="dun-type-display"></span></h4>
+                        <h4>头墩 (3张) <span id="headDunType" class="dun-type-display">(-)</span></h4>
                         <div id="headDun" class="hand-container dun-cards droppable-area" data-area-name="head" data-max-cards="3"></div>
                     </div>
                     <div class="dun-section">
-                        <h4>中墩 (5张) <span id="middleDunType" class="dun-type-display"></span></h4>
+                        <h4>中墩 (5张) <span id="middleDunType" class="dun-type-display">(-)</span></h4>
                         <div id="middleDun" class="hand-container dun-cards droppable-area" data-area-name="middle" data-max-cards="5"></div>
                     </div>
                     <div class="dun-section">
-                        <h4>尾墩 (5张) <span id="tailDunType" class="dun-type-display"></span></h4>
+                        <h4>尾墩 (5张) <span id="tailDunType" class="dun-type-display">(-)</span></h4>
                         <div id="tailDun" class="hand-container dun-cards droppable-area" data-area-name="tail" data-max-cards="5"></div>
                     </div>
                 </div>
@@ -65,7 +64,6 @@
 
         <div id="gameMessageArea" class="message-area"></div>
 
-        <!-- 游戏结算显示区 (简化，可以直接用 gameMessageArea 或一个专门的弹窗) -->
         <div id="trialGameResultDisplay" style="display:none; padding:15px; margin-top:20px; border:1px solid #ccc; background:#f9f9f9;">
             <h4>本局试玩结果：</h4>
             <div id="trialSettlementDetails"></div>
@@ -74,53 +72,25 @@
 
     <!-- 登录/注册/用户管理 弹窗 (Modal) -->
     <div id="userModal" class="modal" style="display:none;">
+        <!-- ... (Modal content from previous response) ... -->
         <div class="modal-content user-modal-content">
             <span class="close-button" id="closeUserModal">×</span>
-
-            <!-- 登录表单 (默认显示) -->
             <div id="loginSection">
                 <h2>登录账户</h2>
-                <form id="modalLoginForm" onsubmit="return false;">
-                    <input type="text" id="modalLoginPhone" placeholder="手机号" required autocomplete="username">
-                    <input type="password" id="modalLoginPassword" placeholder="密码" required autocomplete="current-password">
-                    <button type="button" id="modalLoginButton">登录</button>
-                </form>
-                <p>还没有账户? <a href="#" id="showModalRegisterLink">立即注册</a></p>
-                <div id="modalLoginError" class="error-message"></div>
+                <form id="modalLoginForm" onsubmit="return false;"><input type="text" id="modalLoginPhone" placeholder="手机号" required autocomplete="username"><input type="password" id="modalLoginPassword" placeholder="密码" required autocomplete="current-password"><button type="button" id="modalLoginButton">登录</button></form>
+                <p>还没有账户? <a href="#" id="showModalRegisterLink">立即注册</a></p><div id="modalLoginError" class="error-message"></div>
             </div>
-
-            <!-- 注册表单 (点击链接后显示) -->
             <div id="registerSection" style="display:none;">
                 <h2>注册新账户</h2>
-                <form id="modalRegisterForm" onsubmit="return false;">
-                    <input type="text" id="modalRegisterPhone" placeholder="手机号" required autocomplete="username">
-                    <input type="password" id="modalRegisterPassword" placeholder="密码 (至少6位)" required autocomplete="new-password">
-                    <input type="password" id="modalRegisterConfirmPassword" placeholder="确认密码" required autocomplete="new-password">
-                    <input type="text" id="modalRegisterNickname" placeholder="昵称 (2-15字符)" required autocomplete="nickname">
-                    <button type="button" id="modalRegisterButton">注册</button>
-                </form>
-                <p>已有账户? <a href="#" id="showModalLoginLink">返回登录</a></p>
-                <div id="modalRegisterError" class="error-message"></div>
+                <form id="modalRegisterForm" onsubmit="return false;"><input type="text" id="modalRegisterPhone" placeholder="手机号" required autocomplete="username"><input type="password" id="modalRegisterPassword" placeholder="密码 (至少6位)" required autocomplete="new-password"><input type="password" id="modalRegisterConfirmPassword" placeholder="确认密码" required autocomplete="new-password"><input type="text" id="modalRegisterNickname" placeholder="昵称 (2-15字符)" required autocomplete="nickname"><button type="button" id="modalRegisterButton">注册</button></form>
+                <p>已有账户? <a href="#" id="showModalLoginLink">返回登录</a></p><div id="modalRegisterError" class="error-message"></div>
             </div>
-
-            <!-- 用户管理界面 (登录后显示) -->
             <div id="userManagementSection" style="display:none;">
                 <h2>用户中心</h2>
-                <p>昵称: <strong id="mgmtUserNickname"></strong></p>
-                <p>积分: <strong id="mgmtUserPoints"></strong></p>
-                <hr>
-                <h4>赠送积分</h4>
-                <div>
-                    <input type="text" id="giftRecipientPhone" placeholder="对方手机号">
-                    <button type="button" id="findRecipientButton">查找用户</button>
-                </div>
-                <div id="recipientInfo" style="display:none;">
-                    查找到用户: <span id="foundRecipientName"></span>
-                    <input type="number" id="giftAmount" placeholder="赠送积分数量" min="1">
-                    <button type="button" id="confirmGiftButton">确认赠送</button>
-                </div>
-                <div id="giftMessage" class="message-area" style="margin-top:10px;"></div>
-                <hr>
+                <p>昵称: <strong id="mgmtUserNickname"></strong></p><p>积分: <strong id="mgmtUserPoints"></strong></p><hr><h4>赠送积分</h4>
+                <div><input type="text" id="giftRecipientPhone" placeholder="对方手机号"><button type="button" id="findRecipientButton">查找用户</button></div>
+                <div id="recipientInfo" style="display:none;">查找到用户: <span id="foundRecipientName"></span><input type="number" id="giftAmount" placeholder="赠送积分数量" min="1"><button type="button" id="confirmGiftButton">确认赠送</button></div>
+                <div id="giftMessage" class="message-area" style="margin-top:10px;"></div><hr>
                 <button id="modalLogoutButton">登出账户</button>
             </div>
         </div>
@@ -132,11 +102,11 @@
 
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/ui.js"></script>       <!-- ui.js 需要更新以支持新弹窗的显示/隐藏 -->
-    <script src="js/cardUtils.js"></script> <!-- 牌型工具 -->
-    <script src="js/auth.js"></script>     <!-- auth.js 现在处理弹窗内的登录/注册 -->
-    <script src="js/user_profile.js"></script> <!-- user_profile.js 处理用户管理弹窗逻辑 -->
-    <script src="js/game_manager.js"></script> <!-- 新的: 主游戏流程和试玩初始化 -->
-    <!-- game.js (十三水核心摆牌逻辑) 可能会被 game_manager.js 调用或合并 -->
+    <script src="js/ui.js"></script>
+    <script src="js/cardUtils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user_profile.js"></script>
+    <script src="js/game.js"></script>         <!-- 核心游戏逻辑 -->
+    <script src="js/game_manager.js"></script> <!-- 主控制器，最后加载 -->
 </body>
 </html>
