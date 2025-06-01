@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水 AI 试玩 - 纯净版</title>
+    <title>十三水 AI试玩 - 自适应高度</title>
     <link rel="stylesheet" href="css/style.css"> <!-- 确保路径正确 -->
 </head>
-<body>
-    <!-- 顶栏可以暂时移除或极简化，专注于牌桌 -->
+<body> <!-- body 是顶层容器 -->
+    <!-- header (如果已移除，则忽略) -->
     <!--
     <header>
         <h1>十三水 AI 试玩</h1>
     </header>
     -->
 
-    <main class="game-container">
-        <div id="gameTable">
+    <main class="game-container"> <!-- main 是牌桌的主要包裹容器 -->
+        <div id="gameTable">      <!-- gameTable 是牌桌内部所有元素的容器 -->
             <!-- AI 玩家信息区 -->
             <div class="ai-player-display-area">
                 <div class="player-info-box" id="aiPlayer0Info">AI 1 (等待...)</div>
@@ -26,20 +26,24 @@
             <!-- 核心摆牌区 -->
             <div class="player-arrangement-zone">
                 <div class="dun-section top-dun">
-                    <h4>头墩 (3张) <span class="dun-type" id="headDunType">(-)</span></h4>
-                    <div id="headDun" class="hand-container dun-cards droppable-area" data-dun-name="head" data-max-cards="3"></div>
+                    <div id="headDun" class="hand-container dun-cards droppable-area"
+                         data-dun-name="head" data-max-cards="3"
+                         data-dun-label="头墩 (3张)" data-dun-type="(-)"></div>
                 </div>
 
                 <div class="human-player-hand-area central-area">
-                    <h3 id="centralAreaTitle">你的手牌 (13张) (拖拽摆牌):</h3>
-                    <div id="myHandDisplay" class="hand-container droppable-area" data-dun-name="handOrMiddle" data-max-cards="13">
+                    <!-- 外部标题H3已被移除，文字通过伪元素显示在 #myHandDisplay 上 -->
+                    <div id="myHandDisplay" class="hand-container droppable-area"
+                         data-dun-name="handOrMiddle" data-max-cards="13"
+                         data-dun-label="你的手牌" data-cards-count="0" data-dun-type="(-)">
                         <!-- 卡牌将由JS填充 -->
                     </div>
                 </div>
 
                 <div class="dun-section bottom-dun">
-                    <h4>尾墩 (5张) <span class="dun-type" id="tailDunType">(-)</span></h4>
-                    <div id="tailDun" class="hand-container dun-cards droppable-area" data-dun-name="tail" data-max-cards="5"></div>
+                    <div id="tailDun" class="hand-container dun-cards droppable-area"
+                         data-dun-name="tail" data-max-cards="5"
+                         data-dun-label="尾墩 (5张)" data-dun-type="(-)"></div>
                 </div>
             </div>
 
