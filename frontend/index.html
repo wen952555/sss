@@ -2,43 +2,68 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水理牌</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>十三水</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="telegram-web-app.js"></script>
 </head>
 <body>
-    <div class="game-wrapper">
-        <div class="game-container">
-            <div id="arrangementArea" class="arrangement-container">
-                <div id="headPileArea" class="pile-banner pile-target" data-pile-name="head">
-                    <span class="pile-label">头墩 (<span id="headPileCount">0/3</span>):</span>
-                    <div id="headPileCards" class="cards-display-area"></div>
-                </div>
-                <div id="middlePileArea" class="pile-banner" data-pile-name="middle">
-                    <span class="pile-label">
-                        <span id="middlePileTitle">手牌区</span>
-                        (<span id="middlePileCount">0/13</span>):
-                    </span>
-                    <div id="middlePileCards" class="cards-display-area middle-hand-source-layout">
-                        <!-- Cards will be rendered here by JS -->
-                    </div>
-                </div>
-                <div id="tailPileArea" class="pile-banner pile-target" data-pile-name="tail">
-                    <span class="pile-label">尾墩 (<span id="tailPileCount">0/5</span>):</span>
-                    <div id="tailPileCards" class="cards-display-area"></div>
-                </div>
+    <div id="app-container">
+        <div id="status-bar">
+            游戏状态: <span id="game-status">未开始</span> | 你的分数: <span id="player-score">0</span>
+            <br>
+            CPU 分数: <span id="cpu-score">0</span>
+        </div>
+
+        <div id="player-hand-area" class="card-area">
+            <h3>你的手牌 (拖拽到下方牌墩)</h3>
+            <div id="player-hand-cards" class="hand-display"></div>
+        </div>
+
+        <div id="arrangement-area">
+            <div class="dun-area">
+                <h4>头道 (3张) <span id="front-dun-type"></span></h4>
+                <div id="front-dun" class="drop-zone" data-dun="front" data-max="3"></div>
+            </div>
+            <div class="dun-area">
+                <h4>中道 (5张) <span id="middle-dun-type"></span></h4>
+                <div id="middle-dun" class="drop-zone" data-dun="middle" data-max="5"></div>
+            </div>
+            <div class="dun-area">
+                <h4>尾道 (5张) <span id="back-dun-type"></span></h4>
+                <div id="back-dun" class="drop-zone" data-dun="back" data-max="5"></div>
             </div>
         </div>
-
-        <div class="controls-footer-merged">
-            <button id="dealCardsBtn">发牌</button>
-            <button id="aiSuggestBtn" style="display:none;">AI分牌</button> <!-- AI按钮 -->
-            <button id="resetArrangementBtn" style="display:none;">重置理牌</button>
-            <button id="submitArrangementBtn" style="display:none;">提交牌型</button>
-            <div id="simpleMessage" class="simple-message-footer"></div>
+        
+        <div id="action-buttons">
+            <button id="create-game-btn">创建新游戏</button>
+            <button id="submit-arrangement-btn" style="display: none;">提交牌型</button>
+            <button id="reset-arrangement-btn" style="display: none;">重置摆牌</button>
         </div>
+
+        <div id="results-area" style="display: none;">
+            <h3>比牌结果</h3>
+            <div id="player-result-display">
+                <h4>你的牌:</h4>
+                <p>头道: <span class="dun-result" id="player-front-result"></span></p>
+                <p>中道: <span class="dun-result" id="player-middle-result"></span></p>
+                <p>尾道: <span class="dun-result" id="player-back-result"></span></p>
+            </div>
+            <div id="opponent-result-display">
+                <h4>CPU的牌:</h4>
+                <p>头道: <span class="dun-result" id="opponent-front-result"></span></p>
+                <p>中道: <span class="dun-result" id="opponent-middle-result"></span></p>
+                <p>尾道: <span class="dun-result" id="opponent-back-result"></span></p>
+            </div>
+            <p id="score-change-info"></p>
+            <p id="da-qiang-info"></p>
+        </div>
+
+         <div id="loading-indicator" style="display: none;">处理中...</div>
     </div>
 
-    <script type="module" src="js/main.js"></script>
+    <script src="js/game_rules.js"></script> <!-- 包含牌型判断逻辑 -->
+    <script src="js/ui_helpers.js"></script> <!-- 包含UI渲染和拖拽辅助 -->
+    <script src="js/app.js"></script>
 </body>
 </html>
