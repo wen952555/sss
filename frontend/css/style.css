@@ -1,259 +1,126 @@
-body, html {
+body {
+    font-family: sans-serif;
     margin: 0;
-    padding: 0;
-    width: 100vw; /* 使用视口宽度 */
-    height: 100vh; /* 使用视口高度 */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; /* 更现代的字体栈 */
-    background-color: #22272e; /* 深邃的背景色 */
-    color: #c9d1d9; /* GitHub Dark Mode-like text color */
-    overflow: hidden; /* 严格禁止滚动 */
-    font-size: calc(0.8vw + 0.5vh + 6px); /* 基础字体大小响应式，最小6px */
-    line-height: 1.5;
+    padding: 10px;
+    background-color: #f0f0f0;
+    color: var(--tg-theme-text-color, #000000); /* Telegram theme */
+    background-color: var(--tg-theme-bg-color, #f0f0f0);
 }
 
-.game-wrapper {
-    width: 100%;
-    height: 100%;
-    background-color: #2d333b; /* 游戏区域背景 */
-    display: flex;
-    flex-direction: column;
-    padding: clamp(10px, 2vh, 20px); /* 响应式内边距 */
-    box-sizing: border-box;
+#app-container {
+    max-width: 600px;
+    margin: auto;
+    background-color: var(--tg-theme-secondary-bg-color, #ffffff);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-.game-container {
-    flex-grow: 1; /* 占据除了按钮区之外的所有垂直空间 */
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* 防止内部内容溢出导致滚动 */
+.card-area, #arrangement-area, #action-buttons, #results-area {
+    margin-bottom: 15px;
 }
 
-/* 理牌区整体容器 */
-.arrangement-container {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* 墩在垂直方向上均匀分布 */
-    gap: clamp(5px, 1.5vh, 15px); /* 响应式墩间距 */
-}
-
-/* 单个牌墩横幅 - 通用样式 */
-.pile-banner {
-    background-color: rgba(201, 209, 217, 0.07); /* 更柔和的背景 */
-    border: 2px dashed rgba(173, 186, 199, 0.3); /* 更柔和的边框 */
-    border-radius: clamp(6px, 1vw, 10px); /* 响应式圆角 */
-    padding: clamp(8px, 1.5vh, 15px) clamp(10px, 1.5vw, 20px); /* 响应式内边距 */
-    display: flex;
-    align-items: flex-start; /* 标签和卡牌区都从顶部开始 */
-    transition: border-color 0.2s ease, background-color 0.2s ease;
-    flex-shrink: 0;
-    box-sizing: border-box;
-    position: relative;
-    overflow: hidden; /* 很重要，防止卡牌视觉上溢出墩 */
-}
-.pile-banner.pile-target:hover {
-    border-color: #58a6ff; /* GitHub-like blue */
-    background-color: rgba(88, 166, 255, 0.1);
-}
-
-/* 特定墩的样式 */
-#headPileArea, #tailPileArea {
-    flex-basis: clamp(80px, 20vh, 150px); /* 响应式基础高度 */
-    min-height: 0; /* 允许flex-basis完全控制高度 */
-    cursor: pointer;
-}
-#middlePileArea {
-    flex-basis: clamp(120px, 45vh, 300px); /* 中墩占据更多空间 */
-    min-height: 0;
-}
-
-#middlePileArea.is-hand-source {
-    background-color: rgba(201, 209, 217, 0.1);
-    border-style: solid;
-    border-color: rgba(173, 186, 199, 0.4);
-}
-#middlePileArea.is-middle-pile {
-    background-color: rgba(201, 209, 217, 0.07);
-    cursor: default;
-}
-
-
-.pile-label {
-    font-weight: 600; /* 稍粗的字体 */
-    color: #8b949e; /* GitHub-like secondary text color */
-    margin-right: clamp(8px, 1.5vw, 15px);
-    white-space: nowrap;
-    font-size: 0.9em; /* 相对于父元素的字体大小 */
-    padding-top: clamp(2px, 0.5vh, 5px);
-    min-width: clamp(50px, 10vw, 75px); /* 响应式最小宽度 */
-    flex-shrink: 0;
-    position: relative; /* 确保 z-index 生效 */
-    z-index: 1; /* 标签在卡牌下方 */
-}
-.pile-label #middlePileTitle.is-hand-source-title {
-    font-style: italic;
-    color: #58a6ff;
-}
-
-.cards-display-area {
+.hand-display, .drop-zone {
     display: flex;
     flex-wrap: wrap;
-    gap: clamp(4px, 0.8vw, 8px); /* 响应式卡牌间距 */
-    flex-grow: 1;
-    align-items: flex-start; /* 卡牌从顶部对齐 */
-    justify-content: flex-start; /* 卡牌从左边对齐 */
-    width: 100%;
-    padding-left: 0; /* 卡牌可以从最左边开始，可能会覆盖标签 */
-    box-sizing: border-box;
-    position: relative;
-    z-index: 2; /* 卡牌在标签上方 */
-    /* margin-left: -20px; */ /* 示例：如果想让卡牌区域向左偏移覆盖标签 */
+    gap: 5px;
+    min-height: 70px; /* Adjust based on card size */
+    padding: 10px;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    background-color: #e9e9e9;
 }
 
-/* 中墩手牌区布局由JS控制其内部结构 (card-row) */
-#middlePileArea.is-hand-source .cards-display-area {
-    /* CSS主要定义当JS不创建row时的回退（宽屏）*/
-    /* align-items: center; */ /* 若为单行且希望垂直居中 */
-}
-
-.card-row { /* JS动态创建的行，用于窄屏 */
-    display: flex;
-    justify-content: flex-start;
-    gap: clamp(4px, 0.8vw, 8px);
-    width: 100%;
-    margin-bottom: clamp(4px, 0.8vh, 8px);
-}
-.card-row:last-child {
-    margin-bottom: 0;
-}
-
-.card-image {
-    /* 宽度将主要由JS根据容器和数量计算，CSS提供基础和最大/最小限制 */
-    height: auto; /* 高度自适应 */
-    aspect-ratio: 63 / 88; /* 更精确的扑克牌比例 (e.g., 63mm x 88mm) */
-    border: 1px solid rgba(173, 186, 199, 0.5);
-    border-radius: clamp(3px, 0.5vw, 6px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    background-color: white;
-    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    object-fit: contain;
-    cursor: pointer;
-    /* width: clamp(40px, 7vw, 80px); */ /* 示例：CSS控制的基础响应式宽度，JS可覆盖 */
-    /* max-width: 9vh; */ /* 另一种限制方式：不超过视口高度的某个百分比 */
-    position: relative; /* 为了 z-index 和 transform */
-}
-
-.selectable-card.selected {
-    border: 2px solid #58a6ff !important; /* 增加边框宽度 */
-    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3), 0 4px 12px rgba(0,0,0,0.4) !important;
-    transform: scale(1.1) translateY(calc(-0.5vh - 2px)) !important; /* 响应式上移 */
-    z-index: 10 !important;
-}
-.selectable-card:hover:not(.selected) {
-    transform: translateY(calc(-0.8vh - 1px));
-    box-shadow: 0 6px 15px rgba(0,0,0,0.35);
-    border-color: rgba(173, 186, 199, 0.8);
-    z-index: 5;
-}
-
-.pile-card .remove-card-btn {
-    position: absolute;
-    top: calc(-1vh - 2px); /* 响应式定位 */
-    right: calc(-0.8vw - 2px);
-    background-color: #f85149; /* GitHub-like danger color */
-    color: white;
-    border-radius: 50%;
-    width: clamp(16px, 2.5vh, 22px); /* 响应式大小 */
-    height: clamp(16px, 2.5vh, 22px);
-    font-size: calc(0.8em - 1px);
-    font-weight: bold;
-    line-height: clamp(16px, 2.5vh, 22px);
-    text-align: center;
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-    display: none;
-    z-index: 15;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-.pile-card:hover .remove-card-btn {
-    display: flex; /* Use flex for centering icon if needed */
-    align-items: center;
-    justify-content: center;
-}
-
-/* 合并后的底部按钮栏 */
-.controls-footer-merged {
-    background-color: rgba(34, 39, 46, 0.8); /* 更深的背景，带透明度 */
-    padding: clamp(8px, 1.5vh, 15px) clamp(10px, 2vw, 20px);
-    box-sizing: border-box;
+.card {
+    width: 45px; /* Adjust as needed */
+    height: 65px; /* Adjust as needed */
+    border: 1px solid #333;
+    border-radius: 4px;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: clamp(8px, 1.5vw, 15px);
-    border-top: 1px solid rgba(139, 148, 158, 0.2);
-    flex-shrink: 0;
-    position: relative; /* For potential future absolute positioned elements inside */
+    font-size: 10px; /* For text fallback if SVG fails */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: grab;
+    user-select: none; /* Prevent text selection during drag */
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
 }
-.controls-footer-merged button {
-    padding: clamp(8px, 1.2vh, 12px) clamp(15px, 2.5vw, 25px);
-    background-color: #388bfd; /* Brighter blue */
-    color: white;
+.card.dragging {
+    opacity: 0.5;
+    border: 2px dashed blue;
+}
+
+.drop-zone.drag-over {
+    background-color: #d0e0d0;
+    border-color: #8c8;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: var(--tg-theme-button-color, #007bff);
+    color: var(--tg-theme-button-text-color, white);
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 0.95em;
-    font-weight: 500;
-    transition: background-color 0.15s ease, transform 0.1s ease;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+    margin-right: 10px;
 }
-.controls-footer-merged button:hover:not(:disabled) {
-    background-color: #409eff;
-    transform: translateY(-1px);
+button:hover {
+    opacity: 0.9;
 }
-.controls-footer-merged button:active:not(:disabled) {
-    background-color: #2a7ce8;
-    transform: translateY(0px);
-    box-shadow: inset 0 1px 1px rgba(0,0,0,0.1);
-}
-.controls-footer-merged button:disabled {
-    background-color: #525962;
-    color: #8b949e;
+button:disabled {
+    background-color: #ccc;
     cursor: not-allowed;
-    transform: translateY(0);
-    box-shadow: none;
-}
-.simple-message-footer {
-    color: #8b949e;
-    font-size: 0.85em;
-    margin-left: auto;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-left: clamp(10px, 2vw, 15px);
 }
 
-/* 媒体查询主要用于结构性改变或非常特定的覆盖，大部分自适应由视口单位和flex/grid处理 */
-@media (max-aspect-ratio: 1/1) and (max-width: 600px) { /* 屏幕较窄且偏高（典型手机竖屏） */
-    .controls-footer-merged {
-        flex-direction: column; /* 按钮垂直排列 */
-        gap: clamp(6px, 1vh, 10px);
-        padding-top: clamp(10px, 1.5vh, 12px);
-        padding-bottom: clamp(10px, 1.5vh, 12px);
-    }
-    .controls-footer-merged button {
-        width: 80%; /* 按钮宽度 */
-        max-width: 280px;
-    }
-    .simple-message-footer {
-        margin-left: 0;
-        text-align: center;
-        width: 100%;
-        margin-top: clamp(5px, 1vh, 8px);
-    }
-    .pile-label {
-         min-width: clamp(40px, 8vw, 60px);
-         font-size: 0.8em;
-    }
+#status-bar {
+    padding: 10px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+#arrangement-area {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+.dun-area {
+    flex: 1;
+    text-align: center;
+}
+.dun-area h4 { margin-bottom: 5px; }
+.dun-area span { font-size: 0.8em; color: #555; }
+
+#results-area {
+    border-top: 1px solid #ccc;
+    padding-top: 15px;
+}
+#results-area h3 { text-align: center; }
+.dun-result { font-weight: bold; }
+#player-result-display, #opponent-result-display {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+#loading-indicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0,0,0,0.7);
+    color: white;
+    padding: 20px;
+    border-radius: 5px;
+    z-index: 1000;
+}
+
+/* SVG Card specific styling (if needed) */
+.card svg {
+    width: 100%;
+    height: 100%;
 }
