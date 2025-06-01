@@ -3,9 +3,9 @@ body, html {
     padding: 0;
     height: 100%;
     font-family: sans-serif;
-    background-color: #f0f2f5; /* 淡雅的背景色 */
+    background-color: #f0f2f5;
     color: #333;
-    overflow-x: hidden; /* 防止横向滚动条 */
+    overflow-x: hidden;
 }
 
 .game-container {
@@ -21,12 +21,12 @@ body, html {
     background-color: #e9ecef;
     padding: 10px;
     border-radius: 8px;
-    margin-bottom: 15px;
-    min-height: 100px; /* 至少能放下一行牌的高度 */
+    margin-bottom: 15px; /* 与理牌区的间距 */
+    min-height: 100px;
     display: flex;
-    flex-wrap: wrap; /* 允许卡牌换行 */
-    justify-content: center; /* 居中卡牌 */
-    align-items: center; /* 垂直居中（如果只有一行） */
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
     gap: 8px;
     border: 1px solid #ced4da;
 }
@@ -34,7 +34,7 @@ body, html {
     color: #6c757d;
 }
 
-.unassigned-cards-container .card-image { /* 手牌区的牌 */
+.unassigned-cards-container .card-image {
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -45,62 +45,95 @@ body, html {
 .unassigned-cards-container .selectable-card.selected {
     border: 3px solid dodgerblue;
     box-shadow: 0 0 8px rgba(30, 144, 255, 0.7);
-    transform: scale(1.05); /* 选中时稍微放大 */
+    transform: scale(1.05);
 }
 
 
 /* 理牌区整体容器 */
 .arrangement-container {
-    flex-grow: 1; /* 占据剩余空间 */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-around; /* 均匀分布三个墩 */
-    gap: 10px;
+    /* justify-content: space-around; */ /* 移除这个，因为我们要自定义高度比例和紧贴 */
+    /* gap: 10px; */ /* 移除墩之间的gap，让它们紧贴 */
 }
 
-/* 单个牌墩横幅 */
+/* 单个牌墩横幅 - 通用样式 */
 .pile-banner {
     background-color: #ffffff;
-    border: 2px dashed #adb5bd;
-    border-radius: 8px;
+    border-left: 2px dashed #adb5bd; /* 左右边框 */
+    border-right: 2px dashed #adb5bd;
+    /* border-top 和 border-bottom 会特殊处理 */
     padding: 10px;
-    display: flex; /* 横向排列标签和卡牌区域 */
-    align-items: center; /* 垂直居中内容 */
-    min-height: 100px; /* 每个墩的最小高度 */
-    cursor: pointer; /* 提示可点击放置 */
+    display: flex;
+    align-items: center;
+    cursor: pointer;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0; /* 防止墩在空间不足时被压缩 */
 }
 .pile-banner:hover {
-    border-color: #007bff;
+    border-color: #007bff; /* 悬停时所有边框变色 */
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.1);
+}
+
+/* 特定墩的样式 */
+#headPileArea {
+    /* 假设基准高度为 X, 头墩占 X * 0.7 (示例) */
+    min-height: 80px; /* 给一个最小高度 */
+    flex-basis: 20%;  /* 初始高度占比，可以调整 */
+    border-top: 2px dashed #adb5bd;
+    border-bottom: 1px dashed #adb5bd; /* 与中墩的连接线细一点 */
+    border-top-left-radius: 8px;  /* 顶部圆角 */
+    border-top-right-radius: 8px;
+}
+
+#middlePileArea {
+    /* 中墩高度是基准的 1 (正常) + 0.3 (上) + 0.3 (下) = 1.6 倍? */
+    /* 或者说，中墩比头尾墩高，例如占总高度的 60% */
+    min-height: 150px; /* 给一个更大的最小高度 */
+    flex-basis: 60%;   /* 初始高度占比，可以调整 */
+    /* border-top: 1px dashed #adb5bd; */ /* 因为紧贴，中墩上下边框由相邻墩提供或不显示 */
+    /* border-bottom: 1px dashed #adb5bd; */
+    /* 中墩没有圆角，因为它在中间 */
+    z-index: 1; /* 可选，如果悬停效果有重叠问题 */
+}
+
+#tailPileArea {
+    /* 尾墩占 X * 0.7 (示例) */
+    min-height: 80px; /* 给一个最小高度 */
+    flex-basis: 20%;  /* 初始高度占比，可以调整 */
+    border-top: 1px dashed #adb5bd;  /* 与中墩的连接线细一点 */
+    border-bottom: 2px dashed #adb5bd;
+    border-bottom-left-radius: 8px; /* 底部圆角 */
+    border-bottom-right-radius: 8px;
 }
 
 .pile-label {
     font-weight: bold;
     color: #495057;
     margin-right: 10px;
-    white-space: nowrap; /* 防止标签换行 */
+    white-space: nowrap;
 }
 
 .cards-display-area {
     display: flex;
-    flex-wrap: wrap; /* 允许墩内卡牌换行（如果空间不足）*/
-    gap: 6px; /* 卡牌间距 */
-    flex-grow: 1; /* 卡牌区域占据剩余宽度 */
-    min-height: 75px; /* 确保有空间显示卡牌 */
-    align-items: center; /* 墩内卡牌垂直居中 */
+    flex-wrap: wrap;
+    gap: 6px;
+    flex-grow: 1;
+    min-height: 65px; /* 调整以适应墩高度，确保能放下牌 */
+    align-items: center;
 }
 
 .card-image {
-    width: 60px; /* 调整卡牌大小以适应横幅 */
+    width: 55px; /* 可以适当减小卡牌，以在不同高度的墩中更好显示 */
     height: auto;
     border: 1px solid #ccc;
     border-radius: 5px;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-    background-color: white; /* SVG透明背景时需要 */
+    background-color: white;
 }
 
-.pile-card { /* 墩里的牌 */
+.pile-card {
     position: relative;
 }
 .pile-card .remove-card-btn {
@@ -131,15 +164,15 @@ body, html {
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: #343a40; /* 深色背景 */
+    background-color: #343a40;
     padding: 10px 15px;
     box-sizing: border-box;
     display: flex;
-    justify-content: center; /* 居中按钮 */
+    justify-content: center;
     align-items: center;
     gap: 10px;
     box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-    height: 60px; /* 固定高度 */
+    height: 60px;
 }
 
 .controls-footer button {
@@ -161,10 +194,10 @@ body, html {
 }
 
 .simple-message-footer {
-    color: #f8f9fa; /* 亮色文字 */
+    color: #f8f9fa;
     font-size: 0.9em;
-    margin-left: 15px; /* 与按钮隔开一点距离 */
-    flex-grow: 1; /* 占据剩余空间，可以靠右显示 */
+    margin-left: 15px;
+    flex-grow: 1;
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
