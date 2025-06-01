@@ -1,11 +1,8 @@
-// API 通信模块
+// frontend/js/api.js
 import { API_BASE_URL } from './config.js';
 
-/**
- * 向后端请求发牌
- * @returns {Promise<Array<object>>} - 卡牌数据数组
- */
 export async function fetchDealCards() {
+    // ... (代码不变) ...
     try {
         const response = await fetch(`${API_BASE_URL}/deal_cards.php`);
         if (!response.ok) {
@@ -13,35 +10,40 @@ export async function fetchDealCards() {
             throw new Error(`发牌失败: ${response.status} ${errorData.message || ''}`);
         }
         const data = await response.json();
-        return data.hand; // 后端应返回 { hand: [...] } 格式
+        if (!data.success || !data.hand) {
+            throw new Error(data.message || "获取手牌数据格式错误");
+        }
+        return data.hand;
     } catch (error) {
         console.error("API Error (fetchDealCards):", error);
-        throw error; //  重新抛出错误，让调用者处理
+        throw error;
     }
 }
 
-/**
- * 示例：向后端请求理牌 (假设有这个接口)
- * @param {Array<object>} currentHand - 当前手牌
- * @returns {Promise<Array<object>>} - 理好的牌
- */
-export async function fetchSortHand(currentHand) {
+export async function fetchSubmitArrangement(pilesData) {
     try {
-        const response = await fetch(`${API_BASE_URL}/sort_hand.php`, { // 假设的接口
+        const response = await fetch(`${API_BASE_URL}/submit_arrangement.php`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ hand: currentHand }),
+            body: JSON.stringify(pilesData),
         });
+        // 先尝试解析JSON，无论成功失败
+        const responseData = await response.json();
+
         if (!response.ok) {
-             const errorData = await response.json().catch(() => ({ message: "未知错误" }));
-            throw new Error(`理牌失败: ${response.status} ${errorData.message || ''}`);
+            // 使用解析后的JSON中的message，或提供通用错误
+            throw new Error(responseData.message || `提交牌型失败: ${response.status}`);
         }
-        const data = await response.json();
-        return data.sortedHand;
+        return responseData; // 后端应返回 { success: true/false, isValid: true/false, message: "...", score: 0, handTypeDetails: {...} }
     } catch (error) {
-        console.error("API Error (fetchSortHand):", error);
-        throw error;
+        console.error("API Error (fetchSubmitArrangement):", error);
+        // 如果解析 response.json() 本身失败 (例如返回的不是json)，error.message 可能是 "Unexpected token < in JSON at position 0"
+        // 此时，可能需要一个更通用的错误信息或记录原始响应文本
+        if (error.message.includes("JSON")) {
+             throw new Error("服务器响应格式错误，请检查后端API。");
+        }
+        throw error; // 重新抛出错误，让调用者处理
     }
 }
