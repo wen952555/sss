@@ -1,143 +1,74 @@
-/* frontend/css/style.css (自适应高度和文字覆盖) */
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>十三水 AI 试玩 - 纯净版</title>
+    <link rel="stylesheet" href="css/style.css"> <!-- 确保路径正确 -->
+</head>
+<body>
+    <!-- 顶栏可以暂时移除或极简化，专注于牌桌 -->
+    <!--
+    <header>
+        <h1>十三水 AI 试玩</h1>
+    </header>
+    -->
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: #f0f2f5; /* 更现代的淡灰色 */
-    color: #1c1e21;
-    line-height: 1.5;
-    padding: 10px;
-    display: flex; /* 使得 main 可以撑满高度 */
-    flex-direction: column;
-    min-height: 100vh;
-}
+    <main class="game-container">
+        <div id="gameTable">
+            <!-- AI 玩家信息区 -->
+            <div class="ai-player-display-area">
+                <div class="player-info-box" id="aiPlayer0Info">AI 1 (等待...)</div>
+                <div class="player-info-box" id="aiPlayer1Info">AI 2 (等待...)</div>
+                <div class="player-info-box" id="aiPlayer2Info">AI 3 (等待...)</div>
+            </div>
 
-main.game-container {
-    max-width: 700px; /* 可以适当减小最大宽度，让布局更紧凑 */
-    margin: auto;     /* 上下也auto，使其在body flex中垂直居中（如果body足够高） */
-    padding: 15px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    display: flex; /* 让 gameTable 能更好地自适应 */
-    flex-direction: column;
-    flex-grow: 1; /* 占据body中剩余空间 */
-}
+            <!-- 核心摆牌区 -->
+            <div class="player-arrangement-zone">
+                <div class="dun-section top-dun">
+                    <h4>头墩 (3张) <span class="dun-type" id="headDunType">(-)</span></h4>
+                    <div id="headDun" class="hand-container dun-cards droppable-area" data-dun-name="head" data-max-cards="3"></div>
+                </div>
 
-#gameTable {
-    display: flex;
-    flex-direction: column;
-    gap: 12px; /* 主要区域间距 */
-    flex-grow: 1; /* 占据 game-container 中剩余空间 */
-}
+                <div class="human-player-hand-area central-area">
+                    <h3 id="centralAreaTitle">你的手牌 (13张) (拖拽摆牌):</h3>
+                    <div id="myHandDisplay" class="hand-container droppable-area" data-dun-name="handOrMiddle" data-max-cards="13">
+                        <!-- 卡牌将由JS填充 -->
+                    </div>
+                </div>
 
-.ai-player-display-area { /* ... (保持或微调) ... */ }
-.player-info-box { /* ... (保持或微调) ... */ }
+                <div class="dun-section bottom-dun">
+                    <h4>尾墩 (5张) <span class="dun-type" id="tailDunType">(-)</span></h4>
+                    <div id="tailDun" class="hand-container dun-cards droppable-area" data-dun-name="tail" data-max-cards="5"></div>
+                </div>
+            </div>
 
-.player-arrangement-zone {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch; /* 让子元素（dun-section, human-player-hand-area）宽度撑满 */
-    gap: 10px;
-    padding: 8px; /* 稍微减小内边距 */
-    border: 1px solid #dfe3e8; /* 淡化边框 */
-    border-radius: 6px;
-    background-color: #f5f6f7; /* 非常浅的背景 */
-    flex-shrink: 0; /* 防止在空间不足时被过度压缩 */
-}
+            <!-- 消息和操作区 -->
+            <div class="feedback-and-actions-area">
+                <div id="arrangementError" class="message error-message" style="display:none;"></div>
+                <div class="game-actions">
+                    <button id="submitArrangementButton">提交摆牌</button>
+                    <button id="newGameButton">新一局</button>
+                </div>
+                <div id="gameResultArea" class="message result-message" style="display:none;">
+                    <h4>本局结果：</h4>
+                    <div id="resultDetails"></div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-.dun-section { /* 包裹头墩和尾墩的 .hand-container */
-    /* width: 100%; // 它会自然撑满 player-arrangement-zone */
-    text-align: center; /* 虽然文字现在在伪元素里，以防万一 */
-}
-/* 移除了 dun-section h4 的样式，因为 h4 标签被注释了 */
+    <!-- 页脚可以暂时移除 -->
+    <!--
+    <footer>
+        <p>© 2024 十三水游戏</p>
+    </footer>
+    -->
 
-.human-player-hand-area { /* 包裹 myHandDisplay 的容器 */
-    width: 100%;
-    padding: 0; /* 内边距由 myHandDisplay 控制 */
-    border: none; /* 移除这个容器的边框 */
-    background-color: transparent; /* 背景透明 */
-}
-.human-player-hand-area.is-middle-dun-active { /* 这个类现在可能主要用于JS逻辑 */
-    /* 外观变化可以主要体现在 #myHandDisplay 上 */
-}
-.human-player-hand-area h3 { /* 手牌区/中墩区的标题，如果还想保留在外部的话 */
-    text-align: center;
-    font-size: 1em;
-    color: #333;
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-
-/* --- 卡牌容器 (手牌区和墩位) --- */
-.hand-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center; /* 卡牌垂直居中 */
-    padding: 15px 8px 8px 8px; /* 顶部padding大一点给文字留空间 */
-    border: 2px dashed #bcc0c4; /* 更柔和的虚线 */
-    border-radius: 5px;
-    background-color: #fff;
-    min-height: 90px; /* 至少是卡牌高度 + padding */
-    position: relative; /* 为了伪元素的绝对定位 */
-    width: 100%; /* <<--- 让墩位容器占满其父级 .dun-section 或 .human-player-hand-area 的宽度 */
-    box-sizing: border-box;
-}
-
-/* 使用伪元素在容器内部显示文字说明 */
-.hand-container::before {
-    content: attr(data-dun-label) " " attr(data-dun-type); /* 从data属性获取文本 */
-    position: absolute;
-    top: 2px; /* 微调文字位置 */
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.8em; /* 文字小一点 */
-    color: #606770;
-    padding: 1px 5px;
-    background-color: rgba(255, 255, 255, 0.7); /* 半透明背景 */
-    border-radius: 3px;
-    z-index: 1; /* 确保在卡牌上方，但如果卡牌有更高z-index则无效 */
-    pointer-events: none; /* 让鼠标事件能穿透到下面的卡牌 */
-    white-space: nowrap; /* 防止文字换行 */
-}
-
-/* 手牌区/中墩区的特定样式 */
-#myHandDisplay.hand-container {
-    min-height: 180px; /* 至少两行牌 */
-    border-color: #3b5998; /* 突出显示手牌区 */
-    background-color: #f0f2f5; /* 给手牌区一个不同的背景 */
-}
-#myHandDisplay.hand-container::before { /* myHandDisplay的文字说明 */
-    content: attr(data-dun-label) " (" attr(data-cards-count) "张) " attr(data-dun-type); /* 动态显示牌数 */
-}
-#myHandDisplay.is-middle-dun-target { /* JS添加的类，当它变成中墩时 */
-    border-color: #42b72a; /* 绿色 */
-    background-color: #e9f5e9;
-}
-#myHandDisplay.is-middle-dun-target::before {
-     content: "中墩 (5张) " attr(data-dun-type) !important; /* 强制覆盖 */
-}
-
-
-#headDun.hand-container,
-#tailDun.hand-container {
-    /* min-height 和 max-width 现在可以由内容和父级宽度决定，或按需设置 */
-    /* 确保它们有足够的内边距给伪元素文字 */
-    padding-top: 20px; /* 顶部padding给文字 */
-}
-
-.droppable-area.drag-over { /* ... (保持不变) ... */ }
-
-.card { /* 卡牌尺寸保持 50x70 */
-    width: 50px; height: 70px; margin: 3px;
-    /* ... 其他卡牌样式不变 ... */
-}
-.card-image-error-text, .card-error-placeholder { /* ... (保持不变) ... */ }
-
-/* --- 消息和操作区 --- */
-.feedback-and-actions-area { /* ... (保持不变或微调) ... */ }
-.message { /* ... */ }
-.game-actions button { /* ... */ }
-#resultDetails { /* ... */ }
+    <!-- 脚本加载顺序 -->
+    <script src="js/card_defs.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game_logic.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
