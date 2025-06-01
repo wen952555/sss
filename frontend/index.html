@@ -3,48 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水游戏</title>
+    <title>十三水理牌</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>十三水游戏</h1>
-
-        <div class="controls">
-            <button id="dealCardsBtn">发牌</button>
-            <button id="startArrangementBtn" style="display:none;">开始理牌</button>
-            <button id="resetArrangementBtn" style="display:none;">重置理牌</button>
-            <button id="submitArrangementBtn" style="display:none;">提交牌型</button>
+    <div class="game-container">
+        <div id="unassignedCardsArea" class="unassigned-cards-container">
+            <!-- 初始未分配的13张牌将在这里显示 -->
+            <div class="placeholder-text">等待发牌...</div>
         </div>
 
-        <div id="playerHandArea">
-            <h2>我的手牌 (点击选择，然后点击目标墩)</h2>
-            <div id="handCards" class="cards-container">
-                <!-- 卡牌将在这里显示 -->
+        <div id="arrangementArea" class="arrangement-container">
+            <div id="headPileArea" class="pile-banner" data-pile-name="head">
+                <span class="pile-label">头墩 (<span id="headPileCount">0/3</span>):</span>
+                <div id="headPileCards" class="cards-display-area"></div>
+            </div>
+            <div id="middlePileArea" class="pile-banner" data-pile-name="middle">
+                <span class="pile-label">中墩 (<span id="middlePileCount">0/5</span>):</span>
+                <div id="middlePileCards" class="cards-display-area"></div>
+            </div>
+            <div id="tailPileArea" class="pile-banner" data-pile-name="tail">
+                <span class="pile-label">尾墩 (<span id="tailPileCount">0/5</span>):</span>
+                <div id="tailPileCards" class="cards-display-area"></div>
             </div>
         </div>
+    </div>
 
-        <div id="arrangementArea" style="display:none;">
-            <h2>理牌区</h2>
-            <div class="pile-group">
-                <div id="headPileArea" class="pile" data-pile-name="head">
-                    <h3>头墩 <span id="headPileCount" class="pile-count">(0/3)</span></h3>
-                    <div id="headPileCards" class="cards-container pile-cards-container"></div>
-                </div>
-                <div id="middlePileArea" class="pile" data-pile-name="middle">
-                    <h3>中墩 <span id="middlePileCount" class="pile-count">(0/5)</span></h3>
-                    <div id="middlePileCards" class="cards-container pile-cards-container"></div>
-                </div>
-                <div id="tailPileArea" class="pile" data-pile-name="tail">
-                    <h3>尾墩 <span id="tailPileCount" class="pile-count">(0/5)</span></h3>
-                    <div id="tailPileCards" class="cards-container pile-cards-container"></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="gameMessages" class="message-area">
-            <!-- 游戏消息 -->
-        </div>
+    <div class="controls-footer">
+        <button id="dealCardsBtn">发牌</button>
+        <button id="resetArrangementBtn" style="display:none;">重置理牌</button>
+        <button id="submitArrangementBtn" style="display:none;">提交牌型</button>
+        <div id="simpleMessage" class="simple-message-footer"></div>
     </div>
 
     <script type="module" src="js/main.js"></script>
