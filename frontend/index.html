@@ -3,43 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水 AI试玩 - 自适应高度</title>
-    <link rel="stylesheet" href="css/style.css"> <!-- 确保路径正确 -->
+    <title>十三水 AI试玩 - 精确布局</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body> <!-- body 是顶层容器 -->
-    <!-- header (如果已移除，则忽略) -->
-    <!--
-    <header>
-        <h1>十三水 AI 试玩</h1>
-    </header>
-    -->
-
-    <main class="game-container"> <!-- main 是牌桌的主要包裹容器 -->
-        <div id="gameTable">      <!-- gameTable 是牌桌内部所有元素的容器 -->
-            <!-- AI 玩家信息区 -->
+<body>
+    <main class="game-container">
+        <div id="gameTable">
             <div class="ai-player-display-area">
-                <div class="player-info-box" id="aiPlayer0Info">AI 1 (等待...)</div>
-                <div class="player-info-box" id="aiPlayer1Info">AI 2 (等待...)</div>
-                <div class="player-info-box" id="aiPlayer2Info">AI 3 (等待...)</div>
+                <div class="player-info-box" id="aiPlayer0Info">AI 1 (已摆牌)</div>
+                <div class="player-info-box" id="aiPlayer1Info">AI 2 (已摆牌)</div>
+                <div class="player-info-box" id="aiPlayer2Info">AI 3 (已摆牌)</div>
             </div>
 
-            <!-- 核心摆牌区 -->
+            <!-- 红框区域 -->
             <div class="player-arrangement-zone">
+                <!-- 第一份：头墩 -->
                 <div class="dun-section top-dun">
                     <div id="headDun" class="hand-container dun-cards droppable-area"
                          data-dun-name="head" data-max-cards="3"
                          data-dun-label="头墩 (3张)" data-dun-type="(-)"></div>
                 </div>
 
+                <!-- 第二和第三份：手牌区/中墩区 -->
                 <div class="human-player-hand-area central-area">
-                    <!-- 外部标题H3已被移除，文字通过伪元素显示在 #myHandDisplay 上 -->
                     <div id="myHandDisplay" class="hand-container droppable-area"
                          data-dun-name="handOrMiddle" data-max-cards="13"
-                         data-dun-label="你的手牌" data-cards-count="0" data-dun-type="(-)">
-                        <!-- 卡牌将由JS填充 -->
+                         data-dun-label="你的手牌" data-cards-count="13" data-dun-type="(-)">
+                        <!-- 卡牌 -->
                     </div>
                 </div>
 
+                <!-- 第四份：尾墩 -->
                 <div class="dun-section bottom-dun">
                     <div id="tailDun" class="hand-container dun-cards droppable-area"
                          data-dun-name="tail" data-max-cards="5"
@@ -47,7 +41,6 @@
                 </div>
             </div>
 
-            <!-- 消息和操作区 -->
             <div class="feedback-and-actions-area">
                 <div id="arrangementError" class="message error-message" style="display:none;"></div>
                 <div class="game-actions">
@@ -55,21 +48,12 @@
                     <button id="newGameButton">新一局</button>
                 </div>
                 <div id="gameResultArea" class="message result-message" style="display:none;">
-                    <h4>本局结果：</h4>
-                    <div id="resultDetails"></div>
+                    <h4>本局结果：</h4><div id="resultDetails"></div>
                 </div>
             </div>
         </div>
     </main>
-
-    <!-- 页脚可以暂时移除 -->
-    <!--
-    <footer>
-        <p>© 2024 十三水游戏</p>
-    </footer>
-    -->
-
-    <!-- 脚本加载顺序 -->
+    <!-- Scripts -->
     <script src="js/card_defs.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/game_logic.js"></script>
