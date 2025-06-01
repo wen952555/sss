@@ -1,127 +1,107 @@
 // frontend/js/main.js
-import { displayPlayerHand, showGameMessage, toggleButton } from './ui.js';
+import { showGameMessage, configureButton } from './ui.js'; // 使用新的ui.js
 import { fetchDealCards, fetchSubmitArrangement } from './api.js';
 import {
     initializeArrangement,
     resetArrangement,
     getArrangedPilesData,
     checkArrangementCompletion,
-    setupPileClickHandlers
+    setupPileClickHandlers,
+    clearBoardForNewGame // 新增
 } from './arrange.js';
 
 const dealCardsBtn = document.getElementById('dealCardsBtn');
-const startArrangementBtn = document.getElementById('startArrangementBtn');
 const resetArrangementBtn = document.getElementById('resetArrangementBtn');
 const submitArrangementBtn = document.getElementById('submitArrangementBtn');
+// const startArrangementBtn = document.getElementById('startArrangementBtn'); // 已移除
 
-const playerHandDisplayArea = document.getElementById('playerHandArea'); // 原始手牌显示区（理牌时也用它）
-const arrangementUIArea = document.getElementById('arrangementArea'); // 包含三墩的区域
-
-let currentRawHand = []; // 存储后端发来的13张牌 [{rank, suit}, ...]
+let currentRawHand = [];
 
 async function handleDealCards() {
-    showGameMessage("正在发牌...", "info");
-    dealCardsBtn.disabled = true;
-    toggleButton('startArrangementBtn', false);
-    toggleButton('resetArrangementBtn', false);
-    toggleButton('submitArrangementBtn', false);
-    arrangementUIArea.style.display = 'none'; // 理牌前隐藏三墩
-    playerHandDisplayArea.style.display = 'block'; // 显示手牌区
+    showGameMessage("正在发牌...");
+    configureButton('dealCardsBtn', { enable: false });
+    configureButton('resetArrangementBtn', { show: false });
+    configureButton('submitArrangementBtn', { show: false });
+
+    clearBoardForNewGame(); // 清理旧牌局
 
     try {
         const cards = await fetchDealCards();
         currentRawHand = cards;
-        displayPlayerHand(cards); // 初始显示13张牌在手牌区 (会被理牌模块接管)
-        showGameMessage("发牌完成！点击“开始理牌”进行操作。", "success");
-        toggleButton('startArrangementBtn', true);
+        initializeArrangement(currentRawHand); // 直接初始化理牌模块
+        showGameMessage("发牌完成！请理牌。");
+        configureButton('resetArrangementBtn', { show: true, enable: true });
+        // submitArrangementBtn 由 checkArrangementCompletion 控制
     } catch (error) {
-        showGameMessage(`发牌错误: ${error.message}`, "error");
+        showGameMessage(`发牌错误: ${error.message}`);
         console.error(error);
     } finally {
-        dealCardsBtn.disabled = false;
+        configureButton('dealCardsBtn', { enable: true });
     }
-}
-
-function handleStartArrangement() {
-    if (currentRawHand.length !== 13) {
-        showGameMessage("请先成功发牌！", "warning");
-        return;
-    }
-    showGameMessage("理牌开始！点击手牌选择，再点击目标墩放置。", "info");
-    // playerHandDisplayArea.style.display = 'block'; // 手牌选择区一直显示
-    arrangementUIArea.style.display = 'block'; // 显示三墩UI
-
-    toggleButton('startArrangementBtn', false); // 隐藏“开始理牌”
-    toggleButton('resetArrangementBtn', true); // 显示“重置”
-    // “提交”按钮由 checkArrangementCompletion 控制
-
-    initializeArrangement(currentRawHand); // 使用原始牌数据初始化理牌模块
 }
 
 function handleReset() {
     if (currentRawHand.length === 0) {
-        showGameMessage("没有牌可以重置。", "info");
+        showGameMessage("没有牌可以重置。");
         return;
     }
-    resetArrangement(); // 调用理牌模块的重置
+    resetArrangement();
+    configureButton('submitArrangementBtn', { show: false }); // 重置后通常不能直接提交
 }
 
 async function handleSubmit() {
     const arrangedPiles = getArrangedPilesData();
     if (!arrangedPiles) {
-        // getArrangedPilesData 内部会显示错误信息
         return;
     }
 
-    showGameMessage("正在提交牌型...", "info");
-    submitArrangementBtn.disabled = true;
-    resetArrangementBtn.disabled = true; // 提交期间禁止重置
+    showGameMessage("正在提交牌型...");
+    configureButton('submitArrangementBtn', { enable: false });
+    configureButton('resetArrangementBtn', { enable: false });
 
     try {
         const result = await fetchSubmitArrangement(arrangedPiles);
-        let message = `提交结果: ${result.message || (result.success ? '成功' : '失败')}`;
+        let message = `${result.message || (result.success ? '提交成功' : '提交失败')}`;
         if (result.success) {
             message += result.isValid ? " (牌型有效)" : " (牌型无效)";
             if (result.handTypeDetails) {
-                message += `<br>头墩: ${result.handTypeDetails.head.name}`;
-                message += `<br>中墩: ${result.handTypeDetails.middle.name}`;
-                message += `<br>尾墩: ${result.handTypeDetails.tail.name}`;
+                message += ` 头:${result.handTypeDetails.head.name}, 中:${result.handTypeDetails.middle.name}, 尾:${result.handTypeDetails.tail.name}.`;
             }
-            if (typeof result.score !== 'undefined') {
-                message += `<br>得分: ${result.score}`;
-            }
-            showGameMessage(message, result.isValid ? "success" : "warning"); // 无效但成功提交也算warning
-            toggleButton('dealCardsBtn', true); // 允许开始新一局
-        } else {
-            showGameMessage(message, "error"); // API调用层面就失败了
+            // 可以在这里决定是否允许重新发牌
+            // configureButton('dealCardsBtn', { enable: true });
         }
+        showGameMessage(message);
+        if (result.success && result.isValid) {
+            // 成功且有效，可以冻结重置和提交，提示发新牌
+            configureButton('resetArrangementBtn', { enable: false });
+            configureButton('submitArrangementBtn', { show: true, enable: false }); // 显示但禁用
+        }
+
     } catch (error) {
-        showGameMessage(`提交时发生错误: ${error.message}`, "error");
+        showGameMessage(`提交错误: ${error.message}`);
         console.error(error);
     } finally {
-        submitArrangementBtn.disabled = false; // 无论成功失败，恢复按钮
-        resetArrangementBtn.disabled = false;
-        // 提交后不自动隐藏提交按钮，除非开始新一局
-        if(!checkArrangementCompletion()){ // 如果提交后状态变为未完成（例如后端逻辑导致），则隐藏
-             toggleButton('submitArrangementBtn', false);
+        // 除非是成功且有效的提交，否则恢复按钮
+        if (!(document.getElementById('submitArrangementBtn').disabled && currentRawHand.length > 0)) {
+             configureButton('submitArrangementBtn', { enable: checkArrangementCompletion() }); // 根据当前状态决定是否启用
+        }
+        if (currentRawHand.length > 0) { // 只有在有牌时才启用重置
+            configureButton('resetArrangementBtn', { enable: true });
         }
     }
 }
 
 function init() {
     dealCardsBtn.addEventListener('click', handleDealCards);
-    startArrangementBtn.addEventListener('click', handleStartArrangement);
     resetArrangementBtn.addEventListener('click', handleReset);
     submitArrangementBtn.addEventListener('click', handleSubmit);
 
-    setupPileClickHandlers(); // 为墩区设置点击监听器
+    setupPileClickHandlers();
 
-    displayPlayerHand([]); // 初始显示空手牌区域
-    showGameMessage("欢迎来到十三水游戏！点击“发牌”开始。", "info");
-    arrangementUIArea.style.display = 'none';
-    toggleButton('startArrangementBtn', false);
-    toggleButton('resetArrangementBtn', false);
-    toggleButton('submitArrangementBtn', false);
+    clearBoardForNewGame(); // 初始清理
+    showGameMessage("欢迎！点击“发牌”开始。");
+    configureButton('resetArrangementBtn', { show: false });
+    configureButton('submitArrangementBtn', { show: false });
 }
 
 document.addEventListener('DOMContentLoaded', init);
