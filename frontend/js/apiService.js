@@ -1,7 +1,7 @@
 // frontend/js/apiService.js
 
 // !! 重要: 将 'http://9525.ip-ddns.com/api.php' 替换为您 Serv00 后端的实际URL !!
-const backendBaseUrl = 'http://9525.ip-ddns.com'; // 假设 api.php 在 Serv00 域名的根目录
+const backendBaseUrl = 'https://9525.ip-ddns.com'; // 假设 api.php 在 Serv00 域名的根目录
 // 如果 api.php 在子目录，例如 public_html/mygame/api.php, 则URL应为:
 // const backendBaseUrl = 'http://9525.ip-ddns.com/mygame';
 
