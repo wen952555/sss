@@ -1,224 +1,160 @@
-/* frontend/css/style.css (重构版) */
+/* frontend/css/style.css (调整高度和手牌区布局) */
 
-/* --- 基本重置和全局设置 --- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box; /* 非常重要，让 padding 和 border 不会增加元素的总宽高 */
-}
-
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: #e9ebee; /* 淡灰色背景 */
+    background-color: #f0f2f5;
     color: #1c1e21;
     line-height: 1.5;
-    padding: 10px; /* 给整个页面一点边距 */
+    padding: 10px; /* 给body一点边距 */
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 20px); /* 确保body至少和视口一样高，减去padding */
 }
 
-/* --- 主游戏容器 --- */
 main.game-container {
-    max-width: 800px; /* 限制游戏区域最大宽度 */
-    margin: 10px auto; /* 上下边距，左右自动居中 */
-    padding: 15px;
+    max-width: 750px; /* 可以根据内容调整 */
+    width: 100%; /* 宽度占满可用空间，直到max-width */
+    margin: 15px auto; /* 上下边距，左右自动居中 */
+    padding: 20px;
     background-color: #ffffff;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* 占据body中剩余垂直空间 */
 }
 
 #gameTable {
-    display: flex; /* 使用 Flexbox 进行整体布局 */
-    flex-direction: column; /* 主轴垂直 */
-    gap: 15px; /* 各主要区域之间的间距 */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-grow: 1; /* 占据 game-container 中剩余垂直空间 */
+    /* 移除 grid-template-areas，因为我们现在主要用flex column */
 }
 
-/* --- AI 玩家信息区 --- */
 .ai-player-display-area {
     display: flex;
-    justify-content: space-around; /* AI信息框平均分布 */
+    justify-content: space-around;
     gap: 10px;
+    margin-bottom: 10px; /* 和摆牌区的间隔 */
 }
-.player-info-box { /* AI信息框的具体样式 */
-    flex: 1; /* 每个AI信息框占据可用空间 */
+.player-info-box {
+    flex: 1;
     background-color: #f0f2f5;
     padding: 8px;
     text-align: center;
     border-radius: 4px;
-    font-size: 0.85em;
+    font-size: 0.9em;
     color: #606770;
 }
 
-/* --- 核心摆牌区 --- */
 .player-arrangement-zone {
     display: flex;
-    flex-direction: column; /* 头墩、手牌/中墩、尾墩垂直排列 */
-    align-items: center; /* 内部元素居中 */
-    gap: 12px; /* 各墩之间的垂直间距 */
-    padding: 10px;
-    border: 1px solid #ccd0d5;
+    flex-direction: column;
+    align-items: center; /* 内部墩位（dun-section）居中 */
+    gap: 15px; /* 头、中、尾墩之间的垂直间距 */
+    padding: 10px 0;
+    border: 1px solid #dfe3e8;
     border-radius: 6px;
+    background-color: #f5f6f7;
+    /* flex-grow: 1; */ /* 允许这个区域根据内容增长，但不要过度 */
 }
 
-.dun-section { /* 头墩和尾墩的包裹容器 */
-    width: 100%; /* 宽度由父级控制，或设置max-width */
+.dun-section { /* 包裹头墩和尾墩的 .hand-container */
+    width: 100%; /* 宽度由 player-arrangement-zone 的 align-items:center 后的内容决定 */
+    max-width: 400px; /* 给墩位一个最大宽度，避免过宽 */
     text-align: center;
 }
-.dun-section h4 {
-    font-size: 1em;
-    color: #3b5998; /* Facebook 蓝色调 */
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-.dun-section h4 .dun-type {
-    font-size: 0.85em;
-    color: #4b4f56;
-    margin-left: 5px;
-    font-weight: normal;
-}
+/* 移除了 dun-section h4 的样式，因为文字覆盖在 hand-container 上 */
 
-.human-player-hand-area { /* 手牌区/中墩区的包裹容器 */
-    width: 100%;
-    padding: 8px;
-    border: 2px dashed #8a9ac2; /* 淡蓝色虚线 */
-    border-radius: 5px;
-    background-color: #f0f2f5; /* 与AI区域背景色类似 */
+.human-player-hand-area { /* 包裹 #myHandDisplay 的容器 */
+    width: 100%; /* 占满 .player-arrangement-zone 的可用宽度 */
+    /* padding 由 #myHandDisplay 控制 */
+    border: none;
+    background-color: transparent;
 }
-.human-player-hand-area.is-middle-dun-active { /* JS切换的类，当手牌区变为中墩时 */
-    border-style: solid;
-    border-color: #42b72a; /* 绿色 */
-    background-color: #e9f5e9; /* 淡绿色 */
-}
-.human-player-hand-area h3 {
-    text-align: center;
-    font-size: 1em;
-    color: #1d2129;
-    margin-bottom: 8px;
-    font-weight: 600;
-}
-.human-player-hand-area h3 .dun-type { /* 中墩牌型提示 */
-    font-size: 0.85em; color: #4b4f56; margin-left: 5px; font-weight: normal;
+.human-player-hand-area.is-middle-dun-active { /* 这个类现在可能主要用于JS逻辑 */ }
+.human-player-hand-area h3 { /* 手牌区/中墩区的外部标题，现在已移除，文字在伪元素上 */
+    display: none; /* 隐藏这个外部标题，因为文字在伪元素上 */
 }
 
 
 /* --- 卡牌容器 (手牌区和墩位) --- */
 .hand-container {
     display: flex;
-    flex-wrap: wrap;         /* 允许卡牌换行 */
-    justify-content: center; /* 卡牌在行内居中 */
-    align-items: center;     /* 卡牌在交叉轴上居中 (如果行高度不一) */
-    padding: 5px;
-    border: 1px solid #dddfe2; /* 更细的边框 */
-    border-radius: 3px;
-    background-color: #fff;
-    min-height: 80px; /* 根据卡牌大小调整，确保至少能放下目标数量的牌 */
-}
-
-/* 特定墩的尺寸调整 */
-#headDun.hand-container {
-    max-width: 210px; /* 3 * (50 + 3*2 + 4*2) 约等于 3 * 60 + 30 */
-    min-height: 80px; /* 约等于一张牌的高度 */
-    margin: 0 auto; /* 在 .dun-section 内居中 */
-}
-#tailDun.hand-container {
-    max-width: 350px; /* 5 * (50 + 3*2 + 4*2) 约等于 5 * 60 + 50 */
-    min-height: 80px;
-    margin: 0 auto;
-}
-#myHandDisplay.hand-container { /* 手牌/中墩区 */
-    min-height: 170px; /* 至少容纳两行牌 */
-    /* 宽度由 .human-player-hand-area 控制 */
-}
-
-.droppable-area.drag-over { /* 拖拽悬停高亮 */
-    border-color: #3578e5;
-    background-color: #e7f3ff;
-}
-
-/* --- 卡牌本身样式 --- */
-.card {
-    width: 50px;  /* 目标宽度 */
-    height: 70px; /* 目标高度 */
-    margin: 3px;
-    border: 1px solid #bcc0c4;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-    background-color: #fff;
-    display: flex;
+    flex-wrap: wrap;
     justify-content: center;
-    align-items: center;
-    cursor: grab;
-    user-select: none; /* 防止拖拽时选中文本 */
-    overflow: hidden; /* 防止图片溢出 */
+    align-items: center; /* 卡牌在多行时垂直居中（如果行高不一）*/
+    /* align-content: flex-start; */ /* 如果希望多行内容从顶部开始，可以使用这个，但 align-items:center 可能更适合单行或少行 */
+    padding: 20px 8px 8px 8px; /* 顶部padding给伪元素文字 */
+    border: 2px dashed #bcc0c4;
+    border-radius: 5px;
+    background-color: #fff;
+    position: relative; /* 为了伪元素的绝对定位 */
+    width: 100%; /* 占满父级 (.dun-section 或 .human-player-hand-area) */
+    box-sizing: border-box;
 }
-.card img {
-    display: block; /* 移除图片下方的微小空白 */
-    width: 100%;    /* 图片宽度撑满卡牌div */
-    height: 100%;   /* 图片高度撑满卡牌div */
-    object-fit: contain; /* 保持图片比例并完整显示 */
-    pointer-events: none;
-}
-.card.dragging {
-    opacity: 0.5;
-    transform: scale(0.95);
-}
-/* 图片加载失败时的占位符样式 */
-.card-error-placeholder { /* 如果 ui.js 中使用这个类 */
-    font-size: 10px; color: red; text-align: center;
-    border: 1px dashed red !important; /* 强制显示边框 */
-    display: flex; align-items: center; justify-content: center;
-}
-.card-image-error-text { /* ui.js 中图片加载失败时，在卡牌内显示的文字 */
-    font-size: 9px; color: red; text-align: center; padding: 2px;
+
+/* 使用伪元素在容器内部显示文字说明 */
+.hand-container::before { /* ... (样式与之前一致，确保 data-* 属性被JS更新) ... */
+    content: attr(data-dun-label) " " attr(data-dun-type);
+    position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    font-size: 0.85em; color: #4b4f56; padding: 2px 6px;
+    background-color: rgba(245, 246, 247, 0.8); /* 与背景稍融合 */
+    border-radius: 3px; z-index: 1; pointer-events: none; white-space: nowrap;
+    font-weight: 600;
 }
 
 
-/* --- 消息和操作区 --- */
-.feedback-and-actions-area {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    margin-top: 15px;
+/* --- 特定墩的尺寸和手牌区高度调整 --- */
+#headDun.hand-container {
+    min-height: 85px;  /* 约等于一张卡牌的高度 + padding */
+    /* max-width 通过 .dun-section 控制 */
 }
-.message {
-    width: 100%;
-    max-width: 600px; /* 消息区域不要太宽 */
-    padding: 10px;
-    border-radius: 4px;
-    text-align: center;
-    font-size: 0.9em;
-}
-.error-message {
-    color: #a94442; background-color: #f2dede; border: 1px solid #ebccd1;
-}
-.info-message { /* 如果 ui.js 的 displayMessage 用到了 */
-    color: #31708f; background-color: #d9edf7; border: 1px solid #bce8f1;
-}
-.result-message { /* gameResultArea 的样式 */
-    background-color: #dff0d8; color: #3c763d; border: 1px solid #d6e9c6;
-}
-.game-actions button {
-    padding: 8px 15px; /* 按钮小一点 */
-    font-size: 0.95em;
-    margin: 0 5px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    color: white;
-}
-#submitArrangementButton { background-color: #28a745; }
-#submitArrangementButton:hover { background-color: #218838; }
-#submitArrangementButton:disabled { background-color: #6c757d; cursor: not-allowed; }
-#newGameButton { background-color: #007bff; }
-#newGameButton:hover { background-color: #0056b3; }
 
-#resultDetails {
-    margin-top: 8px;
-    text-align: left;
-    white-space: pre-wrap; /* 保留换行符 */
-    font-size: 0.9em;
-    max-height: 200px; /* 如果结果很多，可以滚动 */
-    overflow-y: auto;
-    background: #fff;
-    padding: 10px;
-    border-radius: 3px;
+#tailDun.hand-container {
+    min-height: 85px;  /* 约等于一张卡牌的高度 + padding */
+    /* max-width 通过 .dun-section 控制 */
 }
+
+#myHandDisplay.hand-container { /* 手牌/中墩区 */
+    min-height: 190px; /* <<--- 明确增加高度以容纳两行卡牌 (2 * 70牌高 + 2 * 3牌间距 + 上下padding) */
+    border-color: #3b5998;
+    background-color: #e7f3ff; /* 给手牌区一个不同的背景 */
+    align-content: flex-start; /* <<--- 当有多行时，所有行从容器顶部开始排列 */
+}
+/* 当手牌区作为中墩时的特殊样式 (通过JS添加/移除此类) */
+#myHandDisplay.is-middle-dun-active {
+    border-color: #42b72a;
+    background-color: #e9f5e9;
+}
+/* 更新中墩的伪元素文字 (JS会更新data属性) */
+#myHandDisplay.is-middle-dun-active::before {
+     content: "中墩 (5张) " attr(data-dun-type) !important;
+}
+/* 更新手牌区的伪元素文字，包含动态牌数 */
+#myHandDisplay:not(.is-middle-dun-active)::before {
+    content: attr(data-dun-label) " (" attr(data-cards-count) "张) " attr(data-dun-type);
+}
+
+
+.droppable-area.drag-over { /* ... (保持不变) ... */ }
+
+.card { /* 卡牌尺寸保持 50x70 */
+    width: 50px; height: 70px; margin: 3px;
+    border: 1px solid #bcc0c4; border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    background-color: #fff; display: flex; justify-content: center;
+    align-items: center; cursor: grab; user-select: none;
+    overflow: hidden;
+}
+.card img { /* ... (保持不变) ... */ }
+.card.dragging { /* ... (保持不变) ... */ }
+.card-error-placeholder, .card-image-error-text { /* ... (保持不变) ... */ }
+
+
+.feedback-and-actions-area { /* ... (保持不变或微调) ... */ }
+.message { /* ... */ }
+.game-actions button { /* ... */ }
+#resultDetails { /* ... */ }
