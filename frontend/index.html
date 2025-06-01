@@ -3,29 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水 AI试玩 - 重构版</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>十三水 AI 试玩 - 纯净版</title>
+    <link rel="stylesheet" href="css/style.css"> <!-- 确保路径正确 -->
 </head>
 <body>
+    <!-- 顶栏可以暂时移除或极简化，专注于牌桌 -->
+    <!--
     <header>
         <h1>十三水 AI 试玩</h1>
     </header>
+    -->
 
     <main class="game-container">
         <div id="gameTable">
-            <div class="player-area ai-player-area" id="aiPlayer0Info">AI 1 (等待...)</div>
-            <div class="player-area ai-player-area" id="aiPlayer1Info">AI 2 (等待...)</div>
-            <div class="player-area ai-player-area" id="aiPlayer2Info">AI 3 (等待...)</div>
+            <!-- AI 玩家信息区 -->
+            <div class="ai-player-display-area">
+                <div class="player-info-box" id="aiPlayer0Info">AI 1 (等待...)</div>
+                <div class="player-info-box" id="aiPlayer1Info">AI 2 (等待...)</div>
+                <div class="player-info-box" id="aiPlayer2Info">AI 3 (等待...)</div>
+            </div>
 
+            <!-- 核心摆牌区 -->
             <div class="player-arrangement-zone">
                 <div class="dun-section top-dun">
                     <h4>头墩 (3张) <span class="dun-type" id="headDunType">(-)</span></h4>
                     <div id="headDun" class="hand-container dun-cards droppable-area" data-dun-name="head" data-max-cards="3"></div>
                 </div>
 
-                <div class="player-area human-player-area central-hand-middle-dun">
-                    <h3 id="centralAreaTitle">你的手牌 (拖拽摆牌):</h3>
-                    <div id="myHandDisplay" class="hand-container droppable-area" data-dun-name="handOrMiddle" data-max-cards="13"></div>
+                <div class="human-player-hand-area central-area">
+                    <h3 id="centralAreaTitle">你的手牌 (13张) (拖拽摆牌):</h3>
+                    <div id="myHandDisplay" class="hand-container droppable-area" data-dun-name="handOrMiddle" data-max-cards="13">
+                        <!-- 卡牌将由JS填充 -->
+                    </div>
                 </div>
 
                 <div class="dun-section bottom-dun">
@@ -34,28 +43,32 @@
                 </div>
             </div>
 
-            <div id="arrangementError" class="message error-message" style="display:none;"></div>
-
-            <div class="game-actions">
-                <button id="submitArrangementButton">提交摆牌</button>
-                <button id="newGameButton">新一局</button>
-            </div>
-
-            <div id="gameResultArea" class="message" style="display:none;">
-                <h4>本局结果：</h4>
-                <div id="resultDetails"></div>
+            <!-- 消息和操作区 -->
+            <div class="feedback-and-actions-area">
+                <div id="arrangementError" class="message error-message" style="display:none;"></div>
+                <div class="game-actions">
+                    <button id="submitArrangementButton">提交摆牌</button>
+                    <button id="newGameButton">新一局</button>
+                </div>
+                <div id="gameResultArea" class="message result-message" style="display:none;">
+                    <h4>本局结果：</h4>
+                    <div id="resultDetails"></div>
+                </div>
             </div>
         </div>
     </main>
 
+    <!-- 页脚可以暂时移除 -->
+    <!--
     <footer>
         <p>© 2024 十三水游戏</p>
     </footer>
+    -->
 
-    <!-- 脚本加载顺序至关重要 -->
-    <script src="js/card_defs.js"></script>   <!-- 1. 定义基础数据结构 -->
-    <script src="js/ui.js"></script>          <!-- 2. 定义UI操作函数 (可能依赖card_defs) -->
-    <script src="js/game_logic.js"></script> <!-- 3. 定义核心游戏逻辑 (可能依赖card_defs, ui) -->
-    <script src="js/main.js"></script>        <!-- 4. 主控制脚本, 最后加载, 使用上面所有定义 -->
+    <!-- 脚本加载顺序 -->
+    <script src="js/card_defs.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game_logic.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
