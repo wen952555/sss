@@ -1,231 +1,290 @@
 // frontend/js/main.js
+console.log("[Main.js] Loaded");
 
 // (依赖 card_defs.js, ui.js, game_logic.js)
 
-let playerHand = [];
-let aiHands = []; // 存放3个AI的手牌
-let playerArrangement = { head: [], middle: [], tail: [] }; // Card 对象
-let aiArrangements = []; // 存放3个AI的摆牌结果 { head, middle, tail, headEval, ... }
+// --- 全局状态 ---
+let humanPlayerHand = []; // Array of Card Objects
+let aiPlayersHands = [[], [], []]; // Array of 3 AI hands
+let humanPlayerArrangement = { head: [], middle: [], tail: [] }; // Card Objects in duns
+let aiPlayerArrangements = [null, null, null]; // Stores AI's {head, middle, tail, evals, isDaoshui}
 
-let deck = [];
-let draggedCardData = null; // { id, rank, suit, value, ... }
-let sourceDunName = null;   // 'hand', 'head', 'middle', 'tail'
+let currentDraggedCardData = null; // Data of the card being dragged
+let currentDragSourceArea = null;  // 'hand', 'head', 'middle', or 'tail'
 
-// DOM Elements
-const myHandDisplay = getElem('myHandDisplay');
-const headDunDisplay = getElem('headDun');
-const middleDunDisplay = getElem('middleDun');
-const tailDunDisplay = getElem('tailDun');
-const submitButton = getElem('submitArrangementButton');
-const newGameButton = getElem('newGameButton');
-const arrangementErrorDisplay = getElem('arrangementError');
-const gameResultArea = getElem('gameResultArea');
-const resultDetailsDisplay = getElem('resultDetails');
+// --- DOM Element References (获取一次) ---
+let myHandDisplayEl, headDunEl, middleDunEl, tailDunEl;
+let headDunTypeEl, middleDunTypeEl, tailDunTypeEl;
+let submitArrangementBtn, newGameBtn;
+let arrangementErrorEl, gameResultAreaEl, resultDetailsEl;
+let aiPlayerInfoEls = [];
 
+function cacheDOMElements() {
+    myHandDisplayEl = getElementByIdSafe('myHandDisplay');
+    headDunEl = getElementByIdSafe('headDun');
+    middleDunEl = getElementByIdSafe('middleDun');
+    tailDunEl = getElementByIdSafe('tailDun');
 
-function initializeGame() {
-    console.log("Initializing new game...");
-    hideGameResults();
-    showFeedbackMessage('arrangementError', '');
-    playerHand = [];
-    aiHands = [];
-    playerArrangement = { head: [], middle: [], tail: [] };
-    aiArrangements = [];
-    if(submitButton) submitButton.disabled = true; // 初始不可提交，直到牌摆好
+    headDunTypeEl = getElementByIdSafe('headDunType');
+    middleDunTypeEl = getElementByIdSafe('middleDunType');
+    tailDunTypeEl = getElementByIdSafe('tailDunType');
 
-    deck = createDeck();
-    shuffleDeck(deck);
+    submitArrangementBtn = getElementByIdSafe('submitArrangementButton');
+    newGameBtn = getElementByIdSafe('newGameButton');
 
-    const dealtHands = dealHands(deck, 4); // 0: player, 1-3: AIs
-    if (dealtHands.length < 4) {
-        showFeedbackMessage('arrangementError', '发牌失败，牌不够！', true);
-        return;
+    arrangementErrorEl = getElementByIdSafe('arrangementError');
+    gameResultAreaEl = getElementByIdSafe('gameResultArea');
+    resultDetailsEl = getElementByIdSafe('resultDetails');
+
+    for (let i = 0; i < 3; i++) {
+        aiPlayerInfoEls[i] = getElementByIdSafe(`aiPlayer${i}Info`);
     }
-    playerHand = dealtHands[0];
-    aiHands = dealtHands.slice(1);
-
-    renderCardsToArea('myHandDisplay', playerHand);
-    renderCardsToArea('headDun', []);
-    renderCardsToArea('middleDun', []);
-    renderCardsToArea('tailDun', []);
-    updateAllDunTypeDisplays(); // 更新所有墩牌型为 '-'
-
-    // AI 自动摆牌 (纯前端)
-    aiHands.forEach((aiHand, index) => {
-        const arrangement = getAIArrangement(aiHand); // game_logic.js
-        if (arrangement) {
-            aiArrangements[index] = arrangement;
-            updateAIPlayerStatus(index, arrangement.isDaoshui ? '已出牌 (倒水!)' : '已出牌');
-        } else {
-            updateAIPlayerStatus(index, '摆牌错误!');
-        }
-    });
-
-    if(submitButton) submitButton.disabled = false; // 允许提交
-    console.log("Game initialized. Player hand:", playerHand);
+    console.log("[Main.js] DOM elements cached.");
 }
 
-function updateAllDunTypeDisplays() {
-    updateDunTypeDisplay('head', playerArrangement.head.length === 3 ? evaluateHand(playerArrangement.head) : null);
-    updateDunTypeDisplay('middle', playerArrangement.middle.length === 5 ? evaluateHand(playerArrangement.middle) : null);
-    updateDunTypeDisplay('tail', playerArrangement.tail.length === 5 ? evaluateHand(playerArrangement.tail) : null);
+
+// --- 游戏初始化和流程 ---
+function startNewGame() {
+    console.log("[Main.js] Starting new game...");
+    if (!myHandDisplayEl) { // 确保DOM已缓存
+        console.error("[Main.js] Cannot start game, DOM elements not cached yet.");
+        return;
+    }
+
+    // 1. 清理UI
+    humanPlayerHand = [];
+    aiPlayersHands = [[], [], []];
+    humanPlayerArrangement = { head: [], middle: [], tail: [] };
+    aiPlayerArrangements = [null, null, null];
+
+    clearElementContent('myHandDisplay');
+    clearElementContent('headDun');
+    clearElementContent('middleDun');
+    clearElementContent('tailDun');
+    updateDunTypeHTML('head', null);
+    updateDunTypeHTML('middle', null);
+    updateDunTypeHTML('tail', null);
+    if (arrangementErrorEl) displayMessage('arrangementError', '');
+    if (gameResultAreaEl) gameResultAreaEl.style.display = 'none';
+    if (submitArrangementBtn) submitArrangementBtn.disabled = false;
+
+    // 2. 创建牌堆并发牌
+    const deck = getShuffledDeck(); // from game_logic.js
+    const allHands = dealCardsToPlayers(deck, 4); // 0 for human, 1-3 for AIs
+
+    if (allHands.length < 4 || allHands[0].length < 13) {
+        displayMessage('arrangementError', '发牌失败，牌数不足！', true);
+        console.error("[Main.js] Dealing cards failed.");
+        return;
+    }
+    humanPlayerHand = allHands[0];
+    aiPlayersHands[0] = allHands[1];
+    aiPlayersHands[1] = allHands[2];
+    aiPlayersHands[2] = allHands[3];
+
+    console.log("[Main.js] Human hand dealt:", humanPlayerHand.map(c => c.id));
+    renderCards('myHandDisplay', humanPlayerHand); // ui.js
+
+    // 3. AI 自动摆牌
+    aiPlayersHands.forEach((hand, index) => {
+        const arrangement = getSimpleAIArrangement(hand); // game_logic.js
+        if (arrangement) {
+            const headEval = evaluatePokerHand(arrangement.head);
+            const middleEval = evaluatePokerHand(arrangement.middle);
+            const tailEval = evaluatePokerHand(arrangement.tail);
+            const isDaoshui = checkDaoshui(arrangement.head, arrangement.middle, arrangement.tail);
+
+            aiPlayerArrangements[index] = {
+                ...arrangement, // head, middle, tail cards
+                headEval, middleEval, tailEval, isDaoshui
+            };
+            updateAIStatusHTML(index, isDaoshui ? "已摆牌(倒水)" : "已摆牌");
+        } else {
+            updateAIStatusHTML(index, "摆牌错误");
+        }
+    });
+    console.log("[Main.js] AI arrangements completed.");
 }
 
 // --- 拖拽逻辑 ---
-function setupDragAndDropListeners() {
+function setupDragDrop() {
     const droppableAreas = document.querySelectorAll('.droppable-area');
 
-    document.addEventListener('dragstart', (e) => {
-        if (e.target.classList.contains('card')) {
-            draggedCardData = findCardInSource(e.target.dataset.cardId);
-            sourceDunName = e.target.parentElement.dataset.dunName;
-            if (draggedCardData) {
-                e.dataTransfer.setData('text/plain', draggedCardData.id);
-                e.dataTransfer.effectAllowed = 'move';
-                setTimeout(() => e.target.classList.add('dragging'), 0);
+    document.addEventListener('dragstart', (event) => {
+        if (event.target.classList.contains('card')) {
+            currentDraggedCardData = findCardByIdInPlay(event.target.dataset.cardId);
+            currentDragSourceArea = event.target.parentElement.dataset.dunName;
+            if (currentDraggedCardData) {
+                event.dataTransfer.setData('text/plain', currentDraggedCardData.id);
+                event.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => event.target.classList.add('dragging'), 0);
             } else {
-                e.preventDefault();
+                console.warn("[Main.js] DragStart: Could not find card data for ID:", event.target.dataset.cardId);
+                event.preventDefault();
             }
         }
     });
 
-    document.addEventListener('dragend', (e) => {
-        if (e.target.classList.contains('card')) {
-            e.target.classList.remove('dragging');
+    document.addEventListener('dragend', (event) => {
+        if (event.target.classList.contains('card')) {
+            event.target.classList.remove('dragging');
         }
-        draggedCardData = null;
-        sourceDunName = null;
+        currentDraggedCardData = null;
+        currentDragSourceArea = null;
         droppableAreas.forEach(area => area.classList.remove('drag-over'));
     });
 
     droppableAreas.forEach(area => {
-        area.addEventListener('dragover', (e) => {
-            e.preventDefault();
+        area.addEventListener('dragover', (event) => {
+            event.preventDefault();
             const targetDunName = area.dataset.dunName;
             const maxCards = parseInt(area.dataset.maxCards) || (targetDunName === 'hand' ? 13 : 0);
-            const currentCardsInTarget = targetDunName === 'hand' ? playerHand.length : playerArrangement[targetDunName]?.length || 0;
+            const currentCardsInTarget = (targetDunName === 'hand') ?
+                humanPlayerHand.length :
+                (humanPlayerArrangement[targetDunName] ? humanPlayerArrangement[targetDunName].length : 0);
 
-            if (draggedCardData && currentCardsInTarget < maxCards) {
-                e.dataTransfer.dropEffect = 'move';
+            if (currentDraggedCardData && currentCardsInTarget < maxCards) {
+                event.dataTransfer.dropEffect = 'move';
                 area.classList.add('drag-over');
             } else {
-                e.dataTransfer.dropEffect = 'none';
-                area.classList.remove('drag-over');
+                event.dataTransfer.dropEffect = 'none';
             }
         });
-        area.addEventListener('dragenter', (e) => { e.preventDefault(); });
-        area.addEventListener('dragleave', (e) => { area.classList.remove('drag-over'); });
-        area.addEventListener('drop', (e) => {
-            e.preventDefault();
+        area.addEventListener('dragenter', (event) => { event.preventDefault(); area.classList.add('drag-over');});
+        area.addEventListener('dragleave', (event) => { area.classList.remove('drag-over'); });
+        area.addEventListener('drop', (event) => {
+            event.preventDefault();
             area.classList.remove('drag-over');
             const targetDunName = area.dataset.dunName;
-            const cardId = e.dataTransfer.getData('text/plain');
-            const droppedCard = findCardInSource(cardId); // 重新查找以确保
+            const cardId = event.dataTransfer.getData('text/plain');
+            const droppedCard = findCardByIdInPlay(cardId); // Re-find to be sure
 
-            if (droppedCard && sourceDunName) {
-                moveCard(droppedCard, sourceDunName, targetDunName);
+            if (droppedCard && currentDragSourceArea && currentDragSourceArea !== targetDunName) {
+                moveCardBetweenAreas(droppedCard, currentDragSourceArea, targetDunName);
             }
         });
     });
+    console.log("[Main.js] Drag and drop listeners set up.");
 }
 
-function findCardInSource(cardId) {
-    let card = playerHand.find(c => c.id === cardId);
+function findCardByIdInPlay(cardId) {
+    let card = humanPlayerHand.find(c => c.id === cardId);
     if (card) return card;
-    for (const dun in playerArrangement) {
-        card = playerArrangement[dun].find(c => c.id === cardId);
+    for (const dunKey in humanPlayerArrangement) {
+        card = humanPlayerArrangement[dunKey].find(c => c.id === cardId);
         if (card) return card;
     }
     return null;
 }
 
-function moveCard(cardToMove, fromDun, toDun) {
-    if (fromDun === toDun) return;
-
-    // 从源移除
-    if (fromDun === 'hand') {
-        playerHand = playerHand.filter(c => c.id !== cardToMove.id);
-    } else if (playerArrangement[fromDun]) {
-        playerArrangement[fromDun] = playerArrangement[fromDun].filter(c => c.id !== cardToMove.id);
+function moveCardBetweenAreas(card, fromArea, toArea) {
+    // 1. Remove from source
+    if (fromArea === 'hand') {
+        humanPlayerHand = humanPlayerHand.filter(c => c.id !== card.id);
+    } else if (humanPlayerArrangement[fromArea]) {
+        humanPlayerArrangement[fromArea] = humanPlayerArrangement[fromArea].filter(c => c.id !== card.id);
     }
 
-    // 添加到目标
-    const max = parseInt(getElem(`${toDun}Dun`)?.dataset.maxCards || (toDun === 'hand' ? 13 : 0));
-    if (toDun === 'hand') {
-        if (playerHand.length < 13) playerHand.push(cardToMove);
-    } else if (playerArrangement[toDun] && playerArrangement[toDun].length < max) {
-        playerArrangement[toDun].push(cardToMove);
-    } else { // 目标墩满了，放回手牌
-        console.warn(`Target ${toDun} is full or invalid. Returning card to hand.`);
-        if (playerHand.length < 13) playerHand.push(cardToMove);
+    // 2. Add to destination
+    const maxCardsInToArea = parseInt(getElementByIdSafe(`${toArea}Dun`)?.dataset.maxCards || (toArea === 'hand' ? 13 : 0));
+    if (toArea === 'hand') {
+        if (humanPlayerHand.length < 13) humanPlayerHand.push(card); // Should always be space if coming from dun
+    } else if (humanPlayerArrangement[toArea] && humanPlayerArrangement[toArea].length < maxCardsInToArea) {
+        humanPlayerArrangement[toArea].push(card);
+    } else { // Target dun is full, return to hand (should ideally be prevented by dragover)
+        console.warn(`[Main.js] Target area ${toArea} is full. Returning card ${card.id} to hand.`);
+        if (humanPlayerHand.length < 13) humanPlayerHand.push(card);
     }
 
-    // 重新渲染
-    renderCardsToArea('myHandDisplay', playerHand);
-    renderCardsToArea('headDun', playerArrangement.head);
-    renderCardsToArea('middleDun', playerArrangement.middle);
-    renderCardsToArea('tailDun', playerArrangement.tail);
-    updateAllDunTypeDisplays();
+    // 3. Re-render all player areas
+    renderCards('myHandDisplay', humanPlayerHand);
+    renderCards('headDun', humanPlayerArrangement.head);
+    renderCards('middleDun', humanPlayerArrangement.middle);
+    renderCards('tailDun', humanPlayerArrangement.tail);
+
+    // 4. Update dun type displays
+    updateDunTypeHTML('head', humanPlayerArrangement.head.length === 3 ? evaluatePokerHand(humanPlayerArrangement.head).name : null);
+    updateDunTypeHTML('middle', humanPlayerArrangement.middle.length === 5 ? evaluatePokerHand(humanPlayerArrangement.middle).name : null);
+    updateDunTypeHTML('tail', humanPlayerArrangement.tail.length === 5 ? evaluatePokerHand(humanPlayerArrangement.tail).name : null);
+    // console.log("[Main.js] Card moved and UI updated:", humanPlayerArrangement);
 }
 
 // --- 提交和结算 ---
-function handleSubmit() {
-    if (playerHand.length > 0 ||
-        playerArrangement.head.length !== 3 ||
-        playerArrangement.middle.length !== 5 ||
-        playerArrangement.tail.length !== 5) {
-        showFeedbackMessage('arrangementError', '请将13张牌完整摆放到三墩 (3-5-5)。', true);
+function handleSubmitArrangement() {
+    console.log("[Main.js] handleSubmitArrangement called.");
+    const totalArranged = humanPlayerArrangement.head.length + humanPlayerArrangement.middle.length + humanPlayerArrangement.tail.length;
+    if (humanPlayerHand.length !== 0 || totalArranged !== 13 ||
+        humanPlayerArrangement.head.length !== 3 ||
+        humanPlayerArrangement.middle.length !== 5 ||
+        humanPlayerArrangement.tail.length !== 5) {
+        displayMessage('arrangementError', '请将所有13张手牌正确摆放到三墩 (3-5-5)。', true);
         return;
     }
-    showFeedbackMessage('arrangementError', '');
-    if(submitButton) submitButton.disabled = true;
+    displayMessage('arrangementError', ''); // Clear error
+    if (submitArrangementBtn) submitArrangementBtn.disabled = true;
 
-    const playerEval = {
-        head: playerArrangement.head,
-        middle: playerArrangement.middle,
-        tail: playerArrangement.tail,
-        headEval: evaluateHand(playerArrangement.head),
-        middleEval: evaluateHand(playerArrangement.middle),
-        tailEval: evaluateHand(playerArrangement.tail)
+    // Evaluate player's duns
+    const playerSubmittedArrangement = {
+        head: humanPlayerArrangement.head,
+        middle: humanPlayerArrangement.middle,
+        tail: humanPlayerArrangement.tail,
+        headEval: evaluatePokerHand(humanPlayerArrangement.head),
+        middleEval: evaluatePokerHand(humanPlayerArrangement.middle),
+        tailEval: evaluatePokerHand(humanPlayerArrangement.tail),
     };
-    playerEval.isDaoshui = isDaoshui(playerEval.headEval, playerEval.middleEval, playerEval.tailEval);
+    playerSubmittedArrangement.isDaoshui = checkDaoshui(playerSubmittedArrangement.head, playerSubmittedArrangement.middle, playerSubmittedArrangement.tail);
 
-    let overallResultText = `你的牌型:\n`;
-    overallResultText += `头墩: ${playerEval.headEval.name}\n`;
-    overallResultText += `中墩: ${playerEval.middleEval.name}\n`;
-    overallResultText += `尾墩: ${playerEval.tailEval.name}\n`;
-    if (playerEval.isDaoshui) {
-        overallResultText += "**你倒水了！**\n\n";
+
+    let fullResultsText = `<b>你的牌局:</b>\n`;
+    fullResultsText += `头墩: ${playerSubmittedArrangement.head.map(c=>c.displayRank+c.displaySuit).join(' ')} (${playerSubmittedArrangement.headEval.name})\n`;
+    fullResultsText += `中墩: ${playerSubmittedArrangement.middle.map(c=>c.displayRank+c.displaySuit).join(' ')} (${playerSubmittedArrangement.middleEval.name})\n`;
+    fullResultsText += `尾墩: ${playerSubmittedArrangement.tail.map(c=>c.displayRank+c.displaySuit).join(' ')} (${playerSubmittedArrangement.tailEval.name})\n`;
+    if (playerSubmittedArrangement.isDaoshui) {
+        fullResultsText += "<strong style='color:red;'>你倒水了!</strong>\n\n";
     } else {
-        overallResultText += "你的摆牌有效。\n\n";
+        fullResultsText += "摆牌有效。\n\n";
     }
 
+    // Compare with each AI
+    let totalPlayerScoreChange = 0;
+    aiPlayerArrangements.forEach((aiArr, index) => {
+        if (aiArr) {
+            fullResultsText += `<b>--- 对战 AI ${index + 1} ---</b>\n`;
+            fullResultsText += `AI头墩: ${aiArr.head.map(c=>c.displayRank+c.displaySuit).join(' ')} (${aiArr.headEval.name})\n`;
+            fullResultsText += `AI中墩: ${aiArr.middle.map(c=>c.displayRank+c.displaySuit).join(' ')} (${aiArr.middleEval.name})\n`;
+            fullResultsText += `AI尾墩: ${aiArr.tail.map(c=>c.displayRank+c.displaySuit).join(' ')} (${aiArr.tailEval.name})\n`;
+            if (aiArr.isDaoshui) fullResultsText += "<span style='color:orange;'>AI倒水!</span>\n";
 
-    // 与每个AI比较
-    aiArrangements.forEach((aiArrangement, index) => {
-        if (!aiArrangement) {
-            overallResultText += `AI ${index + 1} 摆牌错误，无法比较。\n`;
-            return;
+            const comparison = calculateScoreAgainstAI(playerSubmittedArrangement, aiArr);
+            totalPlayerScoreChange += comparison.playerScoreChange;
+            fullResultsText += comparison.details.join("\n") + "\n";
+            fullResultsText += `<i>你从 AI ${index + 1} 赢得/输掉: ${comparison.playerScoreChange > 0 ? '+' : ''}${comparison.playerScoreChange} 道</i>\n\n`;
         }
-        overallResultText += `--- 对战 AI ${index + 1} (${aiArrangement.isDaoshui ? '倒水' : '有效'}) ---\n`;
-        overallResultText += `AI头墩: ${aiArrangement.headEval.name}\n`;
-        overallResultText += `AI中墩: ${aiArrangement.middleEval.name}\n`;
-        overallResultText += `AI尾墩: ${aiArrangement.tailEval.name}\n`;
-
-        const comparison = comparePlayerHands(playerEval, aiArrangement); // from game_logic.js
-        overallResultText += "比牌详情:\n" + comparison.details.join("\n") + "\n";
-        overallResultText += `你从AI ${index + 1} 赢得/输掉道数: ${comparison.player1Score}\n\n`;
     });
 
-    displayGameResults(overallResultText.replace(/\n/g, '<br>')); // 显示结果
+    fullResultsText += `<b>本局总道数变化: ${totalPlayerScoreChange > 0 ? '+' : ''}${totalPlayerScoreChange}</b>`;
+
+    // Display results (ui.js)
+    if (resultDetailsEl) resultDetailsEl.innerHTML = fullResultsText.replace(/\n/g, '<br>');
+    if (gameResultAreaEl) gameResultAreaEl.style.display = 'block';
+
+    console.log("[Main.js] Game submitted and results displayed.");
 }
 
 
-// --- 事件监听 ---
+// --- 初始化 ---
 document.addEventListener('DOMContentLoaded', () => {
-    if(submitButton) submitButton.addEventListener('click', handleSubmit);
-    if(newGameButton) newGameButton.addEventListener('click', initializeGame);
+    console.log("[Main.js] DOMContentLoaded. Initializing...");
+    cacheDOMElements(); // 获取所有需要的DOM元素
 
-    setupDragAndDropListeners();
-    initializeGame(); // 页面加载后自动开始第一局
+    if (submitArrangementBtn) {
+        submitArrangementBtn.addEventListener('click', handleSubmitArrangement);
+    } else { console.warn("[Main.js] Submit button not found."); }
+
+    if (newGameBtn) {
+        newGameBtn.addEventListener('click', startNewGame);
+    } else { console.warn("[Main.js] New Game button not found."); }
+
+    setupDragDrop();
+    startNewGame(); // 页面加载后自动开始第一局
 });
