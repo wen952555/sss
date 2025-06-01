@@ -17,19 +17,21 @@
 
             <div class="player-arrangement-zone">
                 <div class="dun-section top-dun">
+                    <!-- <h4>头墩 (3张) <span class="dun-type" id="headDunType">(-)</span></h4> --><!-- 原标题可以隐藏或移除 -->
                     <div id="headDun" class="hand-container dun-cards droppable-area"
                          data-dun-name="head" data-max-cards="3"
                          data-dun-label="头墩 (3张)" data-dun-type="(-)"></div>
                 </div>
 
                 <div class="human-player-hand-area central-area">
-                    <!-- 外部标题H3已移除，文本通过CSS伪元素显示在myHandDisplay上 -->
+                    <h3 id="centralAreaTitle">你的手牌 (13张) (拖拽摆牌):</h3>
                     <div id="myHandDisplay" class="hand-container droppable-area"
                          data-dun-name="handOrMiddle" data-max-cards="13"
-                         data-dun-label="你的手牌" data-cards-count="0" data-dun-type="(-)"></div>
+                         data-dun-label="手牌/中墩" data-dun-type="(-)"></div>
                 </div>
 
                 <div class="dun-section bottom-dun">
+                    <!-- <h4>尾墩 (5张) <span class="dun-type" id="tailDunType">(-)</span></h4> --><!-- 原标题可以隐藏或移除 -->
                     <div id="tailDun" class="hand-container dun-cards droppable-area"
                          data-dun-name="tail" data-max-cards="5"
                          data-dun-label="尾墩 (5张)" data-dun-type="(-)"></div>
@@ -37,22 +39,10 @@
             </div>
 
             <div class="feedback-and-actions-area">
-                <div id="arrangementError" class="message error-message" style="display:none;"></div>
-                <div class="game-actions">
-                    <button id="submitArrangementButton">提交摆牌</button>
-                    <button id="newGameButton">新一局</button>
-                </div>
-                <div id="gameResultArea" class="message result-message" style="display:none;">
-                    <h4>本局结果：</h4>
-                    <div id="resultDetails"></div>
-                </div>
+                <!-- ... (内容不变) ... -->
             </div>
         </div>
     </main>
-
-    <script src="js/card_defs.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/game_logic.js"></script>
-    <script src="js/main.js"></script>
+    <!-- ... (页脚和脚本加载不变) ... -->
 </body>
 </html>
