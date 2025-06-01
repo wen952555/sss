@@ -7,41 +7,56 @@ let piles = { head: [], middle: [], tail: [] };
 const pileLimits = { head: 3, middle: 5, tail: 5 };
 let gameState = 'INITIAL';
 
-const CARD_ASPECT_RATIO = 63 / 88; // 标准扑克牌宽高比
-const NARROW_SCREEN_HAND_ROWS = 2; // 手机屏幕手牌区固定行数
-const NARROW_SCREEN_BREAKPOINT_WIDTH = 700; // px, 切换手牌区布局的断点 (可调整)
-const MIN_CARD_WIDTH = 40; // px
-const MAX_CARD_WIDTH = 90; // px
+const CARD_ASPECT_RATIO = 63 / 88;
+const NARROW_SCREEN_HAND_ROWS = 2;
+const NARROW_SCREEN_BREAKPOINT_WIDTH = 700;
+const MIN_CARD_WIDTH = 40;
+const MAX_CARD_WIDTH = 90;
 
-// DOM Elements (no change from previous)
-const middlePileAreaDOM = document.getElementById('middlePileArea');
-const middlePileTitleDOM = document.getElementById('middlePileTitle');
-const pileCardContainers = {
-    head: document.getElementById('headPileCards'),
-    middle: document.getElementById('middlePileCards'),
-    tail: document.getElementById('tailPileCards')
-};
-const pileCountDisplays = { /* ... */ }; // unchanged
+// Declare DOM element references at the top level, initialize them later
+let middlePileAreaDOM, middlePileTitleDOM;
+let pileCardContainers = { head: null, middle: null, tail: null };
+let pileCountDisplays = { head: null, middle: null, tail: null };
 
-// --- Helper function to calculate card size ---
+// NEW: Function to initialize DOM element references
+export function initializeArrangeUIDependencies() {
+    middlePileAreaDOM = document.getElementById('middlePileArea');
+    middlePileTitleDOM = document.getElementById('middlePileTitle');
+
+    pileCardContainers.head = document.getElementById('headPileCards');
+    pileCardContainers.middle = document.getElementById('middlePileCards');
+    pileCardContainers.tail = document.getElementById('tailPileCards');
+
+    pileCountDisplays.head = document.getElementById('headPileCount');
+    pileCountDisplays.middle = document.getElementById('middlePileCount'); // Crucial
+    pileCountDisplays.tail = document.getElementById('tailPileCount');
+
+    // Log to confirm they are found (or not)
+    if (!pileCountDisplays.middle) {
+        console.error("ARRANGE.JS ERROR: 'middlePileCount' element NOT FOUND in DOM during initialization!");
+    }
+    if (!middlePileAreaDOM || !middlePileTitleDOM || !pileCardContainers.head || !pileCardContainers.middle || !pileCardContainers.tail || !pileCountDisplays.head || !pileCountDisplays.tail) {
+        console.warn("ARRANGE.JS WARN: One or more UI dependencies were not found during initialization. Check HTML IDs.");
+    }
+}
+
+
 function calculateCardWidth(containerWidth, numCardsToFitInRow, gap) {
-    if (numCardsToFitInRow <= 0) return MAX_CARD_WIDTH;
-    const totalGapWidth = (numCardsToFitInRow - 1) * gap;
+    if (numCardsToFitInRow <= 0 || !containerWidth) return MAX_CARD_WIDTH; // Added !containerWidth check
+    const totalGapWidth = Math.max(0, (numCardsToFitInRow - 1)) * gap; // Ensure gap isn't negative
     let cardWidth = (containerWidth - totalGapWidth) / numCardsToFitInRow;
     return Math.max(MIN_CARD_WIDTH, Math.min(cardWidth, MAX_CARD_WIDTH));
 }
 
 export function initializeArrangement(handCards) {
-    // ... (unchanged: fullHandData, piles, gameState init) ...
     fullHandData = handCards.map((card, index) => ({
         ...card, id: `card-${index}-${Date.now()}`, element: null, selected: false, currentPile: 'middle'
     }));
     piles = { head: [], middle: [...fullHandData], tail: [] };
     gameState = 'ARRANGING_FROM_MIDDLE';
 
-    setMiddlePileRole(true); // Will trigger renderAllPiles via renderPile('middle')
-    // renderAllPiles(); // setMiddlePileRole now handles rendering middle, others can be direct
-    renderPile('head');
+    setMiddlePileRole(true);
+    renderPile('head'); // Render these after middle pile is set up, if they depend on its size
     renderPile('tail');
     updateAllPileCounts();
     checkAndHandleGameStateTransition();
@@ -49,56 +64,63 @@ export function initializeArrangement(handCards) {
 }
 
 function setMiddlePileRole(isHandSource) {
-    // ... (unchanged: class toggling, title, count display) ...
-    const middlePileCardsContainer = pileCardContainers.middle;
+    if (!middlePileAreaDOM || !middlePileTitleDOM || !pileCountDisplays.middle) { // Guard clause
+        console.error("setMiddlePileRole: Required DOM elements not initialized.");
+        return;
+    }
+
+    const middleCardsContainer = pileCardContainers.middle;
     if (isHandSource) {
         middlePileAreaDOM.classList.add('is-hand-source');
         middlePileAreaDOM.classList.remove('is-middle-pile');
+        if (middleCardsContainer) middleCardsContainer.classList.add('middle-hand-source-layout'); // Check if exists
         middlePileTitleDOM.textContent = '手牌区';
         middlePileTitleDOM.classList.add('is-hand-source-title');
         pileCountDisplays.middle.textContent = `${piles.middle.length}/${fullHandData.length}`;
     } else {
         middlePileAreaDOM.classList.remove('is-hand-source');
         middlePileAreaDOM.classList.add('is-middle-pile');
+        if (middleCardsContainer) middleCardsContainer.classList.remove('middle-hand-source-layout'); // Check if exists
         middlePileTitleDOM.textContent = '中墩';
         middlePileTitleDOM.classList.remove('is-hand-source-title');
         pileCountDisplays.middle.textContent = `${piles.middle.length}/${pileLimits.middle}`;
     }
-    renderPile('middle'); // Crucial: re-render middle pile to apply new layout logic
+    renderPile('middle');
 }
 
 function renderPile(pileName) {
     const container = pileCardContainers[pileName];
+    if (!container) { // Guard clause
+        console.warn(`renderPile: Container for pile "${pileName}" not found.`);
+        return;
+    }
     container.innerHTML = '';
     const cardsToRender = piles[pileName];
     if (!cardsToRender) return;
 
     const isHandSourceMiddle = pileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE';
     const isCompletedMiddle = pileName === 'middle' && gameState === 'ARRANGEMENT_COMPLETE';
-    const containerWidth = container.offsetWidth;
-    const gap = parseFloat(getComputedStyle(container).gap) || 6; // Get gap from CSS or default
+    const containerWidth = container.offsetWidth; // Ensure container is visible and has width
+    const gapStyle = getComputedStyle(container).gap;
+    const gap = gapStyle && gapStyle !== 'normal' ? parseFloat(gapStyle) : 6;
+
 
     if (isHandSourceMiddle && cardsToRender.length > 0) {
         const isNarrowScreen = window.innerWidth <= NARROW_SCREEN_BREAKPOINT_WIDTH;
-
         if (isNarrowScreen) {
-            // Narrow screen: force NARROW_SCREEN_HAND_ROWS rows
             const cardsPerRowApprox = Math.ceil(cardsToRender.length / NARROW_SCREEN_HAND_ROWS);
             let currentCardIndex = 0;
             for (let i = 0; i < NARROW_SCREEN_HAND_ROWS && currentCardIndex < cardsToRender.length; i++) {
                 const rowContainer = document.createElement('div');
                 rowContainer.className = 'card-row';
-                const numCardsThisRow = (i === 0 && cardsToRender.length === 13) ? 6 : // Special case 6-7 for 13 cards
+                const numCardsThisRow = (i === 0 && cardsToRender.length === 13 && NARROW_SCREEN_HAND_ROWS === 2) ? 6 :
                                       (i === NARROW_SCREEN_HAND_ROWS - 1) ? cardsToRender.length - currentCardIndex : cardsPerRowApprox;
-
                 const cardWidth = calculateCardWidth(containerWidth, numCardsThisRow, gap);
-
                 for (let j = 0; j < numCardsThisRow && currentCardIndex < cardsToRender.length; j++) {
                     const cardData = cardsToRender[currentCardIndex++];
                     const cardElement = createCardImageElement(cardData);
                     cardData.element = cardElement;
                     cardElement.style.width = `${cardWidth}px`;
-                    // cardElement.style.height = `${cardWidth / CARD_ASPECT_RATIO}px`; // aspect-ratio CSS handles this
                     cardElement.dataset.cardId = cardData.id;
                     cardElement.classList.add('selectable-card');
                     if (cardData.selected) cardElement.classList.add('selected');
@@ -107,12 +129,9 @@ function renderPile(pileName) {
                 }
                 container.appendChild(rowContainer);
             }
-        } else {
-            // Wide screen: single row with wrapping, calculate optimal card size
-            // Try to fit all cards in one row if possible, otherwise let them wrap
-            const idealCardsInRow = cardsToRender.length; // Or a max like 13
+        } else { // Wide screen
+            const idealCardsInRow = Math.min(cardsToRender.length, 13); // Try to fit up to 13, or all if less
             const cardWidth = calculateCardWidth(containerWidth, idealCardsInRow, gap);
-
             cardsToRender.forEach(cardData => {
                 const cardElement = createCardImageElement(cardData);
                 cardData.element = cardElement;
@@ -127,7 +146,7 @@ function renderPile(pileName) {
     } else { // Head, Tail, or Completed Middle pile
         const numCardsToFit = pileName === 'middle' ? pileLimits.middle :
                               pileName === 'head' ? pileLimits.head : pileLimits.tail;
-        const cardWidth = calculateCardWidth(containerWidth, numCardsToFit, gap);
+        const cardWidth = calculateCardWidth(containerWidth, cardsToRender.length > 0 ? Math.min(numCardsToFit, cardsToRender.length) : numCardsToFit, gap);
 
         cardsToRender.forEach(cardData => {
             const cardElement = createCardImageElement(cardData);
@@ -135,8 +154,7 @@ function renderPile(pileName) {
             cardElement.style.width = `${cardWidth}px`;
             cardElement.dataset.cardId = cardData.id;
             cardElement.classList.add('pile-card');
-
-            if (!isCompletedMiddle) { // Add remove button for head, tail, or arranging middle (though middle won't be here)
+            if (!isCompletedMiddle) {
                 const removeBtn = document.createElement('span');
                 removeBtn.textContent = '×';
                 removeBtn.classList.add('remove-card-btn');
@@ -153,25 +171,18 @@ let resizeTimeout;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
-        // Re-render all piles on resize as card sizes might change
         renderAllPiles();
-    }, 200); // Debounce
+    }, 200);
 });
 
-// ... (Rest of the functions: renderAllPiles, updatePileCount, updateAllPileCounts,
-//      handleCardSelectionInSource, addSelectedCardToTargetPile, moveCardBackToSource,
-//      checkAndHandleGameStateTransition, resetArrangement, getArrangedPilesData,
-//      setupPileClickHandlers, clearBoardForNewGame - ensure they are correctly defined
-//      as in previous complete versions. Minor tweaks might be needed if card data or
-//      state dependencies changed, but the core logic should hold.)
-
-// Ensure all other functions are present and correct from your previous complete `arrange.js`
 function renderAllPiles() {
     for (const pileName in piles) {
         renderPile(pileName);
     }
 }
+
 function updatePileCount(pileName) {
+    if (!pileCountDisplays[pileName]) return; // Guard clause
     let currentCount = piles[pileName] ? piles[pileName].length : 0;
     let limit;
     if (pileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') {
@@ -181,7 +192,9 @@ function updatePileCount(pileName) {
     }
     pileCountDisplays[pileName].textContent = `${currentCount}/${limit}`;
 }
+
 function updateAllPileCounts() { for (const pileName in piles) { updatePileCount(pileName); } }
+
 function handleCardSelectionInSource(cardId) {
     if (gameState !== 'ARRANGING_FROM_MIDDLE') return;
     const cardData = fullHandData.find(c => c.id === cardId && c.currentPile === 'middle');
@@ -193,8 +206,9 @@ function handleCardSelectionInSource(cardId) {
     });
     cardData.selected = !cardData.selected;
     if (cardData.element) cardData.element.classList.toggle('selected', cardData.selected);
-    showGameMessage(cardData.selected ? `已选择 ${cardData.element.alt}，请点击目标墩。` : "已取消选择。");
+    showGameMessage(cardData.selected ? `已选择 ${cardData.element?.alt || '卡牌'}，请点击目标墩。` : "已取消选择。");
 }
+
 export function addSelectedCardToTargetPile(targetPileName) {
     if (targetPileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') {
         showGameMessage("手牌区不能作为目标。"); return;
@@ -209,8 +223,9 @@ export function addSelectedCardToTargetPile(targetPileName) {
     selectedCard.currentPile = targetPileName; selectedCard.selected = false;
     piles[targetPileName].push(selectedCard);
     renderPile('middle'); renderPile(targetPileName); updateAllPileCounts(); checkAndHandleGameStateTransition();
-    showGameMessage(`${selectedCard.element.alt} 已放入 ${targetPileName}墩。`);
+    showGameMessage(`${selectedCard.element?.alt || '卡牌'} 已放入 ${targetPileName}墩。`);
 }
+
 function moveCardBackToSource(sourcePileName, cardId) {
     if (gameState === 'ARRANGEMENT_COMPLETE' && sourcePileName === 'middle') {
         showGameMessage("牌型已确认，请重置以修改中墩。"); return;
@@ -223,8 +238,9 @@ function moveCardBackToSource(sourcePileName, cardId) {
     piles.middle.push(cardData);
     if (gameState === 'ARRANGEMENT_COMPLETE') { gameState = 'ARRANGING_FROM_MIDDLE'; setMiddlePileRole(true); }
     renderPile(sourcePileName); renderPile('middle'); updateAllPileCounts(); checkAndHandleGameStateTransition();
-    showGameMessage(`${cardData.element ? cardData.element.alt : '卡牌'} 已从 ${sourcePileName}墩 移回手牌区。`);
+    showGameMessage(`${cardData.element?.alt || '卡牌'} 已从 ${sourcePileName}墩 移回手牌区。`);
 }
+
 function checkAndHandleGameStateTransition() {
     const headCount = piles.head.length; const tailCount = piles.tail.length; const middleCount = piles.middle.length;
     const totalInPiles = headCount + middleCount + tailCount;
@@ -240,13 +256,15 @@ function checkAndHandleGameStateTransition() {
     }
     return gameState === 'ARRANGEMENT_COMPLETE';
 }
+
 export function resetArrangement() {
-    if (fullHandData.length === 0 && piles.middle.length === 0) { showGameMessage("请先发牌。"); return; }
+    if (fullHandData.length === 0 && (!piles.middle || piles.middle.length === 0)) { showGameMessage("请先发牌。"); return; }
     fullHandData.forEach(card => { card.currentPile = 'middle'; card.selected = false; });
     piles = { head: [], middle: [...fullHandData], tail: [] }; gameState = 'ARRANGING_FROM_MIDDLE';
     setMiddlePileRole(true); renderAllPiles(); updateAllPileCounts(); checkAndHandleGameStateTransition();
     showGameMessage("理牌已重置。");
 }
+
 export function getArrangedPilesData() {
     if (gameState !== 'ARRANGEMENT_COMPLETE') { showGameMessage("牌型未完成或不符合提交条件！"); return null; }
     return {
@@ -255,15 +273,30 @@ export function getArrangedPilesData() {
         tail: piles.tail.map(c => ({ rank: c.rank, suit: c.suit }))
     };
 }
+
 export function setupPileClickHandlers() {
-    document.getElementById('headPileArea').addEventListener('click', () => addSelectedCardToTargetPile('head'));
-    document.getElementById('tailPileArea').addEventListener('click', () => addSelectedCardToTargetPile('tail'));
+    const headPileDOM = document.getElementById('headPileArea');
+    const tailPileDOM = document.getElementById('tailPileArea');
+    if (headPileDOM) headPileDOM.addEventListener('click', () => addSelectedCardToTargetPile('head'));
+    if (tailPileDOM) tailPileDOM.addEventListener('click', () => addSelectedCardToTargetPile('tail'));
 }
+
 export function clearBoardForNewGame() {
     fullHandData = []; piles = { head: [], middle: [], tail: [] }; gameState = 'INITIAL';
-    Object.values(pileCardContainers).forEach(container => container.innerHTML = '');
-    setMiddlePileRole(true); middlePileTitleDOM.textContent = '手牌区';
-    pileCountDisplays.middle.textContent = `0/0`;
-    updateAllPileCounts();
-    configureButton('submitArrangementBtn', { show: false }); configureButton('resetArrangementBtn', { show: false });
+    Object.values(pileCardContainers).forEach(container => {
+        if (container) container.innerHTML = '';
+    });
+
+    // Ensure setMiddlePileRole is called when its dependencies are available
+    if (middlePileAreaDOM && middlePileTitleDOM && pileCountDisplays.middle) {
+         setMiddlePileRole(true); // Set to hand source appearance, but it will be empty
+         middlePileTitleDOM.textContent = '手牌区';
+         pileCountDisplays.middle.textContent = `0/0`;
+    } else {
+        console.warn("clearBoardForNewGame: Cannot call setMiddlePileRole, DOM elements missing.");
+    }
+
+    updateAllPileCounts(); // Will update counts for empty head/tail as well
+    configureButton('submitArrangementBtn', { show: false });
+    configureButton('resetArrangementBtn', { show: false });
 }
