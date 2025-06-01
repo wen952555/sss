@@ -1,4 +1,20 @@
-/* ... (保留之前的 body, game-container, controls-footer 等样式) ... */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    overflow-x: hidden;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 60px); /* 减去底部按钮栏的高度 */
+    padding: 15px;
+    box-sizing: border-box;
+}
 
 /* 理牌区整体容器 */
 .arrangement-container {
@@ -15,32 +31,33 @@
     padding: 10px;
     display: flex;
     align-items: center;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; /* 添加 background-color 过渡 */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     flex-shrink: 0;
 }
-.pile-banner.pile-target:hover { /* 只有头尾墩在初始阶段作为目标时有悬浮效果 */
+/* 头尾墩作为目标时的悬浮效果 */
+.pile-banner.pile-target:hover {
     border-color: #007bff;
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.1);
 }
-/* 如果中墩作为手牌源，也给它一个可点击的视觉提示 */
-#middlePileArea.is-hand-source .card-image {
-    cursor: pointer; /* 源牌区的牌可以点击 */
+
+/* 中墩作为手牌源时的卡牌样式 */
+#middlePileArea.is-hand-source .cards-display-area .card-image {
+    cursor: pointer;
 }
-#middlePileArea.is-hand-source .card-image:hover {
+#middlePileArea.is-hand-source .cards-display-area .card-image:hover {
      transform: translateY(-3px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
-#middlePileArea.is-hand-source .selectable-card.selected {
-    border: 3px solid dodgerblue;
-    box-shadow: 0 0 8px rgba(30, 144, 255, 0.7);
-    transform: scale(1.05);
+#middlePileArea.is-hand-source .cards-display-area .selectable-card.selected {
+    border: 3px solid dodgerblue !important; /* 使用 !important 确保覆盖 */
+    box-shadow: 0 0 8px rgba(30, 144, 255, 0.7) !important;
+    transform: scale(1.05) !important;
 }
-
 
 /* 特定墩的样式 */
 #headPileArea {
-    min-height: 80px;
-    flex-basis: 25%;  /* 稍微调整比例给中墩更多初始空间 */
+    min-height: 80px; /* 调整为flex-basis定义的比例 */
+    flex-basis: 25%;
     border-top: 2px dashed #adb5bd;
     border-bottom: 1px dashed #adb5bd;
     border-top-left-radius: 8px;
@@ -49,26 +66,22 @@
 }
 
 #middlePileArea {
-    min-height: 180px; /* 初始作为手牌区，给足高度 */
-    flex-basis: 50%;   /* 初始给中墩（手牌区）较大空间 */
+    min-height: 150px; /* 调整为flex-basis定义的比例 */
+    flex-basis: 50%;
     /* 初始作为手牌区时的特殊样式 */
-    /* &.is-hand-source { background-color: #e9ecef; } */ /* 示例：不同背景色 */
+    /* &.is-hand-source { background-color: #f8f9fa; } */ /* 淡灰色背景 */
 }
-/* 当中墩转换回真正的“中墩”角色时，可能恢复正常样式 */
+#middlePileArea.is-hand-source {
+    background-color: #f8f9fa; /* 手牌区用不同背景色 */
+}
 #middlePileArea.is-middle-pile {
-    /* background-color: #ffffff; */ /* 恢复默认背景 */
-    /* min-height: 150px; */ /* 高度可能也需要调整回之前的值 */
-    /* flex-basis: 60%;  */ /* 如果之前中墩的 flex-basis 不同 */
-    cursor: default; /* 转换后可能不再是牌的源或目标（除非允许墩间移动）*/
+    background-color: #ffffff; /* 转换回中墩时恢复白色背景 */
+    /* flex-basis: 60%; */ /* 如果转换后高度比例不同，在这里调整 */
+    cursor: default;
 }
-/* 为了让中墩的牌也能被点击选择，添加selectable-card类 */
-#middlePileArea .card-image {
-    /* cursor: pointer; 在 is-hand-source 中定义 */
-}
-
 
 #tailPileArea {
-    min-height: 80px;
+    min-height: 80px; /* 调整为flex-basis定义的比例 */
     flex-basis: 25%;
     border-top: 1px dashed #adb5bd;
     border-bottom: 2px dashed #adb5bd;
@@ -83,8 +96,9 @@
     margin-right: 10px;
     white-space: nowrap;
 }
-.pile-label #middlePileTitle { /* 用于JS控制中墩标题 */
-    font-style: italic; /* 比如手牌区时用斜体 */
+.pile-label #middlePileTitle.is-hand-source-title {
+    font-style: italic;
+    color: #007bff; /* 手牌区标题用特殊颜色 */
 }
 
 .cards-display-area {
@@ -94,22 +108,91 @@
     flex-grow: 1;
     min-height: 65px;
     align-items: center;
+    justify-content: flex-start; /* 卡牌从左开始排列 */
 }
 
 .card-image {
-    width: 55px;
-    height: auto;
+    width: 55px; /* 卡牌宽度 */
+    height: auto; /* 保持宽高比 */
     border: 1px solid #ccc;
     border-radius: 5px;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-    background-color: white;
+    background-color: white; /* SVG透明背景时需要 */
+    transition: transform 0.1s ease, box-shadow 0.1s ease; /* 为选中效果添加平滑过渡 */
+}
+.card-image.selectable-card { /* 可以被选择的牌才有这个class */
+    /* 在#middlePileArea.is-hand-source中定义具体选中样式 */
 }
 
-.pile-card {
+
+.pile-card { /* 墩里的牌（非手牌源中的牌） */
     position: relative;
 }
 .pile-card .remove-card-btn {
-    /* ... (样式不变) ... */
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 10;
+}
+.pile-card:hover .remove-card-btn {
+    display: block;
 }
 
-/* ... (底部按钮栏样式不变) ... */
+
+/* 底部按钮栏 */
+.controls-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #343a40;
+    padding: 10px 15px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    height: 60px;
+}
+
+.controls-footer button {
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+.controls-footer button:hover {
+    background-color: #0056b3;
+}
+.controls-footer button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.simple-message-footer {
+    color: #f8f9fa;
+    font-size: 0.9em;
+    margin-left: 15px;
+    flex-grow: 1;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
