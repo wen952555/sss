@@ -1,35 +1,242 @@
-/* ... (已有的CSS代码) ... */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    margin: 0;
+    padding: 0; /* 改为0，让container控制边距 */
+    display: flex;
+    flex-direction: column; /* 让container和可能的页脚垂直排列 */
+    align-items: center; /* 水平居中主要内容区 */
+    min-height: 100vh;
+}
 
-.hand-section h3 {
-    display: flex; /* 使用flex布局让牌型结果和标题在同一行 */
+.container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    width: 95%; /* 调整宽度 */
+    max-width: 1200px; /* 调整最大宽度 */
+    margin-top: 20px; /* 与顶部的距离 */
+    display: flex; /* 使用flex布局让游戏区和摆放区分列显示 */
+    gap: 20px; /* 游戏区和摆放区之间的间隔 */
+}
+
+h1 { /* 将H1移到container外部或内部单独处理 */
+    color: #2c3e50;
+    text-align: center;
+    width: 100%; /* 让标题占据全部宽度 */
+    margin-bottom: 20px;
+}
+
+.game-title-area { /* 新增一个包裹标题的区域 */
+    width: 100%;
+    text-align: center;
+    padding-top: 20px;
+}
+
+
+/* 主要游戏区，包含初始手牌和控制按钮 */
+.main-game-content {
+    flex: 1; /* 占据可用空间的一份 */
+    display: flex;
+    flex-direction: column;
+}
+
+
+.hand-area, .arranged-hands-area-wrapper { /* 修改，让摆放区也成为flex item */
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.hand-area { /* 初始手牌区 */
+    margin-bottom: 20px;
+    /* height: 100%; */ /* 尝试让它占据父容器高度，但这需要父容器有确定高度 */
+    min-height: 400px; /* 给一个最小高度 */
+    display: flex; /* 确保内部内容可以控制 */
+    flex-direction: column; /* 使得标题和牌容器垂直排列 */
+}
+
+.player-initial-hand { /* 这是真正放牌的容器 */
+    display: flex;
+    flex-direction: column; /* 卡片垂直排列 */
+    align-items: center; /* 水平居中卡片 */
+    gap: -40px; /* 让卡片部分重叠，负值根据卡片高度调整 */
+    padding: 10px;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    min-height: 300px; /* 给一个最小高度 */
+    overflow-y: auto; /* 如果牌太多，允许滚动 */
+    flex-grow: 1; /* 占据 hand-area 内的剩余空间 */
+}
+
+.card-container { /* 通用卡片容器样式，例如三道牌的容器 */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 100px;
+    padding: 8px;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    align-items: center;
+    justify-content: flex-start; /* 从左开始排列 */
+}
+
+
+.card {
+    width: 80px; /* 调整卡片宽度 */
+    height: 112px; /* 调整卡片高度 (按常见比例 2.5 x 3.5 inches, 80px -> 112px) */
+    border: 1px solid #b0b0b0;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: grab;
+    background-color: white;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+    display: flex; /* 用于居中图片 */
     justify-content: center;
     align-items: center;
-    gap: 10px; /* 标题和牌型结果之间的间距 */
+}
+
+.player-initial-hand .card { /* 初始手牌区域的卡片可以有特定样式，如果需要 */
+    /* 例如，如果想让它们不完全重叠，而是稍微错开一点点 */
+    /* margin-bottom: -50px; */ /* 已被gap替代 */
+}
+
+
+.card img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block; /* 去除图片下方的空白 */
+    pointer-events: none; /* 防止图片干扰拖拽事件 */
+}
+
+.card.dragging {
+    opacity: 0.6;
+    transform: scale(1.05) rotate(3deg);
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
+    z-index: 1000; /* 确保拖拽的牌在最上层 */
+}
+
+.drop-zone.drag-over {
+    background-color: #e6ffe6;
+    border-color: #5cb85c;
+}
+
+.controls {
+    text-align: center;
+    margin-bottom: 15px; /* 调整与下方区域的间距 */
+    padding: 10px 0;
+}
+
+.controls button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px; /* 调整字体大小 */
+    margin: 5px;
+    transition: background-color 0.3s;
+}
+
+.controls button:hover {
+    background-color: #2980b9;
+}
+
+.controls button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.status {
+    text-align: center;
+    font-size: 1.1em;
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+}
+.status.success {
+    color: #27ae60;
+    background-color: #e8f5e9;
+}
+.status.error {
+    color: #c0392b;
+    background-color: #fdedec;
+}
+.status.info { /* 默认/信息类 */
+    color: #2980b9;
+    background-color: #eaf2f8;
+}
+
+
+/* 摆放牌型的区域 */
+.arranged-hands-area-wrapper { /* 新增一个 wrapper */
+    flex: 2; /* 占据可用空间的两份，比左边手牌区宽 */
+    display: flex;
+    flex-direction: column;
+}
+
+.arranged-hands-area {
+    display: flex;
+    flex-direction: column; /* 头中尾道垂直排列 */
+    gap: 15px; /* 道与道之间的间隔 */
+    flex-grow: 1; /* 占据 wrapper 内的剩余空间 */
+}
+
+.hand-section {
+    background-color: #fdfdfd;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.hand-section h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    color: #333;
+    display: flex;
+    justify-content: space-between; /* 让标题和牌型结果分开 */
+    align-items: center;
 }
 
 .hand-eval-result {
     font-size: 0.9em;
-    color: #27ae60; /* 绿色，表示牌型 */
-    font-weight: normal;
-    background-color: #e8f5e9;
-    padding: 2px 6px;
-    border-radius: 3px;
-    border: 1px solid #a5d6a7;
+    color: #16a085; /* 调整颜色 */
+    font-weight: bold;
+    background-color: #d0ece7;
+    padding: 3px 8px;
+    border-radius: 10px;
+    /* border: 1px solid #a3d9cb; */
 }
 
-.hand-eval-result.error { /* 如果有错误或倒水，可以改变颜色 */
-    color: #c0392b;
-    background-color: #fdedec;
-    border-color: #f5b7b1;
+.hand-eval-result.error {
+    color: #e74c3c;
+    background-color: #f5b7b1;
+    /* border-color: #e74c3c; */
 }
 
-.controls {
-    text-align: center; /* 让按钮居中 */
-    margin-bottom: 20px;
+/* 响应式调整：小屏幕时，主要内容区和摆放区垂直排列 */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    .main-game-content, .arranged-hands-area-wrapper {
+        width: 100%; /* 占据全部宽度 */
+    }
+    .player-initial-hand {
+        flex-direction: row; /* 小屏幕时初始手牌横向排列并换行 */
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px; /* 横向排列时间隙可以小点 */
+        min-height: 150px; /* 高度可以小一些 */
+    }
+    .player-initial-hand .card {
+         width: 60px; /* 卡片更小 */
+         height: 84px;
+    }
 }
-
-.controls button {
-    margin: 5px; /* 给按钮之间一些间距 */
-}
-
-/* ... (其他CSS代码) ... */
