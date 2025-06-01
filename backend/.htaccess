@@ -1,0 +1,12 @@
+# 放在 public_html/.htaccess 或者 public_html/api/.htaccess
+# 主要目的是将请求路由到 public_html/api/thirteen/index.php
+# 具体规则可能需要根据你的serv00配置调整
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 如果API在 /api/thirteen/ 路径下
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/thirteen/(.*)$ /api/thirteen/index.php?request=$1 [QSA,L]
+</IfModule>
