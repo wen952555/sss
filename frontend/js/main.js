@@ -2,6 +2,7 @@
 import { showGameMessage, configureButton } from './ui.js';
 import { fetchDealCards, fetchSubmitArrangement } from './api.js';
 import {
+    initializeArrangeUIDependencies, // Import the new init function
     initializeArrangement,
     resetArrangement,
     getArrangedPilesData,
@@ -9,49 +10,53 @@ import {
     clearBoardForNewGame
 } from './arrange.js';
 
-const dealCardsBtn = document.getElementById('dealCardsBtn');
-const resetArrangementBtn = document.getElementById('resetArrangementBtn');
-const submitArrangementBtn = document.getElementById('submitArrangementBtn');
+// DOM button elements (assuming these IDs are correct in your HTML)
+let dealCardsBtn, resetArrangementBtn, submitArrangementBtn;
 
-let currentRawHand = []; // To store the originally dealt cards if needed for reset
+function initializeMainUIDependencies() {
+    dealCardsBtn = document.getElementById('dealCardsBtn');
+    resetArrangementBtn = document.getElementById('resetArrangementBtn');
+    submitArrangementBtn = document.getElementById('submitArrangementBtn');
+
+    if (!dealCardsBtn || !resetArrangementBtn || !submitArrangementBtn) {
+        console.error("MAIN.JS Error: One or more control buttons not found!");
+    }
+}
+
+let currentRawHand = [];
 
 async function handleDealCards() {
+    if (!dealCardsBtn) return; // Guard
     showGameMessage("正在发牌...");
     configureButton('dealCardsBtn', { enable: false });
     configureButton('resetArrangementBtn', { show: false });
     configureButton('submitArrangementBtn', { show: false });
 
-    clearBoardForNewGame(); // Resets arrange.js state and UI
+    clearBoardForNewGame();
 
     try {
         const cards = await fetchDealCards();
-        currentRawHand = cards; // Store for potential use (e.g. if reset needs original full hand)
-        initializeArrangement(cards); // This will put all cards in middlePile (as hand source)
-        // Message is now handled within initializeArrangement or by subsequent actions
+        currentRawHand = cards;
+        initializeArrangement(cards);
         configureButton('resetArrangementBtn', { show: true, enable: true });
-        // Submit button visibility is handled by arrange.js's checkAndHandleGameStateTransition
     } catch (error) {
         showGameMessage(`发牌错误: ${error.message}`);
         console.error(error);
-        clearBoardForNewGame(); // Ensure clean state on error
+        clearBoardForNewGame();
     } finally {
         configureButton('dealCardsBtn', { enable: true });
     }
 }
 
 function handleReset() {
-    if (currentRawHand.length === 0 && document.getElementById('middlePileCards').children.length === 0) { // Check if any cards were dealt
-        showGameMessage("没有牌可以重置。");
-        return;
-    }
-    resetArrangement(); // arrange.js handles resetting its state and UI
-    // Submit button visibility will be handled by checkAndHandleGameStateTransition in resetArrangement
+    if (!resetArrangementBtn) return; // Guard
+    resetArrangement();
 }
 
 async function handleSubmit() {
-    const arrangedPiles = getArrangedPilesData(); // arrange.js now checks for ARRANGEMENT_COMPLETE state
+    if (!submitArrangementBtn) return; // Guard
+    const arrangedPiles = getArrangedPilesData();
     if (!arrangedPiles) {
-        // getArrangedPilesData will show a message if not ready
         return;
     }
 
@@ -71,44 +76,44 @@ async function handleSubmit() {
         showGameMessage(message);
 
         if (result.success && result.isValid) {
-            // Game ended successfully, disable further arrangement until new deal
             configureButton('resetArrangementBtn', { enable: false });
-            // Submit button can remain visible but disabled, or hidden
-            // configureButton('submitArrangementBtn', { show: true, enable: false });
-            // Or prepare for new game:
-            // showGameMessage(message + " 点击发牌开始新一局。");
+            // configureButton('submitArrangementBtn', { show: true, enable: false }); // Keep visible but disabled
         } else {
-            // If submission failed or invalid, re-enable buttons if appropriate
-             if (currentRawHand.length > 0) {
-                configureButton('resetArrangementBtn', { enable: true });
-                // Submit button state will be re-evaluated by arrange.js if it's still in ARRANGEMENT_COMPLETE
-                // For safety, explicitly re-enable if still possible to submit
-                if (document.getElementById('headPileCards').children.length === 3 &&
-                    document.getElementById('tailPileCards').children.length === 5 &&
-                    document.getElementById('middlePileCards').children.length === 5) {
-                    configureButton('submitArrangementBtn', { enable: true });
-                }
+            // Allow re-arranging if submission failed or invalid (and cards are present)
+            if (fullHandData && fullHandData.length > 0) { // Check fullHandData from arrange.js
+                 configureButton('resetArrangementBtn', { enable: true });
+                 // Submit button state will be re-evaluated by arrange.js if it's still in ARRANGEMENT_COMPLETE
+                 // For safety, explicitly re-enable if still possible to submit
+                 const arrangeModule = await import('./arrange.js'); // Dynamically import to access gameState if needed
+                 if (arrangeModule.getArrangedPilesData()) { // Re-check if arrangement is valid
+                     configureButton('submitArrangementBtn', { enable: true });
+                 }
             }
         }
-
     } catch (error) {
         showGameMessage(`提交错误: ${error.message}`);
         console.error(error);
-        if (currentRawHand.length > 0) { // Allow retry if error
+        if (currentRawHand.length > 0) { // Allow retry if API error
             configureButton('resetArrangementBtn', { enable: true });
-            configureButton('submitArrangementBtn', { enable: true }); // Or based on current state
+            // Check if submission is still possible
+            const arrangeModule = await import('./arrange.js');
+            if (arrangeModule.getArrangedPilesData()) {
+                configureButton('submitArrangementBtn', { enable: true });
+            }
         }
     }
 }
 
 function init() {
-    dealCardsBtn.addEventListener('click', handleDealCards);
-    resetArrangementBtn.addEventListener('click', handleReset);
-    submitArrangementBtn.addEventListener('click', handleSubmit);
+    initializeMainUIDependencies(); // Initialize main.js UI elements
+    initializeArrangeUIDependencies(); // Initialize arrange.js UI elements
 
-    setupPileClickHandlers(); // From arrange.js
+    if (dealCardsBtn) dealCardsBtn.addEventListener('click', handleDealCards);
+    if (resetArrangementBtn) resetArrangementBtn.addEventListener('click', handleReset);
+    if (submitArrangementBtn) submitArrangementBtn.addEventListener('click', handleSubmit);
 
-    clearBoardForNewGame(); // Initial setup
+    setupPileClickHandlers();
+    clearBoardForNewGame();
     showGameMessage("欢迎！点击“发牌”开始。");
 }
 
