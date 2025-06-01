@@ -12,14 +12,33 @@
 
         <div class="controls">
             <button id="dealCardsBtn">发牌</button>
-            <!-- 更多功能按钮将在这里添加 -->
-            <button id="sortHandBtn" style="display:none;">理牌 (示例)</button>
+            <button id="startArrangementBtn" style="display:none;">开始理牌</button>
+            <button id="resetArrangementBtn" style="display:none;">重置理牌</button>
+            <button id="submitArrangementBtn" style="display:none;">提交牌型</button>
         </div>
 
-        <div id="playerHand" class="hand-area">
-            <h2>我的手牌</h2>
+        <div id="playerHandArea">
+            <h2>我的手牌 (点击选择，然后点击目标墩)</h2>
             <div id="handCards" class="cards-container">
                 <!-- 卡牌将在这里显示 -->
+            </div>
+        </div>
+
+        <div id="arrangementArea" style="display:none;">
+            <h2>理牌区</h2>
+            <div class="pile-group">
+                <div id="headPileArea" class="pile" data-pile-name="head">
+                    <h3>头墩 <span id="headPileCount" class="pile-count">(0/3)</span></h3>
+                    <div id="headPileCards" class="cards-container pile-cards-container"></div>
+                </div>
+                <div id="middlePileArea" class="pile" data-pile-name="middle">
+                    <h3>中墩 <span id="middlePileCount" class="pile-count">(0/5)</span></h3>
+                    <div id="middlePileCards" class="cards-container pile-cards-container"></div>
+                </div>
+                <div id="tailPileArea" class="pile" data-pile-name="tail">
+                    <h3>尾墩 <span id="tailPileCount" class="pile-count">(0/5)</span></h3>
+                    <div id="tailPileCards" class="cards-container pile-cards-container"></div>
+                </div>
             </div>
         </div>
 
