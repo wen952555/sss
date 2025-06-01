@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="game-wrapper"> <!-- New overall wrapper -->
+    <div class="game-wrapper">
         <div class="game-container">
             <div id="arrangementArea" class="arrangement-container">
                 <div id="headPileArea" class="pile-banner pile-target" data-pile-name="head">
@@ -30,13 +30,14 @@
             </div>
         </div>
 
-        <div class="controls-footer-merged"> <!-- Renamed and moved -->
+        <div class="controls-footer-merged">
             <button id="dealCardsBtn">发牌</button>
+            <button id="aiSuggestBtn" style="display:none;">AI分牌</button> <!-- AI按钮 -->
             <button id="resetArrangementBtn" style="display:none;">重置理牌</button>
             <button id="submitArrangementBtn" style="display:none;">提交牌型</button>
             <div id="simpleMessage" class="simple-message-footer"></div>
         </div>
-    </div> <!-- End of game-wrapper -->
+    </div>
 
     <script type="module" src="js/main.js"></script>
 </body>
