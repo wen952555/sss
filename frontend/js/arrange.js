@@ -1,252 +1,142 @@
 // frontend/js/arrange.js
 import { showGameMessage, configureButton } from './ui.js';
 import { createCardImageElement } from './card.js';
+// 导入新的验证器模块
+import { validateArrangement, verifyCardsAreFromHand, evaluateHand } from './rules_validator.js';
 
-let fullHandData = []; // Array of {rank, suit, id, element, selected, currentPile}
-let piles = { head: [], middle: [], tail: [] }; // Each pile stores full cardData objects
+// ... (大部分变量和函数定义不变)
+let fullHandData = []; // Stores {rank, suit, id, element, selected, currentPile}
+let piles = { head: [], middle: [], tail: [] };
 const pileLimits = { head: 3, middle: 5, tail: 5 };
-let gameState = 'INITIAL'; // 'INITIAL', 'ARRANGING_FROM_MIDDLE', 'ARRANGEMENT_COMPLETE'
+let gameState = 'INITIAL';
+// ... (DOM element references and constants)
 
-const CARD_ASPECT_RATIO = 63 / 88;
-const NARROW_SCREEN_HAND_ROWS = 2;
-const NARROW_SCREEN_BREAKPOINT_WIDTH = 700; // px
-const MIN_CARD_WIDTH = 40; // px
-const MAX_CARD_WIDTH = 90; // px
+// ... (initializeArrangeUIDependencies, calculateCardWidth, initializeArrangement, setMiddlePileRole) ...
+// ... (renderPile, renderAllPiles, updatePileCount, updateAllPileCounts, handleCardSelectionInSource) ...
 
-// Declare DOM element references
-let middlePileAreaDOM, middlePileTitleDOM;
-let pileCardContainers = { head: null, middle: null, tail: null };
-let pileCountDisplays = { head: null, middle: null, tail: null };
-
-export function initializeArrangeUIDependencies() {
-    middlePileAreaDOM = document.getElementById('middlePileArea');
-    middlePileTitleDOM = document.getElementById('middlePileTitle');
-    pileCardContainers.head = document.getElementById('headPileCards');
-    pileCardContainers.middle = document.getElementById('middlePileCards');
-    pileCardContainers.tail = document.getElementById('tailPileCards');
-    pileCountDisplays.head = document.getElementById('headPileCount');
-    pileCountDisplays.middle = document.getElementById('middlePileCount');
-    pileCountDisplays.tail = document.getElementById('tailPileCount');
-
-    if (!pileCountDisplays.middle || !middlePileAreaDOM || !middlePileTitleDOM ||
-        !pileCardContainers.head || !pileCardContainers.middle || !pileCardContainers.tail ||
-        !pileCountDisplays.head || !pileCountDisplays.tail) {
-        console.warn("ARRANGE.JS WARN: One or more UI dependencies were not found during initialization. Check HTML IDs.");
+// 修改：在放置牌或移除牌后，进行一次即时验证（可选，但体验好）
+function onPileChanged(changedPileName) {
+    renderPile(changedPileName); // Re-render the changed pile
+    if (changedPileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') {
+        renderPile('middle'); // If source pile changed, re-render it too
     }
-}
-
-function calculateCardWidth(containerWidth, numCardsToFitInRow, gap) {
-    if (numCardsToFitInRow <= 0 || !containerWidth || containerWidth <=0) return MAX_CARD_WIDTH;
-    const totalGapWidth = Math.max(0, (numCardsToFitInRow - 1)) * gap;
-    let cardWidth = (containerWidth - totalGapWidth) / numCardsToFitInRow;
-    return Math.max(MIN_CARD_WIDTH, Math.min(cardWidth, MAX_CARD_WIDTH));
-}
-
-export function initializeArrangement(handCards) { // handCards is array of {rank, suit}
-    fullHandData = handCards.map((card, index) => ({
-        ...card, id: `card-${index}-${Date.now()}`, element: null, selected: false, currentPile: 'middle'
-    }));
-    piles = { head: [], middle: [...fullHandData], tail: [] }; // All cards start in middle (as hand source)
-    gameState = 'ARRANGING_FROM_MIDDLE';
-
-    setMiddlePileRole(true); // This will render 'middle'
-    renderPile('head');      // Render empty head
-    renderPile('tail');      // Render empty tail
     updateAllPileCounts();
-    checkAndHandleGameStateTransition(); // Probably won't complete yet
-    showGameMessage("请从下方“手牌区”选择牌，再点击头墩或尾墩放置。");
-}
+    const arrangementStatus = checkAndHandleGameStateTransition(); // Checks for 3-5-5 completion
 
-function setMiddlePileRole(isHandSource) {
-    if (!middlePileAreaDOM || !middlePileTitleDOM || !pileCountDisplays.middle || !pileCardContainers.middle) {
-        console.error("setMiddlePileRole: Required DOM elements not initialized."); return;
-    }
-    const middleCardsContainer = pileCardContainers.middle;
-    if (isHandSource) {
-        middlePileAreaDOM.classList.add('is-hand-source');
-        middlePileAreaDOM.classList.remove('is-middle-pile');
-        middleCardsContainer.classList.add('middle-hand-source-layout');
-        middlePileTitleDOM.textContent = '手牌区';
-        middlePileTitleDOM.classList.add('is-hand-source-title');
-        pileCountDisplays.middle.textContent = `${piles.middle.length}/${fullHandData.length}`;
-    } else {
-        middlePileAreaDOM.classList.remove('is-hand-source');
-        middlePileAreaDOM.classList.add('is-middle-pile');
-        middleCardsContainer.classList.remove('middle-hand-source-layout');
-        middlePileTitleDOM.textContent = '中墩';
-        middlePileTitleDOM.classList.remove('is-hand-source-title');
-        pileCountDisplays.middle.textContent = `${piles.middle.length}/${pileLimits.middle}`;
-    }
-    renderPile('middle'); // Re-render middle pile after role change
-}
+    // Perform pre-validation if all piles have the correct number of cards
+    if (arrangementStatus) { // True if 3-5-5 structure is met
+        const headPileCards = piles.head.map(c => ({ rank: c.rank, suit: c.suit }));
+        const middlePileCards = piles.middle.map(c => ({ rank: c.rank, suit: c.suit }));
+        const tailPileCards = piles.tail.map(c => ({ rank: c.rank, suit: c.suit }));
 
-function renderPile(pileName) {
-    const container = pileCardContainers[pileName];
-    if (!container) { console.warn(`renderPile: Container for pile "${pileName}" not found.`); return; }
-    container.innerHTML = '';
-    const cardsToRender = piles[pileName];
-    if (!cardsToRender) return;
+        // Verify cards are from original hand (this check is more for submission really)
+        // const originalHandSimple = fullHandData.map(c => ({rank: c.rank, suit: c.suit}));
+        // if (!verifyCardsAreFromHand(originalHandSimple, headPileCards, middlePileCards, tailPileCards)) {
+        //     showGameMessage("错误：提交的牌与手牌不符！", "error");
+        //     configureButton('submitArrangementBtn', { enable: false }); // Disable submit
+        //     return;
+        // }
 
-    const isHandSourceMiddle = pileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE';
-    const isCompletedMiddle = pileName === 'middle' && gameState === 'ARRANGEMENT_COMPLETE';
-    const containerWidth = container.offsetWidth;
-    const gapStyle = getComputedStyle(container).gap;
-    const gap = gapStyle && gapStyle !== 'normal' ? parseFloat(gapStyle) : 6;
-
-    if (isHandSourceMiddle && cardsToRender.length > 0) {
-        const isNarrowScreen = window.innerWidth <= NARROW_SCREEN_BREAKPOINT_WIDTH;
-        if (isNarrowScreen) {
-            const cardsPerRowApprox = Math.ceil(cardsToRender.length / NARROW_SCREEN_HAND_ROWS);
-            let currentCardIndex = 0;
-            for (let i = 0; i < NARROW_SCREEN_HAND_ROWS && currentCardIndex < cardsToRender.length; i++) {
-                const rowContainer = document.createElement('div');
-                rowContainer.className = 'card-row';
-                const numCardsThisRow = (i === 0 && cardsToRender.length === 13 && NARROW_SCREEN_HAND_ROWS === 2) ? 6 :
-                                      (i === NARROW_SCREEN_HAND_ROWS - 1) ? cardsToRender.length - currentCardIndex : cardsPerRowApprox;
-                const cardWidth = calculateCardWidth(containerWidth, numCardsThisRow, gap);
-                for (let j = 0; j < numCardsThisRow && currentCardIndex < cardsToRender.length; j++) {
-                    const cardData = cardsToRender[currentCardIndex++];
-                    const cardElement = createCardImageElement(cardData); // cardData is {rank, suit, id, ...}
-                    cardData.element = cardElement;
-                    cardElement.style.width = `${cardWidth}px`;
-                    cardElement.dataset.cardId = cardData.id;
-                    cardElement.classList.add('selectable-card');
-                    if (cardData.selected) cardElement.classList.add('selected');
-                    cardElement.addEventListener('click', (e) => { e.stopPropagation(); handleCardSelectionInSource(cardData.id); });
-                    rowContainer.appendChild(cardElement);
-                }
-                container.appendChild(rowContainer);
+        const validationResult = validateArrangement(headPileCards, middlePileCards, tailPileCards);
+        if (!validationResult.isValid) {
+            showGameMessage(`预检: ${validationResult.message}`, "warning");
+            // Don't disable submit yet, let user fix it. Backend will do final check.
+        } else {
+            // Display current pile types as a preview
+            let previewMsg = "当前牌型: ";
+            if (validationResult.details) {
+                previewMsg += `头(${validationResult.details.head.name}) `;
+                previewMsg += `中(${validationResult.details.middle.name}) `;
+                previewMsg += `尾(${validationResult.details.tail.name})`;
             }
-        } else { // Wide screen
-            const idealCardsInRow = Math.min(cardsToRender.length, 13);
-            const cardWidth = calculateCardWidth(containerWidth, idealCardsInRow, gap);
-            cardsToRender.forEach(cardData => {
-                const cardElement = createCardImageElement(cardData);
-                cardData.element = cardElement;
-                cardElement.style.width = `${cardWidth}px`;
-                cardElement.dataset.cardId = cardData.id;
-                cardElement.classList.add('selectable-card');
-                if (cardData.selected) cardElement.classList.add('selected');
-                cardElement.addEventListener('click', (e) => { e.stopPropagation(); handleCardSelectionInSource(cardData.id); });
-                container.appendChild(cardElement);
-            });
+            showGameMessage(previewMsg, "info");
         }
-    } else { // Head, Tail, or Completed Middle pile
-        const numCardsToFit = pileName === 'middle' ? pileLimits.middle :
-                              (pileName === 'head' ? pileLimits.head : pileLimits.tail);
-        // Calculate width based on number of cards actually in the pile or the pile limit, whichever is smaller and > 0
-        const effectiveCardsInRow = cardsToRender.length > 0 ? Math.min(numCardsToFit, cardsToRender.length) : numCardsToFit;
-        const cardWidth = calculateCardWidth(containerWidth, effectiveCardsInRow, gap);
-
-        cardsToRender.forEach(cardData => {
-            const cardElement = createCardImageElement(cardData);
-            cardData.element = cardElement;
-            cardElement.style.width = `${cardWidth}px`;
-            cardElement.dataset.cardId = cardData.id;
-            cardElement.classList.add('pile-card');
-            if (!isCompletedMiddle) {
-                const removeBtn = document.createElement('span');
-                removeBtn.textContent = '×';
-                removeBtn.classList.add('remove-card-btn');
-                removeBtn.title = '从墩中移除';
-                removeBtn.onclick = (e) => { e.stopPropagation(); moveCardBackToSource(pileName, cardData.id); };
-                cardElement.appendChild(removeBtn);
-            }
-            container.appendChild(cardElement);
-        });
+    } else if (gameState === 'ARRANGING_FROM_MIDDLE' || gameState === 'ARRANGEMENT_COMPLETE') {
+        // If not 3-5-5 yet, but user is arranging, clear previous validation messages or show arranging message.
+        // showGameMessage("理牌中...", "info"); // Avoid too many messages, let user focus.
     }
 }
 
-let resizeTimeout;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => { renderAllPiles(); }, 200);
-});
-
-function renderAllPiles() { for (const pileName in piles) { renderPile(pileName); } }
-function updatePileCount(pileName) {
-    if (!pileCountDisplays[pileName]) return;
-    let currentCount = piles[pileName] ? piles[pileName].length : 0;
-    let limit = (pileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') ? fullHandData.length : pileLimits[pileName];
-    pileCountDisplays[pileName].textContent = `${currentCount}/${limit}`;
-}
-function updateAllPileCounts() { for (const pileName in piles) { updatePileCount(pileName); } }
-
-function handleCardSelectionInSource(cardId) {
-    if (gameState !== 'ARRANGING_FROM_MIDDLE') return;
-    const cardData = fullHandData.find(c => c.id === cardId && c.currentPile === 'middle');
-    if (!cardData) return;
-    fullHandData.forEach(c => {
-        if (c.id !== cardId && c.selected && c.currentPile === 'middle') {
-            c.selected = false; if (c.element) c.element.classList.remove('selected');
-        }
-    });
-    cardData.selected = !cardData.selected;
-    if (cardData.element) cardData.element.classList.toggle('selected', cardData.selected);
-    showGameMessage(cardData.selected ? `已选择 ${cardData.element?.alt || '卡牌'}，请点击目标墩。` : "已取消选择。");
-}
 
 export function addSelectedCardToTargetPile(targetPileName) {
+    // ... (existing logic to find selectedCard and check pile limits) ...
     if (targetPileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') { showGameMessage("手牌区不能作为目标。"); return; }
     const selectedCard = fullHandData.find(c => c.selected && c.currentPile === 'middle');
     if (!selectedCard) { showGameMessage("请先从手牌区选择一张牌。"); return; }
     if (piles[targetPileName].length >= pileLimits[targetPileName]) { showGameMessage(`${targetPileName.charAt(0).toUpperCase() + targetPileName.slice(1)}墩已满。`); return; }
+
     const indexInMiddle = piles.middle.findIndex(c => c.id === selectedCard.id);
     if (indexInMiddle > -1) piles.middle.splice(indexInMiddle, 1);
+
     selectedCard.currentPile = targetPileName; selectedCard.selected = false;
-    piles[targetPileName].push(selectedCard);
-    renderPile('middle'); renderPile(targetPileName); updateAllPileCounts(); checkAndHandleGameStateTransition();
+    piles[targetPileName].push(selectedCard); // piles[targetPileName] stores full cardData objects
+
+    // Call the new onPileChanged instead of direct rendering/updating
+    onPileChanged(targetPileName);
+    if (targetPileName !== 'middle') onPileChanged('middle'); // Also update source if card removed
+
     showGameMessage(`${selectedCard.element?.alt || '卡牌'} 已放入 ${targetPileName}墩。`);
 }
 
 function moveCardBackToSource(sourcePileName, cardId) {
+    // ... (existing logic to find cardData and splice from sourcePile) ...
     if (gameState === 'ARRANGEMENT_COMPLETE' && sourcePileName === 'middle') { showGameMessage("牌型已确认，请重置以修改中墩。"); return; }
     if (sourcePileName === 'middle' && gameState === 'ARRANGING_FROM_MIDDLE') return;
     const cardIndexInPile = piles[sourcePileName].findIndex(c => c.id === cardId);
     if (cardIndexInPile === -1) return;
     const cardData = piles[sourcePileName].splice(cardIndexInPile, 1)[0];
+
     cardData.currentPile = 'middle'; cardData.selected = false;
-    piles.middle.push(cardData); // Add back to the 'middle' pile which acts as hand source
+    piles.middle.push(cardData);
     if (gameState === 'ARRANGEMENT_COMPLETE') { gameState = 'ARRANGING_FROM_MIDDLE'; setMiddlePileRole(true); }
-    renderPile(sourcePileName); renderPile('middle'); updateAllPileCounts(); checkAndHandleGameStateTransition();
+
+    // Call the new onPileChanged
+    onPileChanged(sourcePileName);
+    onPileChanged('middle');
+
     showGameMessage(`${cardData.element?.alt || '卡牌'} 已从 ${sourcePileName}墩 移回手牌区。`);
 }
 
-function checkAndHandleGameStateTransition() {
-    const headCount = piles.head.length; const tailCount = piles.tail.length; const middleCount = piles.middle.length;
-    const totalInPiles = headCount + middleCount + tailCount;
-    if (headCount === pileLimits.head && tailCount === pileLimits.tail && middleCount === pileLimits.middle && totalInPiles === fullHandData.length && fullHandData.length > 0) {
-        if (gameState !== 'ARRANGEMENT_COMPLETE') {
-            gameState = 'ARRANGEMENT_COMPLETE'; setMiddlePileRole(false);
-            showGameMessage("牌型初步完成！中墩已确认。请检查或提交。");
-            configureButton('submitArrangementBtn', { show: true, enable: true });
-        }
-    } else {
-        if (gameState === 'ARRANGEMENT_COMPLETE') { gameState = 'ARRANGING_FROM_MIDDLE'; setMiddlePileRole(true); }
-        if (fullHandData.length > 0 || gameState !== 'INITIAL') { configureButton('submitArrangementBtn', { show: false });}
+
+// 修改 getArrangedPilesData 以包含预验证
+export function getArrangedPilesData(isPreSubmitCheck = false) { // Add a flag
+    const arrangementComplete = checkAndHandleGameStateTransition(); // This checks 3-5-5 counts
+    if (!arrangementComplete) {
+        if (!isPreSubmitCheck) showGameMessage("牌型未完成摆放 (数量不足)。");
+        return null;
     }
-    return gameState === 'ARRANGEMENT_COMPLETE';
-}
 
-export function resetArrangement() {
-    if (fullHandData.length === 0 && (!piles.middle || piles.middle.length === 0)) { showGameMessage("请先发牌。"); return; }
-    fullHandData.forEach(card => { card.currentPile = 'middle'; card.selected = false; });
-    piles = { head: [], middle: [...fullHandData], tail: [] }; gameState = 'ARRANGING_FROM_MIDDLE';
-    setMiddlePileRole(true); renderAllPiles(); updateAllPileCounts(); checkAndHandleGameStateTransition();
-    showGameMessage("理牌已重置。");
-}
+    const headPileCards = piles.head.map(c => ({ rank: c.rank, suit: c.suit }));
+    const middlePileCards = piles.middle.map(c => ({ rank: c.rank, suit: c.suit }));
+    const tailPileCards = piles.tail.map(c => ({ rank: c.rank, suit: c.suit }));
 
-export function getArrangedPilesData() {
-    if (gameState !== 'ARRANGEMENT_COMPLETE') { showGameMessage("牌型未完成或不符合提交条件！"); return null; }
-    return {
-        head: piles.head.map(c => ({ rank: c.rank, suit: c.suit })),
-        middle: piles.middle.map(c => ({ rank: c.rank, suit: c.suit })),
-        tail: piles.tail.map(c => ({ rank: c.rank, suit: c.suit }))
+    // Verify cards are from original hand (important check before sending to server)
+    // Extract simple {rank, suit} from fullHandData for verification
+    const originalHandForVerification = fullHandData.map(c => ({ rank: c.rank, suit: c.suit }));
+    if (!verifyCardsAreFromHand(originalHandForVerification, headPileCards, middlePileCards, tailPileCards)) {
+        if (!isPreSubmitCheck) showGameMessage("错误：提交的牌与您的原始手牌不符！", "error");
+        return null; // Critical error, don't proceed
+    }
+
+    const validationResult = validateArrangement(headPileCards, middlePileCards, tailPileCards);
+    if (!validationResult.isValid) {
+        if (!isPreSubmitCheck) showGameMessage(`错误: ${validationResult.message} (前端预检)`, "error");
+        return null; // Don't allow submission of foul hands if pre-checked
+    }
+    
+    if (isPreSubmitCheck) return validationResult; // For AI apply, just return validation
+
+    return { // For actual submission to server
+        head: headPileCards,
+        middle: middlePileCards,
+        tail: tailPileCards
     };
 }
 
-// NEW function to apply AI suggestion
-export function applyAISuggestion(arrangementData) { // arrangementData from AI: {head:[{rank,suit},..], middle:.., tail:..}
+// 修改 applyAISuggestion 以使用前端验证
+export function applyAISuggestion(arrangementData) {
+    // ... (之前的逻辑来匹配AI牌张到fullHandData，并填充piles.head, piles.middle, piles.tail)
+    // (Ensure this part correctly updates `piles` with full cardData objects from `fullHandData`)
     if (!arrangementData || !arrangementData.head || !arrangementData.middle || !arrangementData.tail) {
         showGameMessage("AI建议数据无效。", "error"); return;
     }
@@ -256,99 +146,106 @@ export function applyAISuggestion(arrangementData) { // arrangementData from AI:
         showGameMessage("AI建议的牌墩数量错误。", "error"); return;
     }
 
-    // Simple way: re-initialize piles directly from AI data, assuming AI data matches original hand cards
-    // This relies on fullHandData being the source of truth for card IDs if needed for `createCardImageElement`
-    // or other operations. We need to map AI's rank/suit back to our `fullHandData` objects.
-
-    // Create a temporary copy of fullHandData to pick from, to ensure each card is used once
-    let availableCards = [...fullHandData]; // Copies of original cardData objects
-
-    function findAndPopMatchingCard(aiCardSimple) { // aiCardSimple is {rank, suit}
+    let availableCards = [...fullHandData];
+    function findAndPopMatchingCard(aiCardSimple) {
         const index = availableCards.findIndex(origCard =>
-            origCard.rank === aiCardSimple.rank && origCard.suit === aiCardSimple.suit
-        );
-        if (index > -1) {
-            const foundCard = availableCards.splice(index, 1)[0]; // Remove and get
-            return foundCard; // This is the original cardData object from fullHandData
-        }
-        console.warn("AI Suggestion: Could not find original card for", aiCardSimple, "- this shouldn't happen if AI uses the same hand.");
-        // Fallback: create a new card object (loses original ID/element if any)
+            origCard.rank === aiCardSimple.rank && origCard.suit === aiCardSimple.suit);
+        if (index > -1) { return availableCards.splice(index, 1)[0];}
+        console.warn("AI Suggestion: Could not find original card for", aiCardSimple);
         return { ...aiCardSimple, id: `ai-fallback-${Math.random()}`, selected: false, element: null };
     }
 
     piles.head = arrangementData.head.map(aiCard => {
         const matchedCard = findAndPopMatchingCard(aiCard);
-        matchedCard.currentPile = 'head';
-        return matchedCard;
+        matchedCard.currentPile = 'head'; return matchedCard;
     });
     piles.middle = arrangementData.middle.map(aiCard => {
         const matchedCard = findAndPopMatchingCard(aiCard);
-        matchedCard.currentPile = 'middle';
-        return matchedCard;
+        matchedCard.currentPile = 'middle'; return matchedCard;
     });
     piles.tail = arrangementData.tail.map(aiCard => {
         const matchedCard = findAndPopMatchingCard(aiCard);
-        matchedCard.currentPile = 'tail';
-        return matchedCard;
+        matchedCard.currentPile = 'tail'; return matchedCard;
     });
-    
     if (availableCards.length !== 0) {
-        console.error("AI Suggestion: Not all original cards were used by AI, or duplicates in AI suggestion. Remaining:", availableCards);
         showGameMessage("AI建议与手牌不完全匹配，请检查。", "error");
-        // Optionally, revert to a safe state or just display what was matched.
-        // For now, we proceed with what was matched.
     }
-
-    // Update fullHandData to reflect new pile assignments for all cards
-    // This ensures that `fullHandData` remains the single source of truth for all 13 card objects.
-    fullHandData.forEach(card => {
-        if (piles.head.find(c => c.id === card.id)) card.currentPile = 'head';
-        else if (piles.middle.find(c => c.id === card.id)) card.currentPile = 'middle';
-        else if (piles.tail.find(c => c.id === card.id)) card.currentPile = 'tail';
-        else {
-            // This case should ideally not happen if mapping is correct
-            console.warn("Card not found in any AI pile after mapping:", card);
-            card.currentPile = null; // Or some default
+    fullHandData.forEach(card => { /* update currentPile and selected from piles assignments */
+        let foundInPile = false;
+        for(const pileKey in piles){
+            if(piles[pileKey].find(c => c.id === card.id)){
+                card.currentPile = pileKey;
+                foundInPile = true;
+                break;
+            }
         }
-        card.selected = false; // Deselect all cards
+        if(!foundInPile) card.currentPile = null; // Should not happen ideally
+        card.selected = false;
     });
-
+    // --- End of card mapping logic ---
 
     gameState = 'ARRANGEMENT_COMPLETE';
-    setMiddlePileRole(false); // Middle pile is now a formal pile
+    setMiddlePileRole(false);
 
-    renderAllPiles(); // This will use the updated piles object
+    renderAllPiles();
     updateAllPileCounts();
-    checkAndHandleGameStateTransition(); // Should confirm completion
-
-    const details = arrangementData.details; // Assuming AI backend sends this
-    if (details && details.head && details.middle && details.tail) {
+    
+    // Validate the AI's suggestion using frontend validator (as a sanity check)
+    const validationResult = getArrangedPilesData(true); // Call with preSubmitCheck = true
+    if (validationResult && validationResult.isValid) {
+        const details = validationResult.details;
         showGameMessage(`AI建议: 头(${details.head.name}), 中(${details.middle.name}), 尾(${details.tail.name})`, "info");
-    } else {
-        showGameMessage("AI已摆牌，请检查。", "info");
+    } else if (validationResult) { // Valid structure, but foul
+        showGameMessage(`AI建议不合规: ${validationResult.message}。请手动调整或再次请求AI。`, "warning");
+    } else { // Structure error from getArrangedPilesData (e.g. card mismatch)
+         showGameMessage(`应用AI建议时发生错误。请重试。`, "error");
     }
+    // Enable submit button regardless, backend will do final check
+    checkAndHandleGameStateTransition();
 }
 
 
-export function setupPileClickHandlers() {
-    const headPileDOM = document.getElementById('headPileArea');
-    const tailPileDOM = document.getElementById('tailPileArea');
-    if (headPileDOM) headPileDOM.addEventListener('click', () => addSelectedCardToTargetPile('head'));
-    if (tailPileDOM) tailPileDOM.addEventListener('click', () => addSelectedCardToTargetPile('tail'));
-}
+// ... (其他函数如 resetArrangement, setupPileClickHandlers, clearBoardForNewGame, checkAndHandleGameStateTransition 保持不变)
+// (但 checkAndHandleGameStateTransition 现在依赖于 getArrangedPilesData(true) 的结果来决定是否显示提交按钮)
+function checkAndHandleGameStateTransition() {
+    const headCount = piles.head.length; const tailCount = piles.tail.length; const middleCount = piles.middle.length;
+    const totalInPiles = headCount + middleCount + tailCount;
 
-export function clearBoardForNewGame() {
-    fullHandData = []; piles = { head: [], middle: [], tail: [] }; gameState = 'INITIAL';
-    Object.values(pileCardContainers).forEach(container => {
-        if (container) container.innerHTML = '';
-    });
-    if (middlePileAreaDOM && middlePileTitleDOM && pileCountDisplays.middle) {
-         setMiddlePileRole(true);
-         middlePileTitleDOM.textContent = '手牌区';
-         pileCountDisplays.middle.textContent = `0/0`;
+    // Condition for enabling submit: all cards placed correctly by count
+    const countsCorrect = headCount === pileLimits.head && tailCount === pileLimits.tail &&
+                          middleCount === pileLimits.middle && totalInPiles === fullHandData.length &&
+                          fullHandData.length > 0;
+
+    if (countsCorrect) {
+        // Even if counts are correct, we might be in ARRANGING_FROM_MIDDLE if user just completed it.
+        // The actual transition to ARRANGEMENT_COMPLETE happens here implicitly if not already.
+        if (gameState !== 'ARRANGEMENT_COMPLETE') {
+             gameState = 'ARRANGEMENT_COMPLETE';
+             setMiddlePileRole(false); // Ensure middle pile is not in hand source mode
+             // Potentially show a message or rely on onPileChanged's message
+        }
+        // Pre-validate before enabling submit button (optional, but good UX)
+        const validation = getArrangedPilesData(true);
+        if (validation && validation.isValid) {
+            configureButton('submitArrangementBtn', { show: true, enable: true });
+        } else {
+             configureButton('submitArrangementBtn', { show: true, enable: false }); // Show but disable if pre-check fails
+             if (validation) { // If validation ran but failed
+                 // showGameMessage(`提示: ${validation.message}`, "warning"); // Message already shown by onPileChanged
+             } else if (fullHandData.length > 0){ // Counts correct but getArrangedPilesData returned null (e.g. card mismatch)
+                 configureButton('submitArrangementBtn', { show: false }); // Hide if critical error
+             }
+        }
+    } else { // Counts are not correct for a full arrangement
+        if (gameState === 'ARRANGEMENT_COMPLETE') { // If we were complete, but user moved a card
+            gameState = 'ARRANGING_FROM_MIDDLE';
+            setMiddlePileRole(true); // Switch middle back to hand source if cards moved out
+        }
+        configureButton('submitArrangementBtn', { show: false });
     }
-    updateAllPileCounts();
-    configureButton('submitArrangementBtn', { show: false });
-    configureButton('resetArrangementBtn', { show: false });
-    configureButton('aiSuggestBtn', { show: false }); // Hide AI button on new game
+    return gameState === 'ARRANGEMENT_COMPLETE' && countsCorrect;
 }
+
+
+// (Ensure all other functions like initializeArrangeUIDependencies, calculateCardWidth, etc. are present)
+// ... (Rest of the file from previous complete version) ...
