@@ -1,212 +1,107 @@
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f0f2f5;
-    color: #333;
-    line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
+/* frontend/css/style.css (添加/修改部分) */
 
-header {
-    background-color: #007bff;
-    color: white;
-    padding: 15px 20px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-header h1 {
-    margin: 0;
-    font-size: 1.8em;
-}
-
-main.game-container {
-    flex-grow: 1;
-    width: 95%;
-    max-width: 1000px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.05);
-}
+/* ... (之前的 body, header, main.game-container, footer, message, card等样式可以保留或微调) ... */
 
 #gameTable {
     display: grid;
     grid-template-areas:
         "ai1 ai2 ai3"
-        "hand hand hand"
-        "duns duns duns"
+        "arrangement arrangement arrangement" /* 新增一行给整个摆牌区 */
         "actions actions actions"
         "results results results";
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 20px;
-}
-
-.player-area {
-    padding: 10px;
-    border-radius: 5px;
+    gap: 15px; /* 减小gap，如果太宽 */
 }
 
 .ai-player-area {
     background-color: #e9ecef;
     text-align: center;
-    min-height: 50px; /* Placeholder for AI cards or status */
+    padding: 8px; /* 减小padding */
+    min-height: 40px;
+    border-radius: 4px;
 }
-#aiPlayer0Info { grid-area: ai1; }
-#aiPlayer1Info { grid-area: ai2; }
-#aiPlayer2Info { grid-area: ai3; }
+/* ... (aiPlayer0Info, aiPlayer1Info, aiPlayer2Info grid-area 不变) ... */
 
 
-.human-player-area {
-    grid-area: hand;
-    border-top: 1px solid #ddd;
-    padding-top: 15px;
-}
-.human-player-area h3{
-    text-align: center;
-    margin-bottom: 10px;
-    color: #555;
-}
-
-.arrangement-area {
-    grid-area: duns;
+.player-arrangement-zone { /* 新的父容器 */
+    grid-area: arrangement;
     display: flex;
-    justify-content: space-around;
-    gap: 15px;
-    margin-top: 15px;
-    padding: 15px;
-    background-color: #f9f9f9;
-    border-radius: 5px;
+    flex-direction: column; /* 关键：垂直排列 */
+    align-items: center; /* 墩位居中 */
+    gap: 15px; /* 各区域之间的间距 */
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background-color: #f8f9fa;
 }
 
-.dun-section {
-    flex: 1;
+.dun-section { /* 用于头墩和尾墩 */
+    width: 80%; /* 墩位宽度，可以调整 */
+    max-width: 500px;
     text-align: center;
-    min-width: 150px; /* Ensure duns have some width */
 }
 .dun-section h4 {
     margin-bottom: 8px;
-    color: #007bff;
-}
-.dun-type {
-    font-size: 0.8em;
-    color: #6c757d;
+    color: #0056b3; /* 深一点的蓝色 */
 }
 
-.hand-container {
+.human-player-area.central-hand-middle-dun { /* 手牌区/中墩区 */
+    width: 90%; /* 比头尾墩稍宽 */
+    max-width: 600px;
+    padding: 10px;
+    border: 1px dashed #007bff; /* 初始为手牌区，用蓝色虚线 */
+    border-radius: 5px;
+    background-color: #e7f3ff; /* 淡蓝色背景 */
+}
+.human-player-area.central-hand-middle-dun.is-middle-dun { /* 当它变成中墩时的样式 */
+    border-style: solid;
+    border-color: #28a745; /* 绿色实线 */
+    background-color: #e9f5ec; /* 淡绿色背景 */
+}
+.human-player-area.central-hand-middle-dun h3 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #333;
+    font-size: 1.1em;
+}
+
+
+.hand-container { /* 通用卡牌容器 */
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    align-items: flex-start; /* Align cards to the top */
-    min-height: 110px;
-    padding: 10px;
-    border: 2px dashed #ced4da;
+    align-items: flex-start;
+    min-height: 100px; /* 根据卡牌大小调整 */
+    padding: 8px;
+    border: 1px dashed #ccc; /* 墩位内部也用虚线 */
     border-radius: 4px;
-    background-color: #fff; /* White background for card areas */
+    background-color: #ffffff; /* 白色背景 */
+}
+#myHandDisplay.is-middle-dun-target { /* 当作为中墩且牌未满5张时的目标样式 */
+     /* 可以添加特定高亮 */
 }
 
-.droppable-area.drag-over {
-    border-color: #28a745; /* Green border when dragging over */
-    background-color: #e9f5ec;
+
+.droppable-area.drag-over { /* 保持不变 */
+    border-color: #1e7e34;
+    background-color: #d4edda;
 }
 
-.card {
-    width: 65px; /* Slightly smaller for more cards */
-    height: 90px;
-    margin: 4px;
-    border: 1px solid #adb5bd;
-    border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    background-color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: grab;
-    user-select: none; /* Prevent text selection during drag */
-    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
-}
-.card:hover {
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    transform: translateY(-2px);
-}
-.card img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    pointer-events: none; /* Important for drag events on parent */
-}
-.card.dragging {
-    opacity: 0.4;
-    border-style: solid;
-    transform: scale(0.95);
+.card { /* 保持不变或微调 */
+    width: 60px;
+    height: 85px;
+    /* ... */
 }
 
-.game-actions {
+.game-actions { /* 保持不变 */
     grid-area: actions;
-    text-align: center;
-    margin-top: 20px;
+    /* ... */
 }
-
-.game-actions button {
-    padding: 10px 20px;
-    font-size: 1em;
-    margin: 0 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+#arrangementError { /* 错误消息也放到actions区域 */
+    grid-area: actions;
+    /* ... */
 }
-#submitArrangementButton {
-    background-color: #28a745; /* Green */
-    color: white;
-}
-#submitArrangementButton:hover {
-    background-color: #218838;
-}
-#submitArrangementButton:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-#newGameButton {
-    background-color: #007bff; /* Blue */
-    color: white;
-}
-#newGameButton:hover {
-    background-color: #0056b3;
-}
-
-
-.message {
-    padding: 10px 15px;
-    margin-top: 15px;
-    border-radius: 4px;
-    text-align: center;
-}
-.error-message {
-    grid-area: actions; /* Position error near buttons or duns */
-    justify-self: center; /* Center it if grid area allows */
-    color: #dc3545; /* Red */
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-}
-#gameResultArea { /* Spans across for results */
+#gameResultArea { /* 保持不变 */
     grid-area: results;
-    background-color: #d1ecf1; /* Light blue for info/results */
-    border: 1px solid #bee5eb;
-    color: #0c5460;
-}
-#gameResultArea h4 { margin-top: 0;}
-#resultDetails { margin-top: 10px; text-align: left; white-space: pre-wrap; } /* pre-wrap for newlines in results */
-
-
-footer {
-    background-color: #343a40;
-    color: white;
-    text-align: center;
-    padding: 15px 0;
-    margin-top: auto; /* Pushes footer to bottom if content is short */
+    /* ... */
 }
