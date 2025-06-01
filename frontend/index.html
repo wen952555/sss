@@ -7,33 +7,36 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="game-container">
-        <!-- 上方未分配牌区已删除 -->
-        <div id="arrangementArea" class="arrangement-container">
-            <div id="headPileArea" class="pile-banner pile-target" data-pile-name="head">
-                <span class="pile-label">头墩 (<span id="headPileCount">0/3</span>):</span>
-                <div id="headPileCards" class="cards-display-area"></div>
-            </div>
-            <div id="middlePileArea" class="pile-banner" data-pile-name="middle">
-                <span class="pile-label">
-                    <span id="middlePileTitle">手牌区</span> <!-- 动态改变标题 -->
-                    (<span id="middlePileCount">0/13</span>): <!-- 初始显示13张牌的容量 -->
-                </span>
-                <div id="middlePileCards" class="cards-display-area"></div>
-            </div>
-            <div id="tailPileArea" class="pile-banner pile-target" data-pile-name="tail">
-                <span class="pile-label">尾墩 (<span id="tailPileCount">0/5</span>):</span>
-                <div id="tailPileCards" class="cards-display-area"></div>
+    <div class="game-wrapper"> <!-- New overall wrapper -->
+        <div class="game-container">
+            <div id="arrangementArea" class="arrangement-container">
+                <div id="headPileArea" class="pile-banner pile-target" data-pile-name="head">
+                    <span class="pile-label">头墩 (<span id="headPileCount">0/3</span>):</span>
+                    <div id="headPileCards" class="cards-display-area"></div>
+                </div>
+                <div id="middlePileArea" class="pile-banner" data-pile-name="middle">
+                    <span class="pile-label">
+                        <span id="middlePileTitle">手牌区</span>
+                        (<span id="middlePileCount">0/13</span>):
+                    </span>
+                    <div id="middlePileCards" class="cards-display-area middle-hand-source-layout">
+                        <!-- Cards will be rendered here by JS -->
+                    </div>
+                </div>
+                <div id="tailPileArea" class="pile-banner pile-target" data-pile-name="tail">
+                    <span class="pile-label">尾墩 (<span id="tailPileCount">0/5</span>):</span>
+                    <div id="tailPileCards" class="cards-display-area"></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="controls-footer">
-        <button id="dealCardsBtn">发牌</button>
-        <button id="resetArrangementBtn" style="display:none;">重置理牌</button>
-        <button id="submitArrangementBtn" style="display:none;">提交牌型</button>
-        <div id="simpleMessage" class="simple-message-footer"></div>
-    </div>
+        <div class="controls-footer-merged"> <!-- Renamed and moved -->
+            <button id="dealCardsBtn">发牌</button>
+            <button id="resetArrangementBtn" style="display:none;">重置理牌</button>
+            <button id="submitArrangementBtn" style="display:none;">提交牌型</button>
+            <div id="simpleMessage" class="simple-message-footer"></div>
+        </div>
+    </div> <!-- End of game-wrapper -->
 
     <script type="module" src="js/main.js"></script>
 </body>
