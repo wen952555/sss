@@ -1,186 +1,224 @@
-/* frontend/css/style.css (调整卡牌尺寸和容器) */
+/* frontend/css/style.css (重构版) */
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+/* --- 基本重置和全局设置 --- */
+* {
     margin: 0;
     padding: 0;
-    background-color: #f0f2f5;
-    color: #333;
-    line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    box-sizing: border-box; /* 非常重要，让 padding 和 border 不会增加元素的总宽高 */
 }
 
-header { /* ... (保持不变) ... */ }
-main.game-container { /* ... (保持不变) ... */ }
-footer { /* ... (保持不变) ... */ }
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #e9ebee; /* 淡灰色背景 */
+    color: #1c1e21;
+    line-height: 1.5;
+    padding: 10px; /* 给整个页面一点边距 */
+}
+
+/* --- 主游戏容器 --- */
+main.game-container {
+    max-width: 800px; /* 限制游戏区域最大宽度 */
+    margin: 10px auto; /* 上下边距，左右自动居中 */
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
 #gameTable {
-    display: grid;
-    grid-template-areas:
-        "ai1 ai2 ai3"
-        "arrangement arrangement arrangement"
-        "actions actions actions"
-        "results results results";
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto 1fr auto auto; /* 让arrangement区域能自适应高度 */
-    gap: 10px; /* 稍微减小整体gap */
+    display: flex; /* 使用 Flexbox 进行整体布局 */
+    flex-direction: column; /* 主轴垂直 */
+    gap: 15px; /* 各主要区域之间的间距 */
 }
 
-.player-area {
-    padding: 8px;
-    border-radius: 5px;
-}
-
-.ai-player-area {
-    background-color: #e9ecef;
-    text-align: center;
-    min-height: 30px; /* AI区域可以小一点 */
-    padding: 5px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    margin-bottom: 5px;
-}
-#aiPlayer0Info { grid-area: ai1; }
-#aiPlayer1Info { grid-area: ai2; }
-#aiPlayer2Info { grid-area: ai3; }
-
-
-.player-arrangement-zone {
-    grid-area: arrangement;
+/* --- AI 玩家信息区 --- */
+.ai-player-display-area {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: space-around; /* AI信息框平均分布 */
     gap: 10px;
-    padding: 10px 0; /* 移除左右padding，让子元素自己控制宽度 */
-    /* border: 1px solid #e0e0e0; */ /* 可以暂时移除边框，看是否影响 */
-    border-radius: 6px;
-    /* background-color: #f8f9fa; */ /* 可以暂时移除背景色 */
+}
+.player-info-box { /* AI信息框的具体样式 */
+    flex: 1; /* 每个AI信息框占据可用空间 */
+    background-color: #f0f2f5;
+    padding: 8px;
+    text-align: center;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: #606770;
 }
 
-.dun-section {
-    width: 90%; /* 墩位宽度相对于父容器 player-arrangement-zone */
-    max-width: 450px; /* 给一个最大宽度 */
+/* --- 核心摆牌区 --- */
+.player-arrangement-zone {
+    display: flex;
+    flex-direction: column; /* 头墩、手牌/中墩、尾墩垂直排列 */
+    align-items: center; /* 内部元素居中 */
+    gap: 12px; /* 各墩之间的垂直间距 */
+    padding: 10px;
+    border: 1px solid #ccd0d5;
+    border-radius: 6px;
+}
+
+.dun-section { /* 头墩和尾墩的包裹容器 */
+    width: 100%; /* 宽度由父级控制，或设置max-width */
     text-align: center;
-    margin-bottom: 5px; /* 墩与墩之间的间隔 */
 }
 .dun-section h4 {
-    margin-top: 0; /* 移除顶部外边距 */
-    margin-bottom: 5px;
-    color: #0056b3;
-    font-size: 0.95em; /* 稍微小一点 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    font-size: 1em;
+    color: #3b5998; /* Facebook 蓝色调 */
+    margin-bottom: 6px;
+    font-weight: 600;
 }
 .dun-section h4 .dun-type {
-    font-size: 0.9em; color: #495057; margin-left: 8px; font-weight: normal;
+    font-size: 0.85em;
+    color: #4b4f56;
+    margin-left: 5px;
+    font-weight: normal;
 }
 
-
-.human-player-area.central-hand-middle-dun {
-    width: 100%; /* 宽度占满父容器 player-arrangement-zone */
-    max-width: 700px; /* 但有一个最大宽度限制 */
+.human-player-hand-area { /* 手牌区/中墩区的包裹容器 */
+    width: 100%;
     padding: 8px;
-    border: 2px dashed #007bff;
+    border: 2px dashed #8a9ac2; /* 淡蓝色虚线 */
     border-radius: 5px;
-    background-color: #e7f3ff;
-    box-sizing: border-box; /* 确保padding和border不增加总宽度 */
+    background-color: #f0f2f5; /* 与AI区域背景色类似 */
 }
-.human-player-area.central-hand-middle-dun.is-middle-dun {
-    border-style: solid; border-color: #28a745; background-color: #e9f5ec;
+.human-player-hand-area.is-middle-dun-active { /* JS切换的类，当手牌区变为中墩时 */
+    border-style: solid;
+    border-color: #42b72a; /* 绿色 */
+    background-color: #e9f5e9; /* 淡绿色 */
 }
-.human-player-area.central-hand-middle-dun h3 {
+.human-player-hand-area h3 {
     text-align: center;
-    margin-top: 0; /* 移除顶部外边距 */
-    margin-bottom: 8px;
-    color: #333;
     font-size: 1em;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    color: #1d2129;
+    margin-bottom: 8px;
+    font-weight: 600;
 }
-.human-player-area.central-hand-middle-dun h3 .dun-type {
-    font-size: 0.9em; color: #495057; margin-left: 8px; font-weight: normal;
+.human-player-hand-area h3 .dun-type { /* 中墩牌型提示 */
+    font-size: 0.85em; color: #4b4f56; margin-left: 5px; font-weight: normal;
 }
 
 
+/* --- 卡牌容器 (手牌区和墩位) --- */
 .hand-container {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: wrap;         /* 允许卡牌换行 */
     justify-content: center; /* 卡牌在行内居中 */
-    align-items: flex-start; /* 卡牌顶部对齐 */
-    /* min-height: 由卡牌大小和数量决定，但可以设一个比单张卡牌稍大的值 */
-    padding: 4px; /* 容器内边距，小一点 */
-    border: 1px dashed #ccc;
-    border-radius: 4px;
-    background-color: #ffffff;
-    overflow: auto; /* 如果内容溢出，显示滚动条 (但我们希望它能换行) */
+    align-items: center;     /* 卡牌在交叉轴上居中 (如果行高度不一) */
+    padding: 5px;
+    border: 1px solid #dddfe2; /* 更细的边框 */
+    border-radius: 3px;
+    background-color: #fff;
+    min-height: 80px; /* 根据卡牌大小调整，确保至少能放下目标数量的牌 */
 }
 
-#myHandDisplay { /* 特殊处理手牌区，确保能容纳多行 */
-    min-height: 180px; /* 至少能容纳两行缩小后的卡牌 + margin */
-    /* align-content: flex-start; 已在 .hand-container 设置，这里不需要 */
+/* 特定墩的尺寸调整 */
+#headDun.hand-container {
+    max-width: 210px; /* 3 * (50 + 3*2 + 4*2) 约等于 3 * 60 + 30 */
+    min-height: 80px; /* 约等于一张牌的高度 */
+    margin: 0 auto; /* 在 .dun-section 内居中 */
+}
+#tailDun.hand-container {
+    max-width: 350px; /* 5 * (50 + 3*2 + 4*2) 约等于 5 * 60 + 50 */
+    min-height: 80px;
+    margin: 0 auto;
+}
+#myHandDisplay.hand-container { /* 手牌/中墩区 */
+    min-height: 170px; /* 至少容纳两行牌 */
+    /* 宽度由 .human-player-hand-area 控制 */
 }
 
-/* *** 核心修改：卡牌尺寸 *** */
+.droppable-area.drag-over { /* 拖拽悬停高亮 */
+    border-color: #3578e5;
+    background-color: #e7f3ff;
+}
+
+/* --- 卡牌本身样式 --- */
 .card {
-    width: 50px;  /* <<--- 显著减小宽度 */
-    height: 70px; /* <<--- 显著减小高度 (保持大致比例 5:7) */
-    margin: 3px;  /* 卡牌之间的间距 */
-    border: 1px solid #999; /* 边框可以细一点 */
-    border-radius: 4px; /* 圆角小一点 */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    background-color: white;
+    width: 50px;  /* 目标宽度 */
+    height: 70px; /* 目标高度 */
+    margin: 3px;
+    border: 1px solid #bcc0c4;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    background-color: #fff;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: grab;
-    user-select: none;
-    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
-    overflow: hidden; /* 防止图片略微溢出边框 */
-}
-.card:hover {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    transform: translateY(-1px) scale(1.02); /* 悬浮效果微调 */
+    user-select: none; /* 防止拖拽时选中文本 */
+    overflow: hidden; /* 防止图片溢出 */
 }
 .card img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+    display: block; /* 移除图片下方的微小空白 */
+    width: 100%;    /* 图片宽度撑满卡牌div */
+    height: 100%;   /* 图片高度撑满卡牌div */
+    object-fit: contain; /* 保持图片比例并完整显示 */
     pointer-events: none;
 }
 .card.dragging {
     opacity: 0.5;
-    transform: scale(0.9);
+    transform: scale(0.95);
 }
-.card-error-placeholder, .card-image-error-text { /* ui.js 中图片加载失败时的样式 */
+/* 图片加载失败时的占位符样式 */
+.card-error-placeholder { /* 如果 ui.js 中使用这个类 */
+    font-size: 10px; color: red; text-align: center;
+    border: 1px dashed red !important; /* 强制显示边框 */
+    display: flex; align-items: center; justify-content: center;
+}
+.card-image-error-text { /* ui.js 中图片加载失败时，在卡牌内显示的文字 */
+    font-size: 9px; color: red; text-align: center; padding: 2px;
+}
+
+
+/* --- 消息和操作区 --- */
+.feedback-and-actions-area {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+.message {
     width: 100%;
-    height: 100%;
-    font-size: 9px;
-    color: red;
+    max-width: 600px; /* 消息区域不要太宽 */
+    padding: 10px;
+    border-radius: 4px;
     text-align: center;
-    border: 1px solid red;
-    box-sizing: border-box;
+    font-size: 0.9em;
 }
-
-
-.droppable-area.drag-over {
-    border-color: #1e7e34;
-    background-color: #d4edda;
+.error-message {
+    color: #a94442; background-color: #f2dede; border: 1px solid #ebccd1;
 }
+.info-message { /* 如果 ui.js 的 displayMessage 用到了 */
+    color: #31708f; background-color: #d9edf7; border: 1px solid #bce8f1;
+}
+.result-message { /* gameResultArea 的样式 */
+    background-color: #dff0d8; color: #3c763d; border: 1px solid #d6e9c6;
+}
+.game-actions button {
+    padding: 8px 15px; /* 按钮小一点 */
+    font-size: 0.95em;
+    margin: 0 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+}
+#submitArrangementButton { background-color: #28a745; }
+#submitArrangementButton:hover { background-color: #218838; }
+#submitArrangementButton:disabled { background-color: #6c757d; cursor: not-allowed; }
+#newGameButton { background-color: #007bff; }
+#newGameButton:hover { background-color: #0056b3; }
 
-
-.game-actions { /* ... (保持不变或微调 margin) ... */ }
-#arrangementError { /* ... (保持不变) ... */ }
-#gameResultArea { /* ... (保持不变) ... */ }
-
-/* 辅助类 (如果需要) */
-.message { /* ... */ }
-.error-message { /* ... */ }
-.info-message { /* ... */ } /* 如果 ui.js 中使用了 */
+#resultDetails {
+    margin-top: 8px;
+    text-align: left;
+    white-space: pre-wrap; /* 保留换行符 */
+    font-size: 0.9em;
+    max-height: 200px; /* 如果结果很多，可以滚动 */
+    overflow-y: auto;
+    background: #fff;
+    padding: 10px;
+    border-radius: 3px;
+}
