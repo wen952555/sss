@@ -3,110 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水 AI对战</title>
+    <title>十三水 AI试玩</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/game.css">
-    <link rel="stylesheet" href="css/modal.css">
 </head>
 <body>
-    <header class="game-header">
-        <h1>十三水 - AI挑战赛</h1>
-        <div class="header-actions">
-            <span id="loggedInUserDisplay" style="display:none;">欢迎, <strong id="userNicknameDisplay"></strong>! 积分: <span id="userPointsDisplay">0</span></span>
-            <button id="userManagementButton">👤 我的账户</button>
-        </div>
+    <header>
+        <h1>十三水 AI 试玩</h1>
     </header>
 
     <main class="game-container">
         <div id="gameTable">
-            <!-- AI 玩家区域 -->
-            <div class="ai-player-area top-ai">
-                <div class="player-info">AI Alpha <span class="ai-status">(等待...)</span></div>
-                <div class="player-cards-played"></div>
-            </div>
-            <div class="ai-player-area left-ai">
-                <div class="player-info">AI Beta <span class="ai-status">(等待...)</span></div>
-                <div class="player-cards-played"></div>
-            </div>
-            <div class="ai-player-area right-ai">
-                <div class="player-info">AI Gamma <span class="ai-status">(等待...)</span></div>
-                <div class="player-cards-played"></div>
-            </div>
+            <!-- AI 玩家区域 (简化显示) -->
+            <div class="player-area ai-player-area" id="aiPlayer0Info">AI 1 (等待出牌...)</div>
+            <div class="player-area ai-player-area" id="aiPlayer1Info">AI 2 (等待出牌...)</div>
+            <div class="player-area ai-player-area" id="aiPlayer2Info">AI 3 (等待出牌...)</div>
 
-            <!-- 真人玩家区域 -->
-            <div class="human-player-area">
-                <div id="myHandDisplay" class="hand-container droppable-area" data-area-name="hand">
-                    <!-- JS Will Fill This -->
-                </div>
-                <h3>摆牌区 (拖拽到下方)</h3>
-                <div class="arrangement-duns">
-                    <div class="dun-section">
-                        <h4>头墩 (3张) <span id="headDunType" class="dun-type-display">(-)</span></h4>
-                        <div id="headDun" class="hand-container dun-cards droppable-area" data-area-name="head" data-max-cards="3"></div>
-                    </div>
-                    <div class="dun-section">
-                        <h4>中墩 (5张) <span id="middleDunType" class="dun-type-display">(-)</span></h4>
-                        <div id="middleDun" class="hand-container dun-cards droppable-area" data-area-name="middle" data-max-cards="5"></div>
-                    </div>
-                    <div class="dun-section">
-                        <h4>尾墩 (5张) <span id="tailDunType" class="dun-type-display">(-)</span></h4>
-                        <div id="tailDun" class="hand-container dun-cards droppable-area" data-area-name="tail" data-max-cards="5"></div>
-                    </div>
-                </div>
-                <div id="arrangementError" class="error-message"></div>
-                <div class="game-actions">
-                    <button id="aiArrangeButton">AI辅助摆牌</button>
-                    <button id="submitArrangementButton">提交摆牌</button>
-                    <button id="newTrialGameButton" style="display:none;">再来一局 (试玩)</button>
+            <!-- 你的手牌区 -->
+            <div class="player-area human-player-area">
+                <h3>你的手牌 (拖拽到下方摆牌):</h3>
+                <div id="myHandDisplay" class="hand-container droppable-area" data-dun-name="hand">
+                    <!-- 卡牌将由JS填充 -->
                 </div>
             </div>
-        </div>
 
-        <div id="gameMessageArea" class="message-area"></div>
+            <!-- 摆牌墩位 -->
+            <div class="arrangement-area">
+                <div class="dun-section">
+                    <h4>头墩 (3张) <span class="dun-type" id="headDunType"></span></h4>
+                    <div id="headDun" class="hand-container dun-cards droppable-area" data-dun-name="head" data-max-cards="3"></div>
+                </div>
+                <div class="dun-section">
+                    <h4>中墩 (5张) <span class="dun-type" id="middleDunType"></span></h4>
+                    <div id="middleDun" class="hand-container dun-cards droppable-area" data-dun-name="middle" data-max-cards="5"></div>
+                </div>
+                <div class="dun-section">
+                    <h4>尾墩 (5张) <span class="dun-type" id="tailDunType"></span></h4>
+                    <div id="tailDun" class="hand-container dun-cards droppable-area" data-dun-name="tail" data-max-cards="5"></div>
+                </div>
+            </div>
 
-        <div id="trialGameResultDisplay" style="display:none; padding:15px; margin-top:20px; border:1px solid #ccc; background:#f9f9f9;">
-            <h4>本局试玩结果：</h4>
-            <div id="trialSettlementDetails"></div>
+            <div id="arrangementError" class="message error-message" style="display:none;"></div>
+
+            <!-- 游戏操作按钮 -->
+            <div class="game-actions">
+                <button id="submitArrangementButton">提交摆牌</button>
+                <button id="newGameButton">新一局 (VS AI)</button>
+            </div>
+
+            <!-- 游戏结果显示区域 -->
+            <div id="gameResultArea" class="message" style="display:none;">
+                <h4>本局结果：</h4>
+                <div id="resultDetails"></div>
+            </div>
         </div>
     </main>
-
-    <!-- 登录/注册/用户管理 弹窗 (Modal) -->
-    <div id="userModal" class="modal" style="display:none;">
-        <!-- ... (Modal content from previous response) ... -->
-        <div class="modal-content user-modal-content">
-            <span class="close-button" id="closeUserModal">×</span>
-            <div id="loginSection">
-                <h2>登录账户</h2>
-                <form id="modalLoginForm" onsubmit="return false;"><input type="text" id="modalLoginPhone" placeholder="手机号" required autocomplete="username"><input type="password" id="modalLoginPassword" placeholder="密码" required autocomplete="current-password"><button type="button" id="modalLoginButton">登录</button></form>
-                <p>还没有账户? <a href="#" id="showModalRegisterLink">立即注册</a></p><div id="modalLoginError" class="error-message"></div>
-            </div>
-            <div id="registerSection" style="display:none;">
-                <h2>注册新账户</h2>
-                <form id="modalRegisterForm" onsubmit="return false;"><input type="text" id="modalRegisterPhone" placeholder="手机号" required autocomplete="username"><input type="password" id="modalRegisterPassword" placeholder="密码 (至少6位)" required autocomplete="new-password"><input type="password" id="modalRegisterConfirmPassword" placeholder="确认密码" required autocomplete="new-password"><input type="text" id="modalRegisterNickname" placeholder="昵称 (2-15字符)" required autocomplete="nickname"><button type="button" id="modalRegisterButton">注册</button></form>
-                <p>已有账户? <a href="#" id="showModalLoginLink">返回登录</a></p><div id="modalRegisterError" class="error-message"></div>
-            </div>
-            <div id="userManagementSection" style="display:none;">
-                <h2>用户中心</h2>
-                <p>昵称: <strong id="mgmtUserNickname"></strong></p><p>积分: <strong id="mgmtUserPoints"></strong></p><hr><h4>赠送积分</h4>
-                <div><input type="text" id="giftRecipientPhone" placeholder="对方手机号"><button type="button" id="findRecipientButton">查找用户</button></div>
-                <div id="recipientInfo" style="display:none;">查找到用户: <span id="foundRecipientName"></span><input type="number" id="giftAmount" placeholder="赠送积分数量" min="1"><button type="button" id="confirmGiftButton">确认赠送</button></div>
-                <div id="giftMessage" class="message-area" style="margin-top:10px;"></div><hr>
-                <button id="modalLogoutButton">登出账户</button>
-            </div>
-        </div>
-    </div>
 
     <footer>
         <p>© 2024 十三水游戏</p>
     </footer>
 
-    <script src="js/config.js"></script>
-    <script src="js/api.js"></script>
+    <script src="js/card_defs.js"></script>
     <script src="js/ui.js"></script>
-    <script src="js/cardUtils.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/user_profile.js"></script>
-    <script src="js/game.js"></script>         <!-- 核心游戏逻辑 -->
-    <script src="js/game_manager.js"></script> <!-- 主控制器，最后加载 -->
+    <script src="js/game_logic.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
