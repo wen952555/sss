@@ -1,81 +1,129 @@
-// frontend/js/ui.js (保持图片路径修改和 onerror 日志)
+// frontend/js/ui.js
+console.log("[UI.js] Loaded");
 
-function getElem(id) {
-    const elem = document.getElementById(id);
-    if (!elem) {
-        console.warn(`[UI.js] Element with ID '${id}' not found.`);
+/**
+ * 获取DOM元素，如果找不到则在控制台警告
+ * @param {string} id
+ * @returns {HTMLElement|null}
+ */
+function getElementByIdSafe(id) {
+    const element = document.getElementById(id);
+    if (!element) {
+        console.warn(`[UI.js] Element with ID '${id}' not found in the DOM.`);
     }
-    return elem;
+    return element;
 }
 
-function clearElement(elementOrId) {
-    const element = typeof elementOrId === 'string' ? getElem(elementOrId) : elementOrId;
+/**
+ * 清空指定DOM元素的内容
+ * @param {string} elementId
+ */
+function clearElementContent(elementId) {
+    const element = getElementByIdSafe(elementId);
     if (element) {
         element.innerHTML = '';
     }
 }
 
-function createCardElement(cardObject) {
-    // *** 添加对 cardObject 和 imageName 的存在性检查 ***
-    if (!cardObject || typeof cardObject.imageName !== 'string' || cardObject.imageName.trim() === '') {
-        console.error("[UI.js] createCardElement: Invalid or missing imageName in cardObject:", cardObject);
-        const errorCardDiv = document.createElement('div');
-        errorCardDiv.classList.add('card', 'card-error'); // 你需要为 .card-error 添加CSS
-        errorCardDiv.innerHTML = `<span style="font-size:9px; color:red; text-align:center;">卡牌数据<br>错误</span>`;
-        return errorCardDiv;
+/**
+ * 创建卡牌的HTML元素
+ * @param {object} cardData - 由 createCard 生成的卡牌对象
+ * @returns {HTMLDivElement|null}
+ */
+function createCardDOMElement(cardData) {
+    if (!cardData || !cardData.imageName || !cardData.id) {
+        console.error("[UI.js] createCardDOMElement: Invalid cardData received.", cardData);
+        return null;
     }
-    console.log("[UI.js] createCardElement called with cardObject (imageName: '" + cardObject.imageName + "'):", JSON.parse(JSON.stringify(cardObject)));
 
     const cardDiv = document.createElement('div');
-    cardDiv.classList.add('card');
+    cardDiv.className = 'card'; // 使用 className 而不是 classList.add 以简化
     cardDiv.draggable = true;
-    cardDiv.dataset.cardId = cardObject.id;
+    cardDiv.dataset.cardId = cardData.id; // 使用 cardData.id
 
     const img = document.createElement('img');
-    const imagePath = `cards/${cardObject.imageName}`; // 图片路径已修改
+    // 图片路径相对于 index.html
+    const imagePath = `cards/${cardData.imageName}`;
     img.src = imagePath;
-    img.alt = `${cardObject.displayRank}${cardObject.suitSymbol}`;
+    img.alt = `${cardData.displayRank}${cardData.displaySuit}`;
     img.title = img.alt;
 
-    console.log("[UI.js] Attempting to load image for card " + cardObject.id + ": " + imagePath);
+    // console.log(`[UI.js] Attempting to set img.src for ${cardData.id} to: ${imagePath}`);
 
     img.onerror = function() {
-        console.error(`[UI.js] FAILED TO LOAD IMAGE: ${imagePath}. Associated card data:`, cardObject);
-        cardDiv.innerHTML = `<span style="font-size:10px; text-align:center; color:red;">${img.alt}<br>图片加载<br>失败</span>`;
-    };
-    img.onload = function() {
-        // console.log(`[UI.js] Image loaded successfully: ${imagePath}`);
+        console.error(`[UI.js] FAILED TO LOAD IMAGE: ${imagePath}. For card ID: ${cardData.id}`);
+        cardDiv.textContent = `${cardData.displayRank}${cardData.displaySuit} (加载失败)`;
+        cardDiv.style.fontSize = "10px";
+        cardDiv.style.color = "red";
+        cardDiv.style.textAlign = "center";
+        cardDiv.style.border = "1px solid red";
     };
 
     cardDiv.appendChild(img);
     return cardDiv;
 }
 
-function renderCardsToArea(areaId, cards) {
-    const areaElement = getElem(areaId);
-    if (!areaElement) {
-        console.error(`[UI.js] renderCardsToArea: Element with ID '${areaId}' not found.`);
-        return;
-    }
-    clearElement(areaElement);
-    console.log(`[UI.js] Rendering ${cards ? cards.length : 0} cards to area '${areaId}'. First card data (if any):`, cards && cards[0] ? JSON.parse(JSON.stringify(cards[0])) : 'No cards');
+/**
+ * 将一组卡牌渲染到指定的DOM区域
+ * @param {string} areaElementId - 目标区域的DOM ID
+ * @param {object[]} cardsArray - 卡牌对象数组
+ */
+function renderCards(areaElementId, cardsArray) {
+    const areaElement = getElementByIdSafe(areaElementId);
+    if (!areaElement) return;
 
-    if (cards && Array.isArray(cards)) {
-        cards.forEach((cardObj, index) => {
-            if (cardObj && typeof cardObj.rank !== 'undefined' && typeof cardObj.imageName === 'string') { // 额外检查imageName
-                try {
-                    const cardElement = createCardElement(cardObj);
-                    areaElement.appendChild(cardElement);
-                } catch (e) {
-                    console.error(`[UI.js] Error creating card element for card at index ${index}:`, cardObj, e);
-                }
-            } else {
-                console.warn(`[UI.js] Invalid card object or missing imageName at index ${index} for area '${areaId}':`, cardObj);
+    clearElementContent(areaElementId); // 清空旧卡牌
+
+    if (Array.isArray(cardsArray)) {
+        cardsArray.forEach(cardData => {
+            const cardElement = createCardDOMElement(cardData);
+            if (cardElement) {
+                areaElement.appendChild(cardElement);
             }
         });
-    } else if (cards) {
-        console.error(`[UI.js] renderCardsToArea: 'cards' argument is not an array for area '${areaId}'. Received:`, cards);
+        // console.log(`[UI.js] Rendered ${cardsArray.length} cards to ${areaElementId}`);
+    } else {
+        console.warn(`[UI.js] renderCards: cardsArray for ${areaElementId} is not an array.`, cardsArray);
     }
 }
 
-// ... (updateDunTypeDisplay, showFeedbackMessage, updateAIPlayerStatus, displayGameResults, hideGameResults 函数不变) ...
+/**
+ * 更新墩位牌型名称的显示
+ * @param {string} dunName - 'head', 'middle', 'tail'
+ * @param {string} typeName - 牌型名称, e.g., '一对' or '-'
+ */
+function updateDunTypeHTML(dunName, typeName) {
+    const element = getElementByIdSafe(`${dunName}DunType`);
+    if (element) {
+        element.textContent = `(${typeName || '-'})`;
+    }
+}
+
+/**
+ * 显示消息/错误
+ * @param {string} elementId
+ * @param {string} message
+ * @param {boolean} isError
+ */
+function displayMessage(elementId, message, isError = false) {
+    const element = getElementByIdSafe(elementId);
+    if (element) {
+        element.textContent = message;
+        element.style.display = message ? 'block' : 'none';
+        element.className = isError ? 'message error-message' : 'message info-message'; // 需要CSS支持
+    }
+}
+
+/**
+ * 更新AI玩家状态显示
+ * @param {number} aiIndex - 0, 1, or 2
+ * @param {string} statusText
+ */
+function updateAIStatusHTML(aiIndex, statusText) {
+    const element = getElementByIdSafe(`aiPlayer${aiIndex}Info`);
+    if (element) {
+        // 假设HTML结构是 "AI N (状态)"
+        const baseText = element.textContent.split('(')[0].trim();
+        element.textContent = `${baseText} (${statusText})`;
+    }
+}
