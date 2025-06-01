@@ -3,44 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十三水 AI试玩</title>
+    <title>十三水 AI试玩 - 新布局</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
-        <h1>十三水 AI 试玩</h1>
+        <h1>十三水 AI 试玩 - 新布局</h1>
     </header>
 
     <main class="game-container">
         <div id="gameTable">
-            <!-- AI 玩家区域 (简化显示) -->
-            <div class="player-area ai-player-area" id="aiPlayer0Info">AI 1 (等待出牌...)</div>
-            <div class="player-area ai-player-area" id="aiPlayer1Info">AI 2 (等待出牌...)</div>
-            <div class="player-area ai-player-area" id="aiPlayer2Info">AI 3 (等待出牌...)</div>
+            <!-- AI 玩家区域 (保持不变或简化) -->
+            <div class="player-area ai-player-area" id="aiPlayer0Info">AI 1 (等待...)</div>
+            <div class="player-area ai-player-area" id="aiPlayer1Info">AI 2 (等待...)</div>
+            <div class="player-area ai-player-area" id="aiPlayer2Info">AI 3 (等待...)</div>
 
-            <!-- 你的手牌区 -->
-            <div class="player-area human-player-area">
-                <h3>你的手牌 (拖拽到下方摆牌):</h3>
-                <div id="myHandDisplay" class="hand-container droppable-area" data-dun-name="hand">
-                    <!-- 卡牌将由JS填充 -->
-                </div>
-            </div>
-
-            <!-- 摆牌墩位 -->
-            <div class="arrangement-area">
-                <div class="dun-section">
+            <!-- 摆牌区域 - 新的上下布局 -->
+            <div class="player-arrangement-zone">
+                <!-- 头墩 -->
+                <div class="dun-section top-dun">
                     <h4>头墩 (3张) <span class="dun-type" id="headDunType"></span></h4>
                     <div id="headDun" class="hand-container dun-cards droppable-area" data-dun-name="head" data-max-cards="3"></div>
                 </div>
-                <div class="dun-section">
-                    <h4>中墩 (5张) <span class="dun-type" id="middleDunType"></span></h4>
-                    <div id="middleDun" class="hand-container dun-cards droppable-area" data-dun-name="middle" data-max-cards="5"></div>
+
+                <!-- 手牌区 / 中墩区 -->
+                <div class="player-area human-player-area central-hand-middle-dun">
+                    <h3 id="centralAreaTitle">你的手牌 (拖拽摆牌):</h3>
+                    <div id="myHandDisplay" class="hand-container droppable-area" data-dun-name="handOrMiddle" data-max-cards="13">
+                        <!-- 卡牌将由JS填充 -->
+                        <!-- 当条件满足时，这里逻辑上是中墩 -->
+                    </div>
                 </div>
-                <div class="dun-section">
+
+                <!-- 尾墩 -->
+                <div class="dun-section bottom-dun">
                     <h4>尾墩 (5张) <span class="dun-type" id="tailDunType"></span></h4>
                     <div id="tailDun" class="hand-container dun-cards droppable-area" data-dun-name="tail" data-max-cards="5"></div>
                 </div>
             </div>
+
 
             <div id="arrangementError" class="message error-message" style="display:none;"></div>
 
@@ -63,8 +64,8 @@
     </footer>
 
     <script src="js/card_defs.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/game_logic.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/ui.js"></script>       <!-- ui.js 需要小幅调整 -->
+    <script src="js/game_logic.js"></script> <!-- game_logic.js 的牌型判断等不变 -->
+    <script src="js/main.js"></script>       <!-- main.js 的改动会比较大 -->
 </body>
 </html>
