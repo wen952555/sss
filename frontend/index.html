@@ -7,39 +7,42 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="game-title-area"> <!-- 将标题移到这里 -->
         <h1>十三水扑克</h1>
+    </div>
 
-        <div class="game-area">
+    <div class="container">
+        <div class="main-game-content"> <!-- 左侧主游戏区 -->
             <div id="player-hand-area" class="hand-area">
                 <h2>你的手牌 (13张)</h2>
                 <div id="player-hand" class="card-container player-initial-hand drop-zone">
                     <!-- 卡片将在这里动态生成 -->
                 </div>
             </div>
-
             <div class="controls">
                 <button id="deal-button">发牌</button>
                 <button id="reset-button" style="display:none;">重新整理</button>
-                <button id="confirm-hands-button" style="display:none;">确认牌型</button> <!-- 新增按钮 -->
+                <button id="confirm-hands-button" style="display:none;">确认牌型</button>
             </div>
+             <p id="status-message" class="status"></p> <!-- 状态消息移到主要内容区底部 -->
+        </div>
 
+        <div class="arranged-hands-area-wrapper"> <!-- 右侧摆放区 -->
+            <h2>摆放牌型</h2>
             <div class="arranged-hands-area">
-                <h2>摆放牌型</h2>
                 <div class="hand-section">
-                    <h3>头道 (3张) <span class="hand-eval-result" id="front-hand-eval"></span></h3> <!-- 用于显示牌型 -->
+                    <h3>头道 (3张) <span class="hand-eval-result" id="front-hand-eval"></span></h3>
                     <div id="front-hand" class="card-container arranged-hand drop-zone" data-hand-name="front" data-max-cards="3"></div>
                 </div>
                 <div class="hand-section">
-                    <h3>中道 (5张) <span class="hand-eval-result" id="middle-hand-eval"></span></h3> <!-- 用于显示牌型 -->
+                    <h3>中道 (5张) <span class="hand-eval-result" id="middle-hand-eval"></span></h3>
                     <div id="middle-hand" class="card-container arranged-hand drop-zone" data-hand-name="middle" data-max-cards="5"></div>
                 </div>
                 <div class="hand-section">
-                    <h3>尾道 (5张) <span class="hand-eval-result" id="back-hand-eval"></span></h3> <!-- 用于显示牌型 -->
+                    <h3>尾道 (5张) <span class="hand-eval-result" id="back-hand-eval"></span></h3>
                     <div id="back-hand" class="card-container arranged-hand drop-zone" data-hand-name="back" data-max-cards="5"></div>
                 </div>
             </div>
-             <p id="status-message" class="status"></p>
         </div>
     </div>
 
