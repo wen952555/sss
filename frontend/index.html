@@ -8,16 +8,13 @@
 </head>
 <body>
     <div class="game-container">
-        <!-- <div id="unassignedCardsArea" class="unassigned-cards-container"> ... </div> -->
         <!-- 上方未分配牌区已删除 -->
-
         <div id="arrangementArea" class="arrangement-container">
             <div id="headPileArea" class="pile-banner pile-target" data-pile-name="head">
                 <span class="pile-label">头墩 (<span id="headPileCount">0/3</span>):</span>
                 <div id="headPileCards" class="cards-display-area"></div>
             </div>
             <div id="middlePileArea" class="pile-banner" data-pile-name="middle">
-                <!-- 初始时，这里会作为手牌区 -->
                 <span class="pile-label">
                     <span id="middlePileTitle">手牌区</span> <!-- 动态改变标题 -->
                     (<span id="middlePileCount">0/13</span>): <!-- 初始显示13张牌的容量 -->
