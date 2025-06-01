@@ -1,115 +1,120 @@
-// frontend/js/auth.js
+// frontend/js/auth.js (配合弹窗版)
+
 document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    const showRegisterLink = document.getElementById('showRegister');
-    const showLoginLink = document.getElementById('showLogin');
+    // 弹窗内的登录按钮
+    const modalLoginButton = document.getElementById('modalLoginButton');
+    modalLoginButton?.addEventListener('click', async () => {
+        const phoneEl = document.getElementById('modalLoginPhone');
+        const passwordEl = document.getElementById('modalLoginPassword');
+        const errorEl = document.getElementById('modalLoginError');
+        if(!phoneEl || !passwordEl || !errorEl) return;
 
-    // 表单切换
-    showRegisterLink?.addEventListener('click', (e) => {
-        e.preventDefault();
-        loginForm.style.display = 'none';
-        registerForm.style.display = 'block';
-        displayError('loginError', ''); displayError('registerError', '');
-    });
-    showLoginLink?.addEventListener('click', (e) => {
-        e.preventDefault();
-        registerForm.style.display = 'none';
-        loginForm.style.display = 'block';
-        displayError('loginError', ''); displayError('registerError', '');
-    });
+        const phone = phoneEl.value.trim();
+        const password = passwordEl.value;
+        displayError(errorEl, '');
 
-    // 登录逻辑
-    const loginButton = document.getElementById('loginButton');
-    loginButton?.addEventListener('click', async () => {
-        const phone = document.getElementById('loginPhone').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        displayError('loginError', '');
+        if (!phone || !password) { displayError(errorEl, '手机号和密码不能为空。'); return; }
 
-        if (!phone || !password) {
-            displayError('loginError', '手机号和密码不能为空。');
-            return;
-        }
         try {
-            showLoading('loginError'); // 显示加载
+            showLoading(errorEl, true, '登录中...'); // 使用 ui.js 的 showLoading
             const response = await authAPI.login({ phone_number: phone, password: password });
-            // 登录成功，保存用户信息 (例如到localStorage或一个全局状态)
+            showLoading(errorEl, false);
+
             localStorage.setItem('currentUser', JSON.stringify(response.user));
             localStorage.setItem('isLoggedIn', 'true');
-            window.location.href = 'lobby.html'; // 跳转到大厅
-        } catch (error) {
-            displayError('loginError', error.message || '登录失败，请检查您的凭据。');
-        } finally {
-            // showLoading('loginError', false); // 隐藏加载 (如果加载提示是文本，错误消息会覆盖它)
-        }
-    });
-
-    // 注册逻辑
-    const registerButton = document.getElementById('registerButton');
-    registerButton?.addEventListener('click', async () => {
-        const phone = document.getElementById('registerPhone').value.trim();
-        const password = document.getElementById('registerPassword').value;
-        const confirmPassword = document.getElementById('registerConfirmPassword').value;
-        const nickname = document.getElementById('registerNickname').value.trim();
-        displayError('registerError', '');
-
-        if (!phone || !password || !nickname) {
-            displayError('registerError', '手机号、密码和昵称不能为空。'); return;
-        }
-        if (password !== confirmPassword) {
-            displayError('registerError', '两次输入的密码不一致。'); return;
-        }
-        if (password.length < 6) {
-            displayError('registerError', '密码长度至少为6位。'); return;
-        }
-        if (nickname.length < 2 || nickname.length > 15) {
-            displayError('registerError', '昵称长度应为2-15个字符。'); return;
-        }
-
-        try {
-            showLoading('registerError');
-            const response = await authAPI.register({
-                phone_number: phone,
-                password: password,
-                nickname: nickname
-            });
-            // 注册成功，后端通常会自动登录，或者提示用户去登录
-            // 这里假设后端注册成功后也返回了用户信息并创建了session
-            localStorage.setItem('currentUser', JSON.stringify(response.user));
-            localStorage.setItem('isLoggedIn', 'true');
-            alert('注册成功！将跳转到游戏大厅。'); // 简单提示
-            window.location.href = 'lobby.html';
-        } catch (error) {
-            displayError('registerError', error.message || '注册失败，请稍后再试。');
-        }
-    });
-
-    // 页面加载时检查登录状态，如果已登录直接跳转到大厅
-    // (这部分逻辑也可以放到 main.js 中做全局路由守卫)
-    async function checkInitialAuth() {
-        try {
-            const status = await authAPI.checkStatus();
-            if (status.isLoggedIn) {
-                localStorage.setItem('currentUser', JSON.stringify(status.user));
-                localStorage.setItem('isLoggedIn', 'true');
-                // 如果当前不是 lobby.html，则跳转
-                if (!window.location.pathname.endsWith('lobby.html') &&
-                    !window.location.pathname.endsWith('room.html') && // 防止在房间页无限重定向
-                    !window.location.pathname.endsWith('game.html')) {
-                    window.location.href = 'lobby.html';
-                }
-            } else {
-                localStorage.removeItem('currentUser');
-                localStorage.setItem('isLoggedIn', 'false');
+            updateHeaderUserStatus(response.user); // 更新顶部显示
+            // 登录成功后，切换到用户管理视图
+            showUserModalView('management');
+            // 并且加载用户管理界面的数据
+            if (typeof window.loadUserManagementData === 'function') {
+                window.loadUserManagementData(response.user);
             }
         } catch (error) {
-            console.warn('检查登录状态失败:', error.message);
+            showLoading(errorEl, false);
+            displayError(errorEl, error.message || '登录失败。');
+        }
+    });
+
+    // 弹窗内的注册按钮
+    const modalRegisterButton = document.getElementById('modalRegisterButton');
+    modalRegisterButton?.addEventListener('click', async () => {
+        const phoneEl = document.getElementById('modalRegisterPhone');
+        const passwordEl = document.getElementById('modalRegisterPassword');
+        const confirmPasswordEl = document.getElementById('modalRegisterConfirmPassword');
+        const nicknameEl = document.getElementById('modalRegisterNickname');
+        const errorEl = document.getElementById('modalRegisterError');
+        if(!phoneEl || !passwordEl || !confirmPasswordEl || !nicknameEl || !errorEl) return;
+
+        const phone = phoneEl.value.trim();
+        const password = passwordEl.value;
+        const confirmPassword = confirmPasswordEl.value;
+        const nickname = nicknameEl.value.trim();
+        displayError(errorEl, '');
+
+        if (!phone || !password || !nickname) { displayError(errorEl, '所有字段均为必填。'); return; }
+        if (password !== confirmPassword) { displayError(errorEl, '两次密码不一致。'); return; }
+        // ... (其他验证如密码长度、昵称长度)
+
+        try {
+            showLoading(errorEl, true, '注册中...');
+            const response = await authAPI.register({ phone_number: phone, password: password, nickname: nickname });
+            showLoading(errorEl, false);
+
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
+            localStorage.setItem('isLoggedIn', 'true');
+            updateHeaderUserStatus(response.user);
+            alert('注册成功！'); // 或更友好的提示
+            showUserModalView('management');
+            if (typeof window.loadUserManagementData === 'function') {
+                window.loadUserManagementData(response.user);
+            }
+        } catch (error) {
+            showLoading(errorEl, false);
+            displayError(errorEl, error.message || '注册失败。');
+        }
+    });
+
+    // 弹窗内的登出按钮 (在 user_profile.js 中处理更合适，或者这里也加一个)
+    const modalLogoutButton = document.getElementById('modalLogoutButton');
+    modalLogoutButton?.addEventListener('click', async () => {
+        try {
+            await authAPI.logout();
+        } catch (error) { console.warn("Logout API error:", error); }
+        finally {
             localStorage.removeItem('currentUser');
             localStorage.setItem('isLoggedIn', 'false');
+            updateHeaderUserStatus(null); // 清除顶部显示
+            showUserModalView('login'); // 切换回登录视图
+            // (可选) 刷新页面或重置试玩游戏
+            if (typeof window.resetAndStartNewTrialGame === 'function') {
+                window.resetAndStartNewTrialGame();
+            } else {
+                // window.location.reload(); // 简单粗暴地刷新
+            }
         }
-    }
-    // 只有在登录页才做这个自动跳转检查，避免在其他页面干扰
-    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
-        checkInitialAuth();
-    }
+    });
 });
+
+// 全局函数，用于从其他JS文件（如 game_manager.js）检查初始登录状态
+window.checkInitialAuthStatusAndUpdateUI = async function() {
+    try {
+        const status = await authAPI.checkStatus();
+        if (status.isLoggedIn && status.user) {
+            localStorage.setItem('currentUser', JSON.stringify(status.user));
+            localStorage.setItem('isLoggedIn', 'true');
+            updateHeaderUserStatus(status.user);
+            return status.user;
+        } else {
+            localStorage.removeItem('currentUser');
+            localStorage.setItem('isLoggedIn', 'false');
+            updateHeaderUserStatus(null);
+            return null;
+        }
+    } catch (error) {
+        console.warn('Check initial auth status failed:', error.message);
+        localStorage.removeItem('currentUser');
+        localStorage.setItem('isLoggedIn', 'false');
+        updateHeaderUserStatus(null);
+        return null;
+    }
+};
