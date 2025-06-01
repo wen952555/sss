@@ -1,132 +1,35 @@
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f0f0f0;
-    color: #333;
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; /* 改为flex-start以防内容过多时垂直居中问题 */
-    min-height: 100vh;
-}
+/* ... (已有的CSS代码) ... */
 
-.container {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    width: 90%;
-    max-width: 1000px; /* 增加最大宽度 */
-}
-
-h1, h2, h3 {
-    color: #2c3e50;
-    text-align: center;
-}
-
-.game-area {
-    margin-top: 20px;
-}
-
-.hand-area, .arranged-hands-area {
-    margin-bottom: 20px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-}
-
-.card-container {
-    display: flex;
-    flex-wrap: wrap; /* 允许卡片换行 */
-    gap: 10px; /* 卡片间距 */
-    min-height: 100px; /* 给拖放区域一个最小高度 */
-    padding: 10px;
-    border: 2px dashed #ccc; /* 拖放区域边框 */
-    border-radius: 4px;
-    align-items: center; /* 垂直居中卡片 */
-    justify-content: center; /* 水平居中卡片 */
-}
-
-.player-initial-hand {
-    min-height: 150px; /* 初始手牌区域可以高一些 */
-}
-
-.arranged-hand {
-    min-height: 100px;
-}
-
-.card {
-    width: 70px; /* 调整卡片宽度 */
-    height: 100px; /* 调整卡片高度 */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    overflow: hidden; /* 确保SVG在边界内 */
-    cursor: grab;
-    display: flex;
+.hand-section h3 {
+    display: flex; /* 使用flex布局让牌型结果和标题在同一行 */
     justify-content: center;
     align-items: center;
-    background-color: white;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    gap: 10px; /* 标题和牌型结果之间的间距 */
 }
 
-.card img {
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
+.hand-eval-result {
+    font-size: 0.9em;
+    color: #27ae60; /* 绿色，表示牌型 */
+    font-weight: normal;
+    background-color: #e8f5e9;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #a5d6a7;
 }
 
-.card.dragging {
-    opacity: 0.5;
-    transform: scale(1.1);
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+.hand-eval-result.error { /* 如果有错误或倒水，可以改变颜色 */
+    color: #c0392b;
+    background-color: #fdedec;
+    border-color: #f5b7b1;
 }
 
-.drop-zone.drag-over {
-    background-color: #e0ffe0; /* 拖拽悬浮时的背景色 */
-    border-color: #5cb85c;
+.controls {
+    text-align: center; /* 让按钮居中 */
+    margin-bottom: 20px;
 }
 
-button {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    margin: 10px 5px 20px 5px;
-    transition: background-color 0.3s;
+.controls button {
+    margin: 5px; /* 给按钮之间一些间距 */
 }
 
-button:hover {
-    background-color: #2980b9;
-}
-
-button:disabled {
-    background-color: #bdc3c7;
-    cursor: not-allowed;
-}
-
-.status {
-    text-align: center;
-    font-size: 1.1em;
-    margin-top: 15px;
-    color: #e74c3c; /* 错误信息用红色 */
-}
-
-.status.success {
-    color: #2ecc71; /* 成功信息用绿色 */
-}
-
-/* 辅助：显示牌面文字信息 */
-.card-info {
-    position: absolute;
-    bottom: 2px;
-    left: 2px;
-    font-size: 10px;
-    background-color: rgba(255,255,255,0.7);
-    padding: 1px 2px;
-    border-radius: 2px;
-}
+/* ... (其他CSS代码) ... */
