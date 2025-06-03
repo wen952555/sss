@@ -1,117 +1,148 @@
 <template>
-  <div 
-    class="player-hand-container"
-    :data-segment-name="segmentName"
-    @dragover.prevent="onDragOverDesktop"
-    @drop="onDropDesktop"
-    @dragleave="onDragLeaveDesktop"
-    :class="{ 'drag-over': isDragOverDesktop }"
-    ref="handContainerElement"
+  <div
+    class="card"
+    :class="{ dragging: isBeingDragged }"
+    :draggable="!isTouchDevice"
+    @dragstart="onDragStart"
+    @touchstart.passive="onTouchStart"
+    ref="cardElement"
   >
-    <div
-      class="card-container"
-      :class="{ 'is-empty': cards.length === 0 }"
-    >
-      <CardComponent
-        v-for="card_item in cards" :key="card_item.id"
-        :card="card_item"
-        :draggable="draggableCards"
-        @customDragStart="passCustomDragStart"
-        @customDragEnd="passCustomDragEnd"
-        @customDragOverSegment="passCustomDragOverSegment"
-      />
-      <span v-if="cards.length === 0 && placeholderText" class="drop-placeholder">
-        {{ placeholderText }}
-      </span>
-    </div>
+    <img v-if="imageSrc" :src="imageSrc" :alt="altText" />
+    <span v-else>{{ card.displayValue }}{{ card.suitSymbol }}</span>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import CardComponent from './Card.vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
-  cards: { type: Array, default: () => [] },
-  placeholderText: { type: String, default: '' },
-  draggableCards: { type: Boolean, default: false },
-  droppable: { type: Boolean, default: true },
-  segmentName: { type: String, required: true }
+  card: { type: Object, required: true },
+});
+const emit = defineEmits(['customDragStart', 'customDragEnd', 'customDragOverSegment']);
+
+const imageSrc = computed(() => props.card && props.card.id ? `/cards/${props.card.id}.svg` : '');
+const altText = computed(() => `${props.card.value} of ${props.card.suit}`);
+const cardElement = ref(null);
+const isBeingDragged = ref(false);
+const isTouchDevice = ref(false);
+
+let touchStartX = 0;
+let touchStartY = 0;
+let elementStartX = 0;
+let elementStartY = 0;
+let draggedCardClone = null;
+
+onMounted(() => {
+  isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 });
 
-const emit = defineEmits(['cardDropped', 'cardDragStart', 'cardDragEnd', 'cardDragOverSegment']);
+onUnmounted(() => {
+  if (isTouchDevice.value) {
+      document.removeEventListener('touchmove', onDocumentTouchMove);
+      document.removeEventListener('touchend', onDocumentTouchEnd);
+      document.removeEventListener('touchcancel', onDocumentTouchEnd);
+  }
+});
 
-const isDragOverDesktop = ref(false);
-const handContainerElement = ref(null);
+function onDragStart(event) {
+  if (isTouchDevice.value) {
+      event.preventDefault();
+      return;
+  }
+  event.dataTransfer.setData('text/plain', JSON.stringify(props.card));
+  event.dataTransfer.effectAllowed = 'move';
+  emit('customDragStart', { card: props.card, event });
+}
 
-function onDragOverDesktop(event) {
-  if (props.droppable) {
-    event.preventDefault();
-    isDragOverDesktop.value = true;
+function onTouchStart(event) {
+  if (!isTouchDevice.value || event.touches.length !== 1) return;
+  
+  const touch = event.touches[0];
+  isBeingDragged.value = true;
+
+  if (cardElement.value) {
+    draggedCardClone = cardElement.value.cloneNode(true);
+    draggedCardClone.style.position = 'absolute';
+    draggedCardClone.style.zIndex = '1000';
+    draggedCardClone.style.pointerEvents = 'none';
+    draggedCardClone.style.opacity = '0.7';
+    document.body.appendChild(draggedCardClone);
+    
+    const rect = cardElement.value.getBoundingClientRect();
+    elementStartX = rect.left;
+    elementStartY = rect.top;
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    
+    cardElement.value.style.opacity = '0.3';
+    updateClonePosition(touch.clientX, touch.clientY);
+  }
+  
+  emit('customDragStart', { card: props.card, event });
+
+  document.addEventListener('touchmove', onDocumentTouchMove, { passive: false });
+  document.addEventListener('touchend', onDocumentTouchEnd);
+  document.addEventListener('touchcancel', onDocumentTouchEnd);
+}
+
+function updateClonePosition(currentX, currentY) {
+  if (draggedCardClone) {
+    const deltaX = currentX - touchStartX;
+    const deltaY = currentY - touchStartY;
+    draggedCardClone.style.left = `${elementStartX + deltaX}px`;
+    draggedCardClone.style.top = `${elementStartY + deltaY}px`;
   }
 }
-function onDragLeaveDesktop() {
-  isDragOverDesktop.value = false;
-}
-function onDropDesktop(event) {
-  if (props.droppable) {
-    event.preventDefault();
-    isDragOverDesktop.value = false;
-    const cardData = event.dataTransfer.getData('text/plain');
-    try {
-      const card = JSON.parse(cardData);
-      emit('cardDropped', { card, toSegment: props.segmentName, type: 'desktop' });
-    } catch (e) {
-      console.error("Failed to parse dropped card data:", e);
-    }
+
+function onDocumentTouchMove(event) {
+  if (!isBeingDragged.value || event.touches.length !== 1) return;
+  event.preventDefault(); 
+  
+  const touch = event.touches[0];
+  updateClonePosition(touch.clientX, touch.clientY);
+
+  if (draggedCardClone) {
+      draggedCardClone.style.display = 'none';
+      const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+      draggedCardClone.style.display = '';
+      
+      if (elementUnderTouch) {
+          const dropZone = elementUnderTouch.closest('.player-hand-container');
+          if (dropZone) {
+              const segmentName = dropZone.dataset.segmentName;
+              if(segmentName) {
+                  emit('customDragOverSegment', segmentName);
+              }
+          } else {
+              emit('customDragOverSegment', null);
+          }
+      }
   }
 }
 
-function passCustomDragStart(payload) {
-  emit('cardDragStart', { ...payload, fromSegment: props.segmentName });
-}
-function passCustomDragEnd(payload) {
-  emit('cardDragEnd', payload);
-}
-function passCustomDragOverSegment(segmentName) {
-    emit('cardDragOverSegment', segmentName);
+function onDocumentTouchEnd(event) {
+  if (!isBeingDragged.value) return;
+
+  if(cardElement.value) {
+      cardElement.value.style.opacity = '1';
+  }
+  
+  if (draggedCardClone) {
+    draggedCardClone.remove();
+    draggedCardClone = null;
+  }
+  
+  isBeingDragged.value = false;
+  emit('customDragEnd', { card: props.card, event });
+
+  document.removeEventListener('touchmove', onDocumentTouchMove);
+  document.removeEventListener('touchend', onDocumentTouchEnd);
+  document.removeEventListener('touchcancel', onDocumentTouchEnd);
 }
 </script>
 
 <style scoped>
-.player-hand-container {
-  margin-bottom: 10px;
-}
-.card-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  min-height: 90px;
-  border: 1px dashed #b0bec5;
-  padding: 8px;
-  border-radius: 4px;
-  position: relative;
-  align-items: flex-start;
-  justify-content: flex-start;
-  background-color: rgba(255,255,255,0.5);
-}
-.card-container.is-empty {
-    background-color: rgba(236, 239, 241, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.drag-over {
-  border-color: #00796b;
-  border-style: solid;
-  background-color: rgba(178, 223, 219, 0.5);
-}
-.drop-placeholder {
-  color: #78909c;
-  font-style: italic;
-  text-align: center;
-  width: 100%;
-  font-size: 0.9em;
-  padding: 10px 0;
+.card {
+  touch-action: none;
 }
 </style>
