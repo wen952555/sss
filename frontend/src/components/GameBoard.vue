@@ -1,5 +1,6 @@
 <template>
   <div class="game-board-container">
+    <!-- 游戏控制按钮 -->
     <div v-if="currentGameState === 'waiting' && isRoomHost && canStartGame" class="game-controls">
       <button @click="$emit('startGame')" class="start-game-button">开始游戏</button>
     </div>
@@ -7,6 +8,19 @@
     <div v-if="playerHandInitial.length > 0 && (currentGameState === 'playing' || currentGameState === 'arranging' || currentGameState === 'showdown')" class="player-area">
       <h3 v-if="currentGameState !== 'showdown'">你的手牌 (拖拽理牌)</h3>
 
+      <!-- 1. 头墩 (现在显示在最上面) -->
+      <PlayerHandComponent
+        :title="currentGameState === 'showdown' ? '你的头墩' : '头墩 (3张)'"
+        :cards="arrangedHand.front"
+        :draggableCards="currentGameState !== 'showdown' && !currentPlayerIsReady"
+        :droppable="currentGameState !== 'showdown' && !currentPlayerIsReady"
+        segmentName="front"
+        @cardDropped="onCardDropped"
+        @cardDragStart="onCardDragStart"
+        class="dun-area" <!-- 可以用一个通用class给墩加样式 -->
+      />
+
+      <!-- 2. 初始手牌区 / 或形成后的中墩 (现在显示在头墩下方) -->
       <PlayerHandComponent
         :title="initialOrMiddleDunTitle"
         :cards="cardsForMiddleOrInitialArea"
@@ -19,16 +33,7 @@
       />
 
       <div class="segments" :class="{ 'showdown-view': currentGameState === 'showdown' }">
-        <PlayerHandComponent
-          :title="currentGameState === 'showdown' ? '你的头墩' : '头墩 (3张)'"
-          :cards="arrangedHand.front"
-          :draggableCards="currentGameState !== 'showdown' && !currentPlayerIsReady"
-          :droppable="currentGameState !== 'showdown' && !currentPlayerIsReady"
-          segmentName="front"
-          @cardDropped="onCardDropped"
-          @cardDragStart="onCardDragStart"
-        />
-        
+        <!-- 中墩 (只有在摊牌时，且动态中墩激活时，作为一个独立的视觉区域显示) -->
         <PlayerHandComponent
           v-if="isDynamicMiddleDunActive && currentGameState === 'showdown'"
           title="你的中墩"
@@ -36,8 +41,10 @@
           :draggableCards="false"
           :droppable="false"
           segmentName="middle_showdown_only"
+          class="dun-area"
         />
 
+        <!-- 3. 尾墩 (现在是第三个显示的墩/区域) -->
         <PlayerHandComponent
           :title="currentGameState === 'showdown' ? '你的尾墩' : '尾墩 (5张)'"
           :cards="arrangedHand.back"
@@ -46,6 +53,7 @@
           segmentName="back"
           @cardDropped="onCardDropped"
           @cardDragStart="onCardDragStart"
+          class="dun-area"
         />
       </div>
 
@@ -87,7 +95,7 @@
 </template>
 
 <script setup>
-// Script部分保持不变
+// Script 部分保持不变
 import { computed } from 'vue';
 import PlayerHandComponent from './PlayerHand.vue';
 
@@ -118,7 +126,9 @@ const cardsForMiddleOrInitialArea = computed(() => {
   } else {
     const assignedToFrontIds = new Set(props.arrangedHand.front.map(c => c.id));
     const assignedToBackIds = new Set(props.arrangedHand.back.map(c => c.id));
-    return props.playerHandInitial.filter(
+    // 确保 playerHandInitial 是一个数组
+    const initialHand = Array.isArray(props.playerHandInitial) ? props.playerHandInitial : [];
+    return initialHand.filter(
       c => !assignedToFrontIds.has(c.id) && !assignedToBackIds.has(c.id)
     );
   }
@@ -142,7 +152,7 @@ function onSubmitHand() {
 </script>
 
 <style scoped>
-/* Style部分保持不变 */
+/* Style 部分可以保持不变，或者根据新的布局微调间距 */
 .game-board-container {
   border: 1px solid #90a4ae;
   padding: 20px;
@@ -153,11 +163,17 @@ function onSubmitHand() {
 .player-area, .showdown-area, .game-controls {
   margin-bottom: 20px;
 }
-.initial-hand-area {
-  margin-bottom: 20px;
+
+/* 可以为墩区域和初始手牌区添加一些通用样式或特定样式 */
+.dun-area {
+  margin-bottom: 10px; /* 例如，墩之间的间距 */
 }
+.initial-hand-area {
+  margin-bottom: 15px; /* 初始手牌区和下方墩的间距 */
+}
+
 .segments {
-  margin-top: 15px;
+  /* margin-top: 15px;  由于上面有了 initial-hand-area，这个可能不需要了 */
   display: flex;
   flex-direction: column;
   gap: 10px;
