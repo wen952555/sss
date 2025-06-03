@@ -1,0 +1,25 @@
+/* frontend/src/components/HandDisplay.css */
+.hand-display-container {
+    border: 1px solid #eee;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.hand-display-container h4 {
+    margin-top: 0;
+    color: #333;
+}
+
+.cards-wrapper {
+    display: flex;
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 5px; /* 卡牌之间的间隙 */
+}
+
+.hand-evaluation {
+    font-style: italic;
+    color: #555;
+    font-size: 0.9em;
+}
