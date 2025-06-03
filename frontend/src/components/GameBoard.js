@@ -72,7 +72,7 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             if (targetDun === DUN_TARGETS.MIDDLE_DUN_AS_PLACEMENT && !middleDunIsActivePlacementArea) {
                 setError("请先将头墩和尾墩摆满 (头3张，尾5张)，才能摆放中墩。");
             }
-            setSelectedCards([]); // 清空选择，因为放置操作未执行
+            setSelectedCards([]);
             return;
         }
 
@@ -90,25 +90,19 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
     const returnCardFromDunToPool = (cardToRemove, sourceDunName) => {
         if (isAiProcessing || isSubmitting) return;
         setError('');
-        let setDunState; // 只解构需要的 setDunState
+        let setDunState;
 
         if (sourceDunName === DUN_NAMES.FRONT) { 
-            // eslint-disable-next-line no-unused-vars
-            let _unusedDunCards; // 明确告诉 ESLint 我们知道它未使用
-            [_unusedDunCards, setDunState] = [frontDunCards, setFrontDunCards]; 
+            [, setDunState] = [frontDunCards, setFrontDunCards]; // 使用空占位符忽略第一个元素
         } else if (sourceDunName === DUN_NAMES.MIDDLE && middleDunIsActivePlacementArea) { 
-            // eslint-disable-next-line no-unused-vars
-            let _unusedDunCards;
-            [_unusedDunCards, setDunState] = [middleDunCards, setMiddleDunCards]; 
+            [, setDunState] = [middleDunCards, setMiddleDunCards]; // 使用空占位符
         } else if (sourceDunName === DUN_NAMES.BACK) { 
-            // eslint-disable-next-line no-unused-vars
-            let _unusedDunCards;
-            [_unusedDunCards, setDunState] = [backDunCards, setBackDunCards]; 
+            [, setDunState] = [backDunCards, setBackDunCards]; // 使用空占位符
         } else {
             return; 
         }
         
-        if (!setDunState) return; // 防御性检查
+        if (!setDunState) return;
 
         setDunState(prevDun => prevDun.filter(c => c.id !== cardToRemove.id));
         setCurrentHandPool(prevPool => sortHand([...prevPool, cardToRemove]));
@@ -136,7 +130,7 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             if (!initialHand || initialHand.length === 0) {
                 setIsAiProcessing(false);
                 setError("AI分牌时手牌数据丢失，请重试。");
-                if (initialHand && initialHand.length === 13) { // 尝试恢复手牌池
+                if (initialHand && initialHand.length === 13) {
                      setCurrentHandPool(sortHand([...initialHand]));
                 }
                 return;
