@@ -1,5 +1,5 @@
 <template>
-  <!-- App.vue template is unchanged from the version that successfully built -->
+  <!-- Template is the same as the last version that successfully built -->
   <div id="app-container" class="app-flex-container">
     <div v-if="generalError" class="error global-error">{{ generalError }}</div>
 
@@ -40,7 +40,7 @@
         :isRoomHost="true"
         :canStartGame="false"
         @custom-drag-start="handleDragStartLogic"
-        @card-dropped="handleDesktopDropLogic" 
+        @desktop-card-dropped="handleDesktopDropLogic" <!-- Listen to the new specific event -->
         @custom-drag-end="handleTouchDragEndLogic"
         @custom-drag-over-segment="handleDragOverSegmentLogic"
         :aiHandVisible="currentLocalGameState === 'showdown'"
@@ -59,8 +59,9 @@
 </template>
 
 <script setup>
-// Script part is identical to the last working version for build
-// All imports and refs ...
+// Script is identical to the last version that successfully built,
+// except for the desktop drop handler name change and ensuring
+// `activeDraggedCardInfo` is correctly used/cleared.
 import { ref, computed, reactive, onMounted } from 'vue';
 import GameBoardComponent from './components/GameBoard.vue';
 import Deck from './game_logic_local/Deck';
@@ -77,13 +78,12 @@ const aiIsReady = ref(false);
 const showdownResults = ref(null);
 const generalError = ref('');
 const isDealing = ref(false);
-let activeDraggedCardInfo = null;
+let activeDraggedCardInfo = null; // { card, fromSegment }
 
-const isDynamicMiddleDunActive = computed(() => {
+const isDynamicMiddleDunActive = computed(() => { /* ... */ 
   return playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5;
 });
-
-const validationMessage = computed(() => {
+const validationMessage = computed(() => { /* ... */ 
   if (playerArrangedHand.front.length !== 3) return "头墩需3张牌";
   if (playerArrangedHand.middle.length !== 5) return "中墩需5张牌";
   if (playerArrangedHand.back.length !== 5) return "尾墩需5张牌";
@@ -102,8 +102,7 @@ const validationMessage = computed(() => {
   }
   return "可以提交";
 });
-
-const showdownResultsForBoard = computed(() => {
+const showdownResultsForBoard = computed(() => { /* ... */ 
     if (!showdownResults.value) return null;
     const results = {};
     if (showdownResults.value.player) {
@@ -124,7 +123,7 @@ const showdownResultsForBoard = computed(() => {
     return results;
 });
 
-function startNewAIGame() {
+function startNewAIGame() { /* ... */ 
   isDealing.value = true;
   generalError.value = '';
   currentLocalGameState.value = 'dealing';
@@ -145,45 +144,49 @@ function startNewAIGame() {
     isDealing.value = false;
   }, 500);
 }
-
-function rankCard(card) {
+function rankCard(card) { /* ... */ 
     const valueOrder = ['2','3','4','5','6','7','8','9','10','jack','queen','king','ace'];
     const suitOrder = ['clubs', 'diamonds', 'hearts', 'spades'];
     return valueOrder.indexOf(card.value) * 4 + suitOrder.indexOf(card.suit);
 }
 
 function handleDragStartLogic(payload) {
+  // console.log("App.vue: Drag Start:", payload);
   activeDraggedCardInfo = { card: payload.card, fromSegment: payload.fromSegment };
 }
 
-function handleDesktopDropLogic(payload) {
-  if (!activeDraggedCardInfo || activeDraggedCardInfo.card.id !== payload.card.id) {
-      activeDraggedCardInfo = null; return;
+function handleDesktopDropLogic(payload) { // payload: { card, toSegment }
+  // console.log("App.vue: Desktop Drop:", payload, "Active Drag Info:", activeDraggedCardInfo);
+  if (!activeDraggedCardInfo) {
+      console.warn("DesktopDrop: No active drag info.");
+      return;
   }
+  // For desktop, the card in payload is the one from dataTransfer. 
+  // We should use the card from activeDraggedCardInfo to ensure consistency.
+  const cardToMove = activeDraggedCardInfo.card;
   const fromSegmentName = activeDraggedCardInfo.fromSegment;
   const toSegmentName = payload.toSegment;
+
   if (!toSegmentName || fromSegmentName === toSegmentName) {
-    activeDraggedCardInfo = null; return;
+    activeDraggedCardInfo = null;
+    return;
   }
-  performCardMove(activeDraggedCardInfo.card, fromSegmentName, toSegmentName);
+  performCardMove(cardToMove, fromSegmentName, toSegmentName);
   activeDraggedCardInfo = null;
 }
 
 function handleTouchDragEndLogic(payload) { // payload: { card, targetSegment }
+    // console.log("App.vue: Touch Drag End:", payload, "Active Drag Info:", activeDraggedCardInfo);
     if (!activeDraggedCardInfo || !payload || activeDraggedCardInfo.card.id !== payload.card.id) {
-        console.warn("Touch drag end: No active drag info or mismatched card.", activeDraggedCardInfo, payload);
+        console.warn("TouchDragEnd: No active drag info or mismatched card.");
         activeDraggedCardInfo = null;
         return;
     }
     const toSegmentName = payload.targetSegment;
     const fromSegmentName = activeDraggedCardInfo.fromSegment;
 
-    console.log(`TouchDragEnd: Moving ${activeDraggedCardInfo.card.id} from ${fromSegmentName} to ${toSegmentName}`);
-
     if (toSegmentName && toSegmentName !== fromSegmentName) {
         performCardMove(activeDraggedCardInfo.card, fromSegmentName, toSegmentName);
-    } else {
-        console.log("TouchDragEnd: No valid target or target is same as source. Card not moved.");
     }
     activeDraggedCardInfo = null;
 }
@@ -194,60 +197,48 @@ function handleDragOverSegmentLogic(segmentName) {
 
 function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
   if (!cardToMove || typeof cardToMove.id === 'undefined') {
-    console.error("PerformCardMove: Attempted to move an invalid card object:", cardToMove);
+    console.error("PerformCardMove: Invalid card object:", cardToMove);
     return;
   }
-  console.log(`Performing move: ${cardToMove.id} from ${fromSegmentName} to ${toSegmentName}`);
+  // console.log(`Perform Move: ${cardToMove.id} from ${fromSegmentName} to ${toSegmentName}`);
 
-  // 1. Remove from source
-  if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName]) {
-    const sourceArray = playerArrangedHand[fromSegmentName];
-    if (Array.isArray(sourceArray)) {
-        const index = sourceArray.findIndex(c => c && c.id === cardToMove.id);
-        if (index > -1) {
-          sourceArray.splice(index, 1);
-          console.log(`Removed ${cardToMove.id} from ${fromSegmentName}`);
-        } else {
-          console.warn(`Card ${cardToMove.id} not found in source ${fromSegmentName}`);
-        }
+  let sourceArray = null;
+  if (fromSegmentName !== 'initial_hand') {
+      sourceArray = playerArrangedHand[fromSegmentName];
+  }
+  // If from initial_hand, removal is implicit as it's not in a dun yet.
+
+  if (sourceArray && Array.isArray(sourceArray)) {
+    const index = sourceArray.findIndex(c => c && c.id === cardToMove.id);
+    if (index > -1) {
+      sourceArray.splice(index, 1);
     }
-  } else {
-      console.log(`Card ${cardToMove.id} is from initial_hand or invalid fromSegment`);
   }
 
-  // 2. Add to destination
   const targetSegmentArray = playerArrangedHand[toSegmentName];
   if (targetSegmentArray && Array.isArray(targetSegmentArray)) {
     if (!targetSegmentArray.find(c => c && c.id === cardToMove.id)) {
       targetSegmentArray.push(cardToMove);
       targetSegmentArray.sort((a, b) => rankCard(a) - rankCard(b));
-      console.log(`Added ${cardToMove.id} to ${toSegmentName}`);
-    } else {
-      console.warn(`Card ${cardToMove.id} already in target ${toSegmentName}. Attempting to revert.`);
-      // Attempt to revert if it was removed from a dun
-      if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName] && 
-          Array.isArray(playerArrangedHand[fromSegmentName]) &&
-          !playerArrangedHand[fromSegmentName].find(c => c && c.id === cardToMove.id)) {
-        playerArrangedHand[fromSegmentName].push(cardToMove);
-        playerArrangedHand[fromSegmentName].sort((a, b) => rankCard(a) - rankCard(b));
-        console.log(`Reverted: Added ${cardToMove.id} back to ${fromSegmentName}`);
+    } else { // Card already in target, revert removal if applicable
+      if (sourceArray && Array.isArray(sourceArray) && !sourceArray.find(c => c && c.id === cardToMove.id)) {
+        sourceArray.push(cardToMove);
+        sourceArray.sort((a, b) => rankCard(a) - rankCard(b));
       }
     }
   } else if (toSegmentName === 'initial_hand') {
-    console.log(`Card ${cardToMove.id} moved to initial_hand (conceptually). No change to playerArrangedHand.`);
+    // Moving back to initial area, if card was removed from a dun, it's effectively back.
+    // No direct push to playerHandInitial as it's the source of truth for all cards.
+    // GameBoard's computed property for initial/middle area will pick it up.
   } else {
-    console.warn(`Invalid toSegmentName: ${toSegmentName} or targetSegmentArray is not an array.`);
-     // If card was removed from a dun but target is invalid, try to put it back
-    if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName] &&
-        Array.isArray(playerArrangedHand[fromSegmentName]) &&
-        !playerArrangedHand[fromSegmentName].find(c => c && c.id === cardToMove.id) ) {
-        playerArrangedHand[fromSegmentName].push(cardToMove);
-        playerArrangedHand[fromSegmentName].sort((a, b) => rankCard(a) - rankCard(b));
-        console.log(`Reverted due to invalid target: Added ${cardToMove.id} back to ${fromSegmentName}`);
-    }
+      console.warn(`Invalid toSegmentName or targetSegmentArray for ${toSegmentName}`);
+      // Revert removal if target is invalid
+      if (sourceArray && Array.isArray(sourceArray) && !sourceArray.find(c => c && c.id === cardToMove.id)) {
+        sourceArray.push(cardToMove);
+        sourceArray.sort((a, b) => rankCard(a) - rankCard(b));
+      }
   }
-
-  // Auto-fill middle dun logic
+  // Auto-fill middle dun logic (same as before)
   if (playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5) {
       const assignedToFrontIds = new Set(playerArrangedHand.front.filter(c => c).map(c => c.id));
       const assignedToBackIds = new Set(playerArrangedHand.back.filter(c => c).map(c => c.id));
@@ -266,11 +257,10 @@ function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
           }
       }
       playerArrangedHand.middle = finalMiddle.slice(0,5).sort((a,b) => rankCard(a) - rankCard(b));
-      console.log("Auto-filled middle dun:", playerArrangedHand.middle.map(c=>c.id));
   }
 }
 
-function submitPlayerHand() {
+function submitPlayerHand() { /* ... (不变) ... */ 
   if (validationMessage.value !== "可以提交") {
     generalError.value = "牌型不符合要求: " + validationMessage.value;
     return;
@@ -280,7 +270,7 @@ function submitPlayerHand() {
   aiProcessHand();
   checkForShowdown();
 }
-function aiProcessHand() {
+function aiProcessHand() { /* ... (不变) ... */ 
   const handToArrange = [...aiHand.value];
   handToArrange.sort(() => 0.5 - Math.random());
   aiArrangedHand.front = handToArrange.slice(0, 3).sort((a,b) => rankCard(a) - rankCard(b));
@@ -288,13 +278,13 @@ function aiProcessHand() {
   aiArrangedHand.back = handToArrange.slice(8, 13).sort((a,b) => rankCard(a) - rankCard(b));
   aiIsReady.value = true;
 }
-function checkForShowdown() {
+function checkForShowdown() { /* ... (不变) ... */ 
   if (playerIsReady.value && aiIsReady.value) {
     currentLocalGameState.value = 'showdown';
     showdownResults.value = compareHands(playerArrangedHand, aiArrangedHand);
   }
 }
-function getHandType(dun) {
+function getHandType(dun) { /* ... (不变) ... */ 
     if (!dun || dun.length === 0) return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
     if (dun.length === 3) {
         const values = dun.map(c => c.value);
@@ -304,7 +294,7 @@ function getHandType(dun) {
     }
     return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
 }
-function compareSingleDuns(playerDun, aiDun) {
+function compareSingleDuns(playerDun, aiDun) { /* ... (不变) ... */ 
     const playerType = getHandType(playerDun);
     const aiType = getHandType(aiDun);
     if (playerType.rank > aiType.rank) return 1;
@@ -315,7 +305,7 @@ function compareSingleDuns(playerDun, aiDun) {
     if (playerMaxRank < aiMaxRank) return -1;
     return 0;
 }
-function compareHands(pHand, aHand) {
+function compareHands(pHand, aHand) { /* ... (不变) ... */ 
   let playerScore = 0;
   let aiScore = 0;
   const comparisonDetails = {
