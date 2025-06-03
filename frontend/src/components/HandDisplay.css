@@ -1,84 +1,83 @@
 /* frontend/src/components/HandDisplay.css */
-.HandDisplay-container { /* ★★★ 组件的根类名通常用 PascalCase 或与组件名一致 ★★★ */
-    /* border: 1px solid #4f545c; */ /* 移除外层边框，让 .dun-area 的边框作为主视觉 */
-    padding: 5px; /* 稍微调整内边距 */
-    /* margin-bottom: 8px; */ /* 移除，间距由父组件控制 */
-    border-radius: 4px; /* 统一圆角 */
-    /* background-color: rgba(47, 49, 54, 0.7); */ /* 移除背景，让父组件背景透出 */
-    display: flex; /* 主容器使用flex，方便标题和cards-wrapper对齐 */
-    flex-direction: column; /* 标题和卡牌区垂直排列 */
-    align-items: flex-start; /* 内容默认左对齐 */
-    min-width: 0; /* 允许在flex item中收缩 */
-}
-
-/* 针对特定墩的 HandDisplay 进行微调，例如AI对手的牌墩 */
-.hand-display-ai-opponent .HandDisplay-container {
-    padding: 2px; /* AI的牌墩更紧凑 */
-}
-.hand-display-ai-opponent .HandDisplay-container h4 {
-    font-size: 0.75em;
-    margin-bottom: 2px;
-}
-
-
-.HandDisplay-container h4 { /* 墩的标题，如 "头墩 (3张)" */
-    margin-top: 0;
-    margin-bottom: 4px;
-    color: #c7c9cc;
-    font-size: 0.85em; /* 减小字体 */
-    font-weight: 500;
-    padding: 0 2px; /* 标题左右轻微留白 */
-    white-space: nowrap;
-}
-
-.cards-wrapper { /* 卡牌的直接容器 */
+.hand-display-container {
+    padding: 5px;
+    border-radius: 4px;
     display: flex;
-    flex-wrap: nowrap; /* 墩内卡牌不换行 */
-    justify-content: flex-start; /* 卡牌默认从左开始排列 */
-    align-items: center;
-    /* min-height: 90px; */ /* ★★★ 移除固定的 min-height ★★★ */
-    /* 高度将由内部卡牌撑开，或者由 Card.css 中的卡牌高度决定 */
-    width: auto; /* ★★★ 宽度由实际卡牌数量和重叠决定，而不是固定或100% ★★★ */
-    /* 如果希望卡牌容器水平居中在 .HandDisplay-container 内（当卡牌总宽度小于容器时） */
-    /* margin: 0 auto;  */ /* 取消这个，让dun-area控制 */
-    position: relative; /* 为了卡牌的 z-index 和重叠 */
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0; 
+    position: relative; /* ★★★ 需要相对定位，为了背景文字的绝对定位 ★★★ */
+    /* 移除背景和边框，让父级 .dun-area 控制 */
 }
 
-/* 卡牌重叠效果 (保持不变或微调) */
-.cards-wrapper > .card:not(:first-child) {
-    margin-left: -35px; /* ★★★ 增加重叠，数值可调整，卡牌宽60px，重叠35px则露出25px ★★★ */
+/* ★★★ 新增/修改：墩的文字说明，作为背景层 ★★★ */
+.dun-title-background-text {
+    position: absolute; /* 相对于 .hand-display-container 定位 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* 文字居中 */
+    font-size: 1.5em; /* 增大背景文字 */
+    color: rgba(114, 118, 125, 0.3); /* 更淡、半透明的文字颜色 */
+    font-weight: bold;
+    z-index: 1; /* ★★★ 确保在卡牌之下 ★★★ */
+    pointer-events: none; /* 确保文字不干扰鼠标对卡牌的操作 */
+    white-space: nowrap; /* 防止文字换行 */
+    /* 可以根据需要添加更多样式，如 text-shadow */
 }
-.cards-wrapper > .card.empty-slot-placeholder:not(:first-child),
-.cards-wrapper > .card.empty-slot:not(:first-child) { /* 确保空槽也不重叠 */
-    margin-left: 1px; 
+/* 手牌区的特定文字样式，如果需要更突出 */
+.hand-display-手牌 .dun-title-background-text,
+.hand-display-手牌区-请先摆满头尾墩 .dun-title-background-text, /* 兼容之前的类名 */
+.hand-display-中墩候选 .dun-title-background-text {
+    font-size: 1.8em; /* 手牌区的背景文字可以更大 */
+    color: rgba(114, 118, 125, 0.2); /* 更淡 */
 }
-
-.hand-evaluation {
+/* 牌型评估文字的样式 (如果需要显示在背景文字旁边或下方) */
+.hand-display-container .hand-evaluation-background-text { /* 和主标题分开 */
+    position: absolute;
+    bottom: 8px; /* 定位在容器底部 */
+    right: 8px; /* 定位在容器右侧 */
     font-style: italic;
-    color: #a0a3a7;
-    font-size: 0.75em; /* 减小字体 */
-    margin-top: 2px;
-    margin-bottom: 2px; /* 减小与下方卡牌的间距 */
-    text-align: right;
-    width: 100%; /* 确保牌型评估在标题下方，并靠右 */
+    color: rgba(160, 163, 167, 0.4);
+    font-size: 1em;
+    z-index: 1;
+    pointer-events: none;
 }
 
-/* 用于拖拽时目标区域的高亮 (保持不变) */
+
+.cards-wrapper {
+    display: flex;
+    flex-wrap: nowrap; 
+    justify-content: flex-start; /* ★★★ 卡牌向左对齐 ★★★ */
+    align-items: center;
+    width: auto; 
+    min-height: 184px; /* ★★★ 设置一个最小高度以容纳卡牌 (180px + 2*margin + 2*border) ★★★ */
+                               /* 或者直接使用 height: 180px; 如果不希望有额外空间 */
+    padding: 2px 0;   /* 上下轻微内边距，确保卡牌边框可见 */
+    position: relative; /* 确保 z-index 生效 */
+    z-index: 2;         /* ★★★ 卡牌容器在背景文字之上 ★★★ */
+}
+
+/* 卡牌重叠效果 - 新的卡牌宽度是 128px */
+.cards-wrapper > .card:not(:first-child) {
+    margin-left: -88px; /* ★★★ 调整重叠：128 - 88 = 40px 露出部分 ★★★ */
+                         /* 您可以调整这个值，例如 -98px 会露出30px */
+}
+/* 空槽不重叠 (如果还使用空槽的话，但我们上一步移除了) */
+.cards-wrapper > .card.empty-slot-placeholder:not(:first-child),
+.cards-wrapper > .card.empty-slot:not(:first-child) {
+    margin-left: 2px; /* 保持空槽之间的正常间距 */
+}
+
+
+/* 拖拽高亮和禁用样式 (保持不变) */
 .cards-wrapper.dragging-over {
-    background-color: rgba(114, 137, 218, 0.15); /* 更淡的高亮 */
-    outline: 1px dashed #7289da; /* 使用 outline 代替 border，不影响布局 */
-    outline-offset: -1px; /* 让 outline 在内部 */
+    background-color: rgba(114, 137, 218, 0.1); /* 更淡的高亮 */
+    outline: 2px dashed #7289da; 
+    outline-offset: -2px; 
 }
 .cards-wrapper.drop-disabled {
-    background-color: rgba(79, 84, 92, 0.1);
+    background-color: rgba(79, 84, 92, 0.05); /* 非常淡的禁用背景 */
     cursor: not-allowed;
 }
-.empty-slot-placeholder { /* 保持不变 */
-    width: 60px; 
-    height: 85px; 
-    background-color: rgba(79, 84, 92, 0.3);
-    border: 1px dashed #6a7078;
-    border-radius: 4px;
-    margin: 1px; 
-    display: inline-block; 
-}
+
+/* 移除 .empty-slot-placeholder 样式，因为 HandDisplay.js 中已移除 */
