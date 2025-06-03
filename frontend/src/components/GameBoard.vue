@@ -1,13 +1,12 @@
 <template>
-  <div class="game-board-container">
-    <!-- 游戏控制按钮 -->
+  <div class="game-board-container game-board-flex-fill"> <!-- 添加 class -->
+    <!-- ... (游戏控制按钮不变) ... -->
     <div v-if="currentGameState === 'waiting' && isRoomHost && canStartGame" class="game-controls">
       <button @click="$emit('startGame')" class="start-game-button">开始游戏</button>
     </div>
 
-    <div v-if="playerHandInitial.length > 0 && (currentGameState === 'playing' || currentGameState === 'arranging' || currentGameState === 'showdown')" class="player-area">
-      <!-- 外部标题已移除 -->
-
+    <div v-if="playerHandInitial.length > 0 && (currentGameState === 'playing' || currentGameState === 'arranging' || currentGameState === 'showdown')" class="player-area player-area-flex-fill"> <!-- 添加 class -->
+      
       <!-- 1. 头墩 -->
       <PlayerHandComponent
         :placeholderText="placeholderForFront"
@@ -29,12 +28,11 @@
         :segmentName="isDynamicMiddleDunActive ? 'middle' : 'initial_hand'"
         @cardDropped="onCardDropped"
         @cardDragStart="onCardDragStart"
-        class="initial-hand-area"
+        class="initial-hand-area dun-area-expand" <!-- 添加 class, 让这个区域能扩展 -->
       />
 
-      <!-- segments div 包裹尾墩和摊牌时的中墩 -->
       <div class="segments" :class="{ 'showdown-view': currentGameState === 'showdown' }">
-        <!-- 中墩 (只有在摊牌时，且动态中墩激活时，作为一个独立的视觉区域显示) -->
+        <!-- 中墩 (摊牌时独立显示) -->
         <PlayerHandComponent
           v-if="isDynamicMiddleDunActive && currentGameState === 'showdown'"
           placeholderText="中墩 (5张)"
@@ -56,27 +54,28 @@
           @cardDragStart="onCardDragStart"
           class="dun-area"
         />
-      </div> <!-- Correctly closing the .segments div -->
+      </div>
 
       <button
         v-if="currentGameState === 'playing' && !currentPlayerIsReady"
         @click="onSubmitHand"
-        :disabled="arrangedHand.front.length !== 3 || arrangedHand.middle.length !== 5 || arrangedHand.back.length !== 5"
+        :disabled="validationMessage !== '可以提交'" <!-- 直接使用 validationMessage -->
         class="submit-hand-button"
       >
         提交牌型 {{ validationMessage !== '可以提交' ? '('+validationMessage+')' : '' }}
       </button>
       <p v-if="currentPlayerIsReady && currentGameState === 'playing'">已提交，等待 AI...</p>
-    </div> <!-- Correctly closing the .player-area div -->
-    <div v-else-if="currentGameState === 'dealing'">
+    </div>
+    <div v-else-if="currentGameState === 'dealing'" class="message-area">
         <p>正在发牌，请稍候...</p>
     </div>
-     <div v-else-if="playerHandInitial.length === 0 && (currentGameState === 'waiting' || currentGameState === 'idle' || currentGameState === 'finished')">
+     <div v-else-if="playerHandInitial.length === 0 && (currentGameState === 'waiting' || currentGameState === 'idle' || currentGameState === 'finished')" class="message-area">
         <p v-if="currentGameState === 'idle'">等待开始新牌局...</p>
         <p v-else>等待游戏开始...</p>
     </div>
 
     <div v-if="showdownResults && (currentGameState === 'showdown' || currentGameState === 'finished')" class="showdown-area">
+        <!-- ... (showdown 内容不变) ... -->
         <h3>比牌结果</h3>
         <div v-if="showdownResults.comparisonDetails" class="comparison-summary">
             <p>头墩: {{ showdownResults.comparisonDetails.front }}</p>
@@ -91,11 +90,11 @@
             <PlayerHandComponent placeholderText="AI 尾墩" :cards="aiArrangedHand.back" :draggableCards="false" :droppable="false" segmentName="ai-back"/>
         </div>
     </div>
-  </div> <!-- Correctly closing the .game-board-container div -->
+  </div>
 </template>
 
 <script setup>
-// Script 部分保持不变
+// ... (script 内容不变，除了 validationMessage 的使用)
 import { computed } from 'vue';
 import PlayerHandComponent from './PlayerHand.vue';
 
@@ -104,7 +103,7 @@ const props = defineProps({
   arrangedHand: { type: Object, default: () => ({ front: [], middle: [], back: [] }) },
   currentGameState: String,
   currentPlayerIsReady: Boolean,
-  validationMessage: String,
+  validationMessage: String, // 这个 prop 现在直接用于按钮的 disabled 状态和提示
   showdownResults: Object,
   isRoomHost: Boolean,
   canStartGame: Boolean,
@@ -115,12 +114,12 @@ const props = defineProps({
 
 const emit = defineEmits(['cardDragStart', 'cardDropped', 'submitHand', 'startGame']);
 
-const initialOrMiddleDunTitle = computed(() => {
+const initialOrMiddleDunTitle = computed(() => { /* ... (不变) ... */
   if (props.currentGameState === 'showdown' && props.isDynamicMiddleDunActive) return "你的中墩";
   return props.isDynamicMiddleDunActive ? `中墩 (${props.arrangedHand.middle.length} cards)` : `手牌区/未分配 (${cardsForMiddleOrInitialArea.value.length} cards)`;
 });
 
-const cardsForMiddleOrInitialArea = computed(() => {
+const cardsForMiddleOrInitialArea = computed(() => { /* ... (不变) ... */
   if (props.isDynamicMiddleDunActive) {
     return props.arrangedHand.middle;
   } else {
@@ -133,31 +132,29 @@ const cardsForMiddleOrInitialArea = computed(() => {
   }
 });
 
-const placeholderForFront = computed(() => {
+const placeholderForFront = computed(() => { /* ... (不变) ... */
     const count = props.arrangedHand.front.length;
     if (props.currentGameState === 'showdown') return `你的头墩 (${count}/3)`;
     return `头墩 (${count}/3) - 拖拽牌到这里`;
 });
 
-const placeholderForInitialOrMiddle = computed(() => {
+const placeholderForInitialOrMiddle = computed(() => { /* ... (不变) ... */
     const currentCards = cardsForMiddleOrInitialArea.value;
     const count = currentCards.length;
     if (props.currentGameState === 'showdown' && props.isDynamicMiddleDunActive) return `你的中墩 (${count}/5)`;
     
     const baseTitle = props.isDynamicMiddleDunActive ? `中墩` : `手牌区/未分配`;
-    // Corrected requiredCount logic for initial/middle area
     let requiredCount;
     if (props.isDynamicMiddleDunActive) {
         requiredCount = 5;
     } else {
-        // Calculate remaining cards for the initial hand area
         const initialTotal = Array.isArray(props.playerHandInitial) ? props.playerHandInitial.length : 0;
         requiredCount = initialTotal - props.arrangedHand.front.length - props.arrangedHand.back.length;
     }
     return `${baseTitle} (${count}/${requiredCount > 0 ? requiredCount : 0}) ${props.isDynamicMiddleDunActive || count > 0 ? '' : '- 拖拽牌到这里'}`;
 });
 
-const placeholderForBack = computed(() => {
+const placeholderForBack = computed(() => { /* ... (不变) ... */
     const count = props.arrangedHand.back.length;
     if (props.currentGameState === 'showdown') return `你的尾墩 (${count}/5)`;
     return `尾墩 (${count}/5) - 拖拽牌到这里`;
@@ -169,59 +166,92 @@ function onCardDragStart(payload) {
     emit('card-drag-start', payload);
   }
 }
-
 function onCardDropped(payload) {
   if ((props.currentGameState === 'playing' || props.currentGameState === 'arranging') && !props.currentPlayerIsReady) {
     emit('card-dropped', payload);
   }
 }
-
 function onSubmitHand() {
     emit('submit-hand');
 }
 </script>
 
 <style scoped>
-/* Style 部分可以保持不变 */
 .game-board-container {
   border: 1px solid #90a4ae;
-  padding: 20px;
-  margin-top: 15px;
+  padding: 15px; /* 减少 GameBoard 自身的 padding */
+  margin-top: 0; /* 由 App.vue 控制 */
   background-color: #f5f5f5;
-  border-radius: 8px;
+  border-radius: 0 0 8px 8px; /* 顶部直角，配合 App.vue 的 top-info-bar */
+  display: flex; /* 启用 flex 布局 */
+  flex-direction: column; /* 子元素垂直排列 */
+  flex-grow: 1; /* 占据父元素（.game-area）的剩余空间 */
+  overflow: hidden; /* 防止内部内容溢出导致整个页面滚动 */
 }
-.player-area, .showdown-area, .game-controls {
-  margin-bottom: 20px;
+
+.player-area {
+  margin-bottom: 15px; /* 调整间距 */
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* 让理牌区域也占据可用空间 */
+  overflow-y: auto; /* 如果理牌区域内容过多，允许其内部滚动 */
+  padding: 10px; /* 给理牌区域一些内边距 */
 }
+.player-area-flex-fill { /* 新增 */
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+
 .dun-area {
-  margin-bottom: 10px;
+  margin-bottom: 8px; /* 墩之间的间距 */
 }
 .initial-hand-area {
-  margin-bottom: 15px;
+  margin-bottom: 8px;
 }
+.dun-area-expand .card-container { /* 让这个区域的卡片容器能扩展 */
+    flex-grow: 1;
+    min-height: 120px; /* 给它一个更大的最小高度 */
+}
+
+
 .segments {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px; /* 墩之间的间距 */
 }
 .segments.showdown-view .player-hand-container {
     background-color: #e8eaf6;
     border-style: solid;
 }
 .submit-hand-button, .start-game-button {
-  margin-top: 15px;
+  margin-top: 10px; /* 提交按钮与上方元素的间距 */
   padding: 10px 18px;
   font-size: 1em;
   background-color: #5c6bc0;
+  align-self: center; /* 按钮居中 */
 }
 .submit-hand-button:disabled {
     background-color: #9fa8da;
 }
-.showdown-area {
+
+.showdown-area { /* 比牌结果区域允许滚动，如果内容多 */
     background-color: #fff9c4;
     padding: 15px;
     border-radius: 6px;
     border: 1px solid #fff59d;
+    overflow-y: auto;
+    max-height: 300px; /* 给一个最大高度，超出则滚动 */
+}
+/* ... (其他样式不变) ... */
+.message-area { /* 新增，用于等待发牌等信息 */
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1em;
+    color: #546e7a;
 }
 .comparison-summary {
     margin-bottom: 15px;
