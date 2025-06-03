@@ -1,0 +1,89 @@
+/* frontend/src/components/GameBoard.css */
+.game-board-container {
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+}
+
+.game-board-container h3 {
+    text-align: center;
+    color: #444;
+    margin-bottom: 15px;
+}
+
+.my-hand-area {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px dashed #ccc;
+    min-height: 110px; /* 至少能放下一行牌的高度 */
+    background-color: #f0f8ff; /* AliceBlue */
+    border-radius: 5px;
+}
+
+.selected-cards-info {
+    text-align: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #e6e6fa; /* Lavender */
+    border-radius: 5px;
+}
+
+.selected-cards-info button {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background-color: #77dd77; /* Pastel green */
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.selected-cards-info button:disabled {
+    background-color: #lightgrey;
+    cursor: not-allowed;
+}
+
+
+.arrangement-area {
+    display: flex;
+    flex-direction: column; /* 墩垂直排列 */
+    gap: 15px; /* 各墩之间的间距 */
+    margin-bottom: 20px;
+}
+
+/* HandDisplay 已经有自己的样式，这里可以不用额外添加太多 */
+
+.submit-arrangement-button {
+    display: block;
+    width: 100%;
+    max-width: 200px;
+    margin: 20px auto 0;
+    padding: 12px 20px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: white;
+    background-color: #28a745; /* Green */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.submit-arrangement-button:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.submit-arrangement-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.error-message {
+    color: red;
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
