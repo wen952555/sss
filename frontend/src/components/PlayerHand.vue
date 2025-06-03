@@ -19,16 +19,15 @@
         @customDragStart="passCustomDragStart"
         @customDragEnd="passCustomDragEnd"
         @customDragOverSegment="passCustomDragOverSegment"
-      /> <!-- Ensuring CardComponent is self-closed -->
+      />
       <span v-if="cards.length === 0 && placeholderText" class="drop-placeholder">
         {{ placeholderText }}
       </span>
-    </div> <!-- Closes card-container div -->
-  </div> <!-- Closes player-hand-container div -->
+    </div>
+  </div>
 </template>
 
 <script setup>
-// Script 部分与之前相同
 import { ref } from 'vue';
 import CardComponent from './Card.vue';
 
@@ -43,7 +42,7 @@ const props = defineProps({
 const emit = defineEmits(['cardDropped', 'cardDragStart', 'cardDragEnd', 'cardDragOverSegment']);
 
 const isDragOverDesktop = ref(false);
-const handContainerElement = ref(null); // Keep if used, otherwise can be removed
+const handContainerElement = ref(null);
 
 function onDragOverDesktop(event) {
   if (props.droppable) {
@@ -80,7 +79,6 @@ function passCustomDragOverSegment(segmentName) {
 </script>
 
 <style scoped>
-/* Style 部分与之前相同 */
 .player-hand-container {
   margin-bottom: 10px;
 }
