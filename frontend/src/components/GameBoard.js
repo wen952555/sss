@@ -1,9 +1,9 @@
 // frontend/src/components/GameBoard.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react'; // 移除了 useCallback
 import socket from '../socket';
 import Card from './Card';
 import HandDisplay from './HandDisplay';
-import { sortHand } from '../utils/cardUtils';
+import { sortHand } from '../utils/cardUtils'; // 假设 sortHand 还是需要的，如果不是，也移除
 import './GameBoard.css';
 
 const DUN_NAMES = { FRONT: "头墩", MIDDLE: "中墩", BACK: "尾墩" };
@@ -11,9 +11,9 @@ const DUN_CAPACITIES = { [DUN_NAMES.FRONT]: 3, [DUN_NAMES.MIDDLE]: 5, [DUN_NAMES
 
 const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) => {
     const [hand, setHand] = useState(sortHand(initialHand || []));
-    const [selectedCards, setSelectedCards] = useState([]); // 当前选中的牌（未放入墩）
+    const [selectedCards, setSelectedCards] = useState([]);
     
-    const [frontDun, setFrontDun] = useState([]); // 存储卡牌对象
+    const [frontDun, setFrontDun] = useState([]);
     const [middleDun, setMiddleDun] = useState([]);
     const [backDun, setBackDun] = useState([]);
 
@@ -22,7 +22,6 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
 
     useEffect(() => {
         setHand(sortHand(initialHand || []));
-        // 重置墩牌和选中牌当手牌变化时 (例如新一局开始)
         setSelectedCards([]);
         setFrontDun([]);
         setMiddleDun([]);
@@ -69,7 +68,7 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
         else return;
 
         setDunFunction(prevDun => prevDun.filter(c => c.id !== card.id));
-        setHand(prevHand => sortHand([...prevHand, card])); // 将牌放回手牌
+        setHand(prevHand => sortHand([...prevHand, card]));
     };
 
     const handleSubmitArrangement = () => {
@@ -81,7 +80,6 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             return;
         }
         
-        // 只需要发送牌的ID
         const arrangement = {
             front: frontDun.map(c => c.id),
             middle: middleDun.map(c => c.id),
@@ -91,17 +89,18 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
         socket.emit('submitArrangement', { roomId, arrangement });
     };
     
-    // 监听来自App.js转发的牌型无效事件
     useEffect(() => {
         const handleInvalid = (message) => {
-            if (onArrangementInvalid) { // 这个 prop 由 App.js 传入
+            if (onArrangementInvalid) {
                 setError(message);
                 setIsSubmitting(false);
             }
         };
         socket.on('arrangementInvalid', handleInvalid);
-        return () => socket.off('arrangementInvalid', handleInvalid);
-    }, [onArrangementInvalid, socket]);
+        return () => { // 清理函数
+            socket.off('arrangementInvalid', handleInvalid);
+        };
+    }, [onArrangementInvalid]); // 从依赖数组中移除了 socket
 
 
     if (!initialHand || initialHand.length === 0) {
@@ -109,6 +108,7 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
     }
 
     return (
+        // ... JSX 保持不变 ...
         <div className="game-board-container">
             <h3>我的手牌 (拖拽或点击选择后放入对应墩)</h3>
             {error && <p className="error-message">{error}</p>}
@@ -128,7 +128,7 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             {selectedCards.length > 0 && (
                 <div className="selected-cards-info">
                     已选择 {selectedCards.length} 张牌.
-                    <button onClick={() => addSelectedToDun(DUN_NAMES.FRONT)} disabled={frontDun.length >= DUN_CAPACITIES.头墩}>放入头墩</button>
+                    <button onClick={() => addSelectedToDun(DUN_NAMES.FRONT)} disabled={frontDun.length >= DUN_CAPACities.头墩}>放入头墩</button>
                     <button onClick={() => addSelectedToDun(DUN_NAMES.MIDDLE)} disabled={middleDun.length >= DUN_CAPACITIES.中墩}>放入中墩</button>
                     <button onClick={() => addSelectedToDun(DUN_NAMES.BACK)} disabled={backDun.length >= DUN_CAPACITIES.尾墩}>放入尾墩</button>
                 </div>
@@ -137,9 +137,9 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             <div className="arrangement-area">
                 <HandDisplay
                     title={DUN_NAMES.FRONT}
-                    cardObjects={frontDun} // 传递完整的牌对象
+                    cardObjects={frontDun}
                     onCardClick={(card) => removeCardFromDun(card, DUN_NAMES.FRONT)}
-                    selectedCards={[]} // 在墩里不需要选中效果
+                    selectedCards={[]}
                 />
                 <HandDisplay
                     title={DUN_NAMES.MIDDLE}
