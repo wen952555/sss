@@ -2,7 +2,7 @@
   <div
     class="card"
     :class="{ dragging: isBeingDraggedVisualState }" 
-    :draggable="!isTouchDevice" <!-- 桌面端启用原生拖拽 -->
+    :draggable="!isTouchDevice"
     @dragstart="onDesktopDragStart"
     @touchstart.stop="onTouchStart" 
     ref="cardElementRef"
@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-// ... ( imports 和其他 props/refs/computed 与上一版相同 ) ...
+// Script part is identical to the last provided working version for build
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
@@ -26,7 +26,7 @@ const altText = computed(() => props.card && props.card.value && props.card.suit
 const cardElementRef = ref(null);
 const isBeingDraggedVisualState = ref(false);
 const isTouchDevice = ref(false);
-// ... (触摸拖拽相关的变量与上一版相同) ...
+
 let touchStartX = 0;
 let touchStartY = 0;
 let elementInitialViewportX = 0;
@@ -34,7 +34,6 @@ let elementInitialViewportY = 0;
 let draggedCardCloneNode = null;
 let isDraggingConfirmed = false;
 let lastKnownOverSegment = null;
-
 
 onMounted(() => {
   isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -61,39 +60,31 @@ function getParentSegmentName() {
         if (parentContainer && parentContainer.dataset.segmentName) {
             return parentContainer.dataset.segmentName;
         }
-        el = el.parentElement; // 向上查找，以防卡片嵌套较深
+        el = el.parentElement;
     }
-    // console.warn("Could not determine parent segment for card:", props.card?.id);
-    return 'unknown_segment'; // 应该总能找到，除非 Card.vue 不在 PlayerHand.vue 内
+    return 'unknown_segment';
 }
 
-// --- 桌面拖拽 ---
 function onDesktopDragStart(event) {
   if (isTouchDevice.value) {
     event.preventDefault(); return;
   }
-  // 确保 props.card 是有效的
   if (!props.card || !props.card.id) {
-      console.error("Card data is invalid for drag start.");
       event.preventDefault();
       return;
   }
   try {
       event.dataTransfer.setData('text/plain', JSON.stringify(props.card));
       event.dataTransfer.effectAllowed = 'move';
-      // 对于桌面拖拽，App.vue 会在 PlayerHand 的 drop 事件中获取 card 和 toSegment
-      // 但 customDragStart 仍然可以用来设置 App.vue 中的 activeDraggedCardInfo
       emit('customDragStart', { card: props.card, fromSegment: getParentSegmentName() });
   } catch (e) {
-      console.error("Error setting drag data:", e);
+      // console.error("Error setting drag data:", e);
   }
 }
 
-// --- 触摸拖拽 (与上一版相同，保持健壮性) ---
 function onTouchStart(event) {
   if (!isTouchDevice.value || event.touches.length !== 1) return;
   if (!props.card || !props.card.id) {
-    console.error("Card data is invalid for touch start.");
     return;
   }
   const touch = event.touches[0];
@@ -226,7 +217,6 @@ const suitSymbol = computed(() => {
   box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
   transition: opacity 0.2s;
 }
-/* .card.dragging is applied by main.css or App.vue style if needed for clone */
 .card img {
   max-width: 90%;
   max-height: 90%;
