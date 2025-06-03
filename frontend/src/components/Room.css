@@ -1,213 +1,192 @@
 /* frontend/src/components/Room.css */
 .room-container {
-    padding: 20px;
-    background-color: #f4f7f6; /* 淡雅的背景色 */
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    max-width: 900px; /* 限制最大宽度 */
-    margin: 20px auto; /* 居中显示 */
+    padding: 15px; /* 稍微减少一些内边距 */
+    background-color: #2c2f33; /* 深色背景，更像牌桌 */
+    color: #f0f0f0; /* 浅色文字 */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    max-width: 1600px; /* 允许更宽的内容 */
+    min-height: calc(100vh - 120px); /* 占据大部分视口高度，减去header/footer */
+    margin: 20px auto;
+    display: flex; /* 改为flex布局 */
+    flex-direction: column; /* 内部元素默认还是垂直排列，但players-area会横向 */
 }
 
-.room-container h2, .room-container h4 {
+.room-container h2 { /* 房间号标题 */
     text-align: center;
-    color: #333;
+    color: #7289da; /* Discord 紫色系 */
+    margin-bottom: 10px;
+    font-size: 1.5em;
 }
-.room-container > p.game-state { /* 针对游戏状态段落的特定样式 */
+.room-container > p.game-state {
     text-align: center;
-    font-size: 1.2em; /* 稍大字体 */
-    color: #555;
-    margin-bottom: 20px;
+    font-size: 1.1em;
+    color: #f0f0f0;
+    margin-bottom: 15px;
     font-weight: bold;
-    text-transform: uppercase; /* 大写显示 */
-    letter-spacing: 1px; /* 字符间距 */
-    padding: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 10px;
     border-radius: 4px;
+    background-color: #4f545c; /* 深灰背景 */
+    border: 1px solid #5c6168;
+    align-self: center; /* 状态条居中 */
+    max-width: 300px;
 }
 
-/* 不同游戏状态的背景色和文字颜色 */
-.game-state-waiting { background-color: #fff3cd; color: #664d03; } /* 黄色系 */
-.game-state-dealing { background-color: #cff4fc; color: #055160; } /* 蓝色系 */
-.game-state-arranging { background-color: #d1e7dd; color: #0a3622; } /* 绿色系 */
-.game-state-comparing { background-color: #e2d9f3; color: #2c0b61; } /* 紫色系 */
-.game-state-ended { background-color: #f8d7da; color: #58151c; } /* 红色系 (如果游戏结束) */
+/* 不同游戏状态的文字颜色 */
+.game-state-waiting { color: #faa61a; } /* 黄色 */
+.game-state-dealing { color: #43b581; } /* 绿色 */
+.game-state-arranging { color: #7289da; } /* 紫色 */
+.game-state-comparing { color: #f04747; } /* 红色 */
+.game-state-ended { color: #b0b8bf; }   /* 灰色 */
 
 
 .players-area {
-    display: grid;
-    grid-template-columns: 1fr; /* 移动端优先，单列 */
-    gap: 25px; /* 玩家信息块之间的间距 */
-    margin-bottom: 25px;
+    display: flex; /* ★★★ 核心改动：玩家区域使用 flex 横向排列 ★★★ */
+    flex-wrap: nowrap; /* 默认不换行，如果玩家多可能需要滚动或调整 */
+    justify-content: space-around; /* 玩家信息块之间平均分布空间 */
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #23272a; /* 更深的背景容纳玩家区 */
+    border-radius: 8px;
+    overflow-x: auto; /* 如果内容超出，允许横向滚动 */
 }
-
-@media (min-width: 768px) { /* 平板及以上，两列 */
-    .players-area {
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* 自动适应列数 */
-    }
-}
-
 
 .player-info {
-    border: 1px solid #d1e7dd;
-    padding: 15px 20px; /* 增加内边距 */
+    border: 1px solid #4f545c; /* 边框颜色调整 */
+    padding: 15px;
     border-radius: 6px;
-    background-color: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* 轻微阴影 */
+    background-color: #36393f; /* Discord 风格的深灰 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    min-width: 280px; /* 给每个玩家信息区一个最小宽度 */
+    max-width: 320px; /* 最大宽度 */
+    flex: 1 1 300px; /* Flex项目：可增长、可收缩，基础宽度300px */
+    display: flex;
+    flex-direction: column; /* 玩家信息内部还是垂直排列 */
 }
 
-.player-info h4 {
+.player-info h4 { /* 玩家昵称和分数 */
     margin-top: 0;
-    color: #0a3622;
-    border-bottom: 2px solid #bee5eb; /* 强调下划线 */
-    padding-bottom: 12px;
-    margin-bottom: 18px;
+    color: #ffffff; /* 白色文字 */
+    border-bottom: 2px solid #7289da;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    text-align: center;
 }
-
-.my-info {
-    border-color: #b6d4fe;
-    background-color: #f0f8ff; /* 爱丽丝蓝 */
+.player-info.my-info h4 {
+     border-bottom-color: #43b581; /* 我的信息用绿色高亮 */
 }
-.my-info h4 {
-    color: #0b2e59; /* 深蓝色 */
-    border-bottom-color: #a1c9f7;
-}
-
 
 .ready-button {
-    display: block;
-    margin: 15px auto; /* 增加外边距 */
-    padding: 12px 25px; /* 增大按钮 */
-    font-size: 1.05em; /* 稍大字体 */
-    background-color: #28a745; /* Bootstrap 成功绿色 */
+    /* ... (样式可以保持或微调) ... */
+    background-color: #5865f2; /* Discord 风格按钮蓝 */
     color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s ease-out;
+    align-self: center; /* 按钮在 player-info 内居中 */
+    margin-top: auto; /* 将按钮推到底部（如果其他内容不足） */
+    padding: 10px 20px;
 }
 .ready-button:hover:not(:disabled) {
-    background-color: #218838; /* 深一点的绿色 */
-}
-.ready-button:disabled {
-    background-color: #6c757d; /* Bootstrap 次要灰色 */
-    cursor: not-allowed;
+    background-color: #4752c4;
 }
 
 .status-text {
     font-style: italic;
-    padding: 8px;
+    padding: 6px;
     border-radius: 4px;
     text-align: center;
     margin-top: 10px;
+    color: #b9bbbe; /* Discord 浅灰文字 */
 }
 .ready-text {
-    background-color: #d4edda; /* 淡绿色 */
-    color: #155724; /* 深绿色文字 */
-    border: 1px solid #c3e6cb;
+    background-color: rgba(67, 181, 129, 0.2); /* 淡绿色背景 */
+    color: #43b581;
+    border: 1px solid #43b581;
 }
 .submitted-text {
-    background-color: #e9ecef; /* 淡灰色 */
-    color: #495057; /* 深灰色文字 */
-    border: 1px solid #ced4da;
+    background-color: rgba(114, 137, 218, 0.1);
+    color: #7289da;
+    border: 1px solid #7289da;
 }
 
 
 .arranged-hands-display {
-    margin-top: 15px;
+    margin-top: 10px;
+    flex-grow: 1; /* 让牌墩展示区域占据剩余空间 */
 }
 .arranged-hands-display h5 {
-    margin-top: 10px;
-    margin-bottom: 8px;
-    color: #444; /* 深灰色 */
-    font-size: 1.05em;
-    text-align: left; /* 标题左对齐 */
+    margin-top: 8px;
+    margin-bottom: 6px;
+    color: #dcddde; /* 亮灰色 */
+    font-size: 1em;
+    text-align: left;
 }
-/* HandDisplay 组件有其自身的样式 */
-.self-hands {
-    border-left: 4px solid #75baf7; /* 浅蓝色边框 */
-    padding-left: 15px;
-    background-color: rgba(224, 239, 252, 0.5); /* 非常淡的蓝色背景 */
-    border-radius: 0 4px 4px 0;
-}
-.opponent-hands {
-    border-left: 4px solid #f7a1a3; /* 浅红色边框 */
-    padding-left: 15px;
-    background-color: rgba(252, 224, 224, 0.5); /* 非常淡的红色背景 */
-    border-radius: 0 4px 4px 0;
+/* HandDisplay 组件本身需要适配内部卡牌的横向或紧凑显示 */
+/* 我们在 HandDisplay.css 中处理卡牌的排列 */
+.self-hands, .opponent-hands { /* 移除之前的背景和边框，由 player-info 控制 */
+    padding-left: 0;
 }
 
 
 .comparison-results, .game-log-section {
-    margin-top: 30px;
-    padding: 20px;
-    background-color: #fff;
-    border: 1px solid #dee2e6; /* 稍深的边框 */
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #36393f; /* 与 player-info 背景一致 */
+    border: 1px solid #4f545c;
     border-radius: 6px;
+    color: #dcddde;
 }
 .comparison-results h4, .game-log-section h4 {
-    color: #212529; /* 更深的标题颜色 */
-    margin-top: 0;
-    margin-bottom: 15px; /* 标题和内容间距 */
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-}
-.comparison-results ul {
-    list-style: none;
-    padding-left: 0;
+    color: #ffffff;
+    border-bottom-color: #4f545c;
 }
 .comparison-results li {
-    padding: 10px 5px; /* 增加列表项内边距 */
-    border-bottom: 1px dashed #e0e0e0; /* 虚线分隔 */
-    color: #343a40;
-    display: flex; /* 弹性布局，方便对齐牌型 */
-    justify-content: space-between; /* 主内容和牌型分开 */
-    align-items: center;
-}
-.comparison-results li:last-child {
-    border-bottom: none;
+    border-bottom-color: #40444b; /* 分隔线颜色 */
+    color: #b9bbbe;
 }
 .comparison-hand-types {
-    font-size: 0.85em;
-    color: #6c757d; /* 灰色文字 */
-    margin-left: 15px;
-    font-style: italic;
+    color: #72767d; /* 牌型比较文字颜色 */
 }
 
-.game-log-section details { /* details 标签的样式 */
-    margin-bottom: 12px;
-}
-.game-log-section summary { /* summary 标签的样式 */
-    cursor: pointer;
-    font-weight: bold;
-    color: #007bff; /* 蓝色 */
-    padding: 8px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+.game-log-section summary {
+    color: #5865f2;
+    background-color: #2f3136; /* 更暗的背景 */
+    border-color: #40444b;
 }
 .game-log-section summary:hover {
-    background-color: #e9ecef;
+    background-color: #3a3e45;
 }
-.game-log-section details > div { /* details展开后的内容区域 */
-    padding: 10px 15px;
-    border: 1px solid #dee2e6;
-    border-top: none; /* 避免和summary的边框重叠 */
-    border-radius: 0 0 4px 4px;
-    background-color: #fff;
+.game-log-section details > div {
+    border-color: #40444b;
+    background-color: #36393f;
 }
 .game-log-section details p {
-    margin: 6px 0 6px 10px;
-    font-size: 0.95em;
-    color: #495057;
+    color: #b9bbbe;
 }
 
 .game-prompt {
     text-align: center;
-    padding: 12px;
-    margin-top: 20px;
-    background-color: #d1ecf1; /* Bootstrap info 浅蓝色 */
-    color: #0c5460; /* 深蓝色文字 */
-    border: 1px solid #bee5eb;
+    padding: 10px;
+    margin-top: 15px;
+    background-color: rgba(114, 137, 218, 0.15); /* 淡紫色提示 */
+    color: #b0b8bf;
+    border: 1px solid #7289da;
     border-radius: 5px;
-    font-weight: 500; /* 中等粗细 */
+    font-weight: 500;
+}
+
+/* GameBoard.js 内的按钮组，确保它们在 player-info 内有合适的布局 */
+.action-buttons { /* GameBoard.js 内部的按钮组 */
+    display: flex;
+    flex-direction: column; /* 在 player-info 内部，按钮垂直排列可能更好 */
+    gap: 10px;
+    margin-top: 15px; /* 与上方牌墩的间距 */
+    align-items: center; /* 按钮居中 */
+}
+
+.ai-arrange-button, .submit-arrangement-button { /* GameBoard.js 内部的按钮 */
+    width: 90%; /* 按钮宽度 */
+    max-width: 200px; /* 最大宽度 */
 }
