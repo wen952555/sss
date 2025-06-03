@@ -5,86 +5,82 @@
     display: flex; 
     flex-direction: column; 
     min-width: 0; 
-    position: relative; /* 关键：为了内部绝对定位的背景文字 */
+    position: relative; 
     width: 100%; 
     box-sizing: border-box;
-    /* background-color: rgba(0, 255, 255, 0.1); */ /* 调试：HandDisplay 容器范围 */
+    /* background-color: rgba(0, 255, 0, 0.05); */ /* 调试用 */
 }
 
 .dun-title-background-text {
     position: absolute; 
-    top: 50%;
-    left: 0; /* ★★★ 改为 left: 0, right: 0 实现横向撑满，方便 text-align: center ★★★ */
+    top: 0; /* ★★★ 改为从顶部开始 ★★★ */
+    left: 0; 
     right: 0;
-    transform: translateY(-50%); /* 只做垂直居中 */
-    font-size: 1.6em; /* 根据卡牌大小调整 */
-    color: rgba(114, 118, 125, 0.2); /* 更淡，更融入背景 */
-    font-weight: 500; /* 不用太粗 */
-    z-index: 1; /* ★★★ 确保在卡牌之下 ★★★ */
-    pointer-events: none; /* ★★★ 确保文字不干扰鼠标操作 ★★★ */
-    white-space: nowrap;
-    text-align: center; /* 文字在横向上居中 */
-    padding: 0 5px; /* 给文字一点左右内边距，避免贴边 */
-    overflow: hidden; /* 防止过长的文字溢出 */
-    text-overflow: ellipsis; /* 过长则显示省略号 */
+    bottom: 0; /* ★★★ 撑满整个 HandDisplay 容器 ★★★ */
+    display: flex; /* ★★★ 使用 flex 实现垂直居中 ★★★ */
+    align-items: center; /* 垂直居中 */
+    justify-content: center; /* 水平居中 */
+    font-size: 1.8em; 
+    color: rgba(80, 85, 95, 0.2); /* 调整颜色 */
+    font-weight: 500; 
+    z-index: 1; /* 在卡牌之下 */
+    pointer-events: none; /* ★★★ 确保不干扰鼠标 ★★★ */
+    white-space: normal; /* ★★★ 允许文字换行，如果标题太长 ★★★ */
+    text-align: center; 
+    padding: 10px; /* 给文字一些内边距 */
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    line-height: 1.2; /* 调整行高 */
 }
-/* 手牌区/中墩候选区的背景文字可以更大更淡 */
 .hand-display-手牌 .dun-title-background-text,
 .hand-display-手牌区-请先摆满头尾墩 .dun-title-background-text,
 .hand-display-中墩候选 .dun-title-background-text {
-    font-size: 1.8em; 
-    color: rgba(114, 118, 125, 0.1); 
+    font-size: 2em; 
+    color: rgba(80, 85, 95, 0.1); 
 }
-
 
 .cards-wrapper {
     display: flex;
-    flex-wrap: nowrap; /* 墩内卡牌不换行，手牌区在GameBoard.css中已用此class并设置wrap */
-    justify-content: flex-start; /* ★★★ 确保卡牌严格向左对齐 ★★★ */
+    flex-wrap: nowrap; /* 墩内不换行，手牌区在GameBoard.js中通过HandDisplay的props或特定类控制 */
+    justify-content: flex-start; /* ★★★ 确保卡牌向左对齐 ★★★ */
     align-items: center; 
-    width: 100%; /* ★★★ 让 wrapper 占满 HandDisplay 容器的宽度 ★★★ */
-    min-height: 188px; /* (卡牌180px + 上下各2px margin + 上下各2px wrapper padding) */
-                       /* 这个值需要根据 Card.css 中的实际尺寸和间距精确计算 */
-    padding: 2px 4px; /* 上下2px，左右4px 的内边距 */
+    width: 100%; 
+    /* min-height 由卡牌和自身padding撑开 */
+    padding: 4px; /* 给wrapper一点内边距，让卡牌和dun-area边框有间隙 */
     position: relative; 
     z-index: 2; /* 卡牌容器在背景文字之上 */
     box-sizing: border-box;
-    /* background-color: rgba(255, 0, 0, 0.1); */ /* 调试：cards-wrapper 范围 */
-    /* overflow-x: hidden; */ /* 在墩内通常不希望滚动，手牌区的滚动由 GameBoard.css 控制 */
+    /* background-color: rgba(255, 0, 0, 0.05); */ /* 调试用 */
 }
-/* 特别针对手牌池的 cards-wrapper (如果在 HandDisplay 中也用这个类名) */
-.hand-display-手牌 .cards-wrapper,
-.hand-display-中墩候选 .cards-wrapper {
-    flex-wrap: wrap; /* 手牌区允许换行 */
-    justify-content: center; /* 手牌区的卡牌可以居中排列（如果一行未满） */
-    /* 如果手牌区也要求严格左对齐，则保持 flex-start */
-    /* min-height 可以设大一点，如果手牌多需要滚动 */
-    /* overflow-y: auto; */ /* 手牌区的垂直滚动由 GameBoard.css 的 .hand-middle-dun-area 控制 */
+/* 手牌区的 cards-wrapper 特殊处理 (允许换行，居中) */
+/* 这个类名需要 GameBoard.js 在传递给 HandDisplay 时动态添加，或者 HandDisplay 根据 title 判断 */
+.hand-display-container.is-hand-pool .cards-wrapper { /* 假设给手牌池的 HandDisplay 容器加一个 is-hand-pool 类 */
+    flex-wrap: wrap;
+    justify-content: center; /* 手牌池卡牌居中 */
+    /* 可以给手牌池的 wrapper 一个更大的 min-height 如果牌多 */
+    /* min-height: 200px; */
 }
 
 
 /* 卡牌重叠效果 - 卡牌宽度 128px */
 /* 这个选择器确保只对 cards-wrapper 的直接子元素（即 dnd 的 div）应用 */
-.cards-wrapper > div[data-rbd-draggable-id]:not(:first-child) { 
-    margin-left: -98px; /* ★★★ 调整重叠：128 - 98 = 30px 露出部分 ★★★ */
-                         /* 您可以根据视觉效果调整这个值 */
+/* 对于非手牌区的墩 */
+.hand-display-container:not(.is-hand-pool) .cards-wrapper > div[data-rbd-draggable-id]:not(:first-child) { 
+    margin-left: -98px; /* 128 - 98 = 30px 露出 */
 }
-/* 如果手牌区不希望重叠，或者重叠方式不同 */
-.hand-display-手牌 .cards-wrapper > div[data-rbd-draggable-id]:not(:first-child),
-.hand-display-中墩候选 .cards-wrapper > div[data-rbd-draggable-id]:not(:first-child) {
-    margin-left: 2px; /* 手牌区的卡牌之间不重叠，或者使用较小的负margin实现轻微堆叠 */
-                      /* 例如 margin-left: -110px; 会露出更多 */
+/* 对于手牌区，卡牌不重叠或轻微重叠 */
+.hand-display-container.is-hand-pool .cards-wrapper > div[data-rbd-draggable-id] { 
+    margin: 2px 4px; /* 手牌区卡牌之间的正常间距 */
 }
 
 
 /* 拖拽高亮和禁用样式 */
 .cards-wrapper.dragging-over {
-    background-color: rgba(88, 101, 242, 0.1); /* 更明显的拖拽目标高亮 */
-    outline: 2px dashed #5865f2; 
-    outline-offset: -2px; 
+    background-color: rgba(88, 101, 242, 0.08); /* 更淡的蓝紫色高亮 */
+    outline: 1px dashed #5865f2; 
+    outline-offset: -1px; 
 }
 .cards-wrapper.drop-disabled {
     background-color: rgba(79, 84, 92, 0.05); 
     cursor: not-allowed;
 }
-/* HandDisplay.js 中已移除 empty-slot-placeholder 的渲染逻辑，所以这里也不需要了 */
