@@ -1,33 +1,33 @@
 /* frontend/src/components/Card.css */
 .card {
-    width: 60px; /* 原为 70px，稍微减小 */
-    height: 85px; /* 原为 100px，稍微减小 */
-    border: 1px solid #5f6773; /* 深色主题边框 */
-    border-radius: 4px; /* 减小圆角 */
+    width: 80px; /* 原为 60px，显著增大 */
+    height: 112px; /* 原为 85px，按比例增大 (约1.4倍) */
+    border: 1px solid #707070; /* 边框颜色微调 */
+    border-radius: 5px; /* 增大圆角以匹配更大的尺寸 */
     display: inline-flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 1px; /* 原为 2px，减小间距 */
-    background-color: #e0e0e0; /* 浅灰色背景，与深色背景对比 */
-    color: #1e1e1e; /* 深色文字，如果图片未加载 */
+    margin: 2px; /* 稍微增加间距以适应大卡牌 */
+    background-color: #f0f0f0; /* 保持浅色背景与深色主题对比 */
+    color: #1e1e1e;
     cursor: pointer;
     user-select: none;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.2); /* 减小阴影 */
-    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
-    position: relative; /* 为了可能的堆叠效果 */
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.25); /* 阴影微调 */
+    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    position: relative; 
 }
 
-.card:hover:not(.empty-slot) { /* 空槽不响应悬停 */
-    transform: translateY(-2px) scale(1.03); /* 稍微放大并上移 */
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-    z-index: 10; /* 悬停时置于顶层 */
+.card:hover:not(.empty-slot) {
+    transform: translateY(-3px) scale(1.05); /* 悬停效果更明显 */
+    box-shadow: 3px 3px 7px rgba(0,0,0,0.35);
+    z-index: 10; 
 }
 
 .card.selected {
-    border: 2px solid #7289da; /* Discord 紫色系 */
-    transform: translateY(-4px) scale(1.05); /* 选中时更明显 */
-    box-shadow: 0 0 8px rgba(114, 137, 218, 0.7);
+    border: 2px solid #5865f2; /* Discord 风格蓝色，更醒目 */
+    transform: translateY(-5px) scale(1.08); 
+    box-shadow: 0 0 10px rgba(88, 101, 242, 0.8); /* 选中阴影更强 */
     z-index: 15;
 }
 
@@ -35,22 +35,43 @@
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    padding: 2px; /* 图片内边距，避免贴边 */
+    padding: 3px; /* 增大图片内边距 */
 }
 
-.empty-slot {
-    background-color: rgba(79, 84, 92, 0.5); /* 深色背景下的空槽颜色 */
-    border-style: dashed;
-    border-color: #6a7078;
+.empty-slot, .empty-slot-placeholder { /* 合并空槽样式 */
+    width: 80px;  /* ★★★ 与卡牌尺寸一致 ★★★ */
+    height: 112px; /* ★★★ 与卡牌尺寸一致 ★★★ */
+    background-color: rgba(54, 57, 63, 0.7); /* 更深的空槽背景 */
+    border: 2px dashed #4f545c; /* 虚线更粗更明显 */
+    border-radius: 5px;
+    margin: 2px; 
+    display: inline-flex; /* 确保能并排 */
+    justify-content: center;
+    align-items: center;
+    /* 可以添加一个小的占位符图标或文字 */
+    /* content: '+'; */ 
+    /* color: #72767d; */
+    /* font-size: 2em; */
     cursor: default;
 }
+.card.empty-slot { /* 如果 Card 组件直接渲染空槽 */
+     background-color: rgba(54, 57, 63, 0.7);
+     border: 2px dashed #4f545c;
+}
 
-/* 如果直接显示文字 (后备) */
+
+/* 卡牌拖拽时的样式 (如果需要) */
+.card.dragging {
+    opacity: 0.75;
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.45);
+    transform: rotate(2deg) scale(1.1); /* 拖拽时效果更夸张 */
+}
+
+/* 后备文字样式 (如果图片未加载) */
 .card-rank {
-    font-size: 1.3em; /* 调整大小 */
+    font-size: 1.8em; /* 增大 */
     font-weight: bold;
 }
 .card-suit {
-    font-size: 1.1em; /* 调整大小 */
+    font-size: 1.5em; /* 增大 */
 }
-/* 移除特定花色颜色，让图片本身决定，或通过 SVG fill 控制 */
