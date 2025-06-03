@@ -3,79 +3,77 @@
     width: 128px; 
     height: 180px; 
     
-    /* ★★★ 强制移除所有方向的边框 ★★★ */
-    border: none !important; 
-    border-width: 0 !important;
-    border-left-width: 0 !important;
-    border-right-width: 0 !important;
-    border-top-width: 0 !important;
-    border-bottom-width: 0 !important;
-    outline: none !important; /* 移除可能的轮廓 */
+    /* ★★★ 终极边框和内边距清除 ★★★ */
+    border: 0 !important; 
+    padding: 0 !important; 
+    outline: 0 !important;
+    margin: 2px 4px !important; /* 外边距也用 important 确保 */
 
     border-radius: 6px; 
-    display: inline-flex; /* 改为 inline-flex 以便与 dnd 的 div 更好配合 */
+    display: flex; /* 改为 flex 以便内部图片更好地控制 */
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 2px 3px; 
     background-color: #ffffff; 
     color: #111; 
-    cursor: grab; 
+    cursor: grab !important; /* 强制 grab 光标 */
     user-select: none;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.15); /* ★★★ 非常柔和的阴影，避免产生边框错觉 ★★★ */
-    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out; /* 过渡效果减弱 */
-    position: relative; 
-    z-index: 10; /* ★★★ 提高卡牌的默认 z-index ★★★ */
-    overflow: hidden; /* ★★★ 确保图片圆角生效 ★★★ */
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* 非常非常柔和的阴影 */
+    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+    position: relative; /* 保持 relative 以便 z-index 生效 */
+    z-index: 10; 
+    overflow: hidden; /* 确保内部图片圆角生效 */
+    box-sizing: border-box !important; /* 强制盒模型 */
 }
 .card:active { 
-    cursor: grabbing;
+    cursor: grabbing !important;
 }
 
-/* 移除 :hover 和 .selected 的 transform 和 box-shadow 改变，先简化以排查拖拽 */
 .card:hover:not(.empty-slot):not(.dragging) {
-    /* transform: translateY(-4px) scale(1.03); */
-    /* box-shadow: 3px 3px 8px rgba(0,0,0,0.3); */
+    transform: translateY(-2px); /* 悬停效果减弱 */
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
     z-index: 20; 
 }
 
 .card.selected {
-    /* transform: translateY(-6px) scale(1.05); */
-    box-shadow: 0 0 8px 2px rgba(88, 101, 242, 0.6); /* 选中时用更明显的阴影 */
+    transform: translateY(-4px); 
+    box-shadow: 0 0 8px 1px rgba(88, 101, 242, 0.5); /* 选中阴影调整 */
     z-index: 25; 
 }
 
 .card-image {
-    display: block; /* ★★★ 确保图片是块级元素，更好控制尺寸 ★★★ */
+    display: block; 
     width: 100%; 
     height: 100%;
-    object-fit: contain; /* 保持 contain 以显示完整牌面 */
+    object-fit: fill; /* ★★★ 改为 fill，让图片填满容器，如果图片比例不一致可能会拉伸 ★★★ */
+                       /* 如果希望保持比例，用回 contain，但需要确保图片本身无边框 */
     border-radius: 6px; /* 图片也带圆角 */
 }
 
-.empty-slot, .empty-slot-placeholder { /* HandDisplay 中不再渲染 placeholder */
+/* 空槽样式 (HandDisplay 中不再渲染) */
+.empty-slot-placeholder {
     width: 128px;  
     height: 180px; 
-    background-color: rgba(54, 57, 63, 0.2); /* 更淡的空槽 */
+    background-color: rgba(54, 57, 63, 0.15); /* 更淡 */
     border: 1px dashed #5c6168; 
     border-radius: 6px;
-    margin: 2px 3px; 
+    margin: 2px 4px !important; 
     display: inline-flex; 
     justify-content: center;
     align-items: center;
     cursor: default;
     z-index: 1; 
-    box-sizing: border-box;
+    box-sizing: border-box !important;
 }
 
 .card.dragging {
     opacity: 0.9;
-    box-shadow: 0px 6px 15px rgba(0,0,0,0.4);
-    /* transform: rotate(1.5deg) scale(1.08); */ /* 暂时移除transform，简化问题 */
-    z-index: 9999 !important; /* ★★★ 拖拽时强制最高 z-index ★★★ */
+    box-shadow: 0px 6px 15px rgba(0,0,0,0.3);
+    /* transform: rotate(1.5deg) scale(1.08); */ /* 暂时移除 transform 简化 */
+    z-index: 9999 !important; 
     cursor: grabbing !important; 
 }
 
-/* 后备文字样式 */
+/* 后备文字样式 (保持不变) */
 .card-rank { font-size: 2.5em; font-weight: bold;}
-.card-suit { font-size: 2.5em; } /* 增大与卡牌匹配 */
+.card-suit { font-size: 2.5em; }
