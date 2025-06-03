@@ -3,9 +3,8 @@ import React from 'react';
 import GameBoard from './GameBoard';
 import HandDisplay from './HandDisplay';
 import socket from '../socket';
-import './Room.css'; // 确保引入了Room.css
+import './Room.css';
 
-// 辅助函数：从后端评估结果获取牌型名称 (保持不变)
 const getHandTypeNameFromEval = (evaluation) => {
     if (evaluation && evaluation.name) return evaluation.name;
     const localHandTypeNames = {0: '乌龙', 1: '一对', 2: '两对', 3: '三条', 4: '顺子', 5: '同花', 6: '葫芦', 7: '铁支', 8: '同花顺'};
@@ -14,13 +13,11 @@ const getHandTypeNameFromEval = (evaluation) => {
 
 const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyLoading, connectionInfo }) => {
 
-    // 初始加载状态或关键数据缺失时的显示
     if (isInitiallyLoading) {
         return (
-            <div className="room-container room-loading-container"> {/* 添加特定类名方便样式 */}
+            <div className="room-container room-loading-container">
                 <div className="room-header-info"><h2>十三水 AI 对战</h2></div>
                 <p className="loading-text">正在连接牌局，请稍候...</p>
-                {/* 即使在加载时也显示连接状态栏 */}
                 {connectionInfo && (
                     <div className="room-connection-status-bar">
                         <p>后端: {connectionInfo.backendHost}</p>
@@ -32,7 +29,6 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
     }
 
     if (!roomData || !roomData.players || !myPlayerId) {
-        // 非初始加载，但数据仍然无效，可能是连接后获取数据失败
         return (
             <div className="room-container room-error-container">
                 <div className="room-header-info"><h2>十三水 AI 对战</h2></div>
@@ -48,7 +44,6 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
         );
     }
 
-    // 正常获取到数据后的渲染逻辑
     const { players, gameState, gameLog, isAIRoom, prompt } = roomData;
     const me = players.find(p => p.id === myPlayerId && !p.isAI);
     const aiOpponents = players.filter(p => p.isAI);
@@ -69,7 +64,7 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
         );
     }
     
-    if (!isAIRoom && !me) { // 这个分支理论上在当前AI对战模式下不会走到
+    if (!isAIRoom && !me) {
          return (
             <div className="room-container room-error-container">
                 <div className="room-header-info"><h2>十三水</h2></div>
@@ -84,7 +79,6 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
         );
     }
 
-    // --- 以下是正常的牌桌渲染逻辑 ---
     return (
         <div className="room-container">
             <div className="room-header-info">
@@ -100,7 +94,7 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
                         const aiMiddleDunCards = ai.arrangedHands?.middle || [];
                         const aiBackDunCards = ai.arrangedHands?.back || [];
                         const aiIsSubmitted = ai.hasSubmitted;
-                        const aiIsReady = ai.isReady; // AI 通常总是 ready
+                        const aiIsReady = ai.isReady;
 
                         return (
                             <div key={ai.id} className="player-info opponent-info">
@@ -108,7 +102,7 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
                                 {gameState === 'waiting' && aiIsReady && <p className="status-text ready-text">准备就绪</p>}
                                 {gameState === 'arranging' && <p className="status-text">{aiIsSubmitted ? '已提交' : 'AI思考中...'}</p>}
                                 {(gameState === 'comparing' || gameState === 'ended' || (gameState === 'arranging' && aiIsSubmitted)) && 
-                                 (aiFrontDunCards.length > 0 || aiMiddleDunCards.length > 0 || aiBackDunCards.length > 0) && ( // 确保有牌才显示墩
+                                 (aiFrontDunCards.length > 0 || aiMiddleDunCards.length > 0 || aiBackDunCards.length > 0) && (
                                     <div className="arranged-hands-display opponent-hands">
                                         <HandDisplay title="头" cardObjects={aiFrontDunCards} handEvaluation={{name: getHandTypeNameFromEval(ai.arrangedHandsEvaluated?.front)}} cardStyle={{width: '30px', height: '45px', margin: '1px', fontSize: '0.7em'}} />
                                         <HandDisplay title="中" cardObjects={aiMiddleDunCards} handEvaluation={{name: getHandTypeNameFromEval(ai.arrangedHandsEvaluated?.middle)}} cardStyle={{width: '30px', height: '45px', margin: '1px', fontSize: '0.7em'}} />
@@ -142,7 +136,7 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
                         />
                     )}
                      {(gameState === 'arranging' || gameState === 'dealing') && (!me.hand || me.hand.length === 0) && 
-                      (gameState !== 'waiting') && /* 不在waiting时才显示等待发牌 */
+                      (gameState !== 'waiting') &&
                         <p className="status-text">等待发牌...</p>
                     }
                  </div>
@@ -150,7 +144,7 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
             
             {(gameState === 'comparing' || gameState === 'ended') && (
                 <div className="results-and-log-area">
-                    {me && me.arrangedHands && me.arrangedHands.front && ( // 确保 arrangedHands 和 front 存在
+                    {me && me.arrangedHands && me.arrangedHands.front && (
                          <div className="player-info my-info final-hands-display">
                             <h4>{me.name}的最终牌墩 (总分: {me.score}):</h4>
                             <div className="arranged-hands-display self-hands">
@@ -166,8 +160,9 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
                             <h4>比牌结果:</h4>
                             <ul>
                                 {roomData.comparisonDetails.map((detail, index) => {
-                                     const playerA = players.find(p => p.id === detail.playerA_id);
-                                     const playerB = players.find(p => p.id === detail.playerB_id);
+                                     // 移除了未使用的 playerA 和 playerB 定义
+                                     // const playerA = players.find(p => p.id === detail.playerA_id); 
+                                     // const playerB = players.find(p => p.id === detail.playerB_id); 
                                      let message = "";
                                      if (detail.type === 'shoot') {
                                          const shooterPlayer = players.find(p => p.id === detail.shooter);
@@ -175,6 +170,8 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
                                          message = `${shooterPlayer?.name || '玩家'} 打枪 ${targetPlayer?.name || '玩家'}! (+${detail.extraPoints}水)`;
                                      } else if (detail.type === 'special_hand_win') {
                                          const winnerPlayer = players.find(p => p.id === detail.winner);
+                                         // 确保 playerA_id 或 playerB_id (在detail中) 能正确关联到特殊牌型的拥有者
+                                         // 这里我们假设 detail.winner 就是特殊牌型的拥有者
                                          message = `${winnerPlayer?.name || '玩家'} 特殊牌型 (${detail.specialHandName}) +${detail.waters}水`;
                                      } else if (detail.winner === 'Draw') {
                                          message = `${detail.dun?.toUpperCase() || '墩'}: 平局`;
@@ -230,7 +227,7 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
                              })}
                         </div>
                     )}
-                    {(gameState === 'ended' || (gameState === 'comparing' && roomData.prompt)) && (
+                    {(gameState === 'ended' || (gameState === 'comparing' && !!roomData.prompt)) && (
                         <div className="next-round-controls">
                             {roomData.prompt && <p className="game-prompt">{roomData.prompt}</p>}
                              <button onClick={() => socket.emit('playerIsReady', { roomId })} className="ready-button">
@@ -245,7 +242,6 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid, isInitiallyL
                 <p className="game-prompt global-prompt">{prompt}</p>
             }
 
-            {/* 新增：在房间底部显示连接状态栏 */}
             {connectionInfo && (
                 <div className="room-connection-status-bar">
                     <p>后端: {connectionInfo.backendHost}</p>
