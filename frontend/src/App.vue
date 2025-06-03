@@ -1,5 +1,4 @@
 <template>
-  <!-- ... (template 与上一版几乎相同, 确保 GameBoardComponent 的事件监听正确) ... -->
   <div id="app-container" class="app-flex-container">
     <div v-if="generalError" class="error global-error">{{ generalError }}</div>
 
@@ -40,8 +39,8 @@
         :isRoomHost="true"
         :canStartGame="false"
         @card-drag-start="handleDragStartLogic"
-        @card-dropped="handleDesktopDropLogic" <!-- 重命名桌面drop处理 -->
-        @card-drag-end="handleTouchDragEndLogic"   <!-- 重命名触摸drag end处理 -->
+        @card-dropped="handleDesktopDropLogic"
+        @card-drag-end="handleTouchDragEndLogic"
         @card-drag-over-segment="handleDragOverSegmentLogic"
         :aiHandVisible="currentLocalGameState === 'showdown'"
         :aiArrangedHand="aiArrangedHand"
@@ -51,15 +50,15 @@
       <div v-else-if="currentLocalGameState === 'idle' && !isDealing" class="idle-message app-flex-grow">
         <p>点击“开始牌局”与 AI 对战。</p>
       </div>
-       <div v-if="isDealing" class="dealing-message app-flex-grow">
+      <div v-if="isDealing" class="dealing-message app-flex-grow">
         <p>正在发牌...</p>
       </div>
-    </div>
-  </div>
+    </div> <!-- Closes game-area div -->
+  </div> <!-- Closes app-container div -->
 </template>
 
 <script setup>
-// ... (大部分 script 与之前相同) ...
+// Script 部分与之前相同
 import { ref, computed, reactive, onMounted } from 'vue';
 import GameBoardComponent from './components/GameBoard.vue';
 import Deck from './game_logic_local/Deck';
@@ -76,14 +75,13 @@ const aiIsReady = ref(false);
 const showdownResults = ref(null);
 const generalError = ref('');
 const isDealing = ref(false);
-
 let activeDraggedCardInfo = null; // { card, fromSegment }
-// currentDragOverSegment 不再由 App.vue 管理，由 Card.vue 在 touchend 时直接传递最终目标
 
-const isDynamicMiddleDunActive = computed(() => { /* ... (不变) ... */
+const isDynamicMiddleDunActive = computed(() => {
   return playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5;
 });
-const validationMessage = computed(() => { /* ... (不变) ... */
+
+const validationMessage = computed(() => {
   if (playerArrangedHand.front.length !== 3) return "头墩需3张牌";
   if (playerArrangedHand.middle.length !== 5) return "中墩需5张牌";
   if (playerArrangedHand.back.length !== 5) return "尾墩需5张牌";
@@ -102,7 +100,8 @@ const validationMessage = computed(() => { /* ... (不变) ... */
   }
   return "可以提交";
 });
-const showdownResultsForBoard = computed(() => { /* ... (不变) ... */
+
+const showdownResultsForBoard = computed(() => {
     if (!showdownResults.value) return null;
     const results = {};
     if (showdownResults.value.player) {
@@ -123,8 +122,7 @@ const showdownResultsForBoard = computed(() => { /* ... (不变) ... */
     return results;
 });
 
-
-function startNewAIGame() { /* ... (不变) ... */
+function startNewAIGame() {
   isDealing.value = true;
   generalError.value = '';
   currentLocalGameState.value = 'dealing';
@@ -146,22 +144,19 @@ function startNewAIGame() { /* ... (不变) ... */
   }, 500);
 }
 
-function rankCard(card) { /* ... (不变) ... */
+function rankCard(card) {
     const valueOrder = ['2','3','4','5','6','7','8','9','10','jack','queen','king','ace'];
     const suitOrder = ['clubs', 'diamonds', 'hearts', 'spades'];
     return valueOrder.indexOf(card.value) * 4 + suitOrder.indexOf(card.suit);
 }
 
-
-function handleDragStartLogic(payload) { // payload: { card, fromSegment }
+function handleDragStartLogic(payload) {
   activeDraggedCardInfo = { card: payload.card, fromSegment: payload.fromSegment };
 }
 
-// 桌面拖拽的放置逻辑
-function handleDesktopDropLogic(payload) { // payload: { card, toSegment }
+function handleDesktopDropLogic(payload) {
   if (!activeDraggedCardInfo || activeDraggedCardInfo.card.id !== payload.card.id) {
-      console.warn("Mismatched card on desktop drop or no active drag.");
-      activeDraggedCardInfo = null; // 清理以防万一
+      activeDraggedCardInfo = null;
       return;
   }
   const fromSegmentName = activeDraggedCardInfo.fromSegment;
@@ -175,35 +170,25 @@ function handleDesktopDropLogic(payload) { // payload: { card, toSegment }
   activeDraggedCardInfo = null;
 }
 
-// 触摸拖拽结束时的放置逻辑
-function handleTouchDragEndLogic(payload) { // payload: { card, targetSegment }
+function handleTouchDragEndLogic(payload) {
     if (!activeDraggedCardInfo || activeDraggedCardInfo.card.id !== payload.card.id) {
-        console.warn("Mismatched card on touch end or no active drag.");
         activeDraggedCardInfo = null;
         return;
     }
-
-    const toSegmentName = payload.targetSegment; // 目标区域由 Card.vue 在 touchend 时确定
+    const toSegmentName = payload.targetSegment;
     const fromSegmentName = activeDraggedCardInfo.fromSegment;
 
     if (toSegmentName && toSegmentName !== fromSegmentName) {
         performCardMove(activeDraggedCardInfo.card, fromSegmentName, toSegmentName);
     }
-    // 如果 toSegmentName 为 null 或与 fromSegmentName 相同，则牌逻辑上回到原位（不执行移动）
     activeDraggedCardInfo = null;
 }
 
 function handleDragOverSegmentLogic(segmentName) {
-    // 这个事件现在主要是为了在 Card.vue 中提供视觉反馈（比如高亮可放置区域）
-    // App.vue 不需要直接用它来更新 currentDragOverSegment 了，
-    // 因为最终的 targetSegment 会在 touchend 时由 Card.vue 传递过来。
-    // 如果需要 App.vue 层面的视觉反馈，可以在这里设置一个 ref。
-    // console.log('Hovering over segment (touch):', segmentName);
+    // Placeholder for potential visual feedback logic on App.vue level
 }
 
-
 function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
-  // ... (performCardMove 函数与上一版完全相同，不限制数量) ...
   if (!cardToMove || typeof cardToMove.id === 'undefined') {
     console.error("Attempted to move an invalid card object:", cardToMove);
     return;
@@ -235,7 +220,6 @@ function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
     // Card is moved back to the conceptual "initial area"
   }
 
-  // Auto-fill middle dun logic
   if (playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5) {
       const assignedToFrontIds = new Set(playerArrangedHand.front.filter(c => c).map(c => c.id));
       const assignedToBackIds = new Set(playerArrangedHand.back.filter(c => c).map(c => c.id));
@@ -257,8 +241,7 @@ function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
   }
 }
 
-
-function submitPlayerHand() { /* ... (不变) ... */
+function submitPlayerHand() {
   if (validationMessage.value !== "可以提交") {
     generalError.value = "牌型不符合要求: " + validationMessage.value;
     return;
@@ -268,7 +251,7 @@ function submitPlayerHand() { /* ... (不变) ... */
   aiProcessHand();
   checkForShowdown();
 }
-function aiProcessHand() { /* ... (不变) ... */
+function aiProcessHand() {
   const handToArrange = [...aiHand.value];
   handToArrange.sort(() => 0.5 - Math.random());
   aiArrangedHand.front = handToArrange.slice(0, 3).sort((a,b) => rankCard(a) - rankCard(b));
@@ -276,13 +259,13 @@ function aiProcessHand() { /* ... (不变) ... */
   aiArrangedHand.back = handToArrange.slice(8, 13).sort((a,b) => rankCard(a) - rankCard(b));
   aiIsReady.value = true;
 }
-function checkForShowdown() { /* ... (不变) ... */
+function checkForShowdown() {
   if (playerIsReady.value && aiIsReady.value) {
     currentLocalGameState.value = 'showdown';
     showdownResults.value = compareHands(playerArrangedHand, aiArrangedHand);
   }
 }
-function getHandType(dun) { /* ... (不变) ... */
+function getHandType(dun) {
     if (!dun || dun.length === 0) return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
     if (dun.length === 3) {
         const values = dun.map(c => c.value);
@@ -292,7 +275,7 @@ function getHandType(dun) { /* ... (不变) ... */
     }
     return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
 }
-function compareSingleDuns(playerDun, aiDun) { /* ... (不变) ... */
+function compareSingleDuns(playerDun, aiDun) {
     const playerType = getHandType(playerDun);
     const aiType = getHandType(aiDun);
     if (playerType.rank > aiType.rank) return 1;
@@ -303,7 +286,7 @@ function compareSingleDuns(playerDun, aiDun) { /* ... (不变) ... */
     if (playerMaxRank < aiMaxRank) return -1;
     return 0;
 }
-function compareHands(pHand, aHand) { /* ... (不变) ... */
+function compareHands(pHand, aHand) {
   let playerScore = 0;
   let aiScore = 0;
   const comparisonDetails = {
@@ -337,7 +320,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ... (App.vue 的样式与上一版相同) ... */
+/* Style 部分与之前相同 */
 .app-flex-container {
   display: flex;
   flex-direction: column;
