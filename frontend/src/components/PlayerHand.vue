@@ -1,20 +1,24 @@
 <template>
-  <div class="player-hand-container">
-    <!-- 移除或修改外部标题的显示方式 -->
-    <!-- <h4>{{ title }}</h4> --> 
+  <div 
+    class="player-hand-container"
+    :data-segment-name="segmentName" <!-- 添加 data-attribute 用于识别 -->
+    @dragover.prevent="onDragOverDesktop" <!-- 桌面端 -->
+    @drop="onDropDesktop"                 <!-- 桌面端 -->
+    @dragleave="onDragLeaveDesktop"        <!-- 桌面端 -->
+    :class="{ 'drag-over': isDragOverDesktop }"
+    ref="handContainerElement"
+  >
     <div
       class="card-container"
-      @dragover.prevent="onDragOver"
-      @drop="onDrop"
-      @dragleave="onDragLeave"
-      :class="{ 'drag-over': isDragOver, 'is-empty': cards.length === 0 }"
+      :class="{ 'is-empty': cards.length === 0 }"
     >
       <CardComponent
-        v-for="card in cards"
-        :key="card.id"
-        :card="card"
+        v-for="card_item in cards" :key="card_item.id" <!-- 修改变量名避免与 props.card 冲突 -->
+        :card="card_item"
         :draggable="draggableCards"
-        @dragstart="$emit('cardDragStart', { card, fromSegment: segmentName })"
+        @customDragStart="passCustomDragStart"
+        @customDragEnd="passCustomDragEnd"
+        @customDragOverSegment="passCustomDragOverSegment"
       />
       <span v-if="cards.length === 0 && placeholderText" class="drop-placeholder">
         {{ placeholderText }}
@@ -28,87 +32,94 @@ import { ref } from 'vue';
 import CardComponent from './Card.vue';
 
 const props = defineProps({
-  cards: {
-    type: Array,
-    default: () => []
-  },
-  title: { // 这个 title 现在可能不直接显示，或者用作 placeholderText 的一部分
-    type: String,
-    default: '手牌'
-  },
-  placeholderText: { // 新增 prop，用于在卡片容器内显示的提示文字
-    type: String,
-    default: ''
-  },
-  draggableCards: {
-    type: Boolean,
-    default: false
-  },
-  droppable: {
-    type: Boolean,
-    default: false
-  },
-  segmentName: {
-    type: String,
-    required: true
-  }
+  cards: { type: Array, default: () => [] },
+  placeholderText: { type: String, default: '' },
+  draggableCards: { type: Boolean, default: false }, // 是否允许从这个区域拖出
+  droppable: { type: Boolean, default: true }, // 这个区域是否接受放置 (现在主要由 App.vue 判断)
+  segmentName: { type: String, required: true }
 });
 
-const emit = defineEmits(['cardDropped', 'cardDragStart']);
-const isDragOver = ref(false);
+const emit = defineEmits(['cardDropped', 'cardDragStart', 'cardDragEnd', 'cardDragOverSegment']);
 
-function onDragOver(event) {
+const isDragOverDesktop = ref(false); // 用于桌面拖拽的视觉效果
+const handContainerElement = ref(null);
+
+
+// --- 桌面原生拖拽事件处理 ---
+function onDragOverDesktop(event) {
   if (props.droppable) {
     event.preventDefault();
-    isDragOver.value = true;
+    isDragOverDesktop.value = true;
   }
 }
-function onDragLeave() {
-  isDragOver.value = false;
+function onDragLeaveDesktop() {
+  isDragOverDesktop.value = false;
 }
-function onDrop(event) {
+function onDropDesktop(event) {
   if (props.droppable) {
     event.preventDefault();
-    isDragOver.value = false;
+    isDragOverDesktop.value = false;
     const cardData = event.dataTransfer.getData('text/plain');
     try {
       const card = JSON.parse(cardData);
-      emit('cardDropped', { card, toSegment: props.segmentName });
+      // 桌面拖拽直接在这里 emit cardDropped
+      emit('cardDropped', { card, toSegment: props.segmentName, type: 'desktop' });
     } catch (e) {
       console.error("Failed to parse dropped card data:", e);
     }
   }
 }
+
+// --- 透传来自 CardComponent 的自定义拖拽事件 ---
+function passCustomDragStart(payload) {
+  emit('cardDragStart', { ...payload, fromSegment: props.segmentName });
+}
+function passCustomDragEnd(payload) {
+  // PlayerHand 不直接处理放置，App.vue 根据卡片最后位置决定
+  emit('cardDragEnd', payload);
+}
+function passCustomDragOverSegment(segmentName) {
+    emit('cardDragOverSegment', segmentName);
+}
+
 </script>
 
 <style scoped>
+/* ... (样式与之前类似，确保 card-container 有足够大小) ... */
 .player-hand-container {
   margin-bottom: 10px;
+  /* background-color: #f0f0f0;  可以给个背景色，方便调试触摸目标 */
 }
 .card-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  min-height: 100px; /* 根据卡片大小调整 */
-  border: 1px dashed #ccc;
-  padding: 10px; /* 增加内边距给 placeholder 空间 */
+  gap: 4px;
+  min-height: 90px;
+  border: 1px dashed #b0bec5;
+  padding: 8px;
   border-radius: 4px;
-  position: relative; /* 为了 placeholder 的定位 (如果需要更复杂的定位) */
-  align-items: center; /* 垂直居中 placeholder */
-  justify-content: center; /* 水平居中 placeholder (如果只有一个元素或为空时) */
+  position: relative;
+  align-items: flex-start;
+  justify-content: flex-start;
+  background-color: rgba(255,255,255,0.5);
 }
 .card-container.is-empty {
-    background-color: #f9f9f9; /* 空的时候给个背景色区分 */
+    background-color: rgba(236, 239, 241, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.drag-over {
-  border-color: #4CAF50;
-  background-color: #e8f5e9;
+.drag-over { /* 桌面拖拽悬停样式 */
+  border-color: #00796b;
+  border-style: solid;
+  background-color: rgba(178, 223, 219, 0.5);
 }
 .drop-placeholder {
-  color: #aaa;
+  color: #78909c;
   font-style: italic;
   text-align: center;
-  width: 100%; /* 让 placeholder 占据整个容器宽度 */
+  width: 100%;
+  font-size: 0.9em;
+  padding: 10px 0;
 }
-/* 移除了 h4 的样式，因为我们不再直接显示 title 为 h4 */
 </style>
