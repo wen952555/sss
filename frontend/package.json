@@ -5,15 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build",  // <--- 这个命令会被 Cloudflare Pages 执行
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.3.11",  // 版本号可能会因你创建项目时Vite的最新版本而略有不同
-    "socket.io-client": "^4.7.2" // 我们手动安装的
+    "vue": "^3.3.11",
+    "socket.io-client": "^4.7.2"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.5.2", // 版本号可能会不同
-    "vite": "^5.0.8" // 版本号可能会不同
+    "@vitejs/plugin-vue": "^4.5.2",
+    "vite": "^5.0.8"
   }
 }
