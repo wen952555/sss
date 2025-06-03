@@ -7,7 +7,6 @@
     <div v-if="playerHandInitial.length > 0 && (currentGameState === 'playing' || currentGameState === 'arranging' || currentGameState === 'showdown')" class="player-area">
       <h3 v-if="currentGameState !== 'showdown'">你的手牌 (拖拽理牌)</h3>
 
-      <!-- 初始手牌区 / 或形成后的中墩 -->
       <PlayerHandComponent
         :title="initialOrMiddleDunTitle"
         :cards="cardsForMiddleOrInitialArea"
@@ -28,15 +27,14 @@
           @cardDropped="onCardDropped"
           @cardDragStart="onCardDragStart"
         />
-        <!-- 中墩现在由上面的 initialOrMiddleDunTitle 区域在 isDynamicMiddleDunActive 为 true 时扮演 -->
-        <!-- 如果你仍然希望在下方明确显示一个“中墩”区域（即使它只是上面区域的别名），可以这样做： -->
+        
         <PlayerHandComponent
-          v-if="isDynamicMiddleDunActive && currentGameState === 'showdown'" /* 只在摊牌时显示独立的“你的中墩” */
+          v-if="isDynamicMiddleDunActive && currentGameState === 'showdown'"
           title="你的中墩"
           :cards="arrangedHand.middle"
           :draggableCards="false"
           :droppable="false"
-          segmentName="middle_showdown_only" /* 给一个不同的名字避免混淆 */
+          segmentName="middle_showdown_only"
         />
 
         <PlayerHandComponent
@@ -69,7 +67,6 @@
     </div>
 
     <div v-if="showdownResults && (currentGameState === 'showdown' || currentGameState === 'finished')" class="showdown-area">
-      <!-- ... (showdownResults 显示部分与之前相同) ... -->
         <h3>比牌结果</h3>
         <div v-if="showdownResults.comparisonDetails" class="comparison-summary">
             <p>头墩: {{ showdownResults.comparisonDetails.front }}</p>
@@ -93,7 +90,7 @@ import { computed } from 'vue';
 import PlayerHandComponent from './PlayerHand.vue';
 
 const props = defineProps({
-  playerHandInitial: { type: Array, default: () => [] }, // 改为接收初始手牌
+  playerHandInitial: { type: Array, default: () => [] },
   arrangedHand: { type: Object, default: () => ({ front: [], middle: [], back: [] }) },
   currentGameState: String,
   currentPlayerIsReady: Boolean,
@@ -103,23 +100,20 @@ const props = defineProps({
   canStartGame: Boolean,
   aiHandVisible: { type: Boolean, default: false },
   aiArrangedHand: { type: Object, default: () => ({ front: [], middle: [], back: [] }) },
-  isDynamicMiddleDunActive: { type: Boolean, default: false } // 新增 prop
+  isDynamicMiddleDunActive: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['cardDragStart', 'cardDropped', 'submitHand', 'startGame']);
 
-// 计算属性：决定中间区域的标题
 const initialOrMiddleDunTitle = computed(() => {
   if (props.currentGameState === 'showdown') return "你的中墩";
   return props.isDynamicMiddleDunActive ? `中墩 (${props.arrangedHand.middle.length} cards)` : `手牌区/未分配 (${cardsForMiddleOrInitialArea.value.length} cards)`;
 });
 
-// 计算属性：决定中间区域显示的牌
 const cardsForMiddleOrInitialArea = computed(() => {
   if (props.isDynamicMiddleDunActive) {
     return props.arrangedHand.middle;
   } else {
-    // 显示 playerHandInitial 中未被 front 或 back 占用的牌
     const assignedToFrontIds = new Set(props.arrangedHand.front.map(c => c.id));
     const assignedToBackIds = new Set(props.arrangedHand.back.map(c => c.id));
     return props.playerHandInitial.filter(
@@ -127,7 +121,6 @@ const cardsForMiddleOrInitialArea = computed(() => {
     );
   }
 });
-
 
 function onCardDragStart(payload) {
   if ((props.currentGameState === 'playing' || props.currentGameState === 'arranging') && !props.currentPlayerIsReady) {
@@ -147,7 +140,6 @@ function onSubmitHand() {
 </script>
 
 <style scoped>
-/* ... (与之前 GameBoard.vue 相同的样式) ... */
 .game-board-container {
   border: 1px solid #90a4ae;
   padding: 20px;
