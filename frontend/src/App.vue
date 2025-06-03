@@ -1,10 +1,8 @@
 <template>
   <div id="app-container">
-    <!-- 顶部的 "十三水 AI 练习" h1 已移除 -->
     <div v-if="generalError" class="error">{{ generalError }}</div>
 
     <div class="game-area">
-      <!-- 顶部信息和控制横幅 - 现在包含玩家状态 -->
       <div class="top-info-bar">
         <div class="game-status-mode">
           模式: AI 练习 | 游戏状态: {{ currentLocalGameState }}
@@ -30,8 +28,6 @@
         </button>
       </div>
 
-      <!-- 原先的 player-info-container 已移除，其内容合并到 top-info-bar -->
-
       <GameBoardComponent
         v-if="playerHandInitial.length > 0 || currentLocalGameState === 'showdown'"
         :playerHandInitial="playerHandInitial"
@@ -48,20 +44,22 @@
         :aiHandVisible="currentLocalGameState === 'showdown'"
         :aiArrangedHand="aiArrangedHand"
         :isDynamicMiddleDunActive="isDynamicMiddleDunActive"
-        class="game-board-main-area" <!-- 给牌桌区一个class，方便调整其外边距 -->
+        class="game-board-main-area"
       />
+      <!-- 这个 v-else-if 对应上面的 GameBoardComponent 的 v-if -->
       <div v-else-if="currentLocalGameState === 'idle' && !isDealing" class="idle-message">
         <p>点击“开始牌局”与 AI 对战。</p>
       </div>
+      <!-- 这个 v-if 是独立的，用于显示发牌信息，不应该用 v-else-if 接在 GameBoardComponent 后面 -->
        <div v-if="isDealing" class="dealing-message">
         <p>正在发牌...</p>
       </div>
-    </div>
-  </div>
+    </div> <!-- Closes game-area div -->
+  </div> <!-- Closes app-container div -->
 </template>
 
 <script setup>
-// Script 部分与之前相同，不需要修改
+// Script 部分与之前相同
 import { ref, computed, reactive, onMounted } from 'vue';
 import GameBoardComponent from './components/GameBoard.vue';
 import Deck from './game_logic_local/Deck';
@@ -275,35 +273,32 @@ onMounted(() => {
 
 <style scoped>
 #app-container {
-  /* 移除顶部的 h1 后，可能需要调整 app-container 的整体 padding 或 game-area 的 margin-top */
+  /* Styles for app container */
 }
 .game-area {
-  /* border 和 padding 可以保留，或者根据需要调整 */
   border: 2px solid #607d8b;
   padding: 15px;
   background-color: #eceff1;
   border-radius: 10px;
-  /* 移除了 margin-top，因为现在顶部横幅就是游戏区域的一部分 */
 }
-
 .top-info-bar {
   background-color: #cfd8dc;
-  padding: 8px 12px; /* 缩小 padding */
+  padding: 8px 12px;
   border-radius: 5px;
   margin-bottom: 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9em; /* 缩小字体 */
+  font-size: 0.9em;
 }
 .game-status-mode {
-  flex-grow: 1; /* 让它占据一些空间 */
+  flex-grow: 1;
 }
 .player-statuses-inline {
   display: flex;
-  gap: 15px; /* 玩家状态之间的间距 */
-  margin: 0 15px; /* 和左右元素的间距 */
-  flex-shrink: 0; /* 防止被过度压缩 */
+  gap: 15px;
+  margin: 0 15px;
+  flex-shrink: 0;
 }
 .player-status-item {
   display: flex;
@@ -314,12 +309,11 @@ onMounted(() => {
   color: #37474f;
 }
 .restart-button-inline {
-  background-color: #00796b !important; /* 保持按钮颜色，!important 确保覆盖之前的 .game-info button */
-  padding: 6px 10px !important; /* 缩小按钮 padding */
-  font-size: 0.9em !important; /* 缩小按钮字体 */
-  margin-left: auto; /* 将按钮推到最右边，如果左边内容想占据更多空间 */
+  background-color: #00796b !important;
+  padding: 6px 10px !important;
+  font-size: 0.9em !important;
+  margin-left: auto;
 }
-
 .error {
     background-color: #ffcdd2;
     color: #c62828;
@@ -328,9 +322,8 @@ onMounted(() => {
     margin-bottom: 10px;
     border: 1px solid #ef9a9a;
 }
-
 .game-board-main-area {
-  margin-top: 0; /* GameBoardComponent 现在紧邻 top-info-bar */
+  margin-top: 0;
 }
 .idle-message, .dealing-message {
     text-align: center;
