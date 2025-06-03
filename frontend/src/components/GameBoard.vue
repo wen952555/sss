@@ -17,7 +17,7 @@
         segmentName="front"
         @cardDropped="onCardDropped"
         @cardDragStart="onCardDragStart"
-        class="dun-area" <!-- 可以用一个通用class给墩加样式 -->
+        class="dun-area"
       />
 
       <!-- 2. 初始手牌区 / 或形成后的中墩 (现在显示在头墩下方) -->
@@ -32,8 +32,8 @@
         class="initial-hand-area"
       />
 
+      <!-- segments div 应该包裹尾墩和摊牌时的中墩 -->
       <div class="segments" :class="{ 'showdown-view': currentGameState === 'showdown' }">
-        <!-- 中墩 (只有在摊牌时，且动态中墩激活时，作为一个独立的视觉区域显示) -->
         <PlayerHandComponent
           v-if="isDynamicMiddleDunActive && currentGameState === 'showdown'"
           title="你的中墩"
@@ -44,7 +44,6 @@
           class="dun-area"
         />
 
-        <!-- 3. 尾墩 (现在是第三个显示的墩/区域) -->
         <PlayerHandComponent
           :title="currentGameState === 'showdown' ? '你的尾墩' : '尾墩 (5张)'"
           :cards="arrangedHand.back"
@@ -66,7 +65,7 @@
         提交牌型 {{ validationMessage !== '可以提交' ? '('+validationMessage+')' : '' }}
       </button>
       <p v-if="currentPlayerIsReady && currentGameState === 'playing'">已提交，等待 AI...</p>
-    </div>
+    </div> <!-- Closes player-area div -->
     <div v-else-if="currentGameState === 'dealing'">
         <p>正在发牌，请稍候...</p>
     </div>
@@ -91,7 +90,7 @@
             <PlayerHandComponent title="AI 尾墩" :cards="aiArrangedHand.back" :draggableCards="false" :droppable="false" segmentName="ai-back"/>
         </div>
     </div>
-  </div>
+  </div> <!-- Closes game-board-container div -->
 </template>
 
 <script setup>
@@ -126,7 +125,6 @@ const cardsForMiddleOrInitialArea = computed(() => {
   } else {
     const assignedToFrontIds = new Set(props.arrangedHand.front.map(c => c.id));
     const assignedToBackIds = new Set(props.arrangedHand.back.map(c => c.id));
-    // 确保 playerHandInitial 是一个数组
     const initialHand = Array.isArray(props.playerHandInitial) ? props.playerHandInitial : [];
     return initialHand.filter(
       c => !assignedToFrontIds.has(c.id) && !assignedToBackIds.has(c.id)
@@ -152,7 +150,7 @@ function onSubmitHand() {
 </script>
 
 <style scoped>
-/* Style 部分可以保持不变，或者根据新的布局微调间距 */
+/* Style 部分可以保持不变 */
 .game-board-container {
   border: 1px solid #90a4ae;
   padding: 20px;
@@ -163,17 +161,13 @@ function onSubmitHand() {
 .player-area, .showdown-area, .game-controls {
   margin-bottom: 20px;
 }
-
-/* 可以为墩区域和初始手牌区添加一些通用样式或特定样式 */
 .dun-area {
-  margin-bottom: 10px; /* 例如，墩之间的间距 */
+  margin-bottom: 10px;
 }
 .initial-hand-area {
-  margin-bottom: 15px; /* 初始手牌区和下方墩的间距 */
+  margin-bottom: 15px;
 }
-
 .segments {
-  /* margin-top: 15px;  由于上面有了 initial-hand-area，这个可能不需要了 */
   display: flex;
   flex-direction: column;
   gap: 10px;
