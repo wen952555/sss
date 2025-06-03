@@ -1,74 +1,76 @@
 /* frontend/src/components/Card.css */
 .card {
-    width: 128px; /* 原为 80px，再增大60% */
-    height: 180px; /* 原为 112px，再增大60% (取整) */
-    border: 1px solid #888; /* 边框颜色更明显一些 */
-    border-radius: 8px; /* 增大圆角以匹配更大的尺寸 */
+    width: 128px; 
+    height: 180px; 
+    /* border: 1px solid #888; */ /* ★★★ 移除边框 ★★★ */
+    border-radius: 6px; /* 保留圆角，即使没有边框也好看 */
     display: inline-flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 2px 3px; /* 左右间距可以稍大一些 */
-    background-color: #ffffff; /* 卡牌背景用白色更突出 */
-    color: #111; /* 卡牌上文字颜色（如果显示） */
+    margin: 2px 3px; 
+    background-color: #ffffff; 
+    color: #111; 
     cursor: pointer;
     user-select: none;
-    box-shadow: 3px 3px 6px rgba(0,0,0,0.3); /* 阴影也相应调整 */
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2); /* 调整阴影使其更柔和 */
     transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
     position: relative; 
-    z-index: 5; /* ★★★ 默认给卡牌一个z-index，方便覆盖背景文字 ★★★ */
+    z-index: 5; 
 }
 
 .card:hover:not(.empty-slot) {
     transform: translateY(-4px) scale(1.03); 
-    box-shadow: 4px 4px 10px rgba(0,0,0,0.4);
-    z-index: 20; /* 悬停时在最上层 */
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.3); /* 悬停阴影 */
+    z-index: 20; 
 }
 
 .card.selected {
-    border: 3px solid #4a90e2; /* 选中边框更粗，颜色调整 */
-    transform: translateY(-6px) scale(1.05); 
-    box-shadow: 0 0 12px rgba(74, 144, 226, 0.9);
-    z-index: 25; /* 选中时也在最上层 */
+    /* border: 3px solid #4a90e2; */ /* ★★★ 移除选中时的边框 ★★★ */
+    /* 可以用其他方式表示选中，例如更强的阴影或轻微的背景色变化 */
+    transform: translateY(-6px) scale(1.05); /* 选中效果调整 */
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.7); /* 增强选中阴影 */
+    z-index: 25; 
 }
 
 .card-image {
-    max-width: calc(100% - 8px); /* 留出内边距空间 */
-    max-height: calc(100% - 8px);
+    max-width: 100%; /* 图片可以占满无边框的卡牌 */
+    max-height: 100%;
     object-fit: contain;
-    /* padding: 4px; */ /* 改用calc来控制图片和边框的距离 */
+    border-radius: 6px; /* ★★★ 让图片也带上圆角，因为卡牌没边框了 ★★★ */
+    /* padding: 0; */ /* 移除内边距，让图片贴合卡牌边缘 */
 }
 
 .empty-slot, .empty-slot-placeholder {
-    width: 128px;  /* 与卡牌尺寸一致 */
-    height: 180px; /* 与卡牌尺寸一致 */
-    background-color: rgba(47, 49, 54, 0.5); /* 深色透明背景 */
-    border: 2px dashed #5c6168; 
-    border-radius: 8px;
+    width: 128px;  
+    height: 180px; 
+    background-color: rgba(54, 57, 63, 0.6); 
+    /* border: 2px dashed #4f545c; */ /* ★★★ 空槽的边框也可以考虑移除或改用其他指示 ★★★ */
+    /* 如果移除边框，可能需要其他方式指示空槽，例如一个内部的浅色背景或图标 */
+    border-radius: 6px;
     margin: 2px 3px; 
     display: inline-flex; 
     justify-content: center;
     align-items: center;
     cursor: default;
-    z-index: 1; /* 确保空槽在背景文字之上，但在真实卡牌之下 */
+    z-index: 1; 
+}
+/* 如果希望空槽也有一个细虚线，可以保留并调整 */
+.empty-slot-placeholder { 
+    border: 1px dashed #5c6168;
 }
 .card.empty-slot { 
-     background-color: rgba(47, 49, 54, 0.5);
-     border: 2px dashed #5c6168;
+     background-color: rgba(54, 57, 63, 0.6);
+     /* border: 2px dashed #4f545c; */
 }
 
 .card.dragging {
     opacity: 0.8;
-    box-shadow: 0px 8px 20px rgba(0,0,0,0.5);
-    transform: rotate(1.5deg) scale(1.08); /* 拖拽效果调整 */
-    z-index: 30; /* 拖拽时最最上层 */
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.45);
+    transform: rotate(1.5deg) scale(1.08); 
+    z-index: 30; 
 }
 
-/* 后备文字样式 (如果图片未加载) */
-.card-rank {
-    font-size: 2.5em; /* 增大 */
-    font-weight: bold;
-}
-.card-suit {
-    font-size: 2em; /* 增大 */
-}
+/* 后备文字样式 (保持不变) */
+.card-rank { /* ... */ }
+.card-suit { /* ... */ }
