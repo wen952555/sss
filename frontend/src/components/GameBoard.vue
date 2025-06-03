@@ -1,5 +1,6 @@
 <template>
   <div class="game-board-container">
+    <!-- 游戏控制按钮 (例如开始游戏) -->
     <div v-if="currentGameState === 'waiting' && isRoomHost && canStartGame" class="game-controls">
       <button @click="$emit('startGame')" class="start-game-button">开始游戏</button>
     </div>
@@ -7,6 +8,7 @@
     <div v-if="playerHandInitial.length > 0 && (currentGameState === 'playing' || currentGameState === 'arranging' || currentGameState === 'showdown')" class="player-area">
       <h3 v-if="currentGameState !== 'showdown'">你的手牌 (拖拽理牌)</h3>
 
+      <!-- 1. 初始手牌区 / 或形成后的中墩 (现在显示在最上面，但逻辑上它仍然是“中间”或“初始”) -->
       <PlayerHandComponent
         :title="initialOrMiddleDunTitle"
         :cards="cardsForMiddleOrInitialArea"
@@ -15,9 +17,11 @@
         :segmentName="isDynamicMiddleDunActive ? 'middle' : 'initial_hand'"
         @cardDropped="onCardDropped"
         @cardDragStart="onCardDragStart"
+        class="initial-hand-area" <!-- 添加一个class方便调整样式 -->
       />
 
       <div class="segments" :class="{ 'showdown-view': currentGameState === 'showdown' }">
+        <!-- 2. 头墩 -->
         <PlayerHandComponent
           :title="currentGameState === 'showdown' ? '你的头墩' : '头墩 (3张)'"
           :cards="arrangedHand.front"
@@ -27,7 +31,9 @@
           @cardDropped="onCardDropped"
           @cardDragStart="onCardDragStart"
         />
-        
+
+        <!-- 3. 中墩 (只有在摊牌时，且动态中墩激活时，作为一个独立的视觉区域显示) -->
+        <!-- 如果希望在理牌时也看到一个明确的“中墩”占位符（即使牌在上面的区域），可以调整这里的 v-if -->
         <PlayerHandComponent
           v-if="isDynamicMiddleDunActive && currentGameState === 'showdown'"
           title="你的中墩"
@@ -36,7 +42,10 @@
           :droppable="false"
           segmentName="middle_showdown_only"
         />
+        <!-- 或者，如果你希望在理牌阶段，当头尾墩满了之后，上面的区域标签变为“中墩”，那么这里就不需要额外显示了 -->
 
+
+        <!-- 4. 尾墩 -->
         <PlayerHandComponent
           :title="currentGameState === 'showdown' ? '你的尾墩' : '尾墩 (5张)'"
           :cards="arrangedHand.back"
@@ -77,6 +86,7 @@
 
         <div v-if="aiHandVisible && aiArrangedHand" class="ai-hand-showdown">
             <h4>电脑 AI 的牌</h4>
+            <!-- AI牌的显示顺序也应该调整，如果需要与玩家一致的视觉布局 -->
             <PlayerHandComponent title="AI 头墩" :cards="aiArrangedHand.front" :draggableCards="false" :droppable="false" segmentName="ai-front"/>
             <PlayerHandComponent title="AI 中墩" :cards="aiArrangedHand.middle" :draggableCards="false" :droppable="false" segmentName="ai-middle"/>
             <PlayerHandComponent title="AI 尾墩" :cards="aiArrangedHand.back" :draggableCards="false" :droppable="false" segmentName="ai-back"/>
@@ -86,6 +96,7 @@
 </template>
 
 <script setup>
+// ... (script 部分与之前相同，不需要修改)
 import { computed } from 'vue';
 import PlayerHandComponent from './PlayerHand.vue';
 
@@ -106,14 +117,16 @@ const props = defineProps({
 const emit = defineEmits(['cardDragStart', 'cardDropped', 'submitHand', 'startGame']);
 
 const initialOrMiddleDunTitle = computed(() => {
-  if (props.currentGameState === 'showdown') return "你的中墩";
+  if (props.currentGameState === 'showdown' && props.isDynamicMiddleDunActive) return "你的中墩"; // 摊牌时，如果中墩激活，明确显示
   return props.isDynamicMiddleDunActive ? `中墩 (${props.arrangedHand.middle.length} cards)` : `手牌区/未分配 (${cardsForMiddleOrInitialArea.value.length} cards)`;
 });
 
 const cardsForMiddleOrInitialArea = computed(() => {
   if (props.isDynamicMiddleDunActive) {
+    // 当中墩激活时，这个区域就代表中墩
     return props.arrangedHand.middle;
   } else {
+    // 否则，它代表初始手牌区（未被分配到头墩或尾墩的牌）
     const assignedToFrontIds = new Set(props.arrangedHand.front.map(c => c.id));
     const assignedToBackIds = new Set(props.arrangedHand.back.map(c => c.id));
     return props.playerHandInitial.filter(
@@ -140,6 +153,7 @@ function onSubmitHand() {
 </script>
 
 <style scoped>
+/* ... (与之前 GameBoard.vue 相同的样式，但可以为 .initial-hand-area 添加特定样式) ... */
 .game-board-container {
   border: 1px solid #90a4ae;
   padding: 20px;
@@ -150,8 +164,14 @@ function onSubmitHand() {
 .player-area, .showdown-area, .game-controls {
   margin-bottom: 20px;
 }
+
+/* 新增：确保初始手牌区/中墩在最上面 */
+.initial-hand-area {
+  margin-bottom: 20px; /* 和其他墩之间有点间距 */
+}
+
 .segments {
-  margin-top: 15px;
+  margin-top: 15px; /* segments 整体的顶部间距可能不需要了，或者减少 */
   display: flex;
   flex-direction: column;
   gap: 10px;
