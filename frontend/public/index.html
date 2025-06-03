@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN"> <!-- 将 lang 设置为中文 -->
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" /> <!-- 你可以替换成自己的 favicon -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="一个多人在线十三水游戏"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" /> <!-- 示例 PWA 图标 -->
+    <!--
+      manifest.json 提供了 Progressive Web App 的元数据。
+      查看 https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      注意上面使用了 %PUBLIC_URL% 占位符。
+      在构建过程中，它将被替换为 public 文件夹的 URL。
+      只有 public 文件夹中的文件可以通过 %PUBLIC_URL% 引用。
+
+      与此不同，"/favicon.ico" 或 "favicon.ico" 将被视为相对于主页的路径。
+      了解如何配置一个非根 public URL，请查阅 https://facebook.github.io/create-react-app/docs/using-the-public-folder#changing-the-page-url
+    -->
+    <title>多人十三水</title> <!-- 浏览器标签页标题 -->
+  </head>
+  <body>
+    <noscript>您需要启用 JavaScript 才能运行此应用。</noscript>
+    <div id="root"></div>
+    <!--
+      这个 HTML 文件是一个模板。
+      如果你直接在浏览器中打开它，你会看到一个空页面。
+
+      你可以在这里添加脚本标签来引入静态资源，或者像下面这样添加meta标签。
+      构建过程会将所有依赖打包到这个 HTML 文件中，以便优化性能。
+      要开始开发，运行 `npm start` 或 `yarn start`。
+      要创建生产环境的包，使用 `npm run build` 或 `yarn build`。
+    -->
+  </body>
+</html>
