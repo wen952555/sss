@@ -10,9 +10,8 @@
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "socket.io-client": "^4.7.2",
-    "web-vitals": "^2.1.4"
-    // 如果你打算使用 react-beautiful-dnd，可以取消注释下一行
-    // "react-beautiful-dnd": "^13.1.1"
+    "web-vitals": "^2.1.4",
+    "react-beautiful-dnd": "^13.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
