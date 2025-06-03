@@ -1,192 +1,173 @@
 /* frontend/src/components/Room.css */
 .room-container {
-    padding: 15px; /* 稍微减少一些内边距 */
-    background-color: #2c2f33; /* 深色背景，更像牌桌 */
-    color: #f0f0f0; /* 浅色文字 */
+    padding: 10px; /* 整体内边距 */
+    background-color: #2c2f33; /* 深色背景 */
+    color: #f0f0f0;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    max-width: 1600px; /* 允许更宽的内容 */
-    min-height: calc(100vh - 120px); /* 占据大部分视口高度，减去header/footer */
-    margin: 20px auto;
-    display: flex; /* 改为flex布局 */
-    flex-direction: column; /* 内部元素默认还是垂直排列，但players-area会横向 */
-}
-
-.room-container h2 { /* 房间号标题 */
-    text-align: center;
-    color: #7289da; /* Discord 紫色系 */
-    margin-bottom: 10px;
-    font-size: 1.5em;
-}
-.room-container > p.game-state {
-    text-align: center;
-    font-size: 1.1em;
-    color: #f0f0f0;
-    margin-bottom: 15px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 6px 10px;
-    border-radius: 4px;
-    background-color: #4f545c; /* 深灰背景 */
-    border: 1px solid #5c6168;
-    align-self: center; /* 状态条居中 */
-    max-width: 300px;
-}
-
-/* 不同游戏状态的文字颜色 */
-.game-state-waiting { color: #faa61a; } /* 黄色 */
-.game-state-dealing { color: #43b581; } /* 绿色 */
-.game-state-arranging { color: #7289da; } /* 紫色 */
-.game-state-comparing { color: #f04747; } /* 红色 */
-.game-state-ended { color: #b0b8bf; }   /* 灰色 */
-
-
-.players-area {
-    display: flex; /* ★★★ 核心改动：玩家区域使用 flex 横向排列 ★★★ */
-    flex-wrap: nowrap; /* 默认不换行，如果玩家多可能需要滚动或调整 */
-    justify-content: space-around; /* 玩家信息块之间平均分布空间 */
-    gap: 15px;
-    margin-bottom: 20px;
-    padding: 10px;
-    background-color: #23272a; /* 更深的背景容纳玩家区 */
-    border-radius: 8px;
-    overflow-x: auto; /* 如果内容超出，允许横向滚动 */
-}
-
-.player-info {
-    border: 1px solid #4f545c; /* 边框颜色调整 */
-    padding: 15px;
-    border-radius: 6px;
-    background-color: #36393f; /* Discord 风格的深灰 */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    min-width: 280px; /* 给每个玩家信息区一个最小宽度 */
-    max-width: 320px; /* 最大宽度 */
-    flex: 1 1 300px; /* Flex项目：可增长、可收缩，基础宽度300px */
+    max-width: 100%; /* 占据全部可用宽度 */
+    min-height: calc(100vh - 100px); /* 减去可能的header/footer高度 */
+    margin: 10px auto;
     display: flex;
-    flex-direction: column; /* 玩家信息内部还是垂直排列 */
+    flex-direction: column; /* 主轴垂直，用于排列五个横幅 */
+    overflow: hidden; /* 防止内部元素溢出导致整体滚动条 */
 }
 
-.player-info h4 { /* 玩家昵称和分数 */
-    margin-top: 0;
-    color: #ffffff; /* 白色文字 */
-    border-bottom: 2px solid #7289da;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-    font-size: 1.1em;
+.room-header-info { /* 新增：用于房间号和游戏状态 */
+    padding: 5px 10px;
     text-align: center;
+    border-bottom: 1px solid #4f545c;
+    margin-bottom: 5px;
 }
-.player-info.my-info h4 {
-     border-bottom-color: #43b581; /* 我的信息用绿色高亮 */
-}
-
-.ready-button {
-    /* ... (样式可以保持或微调) ... */
-    background-color: #5865f2; /* Discord 风格按钮蓝 */
-    color: white;
-    align-self: center; /* 按钮在 player-info 内居中 */
-    margin-top: auto; /* 将按钮推到底部（如果其他内容不足） */
-    padding: 10px 20px;
-}
-.ready-button:hover:not(:disabled) {
-    background-color: #4752c4;
-}
-
-.status-text {
-    font-style: italic;
-    padding: 6px;
-    border-radius: 4px;
-    text-align: center;
-    margin-top: 10px;
-    color: #b9bbbe; /* Discord 浅灰文字 */
-}
-.ready-text {
-    background-color: rgba(67, 181, 129, 0.2); /* 淡绿色背景 */
-    color: #43b581;
-    border: 1px solid #43b581;
-}
-.submitted-text {
-    background-color: rgba(114, 137, 218, 0.1);
+.room-header-info h2 {
     color: #7289da;
-    border: 1px solid #7289da;
+    margin: 5px 0;
+    font-size: 1.3em;
 }
-
-
-.arranged-hands-display {
-    margin-top: 10px;
-    flex-grow: 1; /* 让牌墩展示区域占据剩余空间 */
-}
-.arranged-hands-display h5 {
-    margin-top: 8px;
-    margin-bottom: 6px;
-    color: #dcddde; /* 亮灰色 */
+.room-container > .game-state-banner { /* 修改 p.game-state 为一个独立的div */
+    text-align: center;
     font-size: 1em;
-    text-align: left;
+    padding: 5px;
+    border-radius: 4px;
+    background-color: #4f545c;
+    border: 1px solid #5c6168;
+    margin: 0 auto 8px auto; /* 上边距0，左右自动，下边距8 */
+    max-width: 250px;
+    font-weight: bold;
 }
-/* HandDisplay 组件本身需要适配内部卡牌的横向或紧凑显示 */
-/* 我们在 HandDisplay.css 中处理卡牌的排列 */
-.self-hands, .opponent-hands { /* 移除之前的背景和边框，由 player-info 控制 */
-    padding-left: 0;
-}
+/* 游戏状态颜色保持不变 */
+.game-state-banner.waiting { color: #faa61a; }
+.game-state-banner.dealing { color: #43b581; }
+.game-state-banner.arranging { color: #7289da; }
+.game-state-banner.comparing { color: #f04747; }
+.game-state-banner.ended { color: #b0b8bf; }
 
 
-.comparison-results, .game-log-section {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #36393f; /* 与 player-info 背景一致 */
-    border: 1px solid #4f545c;
+/* 第1道横幅：AI玩家展示区 (之前是 .players-area 的一部分) */
+.ai-opponents-banner {
+    display: flex;
+    justify-content: space-around; /* AI玩家平均分布 */
+    align-items: flex-start; /* 顶部对齐 */
+    padding: 8px;
+    background-color: rgba(35, 39, 42, 0.7); /* 半透明深色 */
     border-radius: 6px;
-    color: #dcddde;
+    margin-bottom: 8px;
+    min-height: 150px; /* 给AI区一个最小高度，根据内容调整 */
+    overflow-x: auto; /* 如果AI多，允许横向滚动 */
 }
-.comparison-results h4, .game-log-section h4 {
-    color: #ffffff;
-    border-bottom-color: #4f545c;
+.ai-opponents-banner .player-info.opponent-info { /* AI玩家信息块样式 */
+    border: 1px solid #4a4e55;
+    background-color: #2f3136; /* 比主背景稍浅 */
+    min-width: 200px; /* AI信息块最小宽度 */
+    max-width: 250px;
+    flex: 1 1 220px;
+    margin: 0 5px; /* AI之间的间距 */
 }
-.comparison-results li {
-    border-bottom-color: #40444b; /* 分隔线颜色 */
-    color: #b9bbbe;
+.ai-opponents-banner .player-info.opponent-info h4 {
+    font-size: 1em;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
 }
-.comparison-hand-types {
-    color: #72767d; /* 牌型比较文字颜色 */
+/* AI 的牌墩展示会比较小，HandDisplay.css 需要适配 */
+
+
+/* GameBoard 容器，现在它将包含第2、3、4道横幅 */
+.game-board-layout-container { /* Room.js 中的 GameBoard 外层容器 */
+    flex-grow: 1; /* 占据剩余垂直空间 */
+    display: flex;
+    flex-direction: column; /* 内部的墩区、手牌区、按钮区垂直排列 */
+    padding: 0 10px; /* 左右留白 */
+    overflow: hidden; /* 重要：防止内容溢出导致整个页面滚动 */
 }
 
-.game-log-section summary {
-    color: #5865f2;
-    background-color: #2f3136; /* 更暗的背景 */
-    border-color: #40444b;
+/* 第2道横幅：头道置牌区 (由 GameBoard.js 内部管理) */
+.dun-area.header-dun-area { /* GameBoard.js 内部的头墩容器的特定类名 */
+    /* background-color: rgba(255,0,0,0.1); */ /* 调试用背景色 */
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px dashed #5c6168;
+    border-radius: 5px;
+    display: flex; /* 内部使用flex排列墩位 */
+    justify-content: center; /* 墩位居中 */
 }
-.game-log-section summary:hover {
-    background-color: #3a3e45;
+
+/* 第3道横幅：手牌区 / 中道置牌区 (由 GameBoard.js 内部管理) */
+.hand-middle-dun-area { /* GameBoard.js 内部的此区域容器的特定类名 */
+    /* background-color: rgba(0,255,0,0.1); */ /* 调试用背景色 */
+    flex-grow: 1; /* 占据可用空间，让手牌有足够地方显示 */
+    padding: 10px;
+    margin-bottom: 8px;
+    border: 1px solid #5c6168; /* 实线边框 */
+    border-radius: 5px;
+    display: flex; /* 用于内部手牌或中墩的排列 */
+    flex-direction: column; /* 默认内容垂直排列 */
+    align-items: center; /* 内容居中 */
+    justify-content: center; /* 内容居中 */
+    overflow-y: auto; /* 如果手牌多，允许垂直滚动 */
 }
-.game-log-section details > div {
-    border-color: #40444b;
+
+/* 第4道横幅：按钮区 (由 GameBoard.js 内部管理) */
+.action-buttons-banner { /* GameBoard.js 内部的按钮区容器的特定类名 */
+    /* background-color: rgba(0,0,255,0.1); */ /* 调试用背景色 */
+    padding: 10px;
+    margin-bottom: 8px; /* 距离尾墩的间距 */
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+/* 第5道横幅：尾道置牌区 (由 GameBoard.js 内部管理) */
+/* 注意：根据您的描述，按钮区在第4道，尾道在第5道。*/
+/* 但通常按钮区在最下方，这里我先按您的描述，如果需要调整顺序，可以修改 Room.js 和 GameBoard.js 的 JSX */
+/* 假设尾墩仍在按钮区下方，或者与头墩对称放置 */
+.dun-area.footer-dun-area { /* GameBoard.js 内部的尾墩容器的特定类名 */
+     /* background-color: rgba(255,255,0,0.1); */ /* 调试用背景色 */
+    padding: 8px;
+    /* margin-top: 8px; */ /* 如果在按钮区下方 */
+    border: 1px dashed #5c6168;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+}
+
+
+/* 旧的 .players-area 现在主要用于真人玩家（如果需要并排显示，但现在是单人对AI） */
+/* 或者可以完全重构 Room.js 的 JSX 结构 */
+.players-area { /* 这个类名可能需要调整或移除，取决于 Room.js 的最终结构 */
+    /* 之前的横向flex布局可能不再适用，因为真人玩家是主体 */
+    display: block; /* 改为块级，让其内部的 .player-info.my-info 独占一行 */
+    margin-bottom: 0; /* 移除多余间距 */
+}
+.player-info.my-info { /* 真人玩家信息区 */
+    /* 可能不再需要 flex: 1 1 300px; */
+    max-width: none; /* 允许占据更多宽度 */
+    min-width: auto;
+    margin: 0 auto 10px auto; /* 居中显示 */
+    padding: 10px;
     background-color: #36393f;
 }
-.game-log-section details p {
-    color: #b9bbbe;
+.player-info.my-info h4 {
+    font-size: 1.2em;
 }
+/* GameBoard.js 内的 .action-buttons 样式已在 GameBoard.css 定义或在这里覆盖 */
 
-.game-prompt {
-    text-align: center;
+
+/* 通用状态文本等，可以保持或微调 */
+.status-text { color: #b9bbbe; }
+.ready-text { background-color: rgba(67, 181, 129, 0.2); color: #43b581; border: 1px solid #43b581; }
+.submitted-text { background-color: rgba(114, 137, 218, 0.1); color: #7289da; border: 1px solid #7289da; }
+
+/* 比牌结果和游戏日志样式 */
+.comparison-results, .game-log-section {
+    max-height: 200px; /* 给日志和结果一个最大高度，超出则滚动 */
+    overflow-y: auto;
+    margin-top: 10px;
     padding: 10px;
-    margin-top: 15px;
-    background-color: rgba(114, 137, 218, 0.15); /* 淡紫色提示 */
-    color: #b0b8bf;
-    border: 1px solid #7289da;
-    border-radius: 5px;
-    font-weight: 500;
+    font-size: 0.9em;
+}
+.game-prompt {
+    font-size: 0.9em;
 }
 
-/* GameBoard.js 内的按钮组，确保它们在 player-info 内有合适的布局 */
-.action-buttons { /* GameBoard.js 内部的按钮组 */
-    display: flex;
-    flex-direction: column; /* 在 player-info 内部，按钮垂直排列可能更好 */
-    gap: 10px;
-    margin-top: 15px; /* 与上方牌墩的间距 */
-    align-items: center; /* 按钮居中 */
-}
-
-.ai-arrange-button, .submit-arrangement-button { /* GameBoard.js 内部的按钮 */
-    width: 90%; /* 按钮宽度 */
-    max-width: 200px; /* 最大宽度 */
-}
+/* 确保 GameBoard 内部的 HandDisplay 适应新布局 */
+/* HandDisplay.css 中的 .cards-wrapper 也需要关注 */
