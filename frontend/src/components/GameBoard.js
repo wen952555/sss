@@ -1,36 +1,33 @@
 // frontend/src/components/GameBoard.js
 import React, { useState, useEffect, useMemo } from 'react';
 import socket from '../socket';
-import Card from './Card';
+// import Card from './Card'; // ★★★ 移除 Card 的导入 ★★★
 import HandDisplay from './HandDisplay';
 import { sortHand } from '../utils/cardUtils';
-import { DragDropContext } from 'react-beautiful-dnd'; // ★★★ 引入 DragDropContext ★★★
+import { DragDropContext } from 'react-beautiful-dnd';
 import './GameBoard.css';
 
 const DUN_NAMES = { FRONT: "头墩", MIDDLE: "中墩", BACK: "尾墩" };
-// 将 Droppable ID 定义为常量，与 HandDisplay 中的 droppableId 对应
 const DROPPABLE_IDS = {
     FRONT_DUN: 'FRONT_DUN_ID',
-    MIDDLE_DUN_LOGICAL: 'MIDDLE_DUN_LOGICAL_ID', // 代表逻辑上的中墩区域
+    MIDDLE_DUN_LOGICAL: 'MIDDLE_DUN_LOGICAL_ID',
     BACK_DUN: 'BACK_DUN_ID',
-    CURRENT_HAND_POOL: 'CURRENT_HAND_POOL_ID' // 手牌池的ID
+    CURRENT_HAND_POOL: 'CURRENT_HAND_POOL_ID'
 };
 
 const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) => {
     const [frontDunCards, setFrontDunCards] = useState([]);
     const [middleDunCards, setMiddleDunCards] = useState([]);
     const [backDunCards, setBackDunCards] = useState([]);
-    const [currentHandPool, setCurrentHandPool] = useState([]); // 初始时所有牌都在这里
+    const [currentHandPool, setCurrentHandPool] = useState([]);
     
-    // selectedCards 状态在拖拽模式下不再需要，因为拖拽本身就是一种选择
-    // const [selectedCards, setSelectedCards] = useState([]); 
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAiProcessing, setIsAiProcessing] = useState(false);
 
     const middleDunIsActivePlacementArea = useMemo(() => {
         return frontDunCards.length === 3 && backDunCards.length === 5;
-    }, [frontDunCards.length, backDunCards.length]); // 依赖长度变化
+    }, [frontDunCards.length, backDunCards.length]);
 
     useEffect(() => {
         if (initialHand && initialHand.length === 13) {
@@ -38,7 +35,6 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             setFrontDunCards([]);
             setMiddleDunCards([]);
             setBackDunCards([]);
-            // setSelectedCards([]); // 移除
             setError('');
             setIsSubmitting(false);
             setIsAiProcessing(false);
@@ -47,47 +43,42 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             setFrontDunCards([]);
             setMiddleDunCards([]);
             setBackDunCards([]);
-            // setSelectedCards([]); // 移除
         }
     }, [initialHand]);
 
-    // ★★★ onDragEnd 处理函数 ★★★
     const onDragEnd = (result) => {
         const { source, destination, draggableId } = result;
 
-        // 如果拖拽到非 Droppable 区域，或没有移动
         if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) {
             return;
         }
         
-        setError(''); // 清除之前的错误
-        if (isAiProcessing || isSubmitting) return; // AI或提交中禁止操作
+        setError('');
+        if (isAiProcessing || isSubmitting) return;
 
-        // 找到被拖拽的卡牌
         let draggedCard;
         let sourceList, setSourceListFunc;
-        let sourceListName = '';
+        // let sourceListName = ''; // ★★★ 移除 sourceListName ★★★
 
-        // 从源列表移除卡牌
         if (source.droppableId === DROPPABLE_IDS.CURRENT_HAND_POOL) {
             sourceList = [...currentHandPool];
             setSourceListFunc = setCurrentHandPool;
-            sourceListName = '手牌池';
+            // sourceListName = '手牌池';
         } else if (source.droppableId === DROPPABLE_IDS.FRONT_DUN) {
             sourceList = [...frontDunCards];
             setSourceListFunc = setFrontDunCards;
-            sourceListName = DUN_NAMES.FRONT;
+            // sourceListName = DUN_NAMES.FRONT;
         } else if (source.droppableId === DROPPABLE_IDS.MIDDLE_DUN_LOGICAL && middleDunIsActivePlacementArea) {
             sourceList = [...middleDunCards];
             setSourceListFunc = setMiddleDunCards;
-            sourceListName = DUN_NAMES.MIDDLE;
+            // sourceListName = DUN_NAMES.MIDDLE;
         } else if (source.droppableId === DROPPABLE_IDS.BACK_DUN) {
             sourceList = [...backDunCards];
             setSourceListFunc = setBackDunCards;
-            sourceListName = DUN_NAMES.BACK;
+            // sourceListName = DUN_NAMES.BACK;
         } else {
             console.warn("onDragEnd: Unknown source droppableId", source.droppableId);
-            return; // 无效源
+            return;
         }
         
         draggedCard = sourceList.find(card => card.id === draggableId);
@@ -96,15 +87,14 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             return;
         }
         const newSourceList = sourceList.filter(card => card.id !== draggableId);
-        setSourceListFunc(sortHand(newSourceList)); // 更新源列表并排序
+        // setSourceListFunc(sortHand(newSourceList)); // 移动到后面，确保操作失败时能正确回退
 
-        // 添加卡牌到目标列表
         let destList, setDestListFunc, destCapacity, destListName;
 
         if (destination.droppableId === DROPPABLE_IDS.CURRENT_HAND_POOL) {
-            destList = [...currentHandPool.filter(card => card.id !== draggableId)]; // 确保不重复添加回手牌池
+            destList = [...currentHandPool.filter(card => card.id !== draggableId)];
             setDestListFunc = setCurrentHandPool;
-            destCapacity = 13; // 手牌池容量理论上是13减去已摆放的
+            destCapacity = 13; 
             destListName = '手牌池';
         } else if (destination.droppableId === DROPPABLE_IDS.FRONT_DUN) {
             destList = [...frontDunCards.filter(card => card.id !== draggableId)];
@@ -122,31 +112,29 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             destCapacity = 5;
             destListName = DUN_NAMES.BACK;
         } else {
-             // 如果目标是未激活的中墩或其他无效区域
             if (destination.droppableId === DROPPABLE_IDS.MIDDLE_DUN_LOGICAL && !middleDunIsActivePlacementArea) {
                 setError("请先将头墩和尾墩摆满 (头3张，尾5张)，才能摆放中墩。");
             } else {
                 console.warn("onDragEnd: Unknown or invalid destination droppableId", destination.droppableId);
             }
-            // 将卡牌放回原列表
-            setSourceListFunc(sortHand([...newSourceList, draggedCard]));
-            return;
+            // 无效目标，不移动卡牌，所以不需要更新源列表
+            // setSourceListFunc(sortHand([...newSourceList, draggedCard])); // 错误：这里不应该放回，因为源列表已经过滤了
+            return; // 直接返回，不进行任何状态更新
         }
 
-        // 检查目标墩容量
         if (destList.length >= destCapacity && destination.droppableId !== DROPPABLE_IDS.CURRENT_HAND_POOL) {
             setError(`${destListName} 已满 (${destCapacity}张)。`);
-            // 将卡牌放回原列表
-            setSourceListFunc(sortHand([...newSourceList, draggedCard]));
-            return;
+            // 目标已满，不移动卡牌，所以不需要更新源列表
+            return; // 直接返回
         }
+        
+        // 只有在所有检查通过后，才真正更新源列表
+        setSourceListFunc(sortHand(newSourceList));
 
-        // 将卡牌插入目标列表的指定位置
         const newDestList = [...destList];
         newDestList.splice(destination.index, 0, draggedCard);
-        setDestListFunc(sortHand(newDestList)); // 更新目标列表并排序
+        setDestListFunc(sortHand(newDestList));
     };
-
 
     const handleAiArrange = () => { /* ... (保持不变) ... */ 
         if (!initialHand || initialHand.length !== 13) { setError("手牌信息不完整，无法使用AI分牌。"); return; }
@@ -200,49 +188,41 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
                                  backDunCards.length === 5;
 
     return (
-        // ★★★ 使用 DragDropContext 包裹所有可拖放区域 ★★★
         <DragDropContext onDragEnd={onDragEnd}>
-            {/* 头墩区 (第2道横幅) */}
             <div className="dun-area header-dun-area">
                 <HandDisplay
                     title={DUN_NAMES.FRONT}
-                    droppableId={DROPPABLE_IDS.FRONT_DUN} // ★★★
+                    droppableId={DROPPABLE_IDS.FRONT_DUN}
                     cards={frontDunCards}
-                    isDropDisabled={frontDunCards.length >= 3 || isAiProcessing || isSubmitting} // ★★★
-                    // onCardClick 不再需要，由拖拽处理
+                    isDropDisabled={frontDunCards.length >= 3 || isAiProcessing || isSubmitting}
                 />
             </div>
 
-            {/* 手牌区 / 中墩置牌区 (第3道横幅) */}
             <div className="hand-middle-dun-area">
                 {!middleDunIsActivePlacementArea ? (
                     <>
                         <h4>手牌区 (请先摆满头尾墩)</h4>
                         <HandDisplay
-                            title="手牌" // 给手牌区一个标题
-                            droppableId={DROPPABLE_IDS.CURRENT_HAND_POOL} // ★★★
+                            title="手牌"
+                            droppableId={DROPPABLE_IDS.CURRENT_HAND_POOL}
                             cards={currentHandPool}
-                            isDropDisabled={isAiProcessing || isSubmitting} // ★★★ 手牌区总是可以放回牌
-                            // 不显示空槽，卡牌内部排列由 HandDisplay.css cards-wrapper 控制
+                            isDropDisabled={isAiProcessing || isSubmitting}
                         />
                     </>
                 ) : (
                     <>
-                        {/* 中墩已激活为置牌区 */}
                         <HandDisplay
                             title={DUN_NAMES.MIDDLE}
-                            droppableId={DROPPABLE_IDS.MIDDLE_DUN_LOGICAL} // ★★★
+                            droppableId={DROPPABLE_IDS.MIDDLE_DUN_LOGICAL}
                             cards={middleDunCards}
-                            isDropDisabled={middleDunCards.length >= 5 || isAiProcessing || isSubmitting} // ★★★
+                            isDropDisabled={middleDunCards.length >= 5 || isAiProcessing || isSubmitting}
                         />
-                        {/* 当中墩激活后，如果手牌池还有牌，单独显示这些牌作为中墩的候选 */}
-                        {/* 这个区域也需要是 Droppable 和 Draggable 的 */}
-                        {currentHandPool.length > 0 && (
+                        {currentHandPool.length > 0 && ( // 只有当手牌池还有牌时才显示这个区域
                             <div className="remaining-for-middle-dun">
                                 <h5>剩余手牌 (用于中墩):</h5>
                                  <HandDisplay
-                                    title="中墩候选"
-                                    droppableId={DROPPABLE_IDS.CURRENT_HAND_POOL} // 拖拽回这里也算回手牌池
+                                    title="中墩候选" // 可以用一个不同的title或不显示title
+                                    droppableId={DROPPABLE_IDS.CURRENT_HAND_POOL} // 拖到这里等同于放回手牌池
                                     cards={currentHandPool}
                                     isDropDisabled={isAiProcessing || isSubmitting}
                                 />
@@ -253,17 +233,15 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
                 )}
             </div>
             
-            {/* 尾墩区 (第5道横幅) */}
             <div className="dun-area footer-dun-area">
                 <HandDisplay
                     title={DUN_NAMES.BACK}
-                    droppableId={DROPPABLE_IDS.BACK_DUN} // ★★★
+                    droppableId={DROPPABLE_IDS.BACK_DUN}
                     cards={backDunCards}
-                    isDropDisabled={backDunCards.length >= 5 || isAiProcessing || isSubmitting} // ★★★
+                    isDropDisabled={backDunCards.length >= 5 || isAiProcessing || isSubmitting}
                 />
             </div>
 
-            {/* 按钮区 (第4道横幅) */}
             <div className="action-buttons-banner">
                 {error && <p className="error-message gameboard-error">{error}</p>}
                 <button 
