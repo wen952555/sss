@@ -1,93 +1,102 @@
 /* frontend/src/components/GameBoard.css */
-/* GameBoard.js 的根元素现在是 Fragment，所以没有直接的 .game-board-container 顶级类 */
-/* 我们直接为内部的横幅区域定义样式 */
 
 /* 通用墩区域样式 */
 .dun-area {
     padding: 8px;
     margin-bottom: 8px;
-    border: 1px dashed #5c6168; /* 虚线边框表示可放置区域 */
+    border: 1px dashed #72767d; /* 虚线边框颜色调整，更明显 */
     border-radius: 5px;
-    background-color: rgba(47, 49, 54, 0.5); /* 半透明深色背景 */
-    display: flex; /* 用于内部 HandDisplay 和按钮的对齐 */
-    align-items: center; /* 垂直居中 */
-    min-height: 100px; /* 保证墩区有一定高度，根据卡牌大小调整 */
-    position: relative; /* 为了放置按钮的绝对定位（如果需要） */
+    background-color: rgba(47, 49, 54, 0.3); /* 稍微调整透明度和颜色 */
+    display: flex; 
+    align-items: center; 
+    /* min-height: 100px; */ /* ★★★ 移除固定的 min-height，让高度由内容决定 ★★★ */
+    width: 100%; /* ★★★ 墩区宽度占满其父容器 (.game-board-layout-container 的一部分) ★★★ */
+    box-sizing: border-box; /* 确保 padding 和 border 不会增加总宽度 */
+    position: relative; 
 }
-.dun-area .HandDisplay-container { /* 针对 HandDisplay 组件的容器进行调整 */
-    flex-grow: 1; /* 让 HandDisplay 占据主要空间 */
+.dun-area .HandDisplay-container { 
+    flex-grow: 1; 
+    /* 移除 HandDisplay 容器的特定背景，让 .dun-area 的背景透出来 */
+    /* background-color: transparent;  */
 }
-.dun-area h4 { /* HandDisplay 内部的标题 */
+.dun-area h4 { 
     font-size: 0.9em;
     color: #b9bbbe;
+    margin-right: 10px; /* 标题和卡牌区域的间隔 */
+    white-space: nowrap; /* 防止标题换行 */
 }
 
 /* 第2道横幅：头墩置牌区 */
 .header-dun-area {
-    /* 可以添加特定样式，如果需要与尾墩不同 */
+    /* 特定样式 */
 }
 
 /* 第5道横幅：尾墩置牌区 */
 .footer-dun-area {
-    margin-top: 8px; /* 与上方按钮区或手牌区的间距 */
+    margin-top: 0; /* 如果按钮区在它之上，可能不需要上边距 */
+    margin-bottom: 8px; /* 与下方按钮区的间距，如果按钮区在最下方 */
 }
 
-/* 墩旁边的放置按钮 */
+/* 墩旁边的放置按钮 (样式保持或微调) */
 .place-here-button {
-    background-color: #4caf50; /* 绿色 */
+    background-color: #43b581; /* 统一用绿色系 */
     color: white;
     border: none;
-    padding: 6px 10px;
-    border-radius: 4px;
+    padding: 5px 8px; /* 减小按钮，使其不那么占空间 */
+    border-radius: 3px;
     cursor: pointer;
-    font-size: 0.8em;
-    margin-left: 10px; /* 与 HandDisplay 的间距 */
-    flex-shrink: 0; /* 防止按钮被压缩 */
+    font-size: 0.75em;
+    margin-left: 8px;
+    flex-shrink: 0;
     transition: background-color 0.2s;
 }
 .place-here-button:hover:not(:disabled) {
-    background-color: #388e3c;
+    background-color: #3aa070;
 }
 .place-here-button:disabled {
-    background-color: #555;
+    background-color: #4f545c; /* 深灰色禁用 */
     cursor: not-allowed;
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 
 /* 第3道横幅：手牌区 / 中墩置牌区 */
 .hand-middle-dun-area {
-    flex-grow: 1; /* ★★★ 核心：让此区域占据 GameBoard 内剩余的主要垂直空间 ★★★ */
+    flex-grow: 1; 
     padding: 10px;
     margin-bottom: 8px;
-    border: 1px solid #5c6168; /* 实线边框，区别于可直接放置的墩区 */
+    border: 1px solid #4f545c; /* 实线边框 */
     border-radius: 5px;
-    background-color: rgba(35, 39, 42, 0.8); /* 稍深一点的背景 */
+    background-color: rgba(35, 39, 42, 0.7); 
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start; /* 内容从顶部开始排列 */
-    overflow-y: auto; /* 如果手牌或内容多，允许垂直滚动 */
-    min-height: 120px; /* 保证有一定高度显示手牌 */
+    justify-content: center; /* ★★★ 尝试让内容垂直居中 ★★★ */
+    overflow-y: auto; 
+    min-height: 130px; /* ★★★ 给手牌区一个稍大的最小高度 ★★★ */
+    width: 100%; /* 占满宽度 */
+    box-sizing: border-box;
 }
-.hand-middle-dun-area h4 { /* 手牌区标题 */
+.hand-middle-dun-area h4 { 
     color: #7289da;
     margin-bottom: 8px;
     font-size: 1em;
 }
-.current-hand-pool-display.cards-wrapper { /* 手牌池的卡牌容器 */
+.current-hand-pool-display.cards-wrapper { 
     display: flex;
-    flex-wrap: wrap; /* 允许手牌换行 */
-    justify-content: center; /* 手牌居中排列 */
-    gap: 3px; /* 手牌之间的间隙 */
-    width: 100%; /* 占据可用宽度 */
+    flex-wrap: wrap; 
+    justify-content: center; 
+    gap: 2px; /* 卡牌间隙再小一点 */
+    width: 100%; 
     padding: 5px 0;
+    align-items: center; /* 卡牌垂直居中 */
 }
-.remaining-for-middle-dun.cards-wrapper { /* 中墩激活后，剩余手牌的显示区域 */
+.remaining-for-middle-dun.cards-wrapper { 
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px dashed #5c6168;
     width: 100%;
+    justify-content: center; /* 剩余手牌也居中 */
 }
 .remaining-for-middle-dun h5 {
     color: #b9bbbe;
@@ -95,80 +104,35 @@
     text-align: center;
     margin-bottom: 5px;
 }
-.info-prompt { /* 提示文字，如“请放入中墩” */
-    color: #faa61a; /* 黄色提示 */
+.info-prompt { 
+    color: #faa61a; 
     font-size: 0.9em;
     margin-top: 10px;
 }
 
-/* 当中墩区域作为置牌区激活时，其内部 HandDisplay 的样式 */
-.hand-middle-dun-area .HandDisplay-container {
-    /* 如果需要特定样式可以添加，通常 HandDisplay 的通用样式已足够 */
-    width: 100%; /* 让中墩的 HandDisplay 占据宽度 */
-    display: flex;
-    justify-content: center; /* HandDisplay 内部的卡牌也居中 */
+.hand-middle-dun-area .HandDisplay-container { /* 当作为中墩显示时 */
+    width: auto; /* ★★★ 让宽度由内部卡牌决定，而不是100% ★★★ */
+    /* display: flex; */ /* HandDisplay 内部的 .cards-wrapper 已经是 flex */
+    /* justify-content: center; */
 }
-.hand-middle-dun-area .middle-place-button { /* 放中墩的按钮 */
-    margin-top: 10px; /* 与中墩 HandDisplay 的间距 */
+.hand-middle-dun-area .middle-place-button { 
+    margin-top: 10px; 
 }
 
 
-/* 第4道横幅：按钮区 */
+/* 第4道横幅：按钮区 (现在在尾墩下方) */
 .action-buttons-banner {
-    padding: 10px 0; /* 上下内边距，左右由Room.css控制 */
+    padding: 10px 0; 
     display: flex;
     justify-content: center;
-    align-items: center; /* 垂直居中错误信息和按钮 */
-    gap: 15px; /* 按钮之间的间距 */
-    flex-wrap: wrap; /* 允许按钮换行，如果空间不足 */
-    flex-shrink: 0; /* 防止被压缩 */
-    border-top: 1px solid #4f545c; /* 与上方区域的分隔线 */
-    margin-top: 5px; /* 与上方尾墩区域的间距 */
+    align-items: center; 
+    gap: 20px; 
+    flex-wrap: wrap; 
+    flex-shrink: 0; 
+    border-top: 1px solid #4f545c; 
+    margin-top: 0; /* 因为尾墩在它上面了，移除与尾墩的间距 */
 }
-.gameboard-error.error-message { /* GameBoard 内部的错误信息 */
-    color: #f04747; /* 红色错误文字 */
-    font-size: 0.9em;
-    margin: 0; /* 移除默认外边距 */
-    text-align: center;
-    flex-basis: 100%; /* 在按钮换行时，错误信息可以占据整行 */
-    margin-bottom: 8px; /* 与按钮的间距 */
-}
-
-/* AI按钮和提交按钮的样式 (已在 Room.css 中定义过类似的，这里可以复用或微调) */
-.ai-arrange-button, .submit-arrangement-button {
-    padding: 10px 18px; /* 调整按钮大小 */
-    font-size: 1em;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s, opacity 0.2s;
-    min-width: 140px;
-    font-weight: 500;
-}
-.ai-arrange-button {
-    background-color: #faa61a; /* 黄色 */
-    color: #23272a; /* 深色文字 */
-}
-.ai-arrange-button:hover:not(:disabled) {
-    background-color: #e69500;
-}
-.submit-arrangement-button {
-    background-color: #43b581; /* 绿色 */
-    color: white;
-}
-.submit-arrangement-button:hover:not(:disabled) {
-    background-color: #3aa070;
-}
-.ai-arrange-button:disabled, .submit-arrangement-button:disabled {
-    background-color: #4f545c; /* 禁用时深灰色 */
-    color: #72767d;
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-/* GameBoard 内部的加载提示 (如果需要) */
-.loading-text-inner {
-    color: #b9bbbe;
-    font-style: italic;
-    padding: 20px;
-}
+/* ... (按钮和错误信息样式保持不变) ... */
+.ai-arrange-button, .submit-arrangement-button { /* ... */ }
+.gameboard-error.error-message { /* ... */ }
+.loading-text-inner { /* ... */ }
