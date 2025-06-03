@@ -1,12 +1,13 @@
 <template>
   <div class="player-hand-container">
-    <h4>{{ title }} ({{ cards.length }} cards)</h4>
+    <!-- 移除或修改外部标题的显示方式 -->
+    <!-- <h4>{{ title }}</h4> --> 
     <div
       class="card-container"
       @dragover.prevent="onDragOver"
       @drop="onDrop"
       @dragleave="onDragLeave"
-      :class="{ 'drag-over': isDragOver }"
+      :class="{ 'drag-over': isDragOver, 'is-empty': cards.length === 0 }"
     >
       <CardComponent
         v-for="card in cards"
@@ -15,8 +16,8 @@
         :draggable="draggableCards"
         @dragstart="$emit('cardDragStart', { card, fromSegment: segmentName })"
       />
-      <span v-if="cards.length === 0 && droppable" class="drop-placeholder">
-        拖拽牌到这里 ({{ segmentName === 'front' ? 3 : 5 }}张)
+      <span v-if="cards.length === 0 && placeholderText" class="drop-placeholder">
+        {{ placeholderText }}
       </span>
     </div>
   </div>
@@ -24,46 +25,47 @@
 
 <script setup>
 import { ref } from 'vue';
-import CardComponent from './Card.vue'; // Corrected import name
+import CardComponent from './Card.vue';
 
 const props = defineProps({
   cards: {
     type: Array,
     default: () => []
   },
-  title: {
+  title: { // 这个 title 现在可能不直接显示，或者用作 placeholderText 的一部分
     type: String,
     default: '手牌'
   },
-  draggableCards: { // 是否允许从这个区域拖出牌
+  placeholderText: { // 新增 prop，用于在卡片容器内显示的提示文字
+    type: String,
+    default: ''
+  },
+  draggableCards: {
     type: Boolean,
     default: false
   },
-  droppable: { // 是否允许牌拖入这个区域
-     type: Boolean,
-     default: false
+  droppable: {
+    type: Boolean,
+    default: false
   },
-  segmentName: { // 'initial', 'front', 'middle', 'back'
-     type: String,
-     required: true
+  segmentName: {
+    type: String,
+    required: true
   }
 });
 
 const emit = defineEmits(['cardDropped', 'cardDragStart']);
-
 const isDragOver = ref(false);
 
 function onDragOver(event) {
   if (props.droppable) {
-    event.preventDefault(); // Necessary to allow drop
+    event.preventDefault();
     isDragOver.value = true;
   }
 }
-
 function onDragLeave() {
   isDragOver.value = false;
 }
-
 function onDrop(event) {
   if (props.droppable) {
     event.preventDefault();
@@ -83,16 +85,30 @@ function onDrop(event) {
 .player-hand-container {
   margin-bottom: 10px;
 }
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 100px; /* 根据卡片大小调整 */
+  border: 1px dashed #ccc;
+  padding: 10px; /* 增加内边距给 placeholder 空间 */
+  border-radius: 4px;
+  position: relative; /* 为了 placeholder 的定位 (如果需要更复杂的定位) */
+  align-items: center; /* 垂直居中 placeholder */
+  justify-content: center; /* 水平居中 placeholder (如果只有一个元素或为空时) */
+}
+.card-container.is-empty {
+    background-color: #f9f9f9; /* 空的时候给个背景色区分 */
+}
 .drag-over {
-  border-color: #4CAF50; /* Highlight when dragging over */
+  border-color: #4CAF50;
   background-color: #e8f5e9;
 }
 .drop-placeholder {
   color: #aaa;
   font-style: italic;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100px; /* Same as card container */
+  text-align: center;
+  width: 100%; /* 让 placeholder 占据整个容器宽度 */
 }
+/* 移除了 h4 的样式，因为我们不再直接显示 title 为 h4 */
 </style>
