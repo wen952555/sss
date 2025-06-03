@@ -2,6 +2,13 @@
   <!-- Template is identical to the last working version -->
   <div id="app-container" class="app-flex-container">
     <div v-if="generalError" class="error global-error">{{ generalError }}</div>
+    <p v-if="currentLocalGameState === 'arranging'">Debug Validation: {{ validationMessage }}</p>
+    <p v-if="currentLocalGameState === 'arranging'">
+        Front: {{ playerArrangedHand.front.length }} | 
+        Middle: {{ playerArrangedHand.middle.length }} | 
+        Back: {{ playerArrangedHand.back.length }}
+    </p>
+
 
     <div class="game-area app-flex-grow">
       <div class="top-info-bar">
@@ -59,8 +66,7 @@
 </template>
 
 <script setup>
-// Script is identical to the last working version
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted, watch } from 'vue'; // Added watch for debugging
 import GameBoardComponent from './components/GameBoard.vue';
 import Deck from './game_logic_local/Deck';
 import { Card } from './game_logic_local/Card';
@@ -82,27 +88,53 @@ const isDynamicMiddleDunActive = computed(() => {
   return playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5;
 });
 
+// Watch for debugging purposes
+watch(playerArrangedHand, (newVal) => {
+  console.log('playerArrangedHand changed:', 
+    `F:${newVal.front.length}`, 
+    `M:${newVal.middle.length}`, 
+    `B:${newVal.back.length}`
+  );
+}, { deep: true });
+
+
 const validationMessage = computed(() => {
-  if (playerArrangedHand.front.length !== 3) return "头墩需3张牌";
-  if (playerArrangedHand.middle.length !== 5) return "中墩需5张牌";
-  if (playerArrangedHand.back.length !== 5) return "尾墩需5张牌";
-  const allPlayerCardsInDuns = new Set([
-      ...playerArrangedHand.front.map(c => c.id),
-      ...playerArrangedHand.middle.map(c => c.id),
-      ...playerArrangedHand.back.map(c => c.id)
-  ]);
-  if (allPlayerCardsInDuns.size !== 13) return "牌未分配完整或有重复";
+  const frontCount = playerArrangedHand.front.length;
+  const middleCount = playerArrangedHand.middle.length;
+  const backCount = playerArrangedHand.back.length;
+
+  if (frontCount !== 3) return `头墩需3张牌 (当前${frontCount}张)`;
+  // 对于中墩和尾墩，只有在头墩满了之后，它们的数量才严格要求是5
+  // 但在提交时，它们必须是5
+  if (middleCount !== 5) return `中墩需5张牌 (当前${middleCount}张)`;
+  if (backCount !== 5) return `尾墩需5张牌 (当前${backCount}张)`;
+
+  const allCardsInDunsSet = new Set();
+  [...playerArrangedHand.front, ...playerArrangedHand.middle, ...playerArrangedHand.back].forEach(card => {
+      if (card && card.id) allCardsInDunsSet.add(card.id);
+  });
+
+  if (allCardsInDunsSet.size !== 13) {
+    return `牌数分配错误 (总${allCardsInDunsSet.size}张不等于13)`;
+  }
+
+  // 验证所有墩牌是否都来自初始手牌
   for (const dun of [playerArrangedHand.front, playerArrangedHand.middle, playerArrangedHand.back]) {
       for (const card of dun) {
-          if (!playerHandInitial.value.find(initialCard => initialCard.id === card.id)) {
-              return "墩内包含无效的牌";
+          if (!card || !playerHandInitial.value.find(initialCard => initialCard.id === card.id)) {
+              return `墩内包含无效的牌或非初始手牌 (${card ? card.id : 'undefined card'})`;
           }
       }
   }
+  // TODO: 在这里添加墩序比较的验证 (头墩牌力 <= 中墩牌力 <= 尾墩牌力)
+  // if (!isValidDunOrder(playerArrangedHand.front, playerArrangedHand.middle, playerArrangedHand.back)) {
+  //   return "墩序错误！";
+  // }
+
   return "可以提交";
 });
 
-const showdownResultsForBoard = computed(() => {
+const showdownResultsForBoard = computed(() => { /* ... (不变) ... */
     if (!showdownResults.value) return null;
     const results = {};
     if (showdownResults.value.player) {
@@ -123,7 +155,8 @@ const showdownResultsForBoard = computed(() => {
     return results;
 });
 
-function startNewAIGame() {
+
+function startNewAIGame() { /* ... (不变) ... */
   isDealing.value = true;
   generalError.value = '';
   currentLocalGameState.value = 'dealing';
@@ -145,33 +178,38 @@ function startNewAIGame() {
   }, 500);
 }
 
-function rankCard(card) {
+function rankCard(card) { /* ... (不变) ... */
     const valueOrder = ['2','3','4','5','6','7','8','9','10','jack','queen','king','ace'];
     const suitOrder = ['clubs', 'diamonds', 'hearts', 'spades'];
+    if (!card || typeof card.value === 'undefined' || typeof card.suit === 'undefined') return -1; // Handle undefined card
     return valueOrder.indexOf(card.value) * 4 + suitOrder.indexOf(card.suit);
 }
 
-function handleDragStartLogic(payload) {
+
+function handleDragStartLogic(payload) { /* ... (不变) ... */
   activeDraggedCardInfo = { card: payload.card, fromSegment: payload.fromSegment };
 }
 
-function handleDesktopDropLogic(payload) {
-  if (!activeDraggedCardInfo || activeDraggedCardInfo.card.id !== payload.card.id) {
-      activeDraggedCardInfo = null; return;
-  }
+function handleDesktopDropLogic(payload) { /* ... (不变) ... */
+  if (!activeDraggedCardInfo) { return; } // Ensure activeDraggedCardInfo is set
+  // desktop drop payload.card is the dragged card from dataTransfer
+  // activeDraggedCardInfo.card is the card instance from our state
+  // It's better to use activeDraggedCardInfo.card for consistency
+  const cardToMove = activeDraggedCardInfo.card;
   const fromSegmentName = activeDraggedCardInfo.fromSegment;
   const toSegmentName = payload.toSegment;
+
   if (!toSegmentName || fromSegmentName === toSegmentName) {
-    activeDraggedCardInfo = null; return;
+    activeDraggedCardInfo = null;
+    return;
   }
-  performCardMove(activeDraggedCardInfo.card, fromSegmentName, toSegmentName);
+  performCardMove(cardToMove, fromSegmentName, toSegmentName);
   activeDraggedCardInfo = null;
 }
 
-function handleTouchDragEndLogic(payload) {
+function handleTouchDragEndLogic(payload) { /* ... (不变) ... */
     if (!activeDraggedCardInfo || !payload || activeDraggedCardInfo.card.id !== payload.card.id) {
-        activeDraggedCardInfo = null;
-        return;
+        activeDraggedCardInfo = null; return;
     }
     const toSegmentName = payload.targetSegment;
     const fromSegmentName = activeDraggedCardInfo.fromSegment;
@@ -181,30 +219,35 @@ function handleTouchDragEndLogic(payload) {
     activeDraggedCardInfo = null;
 }
 
-function handleDragOverSegmentLogic(segmentName) {
-    // For visual feedback
-}
+function handleDragOverSegmentLogic(segmentName) { /* ... (不变) ... */ }
 
 function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
   if (!cardToMove || typeof cardToMove.id === 'undefined') {
+    console.error("PerformCardMove: Invalid card object:", cardToMove);
     return;
   }
+
+  // 1. Remove from source
+  let cardWasInSourceArray = false;
   if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName]) {
-    const arr = playerArrangedHand[fromSegmentName];
-    if (Array.isArray(arr)) {
-        const index = arr.findIndex(c => c && c.id === cardToMove.id);
+    const sourceArray = playerArrangedHand[fromSegmentName];
+    if (Array.isArray(sourceArray)) {
+        const index = sourceArray.findIndex(c => c && c.id === cardToMove.id);
         if (index > -1) {
-          arr.splice(index, 1);
+          sourceArray.splice(index, 1);
+          cardWasInSourceArray = true;
         }
     }
   }
+
+  // 2. Add to destination
   const targetSegmentArray = playerArrangedHand[toSegmentName];
   if (targetSegmentArray && Array.isArray(targetSegmentArray)) {
     if (!targetSegmentArray.find(c => c && c.id === cardToMove.id)) {
       targetSegmentArray.push(cardToMove);
       targetSegmentArray.sort((a, b) => rankCard(a) - rankCard(b));
-    } else {
-      if (fromSegmentName !== 'initial_hand' && 
+    } else { // Card already in target, revert removal if applicable
+      if (cardWasInSourceArray && fromSegmentName !== 'initial_hand' && 
           playerArrangedHand[fromSegmentName] && 
           Array.isArray(playerArrangedHand[fromSegmentName]) &&
           !playerArrangedHand[fromSegmentName].find(c => c && c.id === cardToMove.id)) {
@@ -213,9 +256,12 @@ function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
       }
     }
   } else if (toSegmentName === 'initial_hand') {
-    // Card is moved back
-  } else {
-      if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName] &&
+    // Card is moved back to the conceptual "initial area".
+    // If it was removed from a dun, it is now "unassigned" again.
+    // GameBoard's computed property `cardsForMiddleOrInitialArea` will update.
+  } else { // Invalid target
+      if (cardWasInSourceArray && fromSegmentName !== 'initial_hand' && 
+          playerArrangedHand[fromSegmentName] &&
           Array.isArray(playerArrangedHand[fromSegmentName]) &&
           !playerArrangedHand[fromSegmentName].find(c => c && c.id === cardToMove.id) ) {
           playerArrangedHand[fromSegmentName].push(cardToMove);
@@ -223,30 +269,33 @@ function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
       }
   }
 
-  if (playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5) {
-      const assignedToFrontIds = new Set(playerArrangedHand.front.filter(c => c).map(c => c.id));
-      const assignedToBackIds = new Set(playerArrangedHand.back.filter(c => c).map(c => c.id));
+  // Auto-fill or clear middle dun logic (CRUCIAL for 3-5-5 interaction)
+  const frontIsFull = playerArrangedHand.front.length === 3;
+  const backIsFull = playerArrangedHand.back.length === 5;
+
+  if (frontIsFull && backIsFull) {
+      const assignedToFrontIds = new Set(playerArrangedHand.front.map(c => c.id));
+      const assignedToBackIds = new Set(playerArrangedHand.back.map(c => c.id));
+      
+      // Collect all cards NOT in front or back, these are candidates for middle
       let middleCandidates = playerHandInitial.value.filter(
           c => c && !assignedToFrontIds.has(c.id) && !assignedToBackIds.has(c.id)
       );
-      const currentMiddleCards = playerArrangedHand.middle.filter(
-          c => c && !assignedToFrontIds.has(c.id) && !assignedToBackIds.has(c.id)
-      );
-      const currentMiddleIds = new Set(currentMiddleCards.map(c => c.id));
-      let finalMiddle = [...currentMiddleCards];
-      for (const candidate of middleCandidates) {
-          if (candidate && finalMiddle.length < 5 && !currentMiddleIds.has(candidate.id)) {
-              finalMiddle.push(candidate);
-              currentMiddleIds.add(candidate.id);
-          }
-      }
-      playerArrangedHand.middle = finalMiddle.slice(0,5).sort((a,b) => rankCard(a) - rankCard(b));
+      
+      // Ensure middle dun gets exactly 5 of these candidates
+      playerArrangedHand.middle = middleCandidates.slice(0, 5).sort((a, b) => rankCard(a) - rankCard(b));
+  } else {
+      // If front or back is NOT full, middle dun should only contain cards explicitly dragged there.
+      // Any card dragged OUT of middle should be removed.
+      // Any card dragged INTO middle (from initial or other duns) is added (as handled above).
+      // We don't auto-clear it here, as user might be temporarily moving cards.
+      // The validationMessage will catch if middle is not 5 at submission time.
   }
 }
 
 function submitPlayerHand() {
   if (validationMessage.value !== "可以提交") {
-    generalError.value = "牌型不符合要求: " + validationMessage.value;
+    generalError.value = "提交失败: " + validationMessage.value; // More specific error
     return;
   }
   playerIsReady.value = true;
@@ -254,6 +303,8 @@ function submitPlayerHand() {
   aiProcessHand();
   checkForShowdown();
 }
+
+// ... (rest of the script: aiProcessHand, checkForShowdown, getHandType, compareSingleDuns, compareHands, onMounted)
 function aiProcessHand() {
   const handToArrange = [...aiHand.value];
   handToArrange.sort(() => 0.5 - Math.random());
@@ -270,11 +321,15 @@ function checkForShowdown() {
 }
 function getHandType(dun) {
     if (!dun || dun.length === 0) return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
-    if (dun.length === 3) {
+    // This is a placeholder, needs full implementation
+    if (dun.length === 3) { 
         const values = dun.map(c => c.value);
         if (values[0] === values[1] && values[1] === values[2]) {
-             return { type: '三条', rank: 4, cards: dun, description: `三条-${values[0]}` };
+             return { type: '三条', rank: 4, cards: dun, description: `三条-${values[0]}` }; // Example rank
         }
+    }
+    if (dun.length === 5) {
+        // Add more checks for 5-card hands
     }
     return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
 }
@@ -283,8 +338,9 @@ function compareSingleDuns(playerDun, aiDun) {
     const aiType = getHandType(aiDun);
     if (playerType.rank > aiType.rank) return 1;
     if (playerType.rank < aiType.rank) return -1;
-    const playerMaxRank = playerDun.length > 0 ? Math.max(...playerDun.map(c => rankCard(c))) : -1;
-    const aiMaxRank = aiDun.length > 0 ? Math.max(...aiDun.map(c => rankCard(c))) : -1;
+    // Placeholder for tie-breaking logic
+    const playerMaxRank = playerDun.length > 0 ? Math.max(...playerDun.map(c => c ? rankCard(c) : -1).filter(r => r !== -1)) : -1;
+    const aiMaxRank = aiDun.length > 0 ? Math.max(...aiDun.map(c => c ? rankCard(c) : -1).filter(r => r !== -1)) : -1;
     if (playerMaxRank > aiMaxRank) return 1;
     if (playerMaxRank < aiMaxRank) return -1;
     return 0;
@@ -320,42 +376,43 @@ function compareHands(pHand, aHand) {
 onMounted(() => {
   currentLocalGameState.value = 'idle';
 });
+
 </script>
 
 <style scoped>
+/* Styles are identical to the last working version for build */
 .app-flex-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; /* 确保占满视口高度 */
-  height: 100%; /* 尝试强制高度，与body, html的100%配合 */
-  /* background-color: #fff; */ /* App 的背景由 main.css 的 body 控制 */
-  padding: 8px; /* 手机上整体边距小一点 */
+  min-height: 100vh;
+  height: 100%; 
+  background-color: #e0e0e0;
+  padding: 5px;
   box-sizing: border-box;
-  overflow: hidden; /* 防止 App 级别滚动 */
+  overflow: hidden; 
 }
-
 .global-error {
   margin-bottom: 10px;
-  flex-shrink: 0;
+  flex-shrink: 0; 
 }
-
 .game-area {
-  /* border: 1px solid #78909c; */ /* 边框颜色可以淡一些或与背景融合 */
-  background-color: transparent; /* 让 App 的深绿色背景透出来 */
-  /* border-radius: 6px; */ /* 可以不需要圆角，如果希望与App边缘对齐 */
+  border: 1px solid #90a4ae;
+  background-color: #f5f5f5;
+  border-radius: 6px;
   display: flex;
   flex-direction: column;
-  flex-grow: 1; /* 占据父元素（.app-flex-container）的剩余空间 */
-  overflow: hidden; /* 确保 game-area 内部滚动 */
-  padding: 0; /* 移除 game-area 的 padding，让子元素控制 */
+  overflow: hidden; 
 }
-
+.app-flex-grow {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; 
+}
 .top-info-bar {
-  background-color: rgba(0, 0, 0, 0.2); /* 在深绿色背景上的半透明深色条 */
-  color: #e0e0e0; /* 信息栏文字用浅色 */
+  background-color: #b0bec5;
   padding: 6px 10px;
-  /* border-radius: 4px 4px 0 0; */ /* 如果 game-area 无圆角，这里也不需要 */
-  margin-bottom: 8px; /* 与下方牌桌的间距 */
+  border-radius: 4px 4px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -364,42 +421,51 @@ onMounted(() => {
   flex-wrap: wrap;
   gap:5px;
 }
+.game-status-mode {
+  margin-right: auto;
+}
+.player-statuses-inline {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.player-status-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
 .player-status-item strong {
-  color: #fff; /* 玩家名字用更亮的颜色 */
+  color: #37474f;
 }
 .restart-button-inline {
-  background-color: #004d40 !important; /* 更深的绿色按钮 */
-  border: 1px solid #00695c;
-  color: #e0f2f1 !important;
-  padding: 5px 8px !important; /* 按钮再小一点 */
-  font-size: 0.85em !important;
+  background-color: #00796b !important;
+  padding: 6px 10px !important;
+  font-size: 0.9em !important;
+  white-space: nowrap;
 }
-.restart-button-inline:hover {
-    background-color: #00695c !important;
-}
-
-
 .game-board-main-area {
   margin-top: 0;
-  /* border-radius and border-top related styles can be removed if game-area has no border/radius */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
-
 .idle-message, .dealing-message {
     text-align: center;
     padding: 20px;
     font-size: 1.1em;
-    color: #b0bec5; /* 在深绿色背景上，提示文字用浅灰色 */
+    color: #546e7a;
     flex-grow: 1;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-.error { /* 这个是通用的错误提示，颜色也需要调整 */
-    background-color: #ffccbc; /* 浅橙色背景 */
-    color: #bf360c; /* 深橙色文字 */
+.error {
+    background-color: #ffcdd2;
+    color: #c62828;
     padding: 10px;
     border-radius: 4px;
     margin-bottom: 10px;
-    border: 1px solid #ffab91;
+    border: 1px solid #ef9a9a;
 }
 </style>
