@@ -1,18 +1,11 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client'; // 适用于 React 18+
-import './index.css'; // 全局 CSS 文件 (可选)
-import App from './App'; // 你的主应用组件
-// import reportWebVitals from './reportWebVitals'; // <--- 移除或注释掉这一行
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
 
-// React 18+ 的方式
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
 );
-
-// 如果你想开始测量应用的性能，可以传递一个函数
-// 来记录结果 (例如: reportWebVitals(console.log))
-// 或者发送到一个分析端点。了解更多: https://bit.ly/CRA-vitals
-// reportWebVitals(); // <--- 移除或注释掉这一行
