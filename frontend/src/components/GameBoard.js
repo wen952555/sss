@@ -1,74 +1,117 @@
 // frontend/src/components/GameBoard.js
-// ... (imports, constants, state, effects, onDragEnd, handlers - 保持我们之前最终修正的版本) ...
-// 我将只展示 return 部分的 JSX，确保 HandDisplay 的 props 调用正确
-// 假设 GameBoard.js 的其他部分与我上次提供修复了所有 ESLint 错误的版本一致
+import React, { useState, useEffect, useMemo } from 'react'; // Keep hooks for now, will remove if not used in simplified version
+// import socket from '../socket'; // Temporarily remove if not used
+import HandDisplay from './HandDisplay';
+// import { sortHand } from '../utils/cardUtils'; // Temporarily remove if not used
+// import { DragDropContext } from 'react-beautiful-dnd'; // Temporarily remove DND
+import './GameBoard.css';
 
-// ... (inside GameBoard component's return statement)
-    return ( 
-        <DragDropContext onDragEnd={onDragEnd}>
-            {/* 头墩区 */}
+// ★★★ 确保此区域绝对干净，只有 imports 和 const 定义 ★★★
+
+const DUN_NAMES = { FRONT: "头墩", MIDDLE: "中墩", BACK: "尾墩" };
+// const DROPPABLE_IDS = { /* ... */ }; // DND related, remove for now
+
+const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) => {
+    // ★★★ 确保这里，在函数体开始处，没有 return ★★★
+
+    // 简化状态，只保留最基本的显示
+    const [frontDunCards, setFrontDunCards] = useState([]);
+    const [middleDunCards, setMiddleDunCards] = useState([]); // This will be the "true" middle dun
+    const [backDunCards, setBackDunCards] = useState([]);
+    const [currentHandPool, setCurrentHandPool] = useState([]); // All cards not in a dun
+
+    // 简化 middleDunIsActivePlacementArea
+    const middleDunIsActivePlacementArea = useMemo(() => {
+        return frontDunCards.length === 3 && backDunCards.length === 5;
+    }, [frontDunCards.length, backDunCards.length]);
+
+    useEffect(() => {
+        if (initialHand && initialHand.length === 13) {
+            // setCurrentHandPool(sortHand([...initialHand])); // sortHand might not be imported
+            setCurrentHandPool([...initialHand]); // Simplified
+            setFrontDunCards([]);
+            setMiddleDunCards([]);
+            setBackDunCards([]);
+        } else {
+            setCurrentHandPool([]);
+            setFrontDunCards([]);
+            setMiddleDunCards([]);
+            setBackDunCards([]);
+        }
+    }, [initialHand]);
+
+    // 暂时移除所有事件处理器和复杂逻辑
+    // const onDragEnd = (result) => { /* ... */ };
+    // const handleAiArrange = () => { /* ... */ };
+    // const handleSubmitArrangement = () => { /* ... */ };
+    // ... other useEffects for socket events ...
+
+    if (!initialHand || initialHand.length === 0) {
+        return <div className="game-board-container"><p className="loading-text-inner">等待手牌 (简化版)...</p></div>;
+    }
+
+    return (
+        // <DragDropContext onDragEnd={onDragEnd}> // Temporarily remove DND Context
+        <> {/* Use Fragment or a div */}
             <div className="dun-area header-dun-area">
                 <HandDisplay
                     title={DUN_NAMES.FRONT}
-                    droppableId={DROPPABLE_IDS.FRONT_DUN}
+                    // droppableId={DROPPABLE_IDS.FRONT_DUN} // DND related
                     cards={frontDunCards}
-                    isDropDisabled={isAiProcessing || isSubmitting || frontDunCards.length >= 3}
-                    // containerClassName="" // 普通墩不需要特殊类
+                    // isDropDisabled={/*...*/}
                 />
             </div>
 
-            {/* 中间区域 */}
             <div className="hand-middle-dun-area">
                 {!middleDunIsActivePlacementArea ? (
                     <HandDisplay
-                        title="手牌区 (请先摆满头尾墩)"
-                        droppableId={DROPPABLE_IDS.CURRENT_HAND_POOL}
+                        title="手牌区 (简化版)"
+                        // droppableId={DROPPABLE_IDS.CURRENT_HAND_POOL} // DND related
                         cards={currentHandPool}
-                        isDropDisabled={isAiProcessing || isSubmitting}
-                        type="HAND_POOL" // 可以用这个type来区分拖拽规则
-                        containerClassName="is-hand-pool" 
+                        // isDropDisabled={/*...*/}
+                        // type="HAND_POOL"
+                        containerClassName="is-hand-pool"
                     />
                 ) : (
                     <>
                         <HandDisplay
                             title={DUN_NAMES.MIDDLE}
-                            droppableId={DROPPABLE_IDS.MIDDLE_DUN_LOGICAL}
+                            // droppableId={DROPPABLE_IDS.MIDDLE_DUN_LOGICAL} // DND related
                             cards={middleDunCards}
-                            isDropDisabled={isAiProcessing || isSubmitting || middleDunCards.length >= 5}
-                            // containerClassName=""
+                            // isDropDisabled={/*...*/}
                         />
                         {currentHandPool.length > 0 && (
                             <div className="remaining-for-middle-dun">
                                 <HandDisplay
-                                    title="剩余手牌 (拖拽到中墩)"
-                                    droppableId={DROPPABLE_IDS.CURRENT_HAND_POOL} 
+                                    title="剩余手牌 (简化版)"
+                                    // droppableId={DROPPABLE_IDS.CURRENT_HAND_POOL} // DND related
                                     cards={currentHandPool}
-                                    isDropDisabled={isAiProcessing || isSubmitting}
-                                    type="HAND_POOL"
-                                    containerClassName="is-hand-pool" 
+                                    // isDropDisabled={/*...*/}
+                                    // type="HAND_POOL"
+                                    containerClassName="is-hand-pool"
                                 />
                             </div>
                         )}
-                        {/* ... (info prompts) ... */}
                     </>
                 )}
             </div>
             
-            {/* 尾墩区 */}
             <div className="dun-area footer-dun-area">
                 <HandDisplay
                     title={DUN_NAMES.BACK}
-                    droppableId={DROPPABLE_IDS.BACK_DUN}
+                    // droppableId={DROPPABLE_IDS.BACK_DUN} // DND related
                     cards={backDunCards}
-                    isDropDisabled={isAiProcessing || isSubmitting || backDunCards.length >= 5}
-                    // containerClassName=""
+                    // isDropDisabled={/*...*/}
                 />
             </div>
 
-            {/* ... (action-buttons-banner remains the same) ... */}
-        </DragDropContext>
+            <div className="action-buttons-banner">
+                {/* 暂时移除按钮以简化 */}
+                <p>(按钮区简化版)</p> 
+            </div>
+        </>
+        // </DragDropContext>
     );
-// ... (rest of the GameBoard component from the last valid version) ...
-// ★★★ 请确保您使用的是我们之前修复了所有ESLint错误的 GameBoard.js 的完整版本 ★★★
-// ★★★ 我这里只展示了 JSX 的 return 部分以确认 HandDisplay 的调用 ★★★
-// ★★★ 如果您需要 GameBoard.js 的完整版，请告诉我，我会提供上一次的最终版 ★★★
+};
+
+export default GameBoard;
