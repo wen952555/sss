@@ -1,38 +1,39 @@
 <template>
   <div class="game-board-container game-board-flex-fill">
+    <!-- ... (game-controls div) ... -->
     <div v-if="currentGameState === 'waiting' && isRoomHost && canStartGame" class="game-controls">
       <button @click="$emit('startGame')" class="start-game-button">开始游戏</button>
     </div>
 
     <div v-if="playerHandInitial.length > 0 && (currentGameState === 'playing' || currentGameState === 'arranging' || currentGameState === 'showdown')" class="player-area player-area-flex-fill">
       
-      <!-- 1. 头墩 -->
       <PlayerHandComponent
         :placeholderText="placeholderForFront"
         :cards="arrangedHand.front"
         :draggableCards="currentGameState !== 'showdown' && !currentPlayerIsReady"
         :droppable="currentGameState !== 'showdown' && !currentPlayerIsReady"
         segmentName="front"
-        @cardDropped="onCardDropped"
-        @cardDragStart="onCardDragStart"
+        @desktopCardDropped="passDesktopCardDropped" <!-- Listen to new event -->
+        @customDragStart="passCustomDragStart"
+        @customDragEnd="passCustomDragEnd"
+        @customDragOverSegment="passCustomDragOverSegment"
         class="dun-area"
       />
 
-      <!-- 2. 初始手牌区 / 或形成后的中墩 -->
       <PlayerHandComponent
         :placeholderText="placeholderForInitialOrMiddle"
         :cards="cardsForMiddleOrInitialArea"
         :draggableCards="currentGameState !== 'showdown' && !currentPlayerIsReady"
         :droppable="currentGameState !== 'showdown' && !currentPlayerIsReady"
         :segmentName="isDynamicMiddleDunActive ? 'middle' : 'initial_hand'"
-        @cardDropped="onCardDropped"
-        @cardDragStart="onCardDragStart"
+        @desktopCardDropped="passDesktopCardDropped"
+        @customDragStart="passCustomDragStart"
+        @customDragEnd="passCustomDragEnd"
+        @customDragOverSegment="passCustomDragOverSegment"
         class="initial-hand-area dun-area-expand"
       />
 
-      <!-- segments div 包裹尾墩和摊牌时的中墩 -->
       <div class="segments" :class="{ 'showdown-view': currentGameState === 'showdown' }">
-        <!-- 中墩 (只有在摊牌时，且动态中墩激活时，作为一个独立的视觉区域显示) -->
         <PlayerHandComponent
           v-if="isDynamicMiddleDunActive && currentGameState === 'showdown'"
           placeholderText="中墩 (5张)"
@@ -42,30 +43,31 @@
           segmentName="middle_showdown_only"
           class="dun-area"
         />
-
-        <!-- 3. 尾墩 -->
         <PlayerHandComponent
           :placeholderText="placeholderForBack"
           :cards="arrangedHand.back"
           :draggableCards="currentGameState !== 'showdown' && !currentPlayerIsReady"
           :droppable="currentGameState !== 'showdown' && !currentPlayerIsReady"
           segmentName="back"
-          @cardDropped="onCardDropped"
-          @cardDragStart="onCardDragStart"
+          @desktopCardDropped="passDesktopCardDropped"
+          @customDragStart="passCustomDragStart"
+          @customDragEnd="passCustomDragEnd"
+          @customDragOverSegment="passCustomDragOverSegment"
           class="dun-area"
         />
-      </div> <!-- Closes .segments div -->
+      </div>
 
       <button
         v-if="currentGameState === 'playing' && !currentPlayerIsReady"
-        @click="onSubmitHand"
+        @click="onSubmitHandProxy" <!-- Renamed to avoid conflict if emit name changes -->
         :disabled="validationMessage !== '可以提交'"
         class="submit-hand-button"
       >
         提交牌型 {{ validationMessage !== '可以提交' ? '('+validationMessage+')' : '' }}
       </button>
       <p v-if="currentPlayerIsReady && currentGameState === 'playing'">已提交，等待 AI...</p>
-    </div> <!-- Closes .player-area div -->
+    </div>
+    <!-- ... (v-else-if and showdown-area divs) ... -->
     <div v-else-if="currentGameState === 'dealing'" class="message-area">
         <p>正在发牌，请稍候...</p>
     </div>
@@ -89,11 +91,11 @@
             <PlayerHandComponent placeholderText="AI 尾墩" :cards="aiArrangedHand.back" :draggableCards="false" :droppable="false" segmentName="ai-back"/>
         </div>
     </div>
-  </div> <!-- Closes .game-board-container div -->
+  </div>
 </template>
 
 <script setup>
-// Script 部分与之前相同
+// ... (script setup props and computed properties are the same as last working build version) ...
 import { computed } from 'vue';
 import PlayerHandComponent from './PlayerHand.vue';
 
@@ -111,13 +113,19 @@ const props = defineProps({
   isDynamicMiddleDunActive: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['cardDragStart', 'cardDropped', 'submitHand', 'startGame']);
+const emit = defineEmits([
+    'desktopCardDropped', // Emit the new specific event
+    'customDragStart', 
+    'customDragEnd', 
+    'customDragOverSegment',
+    'submitHand', // Keep this for the button
+    'startGame'   // Keep this for the button
+]);
 
 const initialOrMiddleDunTitle = computed(() => {
   if (props.currentGameState === 'showdown' && props.isDynamicMiddleDunActive) return "你的中墩";
   return props.isDynamicMiddleDunActive ? `中墩 (${props.arrangedHand.middle.length} cards)` : `手牌区/未分配 (${cardsForMiddleOrInitialArea.value.length} cards)`;
 });
-
 const cardsForMiddleOrInitialArea = computed(() => {
   if (props.isDynamicMiddleDunActive) {
     return props.arrangedHand.middle;
@@ -130,18 +138,15 @@ const cardsForMiddleOrInitialArea = computed(() => {
     );
   }
 });
-
 const placeholderForFront = computed(() => {
     const count = props.arrangedHand.front.length;
     if (props.currentGameState === 'showdown') return `你的头墩 (${count}/3)`;
     return `头墩 (${count}/3) - 拖拽牌到这里`;
 });
-
 const placeholderForInitialOrMiddle = computed(() => {
     const currentCards = cardsForMiddleOrInitialArea.value;
     const count = currentCards.length;
     if (props.currentGameState === 'showdown' && props.isDynamicMiddleDunActive) return `你的中墩 (${count}/5)`;
-    
     const baseTitle = props.isDynamicMiddleDunActive ? `中墩` : `手牌区/未分配`;
     let requiredCount;
     if (props.isDynamicMiddleDunActive) {
@@ -152,33 +157,23 @@ const placeholderForInitialOrMiddle = computed(() => {
     }
     return `${baseTitle} (${count}/${requiredCount > 0 ? requiredCount : 0}) ${props.isDynamicMiddleDunActive || count > 0 ? '' : '- 拖拽牌到这里'}`;
 });
-
 const placeholderForBack = computed(() => {
     const count = props.arrangedHand.back.length;
     if (props.currentGameState === 'showdown') return `你的尾墩 (${count}/5)`;
     return `尾墩 (${count}/5) - 拖拽牌到这里`;
 });
 
+// 透传事件
+function passDesktopCardDropped(payload) { emit('desktopCardDropped', payload); }
+function passCustomDragStart(payload) { emit('customDragStart', payload); }
+function passCustomDragEnd(payload) { emit('customDragEnd', payload); }
+function passCustomDragOverSegment(segmentName) { emit('customDragOverSegment', segmentName); }
+function onSubmitHandProxy() { emit('submitHand'); }
 
-function onCardDragStart(payload) {
-  if ((props.currentGameState === 'playing' || props.currentGameState === 'arranging') && !props.currentPlayerIsReady) {
-    emit('card-drag-start', payload);
-  }
-}
-
-function onCardDropped(payload) {
-  if ((props.currentGameState === 'playing' || props.currentGameState === 'arranging') && !props.currentPlayerIsReady) {
-    emit('card-dropped', payload);
-  }
-}
-
-function onSubmitHand() {
-    emit('submit-hand');
-}
 </script>
 
 <style scoped>
-/* Style 部分与之前相同 */
+/* Styles are the same as the last working version for build */
 .game-board-container {
   border: 1px solid #90a4ae;
   padding: 15px;
@@ -236,7 +231,7 @@ function onSubmitHand() {
     background-color: #fff9c4;
     padding: 15px;
     border-radius: 6px;
-    border: 1px solid #fff59d;
+    border: 1px solid #fff9d;
     overflow-y: auto;
     max-height: 300px;
 }
@@ -248,6 +243,7 @@ function onSubmitHand() {
     font-size: 1.1em;
     color: #546e7a;
 }
+/* ... (rest of the styles) ... */
 .comparison-summary {
     margin-bottom: 15px;
     padding-bottom: 10px;
