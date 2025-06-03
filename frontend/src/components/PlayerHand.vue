@@ -2,9 +2,9 @@
   <div 
     class="player-hand-container"
     :data-segment-name="segmentName"
-    @dragover.prevent="onDragOverDesktop"
-    @drop="onDropDesktop"
-    @dragleave="onDragLeaveDesktop"
+    @dragover.prevent="onDesktopDragOver" <!-- Renamed for clarity -->
+    @drop.prevent="onDesktopDrop"        <!-- Renamed and added .prevent -->
+    @dragleave="onDesktopDragLeave"     <!-- Renamed -->
     :class="{ 'drag-over': isDragOverDesktop }"
     ref="handContainerElement"
   >
@@ -13,12 +13,12 @@
       :class="{ 'is-empty': cards.length === 0 }"
     >
       <CardComponent
-        v-for="card_item in cards" :key="card_item.id"
-        :card="card_item"
-        :draggable="draggableCards"
-        @customDragStart="passCustomDragStart"
-        @customDragEnd="passCustomDragEnd"
-        @customDragOverSegment="passCustomDragOverSegment"
+        v-for="card_item_loop_var in cards" :key="card_item_loop_var.id" <!-- Renamed loop var -->
+        :card="card_item_loop_var"
+        :draggable="draggableCards" <!-- This prop should be controlled by parent -->
+        @customDragStart="passCustomDragStartThrough"
+        @customDragEnd="passCustomDragEndThrough"
+        @customDragOverSegment="passCustomDragOverSegmentThrough"
       />
       <span v-if="cards.length === 0 && placeholderText" class="drop-placeholder">
         {{ placeholderText }}
@@ -34,51 +34,65 @@ import CardComponent from './Card.vue';
 const props = defineProps({
   cards: { type: Array, default: () => [] },
   placeholderText: { type: String, default: '' },
-  draggableCards: { type: Boolean, default: false },
-  droppable: { type: Boolean, default: true },
+  draggableCards: { type: Boolean, default: false }, // Whether cards *from* this hand are draggable
+  droppable: { type: Boolean, default: true },      // Whether this hand *accepts* drops
   segmentName: { type: String, required: true }
 });
 
-const emit = defineEmits(['cardDropped', 'cardDragStart', 'cardDragEnd', 'cardDragOverSegment']);
+const emit = defineEmits([
+    'desktopCardDropped', // New specific event for desktop
+    'customDragStart', 
+    'customDragEnd', 
+    'customDragOverSegment'
+]);
 
 const isDragOverDesktop = ref(false);
 const handContainerElement = ref(null);
 
-function onDragOverDesktop(event) {
+
+function onDesktopDragOver(event) {
   if (props.droppable) {
-    event.preventDefault();
+    event.preventDefault(); // Necessary to allow drop
+    event.dataTransfer.dropEffect = 'move'; // Visual feedback
     isDragOverDesktop.value = true;
   }
 }
-function onDragLeaveDesktop() {
+function onDesktopDragLeave() {
   isDragOverDesktop.value = false;
 }
-function onDropDesktop(event) {
+function onDesktopDrop(event) {
   if (props.droppable) {
     event.preventDefault();
     isDragOverDesktop.value = false;
     const cardData = event.dataTransfer.getData('text/plain');
+    if (!cardData) {
+        console.warn("No card data found in drop event.");
+        return;
+    }
     try {
       const card = JSON.parse(cardData);
-      emit('cardDropped', { card, toSegment: props.segmentName, type: 'desktop' });
+      // Emit a more specific event for desktop drops
+      emit('desktopCardDropped', { card, toSegment: props.segmentName });
     } catch (e) {
-      console.error("Failed to parse dropped card data:", e);
+      console.error("Failed to parse dropped card data:", e, cardData);
     }
   }
 }
 
-function passCustomDragStart(payload) {
-  emit('cardDragStart', { ...payload, fromSegment: props.segmentName });
+// 透传来自 CardComponent 的自定义拖拽事件
+function passCustomDragStartThrough(payload) {
+  emit('customDragStart', { ...payload, fromSegment: props.segmentName });
 }
-function passCustomDragEnd(payload) {
-  emit('cardDragEnd', payload);
+function passCustomDragEndThrough(payload) {
+  emit('customDragEnd', payload);
 }
-function passCustomDragOverSegment(segmentName) {
-    emit('cardDragOverSegment', segmentName);
+function passCustomDragOverSegmentThrough(segmentName) {
+    emit('customDragOverSegment', segmentName);
 }
 </script>
 
 <style scoped>
+/* Styles are the same as the last working version for build */
 .player-hand-container {
   margin-bottom: 10px;
 }
