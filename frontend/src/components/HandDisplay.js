@@ -1,10 +1,11 @@
 // frontend/src/components/HandDisplay.js
 import React from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
-import Card from './Card'; // Card.js 之前已修复并导入
+import Card from './Card';
 import './HandDisplay.css';
 
-const HAND_TYPE_NAMES_LOCAL = { /* ... */ };
+// ★★★ 移除了 HAND_TYPE_NAMES_LOCAL 的定义 ★★★
+// const HAND_TYPE_NAMES_LOCAL = { /* ... */ };
 
 const HandDisplay = ({ 
     title, 
@@ -14,10 +15,19 @@ const HandDisplay = ({
     cardStyle = {},
     isDropDisabled = false,
     type = "CARDS",
-    containerClassName = "" // 从 GameBoard.js 传入，例如 "is-hand-pool"
+    containerClassName = ""
 }) => {
+    
     let evaluationText = '';
-    if (handEvaluation) { /* ... */ }
+    if (handEvaluation && handEvaluation.name) { // ★★★ 只依赖后端提供的 handEvaluation.name ★★★
+        evaluationText = handEvaluation.name;
+    }
+    // ★★★ 移除了使用 HAND_TYPE_NAMES_LOCAL 的 else if 分支 ★★★
+    // else if (handEvaluation && handEvaluation.type !== undefined && HAND_TYPE_NAMES_LOCAL[handEvaluation.type]) {
+    //     evaluationText = HAND_TYPE_NAMES_LOCAL[handEvaluation.type];
+    // }
+
+
     const displayableCards = cards || [];
     const cardCountText = displayableCards.length > 0 
         ? `${displayableCards.length} 张` 
@@ -27,6 +37,7 @@ const HandDisplay = ({
         <div className={`hand-display-container hand-display-${title?.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '')} ${containerClassName}`}>
             <div className="dun-title-background-text">
                 {title ? `${title} (${cardCountText})` : cardCountText} 
+                {/* 如果 evaluationText 为空字符串，则不显示 " - 牌型: " */}
                 {evaluationText && ` - 牌型: ${evaluationText}`}
             </div>
 
@@ -38,13 +49,13 @@ const HandDisplay = ({
             >
                 {(provided, snapshot) => (
                     <div
-                        ref={provided.innerRef} // ★★★ 必须
-                        {...provided.droppableProps} // ★★★ 必须
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
                         className={`cards-wrapper ${snapshot.isDraggingOver ? 'dragging-over' : ''} ${isDropDisabled ? 'drop-disabled' : ''}`}
                     >
                         {displayableCards.map((card, index) => {
                             if (!card || !card.id) {
-                                console.warn("HandDisplay: Invalid card data at index", index, card);
+                                console.warn("HandDisplay: Attempting to render Draggable for invalid card data at index", index, card);
                                 return null; 
                             }
                             return (
@@ -54,23 +65,23 @@ const HandDisplay = ({
                                     index={index}
                                 >
                                     {(providedDraggable, snapshotDraggable) => (
-                                        // Card 组件内部会使用 providedDraggable 和 snapshotDraggable
                                         <Card
                                             card={card}
                                             style={cardStyle}
-                                            provided={providedDraggable} // ★★★ 传递给 Card
-                                            innerRef={providedDraggable.innerRef} // ★★★ 传递给 Card
-                                            isDragging={snapshotDraggable.isDragging} // ★★★ 传递给 Card
+                                            provided={providedDraggable}
+                                            innerRef={providedDraggable.innerRef}
+                                            isDragging={snapshotDraggable.isDragging}
                                         />
                                     )}
                                 </Draggable>
                             );
                         })}
-                        {provided.placeholder} {/* ★★★ 必须 */}
+                        {provided.placeholder}
                     </div>
                 )}
             </Droppable>
         </div>
     );
 };
+
 export default HandDisplay;
