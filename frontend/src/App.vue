@@ -1,4 +1,5 @@
 <template>
+  <!-- Template is identical to the last working version -->
   <div id="app-container" class="app-flex-container">
     <div v-if="generalError" class="error global-error">{{ generalError }}</div>
 
@@ -26,7 +27,7 @@
         <button @click="startNewAIGame" :disabled="isDealing" class="restart-button-inline">
           {{ playerHandInitial.length > 0 ? '重新开始' : '开始牌局' }}
         </button>
-      </div> <!-- Closing top-info-bar div -->
+      </div>
 
       <GameBoardComponent
         v-if="playerHandInitial.length > 0 || currentLocalGameState === 'showdown'"
@@ -46,19 +47,19 @@
         :aiArrangedHand="aiArrangedHand"
         :isDynamicMiddleDunActive="isDynamicMiddleDunActive"
         class="game-board-main-area app-flex-grow"
-      /> <!-- GameBoardComponent is self-closing and seems correct here -->
+      />
       <div v-else-if="currentLocalGameState === 'idle' && !isDealing" class="idle-message app-flex-grow">
         <p>点击“开始牌局”与 AI 对战。</p>
       </div>
-      <div v-if="isDealing" class="dealing-message app-flex-grow"> <!-- This v-if is independent -->
+       <div v-if="isDealing" class="dealing-message app-flex-grow">
         <p>正在发牌...</p>
       </div>
-    </div> <!-- Closing game-area div -->
-  </div> <!-- Closing app-container div -->
+    </div>
+  </div>
 </template>
 
 <script setup>
-// Script部分与之前相同
+// Script is identical to the last working version
 import { ref, computed, reactive, onMounted } from 'vue';
 import GameBoardComponent from './components/GameBoard.vue';
 import Deck from './game_logic_local/Deck';
@@ -181,12 +182,11 @@ function handleTouchDragEndLogic(payload) {
 }
 
 function handleDragOverSegmentLogic(segmentName) {
-    // For visual feedback if needed
+    // For visual feedback
 }
 
 function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
   if (!cardToMove || typeof cardToMove.id === 'undefined') {
-    console.error("PerformCardMove: Attempted to move an invalid card object:", cardToMove);
     return;
   }
   if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName]) {
@@ -323,39 +323,39 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Style 部分与之前相同 */
 .app-flex-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  height: 100%;
-  background-color: #e0e0e0;
-  padding: 5px;
+  min-height: 100vh; /* 确保占满视口高度 */
+  height: 100%; /* 尝试强制高度，与body, html的100%配合 */
+  /* background-color: #fff; */ /* App 的背景由 main.css 的 body 控制 */
+  padding: 8px; /* 手机上整体边距小一点 */
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: hidden; /* 防止 App 级别滚动 */
 }
+
 .global-error {
   margin-bottom: 10px;
   flex-shrink: 0;
 }
+
 .game-area {
-  border: 1px solid #90a4ae;
-  background-color: #f5f5f5;
-  border-radius: 6px;
+  /* border: 1px solid #78909c; */ /* 边框颜色可以淡一些或与背景融合 */
+  background-color: transparent; /* 让 App 的深绿色背景透出来 */
+  /* border-radius: 6px; */ /* 可以不需要圆角，如果希望与App边缘对齐 */
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  flex-grow: 1; /* 占据父元素（.app-flex-container）的剩余空间 */
+  overflow: hidden; /* 确保 game-area 内部滚动 */
+  padding: 0; /* 移除 game-area 的 padding，让子元素控制 */
 }
-.app-flex-grow {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
+
 .top-info-bar {
-  background-color: #b0bec5;
+  background-color: rgba(0, 0, 0, 0.2); /* 在深绿色背景上的半透明深色条 */
+  color: #e0e0e0; /* 信息栏文字用浅色 */
   padding: 6px 10px;
-  border-radius: 4px 4px 0 0;
+  /* border-radius: 4px 4px 0 0; */ /* 如果 game-area 无圆角，这里也不需要 */
+  margin-bottom: 8px; /* 与下方牌桌的间距 */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -364,51 +364,42 @@ onMounted(() => {
   flex-wrap: wrap;
   gap:5px;
 }
-.game-status-mode {
-  margin-right: auto;
-}
-.player-statuses-inline {
-  display: flex;
-  gap: 10px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-}
-.player-status-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
 .player-status-item strong {
-  color: #37474f;
+  color: #fff; /* 玩家名字用更亮的颜色 */
 }
 .restart-button-inline {
-  background-color: #00796b !important;
-  padding: 6px 10px !important;
-  font-size: 0.9em !important;
-  white-space: nowrap;
+  background-color: #004d40 !important; /* 更深的绿色按钮 */
+  border: 1px solid #00695c;
+  color: #e0f2f1 !important;
+  padding: 5px 8px !important; /* 按钮再小一点 */
+  font-size: 0.85em !important;
 }
+.restart-button-inline:hover {
+    background-color: #00695c !important;
+}
+
+
 .game-board-main-area {
   margin-top: 0;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+  /* border-radius and border-top related styles can be removed if game-area has no border/radius */
 }
+
 .idle-message, .dealing-message {
     text-align: center;
     padding: 20px;
     font-size: 1.1em;
-    color: #546e7a;
+    color: #b0bec5; /* 在深绿色背景上，提示文字用浅灰色 */
     flex-grow: 1;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-.error {
-    background-color: #ffcdd2;
-    color: #c62828;
+.error { /* 这个是通用的错误提示，颜色也需要调整 */
+    background-color: #ffccbc; /* 浅橙色背景 */
+    color: #bf360c; /* 深橙色文字 */
     padding: 10px;
     border-radius: 4px;
     margin-bottom: 10px;
-    border: 1px solid #ef9a9a;
+    border: 1px solid #ffab91;
 }
 </style>
