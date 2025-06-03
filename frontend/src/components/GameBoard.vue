@@ -1,21 +1,19 @@
 <template>
   <div class="game-board-container">
-    <!-- 游戏控制按钮 (例如开始游戏) -->
     <div v-if="currentGameState === 'waiting' && isRoomHost && canStartGame" class="game-controls">
       <button @click="$emit('startGame')" class="start-game-button">开始游戏</button>
     </div>
-    <!-- AI模式下，开始游戏的按钮在 App.vue 控制 -->
 
-    <!-- 玩家手牌展示和理牌区域 -->
-    <div v-if="playerHand.length > 0 && (currentGameState === 'playing' || currentGameState === 'arranging' || currentGameState === 'showdown')" class="player-area">
+    <div v-if="playerHandInitial.length > 0 && (currentGameState === 'playing' || currentGameState === 'arranging' || currentGameState === 'showdown')" class="player-area">
       <h3 v-if="currentGameState !== 'showdown'">你的手牌 (拖拽理牌)</h3>
+
+      <!-- 初始手牌区 / 或形成后的中墩 -->
       <PlayerHandComponent
-        v-if="currentGameState !== 'showdown'"
-        title="未分配的牌"
-        :cards="unassignedCards"
-        :draggableCards="true"
-        :droppable="true"
-        segmentName="initial"
+        :title="initialOrMiddleDunTitle"
+        :cards="cardsForMiddleOrInitialArea"
+        :draggableCards="currentGameState !== 'showdown' && !currentPlayerIsReady"
+        :droppable="currentGameState !== 'showdown' && !currentPlayerIsReady"
+        :segmentName="isDynamicMiddleDunActive ? 'middle' : 'initial_hand'"
         @cardDropped="onCardDropped"
         @cardDragStart="onCardDragStart"
       />
@@ -30,15 +28,17 @@
           @cardDropped="onCardDropped"
           @cardDragStart="onCardDragStart"
         />
+        <!-- 中墩现在由上面的 initialOrMiddleDunTitle 区域在 isDynamicMiddleDunActive 为 true 时扮演 -->
+        <!-- 如果你仍然希望在下方明确显示一个“中墩”区域（即使它只是上面区域的别名），可以这样做： -->
         <PlayerHandComponent
-          :title="currentGameState === 'showdown' ? '你的中墩' : '中墩 (5张)'"
+          v-if="isDynamicMiddleDunActive && currentGameState === 'showdown'" /* 只在摊牌时显示独立的“你的中墩” */
+          title="你的中墩"
           :cards="arrangedHand.middle"
-          :draggableCards="currentGameState !== 'showdown' && !currentPlayerIsReady"
-          :droppable="currentGameState !== 'showdown' && !currentPlayerIsReady"
-          segmentName="middle"
-          @cardDropped="onCardDropped"
-          @cardDragStart="onCardDragStart"
+          :draggableCards="false"
+          :droppable="false"
+          segmentName="middle_showdown_only" /* 给一个不同的名字避免混淆 */
         />
+
         <PlayerHandComponent
           :title="currentGameState === 'showdown' ? '你的尾墩' : '尾墩 (5张)'"
           :cards="arrangedHand.back"
@@ -53,7 +53,7 @@
       <button
         v-if="currentGameState === 'playing' && !currentPlayerIsReady"
         @click="onSubmitHand"
-        :disabled="arrangedHand.front.length !== 3 || arrangedHand.middle.length !== 5 || arrangedHand.back.length !== 5 || unassignedCards.length > 0"
+        :disabled="arrangedHand.front.length !== 3 || arrangedHand.middle.length !== 5 || arrangedHand.back.length !== 5"
         class="submit-hand-button"
       >
         提交牌型 {{ validationMessage !== '可以提交' ? '('+validationMessage+')' : '' }}
@@ -63,14 +63,13 @@
     <div v-else-if="currentGameState === 'dealing'">
         <p>正在发牌，请稍候...</p>
     </div>
-     <div v-else-if="playerHand.length === 0 && (currentGameState === 'waiting' || currentGameState === 'idle' || currentGameState === 'finished')">
+     <div v-else-if="playerHandInitial.length === 0 && (currentGameState === 'waiting' || currentGameState === 'idle' || currentGameState === 'finished')">
         <p v-if="currentGameState === 'idle'">等待开始新牌局...</p>
         <p v-else>等待游戏开始...</p>
     </div>
 
-
-    <!-- 比牌结果 和 AI 牌面 -->
     <div v-if="showdownResults && (currentGameState === 'showdown' || currentGameState === 'finished')" class="showdown-area">
+      <!-- ... (showdownResults 显示部分与之前相同) ... -->
         <h3>比牌结果</h3>
         <div v-if="showdownResults.comparisonDetails" class="comparison-summary">
             <p>头墩: {{ showdownResults.comparisonDetails.front }}</p>
@@ -86,41 +85,58 @@
             <PlayerHandComponent title="AI 尾墩" :cards="aiArrangedHand.back" :draggableCards="false" :droppable="false" segmentName="ai-back"/>
         </div>
     </div>
-
-    <!-- 移除了之前用于多人模式的 opponents-display-area -->
-
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import PlayerHandComponent from './PlayerHand.vue';
-// CardComponent 可能被 PlayerHandComponent 内部使用，所以不需要在这里显式导入（除非你要直接用）
 
 const props = defineProps({
-  playerHand: { type: Array, default: () => [] },
+  playerHandInitial: { type: Array, default: () => [] }, // 改为接收初始手牌
   arrangedHand: { type: Object, default: () => ({ front: [], middle: [], back: [] }) },
-  unassignedCards: { type: Array, default: () => [] },
-  currentGameState: String, // 'idle', 'dealing', 'arranging', 'playing', 'showdown', 'finished'
+  currentGameState: String,
   currentPlayerIsReady: Boolean,
   validationMessage: String,
-  showdownResults: Object, // App.vue 提供的包含玩家和AI牌面及结果的对象
-  isRoomHost: Boolean, // 在AI模式下，玩家总是“房主”
-  canStartGame: Boolean, // 控制“开始游戏”按钮的显示 (AI模式下通常由App.vue的按钮控制)
-  aiHandVisible: { type: Boolean, default: false }, // 控制是否显示AI的牌
-  aiArrangedHand: { type: Object, default: () => ({ front: [], middle: [], back: [] }) } // AI的牌
+  showdownResults: Object,
+  isRoomHost: Boolean,
+  canStartGame: Boolean,
+  aiHandVisible: { type: Boolean, default: false },
+  aiArrangedHand: { type: Object, default: () => ({ front: [], middle: [], back: [] }) },
+  isDynamicMiddleDunActive: { type: Boolean, default: false } // 新增 prop
 });
 
 const emit = defineEmits(['cardDragStart', 'cardDropped', 'submitHand', 'startGame']);
 
+// 计算属性：决定中间区域的标题
+const initialOrMiddleDunTitle = computed(() => {
+  if (props.currentGameState === 'showdown') return "你的中墩";
+  return props.isDynamicMiddleDunActive ? `中墩 (${props.arrangedHand.middle.length} cards)` : `手牌区/未分配 (${cardsForMiddleOrInitialArea.value.length} cards)`;
+});
+
+// 计算属性：决定中间区域显示的牌
+const cardsForMiddleOrInitialArea = computed(() => {
+  if (props.isDynamicMiddleDunActive) {
+    return props.arrangedHand.middle;
+  } else {
+    // 显示 playerHandInitial 中未被 front 或 back 占用的牌
+    const assignedToFrontIds = new Set(props.arrangedHand.front.map(c => c.id));
+    const assignedToBackIds = new Set(props.arrangedHand.back.map(c => c.id));
+    return props.playerHandInitial.filter(
+      c => !assignedToFrontIds.has(c.id) && !assignedToBackIds.has(c.id)
+    );
+  }
+});
+
+
 function onCardDragStart(payload) {
-  // 只在玩家理牌阶段允许拖拽
-  if (props.currentGameState === 'playing' && !props.currentPlayerIsReady) {
+  if ((props.currentGameState === 'playing' || props.currentGameState === 'arranging') && !props.currentPlayerIsReady) {
     emit('card-drag-start', payload);
   }
 }
 
 function onCardDropped(payload) {
-  if (props.currentGameState === 'playing' && !props.currentPlayerIsReady) {
+  if ((props.currentGameState === 'playing' || props.currentGameState === 'arranging') && !props.currentPlayerIsReady) {
     emit('card-dropped', payload);
   }
 }
@@ -131,12 +147,12 @@ function onSubmitHand() {
 </script>
 
 <style scoped>
-/* GameBoard.vue specific styles */
+/* ... (与之前 GameBoard.vue 相同的样式) ... */
 .game-board-container {
-  border: 1px solid #90a4ae; /* 蓝灰色边框 */
+  border: 1px solid #90a4ae;
   padding: 20px;
   margin-top: 15px;
-  background-color: #f5f5f5; /* 非常浅的灰色背景，更像牌桌 */
+  background-color: #f5f5f5;
   border-radius: 8px;
 }
 .player-area, .showdown-area, .game-controls {
@@ -149,7 +165,7 @@ function onSubmitHand() {
   gap: 10px;
 }
 .segments.showdown-view .player-hand-container {
-    background-color: #e8eaf6; /* 比牌时墩的背景色 */
+    background-color: #e8eaf6;
     border-style: solid;
 }
 
@@ -157,14 +173,14 @@ function onSubmitHand() {
   margin-top: 15px;
   padding: 10px 18px;
   font-size: 1em;
-  background-color: #5c6bc0; /* 靛蓝色 */
+  background-color: #5c6bc0;
 }
 .submit-hand-button:disabled {
     background-color: #9fa8da;
 }
 
 .showdown-area {
-    background-color: #fff9c4; /* 淡黄色背景 */
+    background-color: #fff9c4;
     padding: 15px;
     border-radius: 6px;
     border: 1px solid #fff59d;
@@ -179,7 +195,7 @@ function onSubmitHand() {
     font-size: 1.1em;
 }
 .comparison-summary h4 {
-    color: #d32f2f; /* 红色突出赢家 */
+    color: #d32f2f;
     margin-top: 10px;
 }
 
@@ -189,10 +205,9 @@ function onSubmitHand() {
     border-top: 1px solid #ccc;
 }
 .ai-hand-showdown h4 {
-    color: #1e88e5; /* 蓝色 */
+    color: #1e88e5;
 }
-.ai-hand-showdown .player-hand-container { /* AI的墩 */
-    background-color: #fce4ec; /* 淡粉色 */
+.ai-hand-showdown .player-hand-container {
+    background-color: #fce4ec;
 }
-
 </style>
