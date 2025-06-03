@@ -1,25 +1,48 @@
 /* frontend/src/components/HandDisplay.css */
 .hand-display-container {
-    border: 1px solid #eee;
-    padding: 10px;
-    margin-bottom: 10px;
+    border: 1px solid #4f545c; /* 深色主题边框 */
+    padding: 8px; /* 减小内边距 */
+    margin-bottom: 8px; /* 减小外边距 */
     border-radius: 5px;
-    background-color: #f9f9f9;
+    background-color: rgba(47, 49, 54, 0.7); /* 半透明的深色背景，让父背景透出一点 */
 }
 
 .hand-display-container h4 {
     margin-top: 0;
-    color: #333;
+    margin-bottom: 6px; /* 减小标题和卡牌间距 */
+    color: #c7c9cc; /* 浅灰色标题 */
+    font-size: 0.9em; /* 减小字体 */
+    font-weight: 500; /* 中等粗细 */
 }
 
 .cards-wrapper {
-    display: flex;
-    flex-wrap: wrap; /* 允许换行 */
-    gap: 5px; /* 卡牌之间的间隙 */
+    display: flex; /* 使用 Flexbox 进行横向排列 */
+    flex-wrap: nowrap; /* 卡牌默认不换行，如果需要换行则用 wrap */
+    justify-content: flex-start; /* 卡牌从左开始排列 */
+    align-items: center; /* 垂直居中对齐卡牌 */
+    min-height: 90px; /* 根据卡牌高度设置最小高度，避免容器塌陷 */
+    padding: 2px 0; /* 上下轻微内边距 */
 }
+
+/* 针对卡牌之间重叠的效果 (可选，如果希望更紧凑) */
+/* 如果不希望重叠，可以将 .cards-wrapper .card 的 margin-left 设为正值 */
+.cards-wrapper > .card:not(:first-child) {
+    margin-left: -30px; /* ★★★ 关键：让卡牌向左重叠，数值可调整 ★★★ */
+                        /* 这个值应该小于卡牌宽度，例如卡牌宽60px，重叠30px则露出一半 */
+}
+.cards-wrapper > .card.empty-slot:not(:first-child) {
+    margin-left: 1px; /* 空槽之间不重叠，保持正常间距 */
+}
+.cards-wrapper > .card:hover {
+    /* 确保悬停的牌在最上面，已在 Card.css 中通过 z-index 实现 */
+}
+
 
 .hand-evaluation {
     font-style: italic;
-    color: #555;
-    font-size: 0.9em;
+    color: #a0a3a7; /* 牌型文字颜色 */
+    font-size: 0.8em; /* 减小字体 */
+    margin-top: 2px;
+    margin-bottom: 4px;
+    text-align: right; /* 牌型评估靠右显示 */
 }
