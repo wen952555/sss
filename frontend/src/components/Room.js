@@ -1,9 +1,9 @@
 // frontend/src/components/Room.js
 import React from 'react';
-import GameBoard from './GameBoard'; // GameBoard 将负责中间的主要操作区域
-import HandDisplay from './HandDisplay'; // AI对手的牌墩也用HandDisplay展示
+import GameBoard from './GameBoard';
+import HandDisplay from './HandDisplay';
 import socket from '../socket';
-import './Room.css'; // 引入我们修改后的 Room.css
+import './Room.css';
 
 // 辅助函数：从后端评估结果获取牌型名称
 const getHandTypeNameFromEval = (evaluation) => {
@@ -12,25 +12,8 @@ const getHandTypeNameFromEval = (evaluation) => {
     return evaluation && localHandTypeNames[evaluation.type] !== undefined ? localHandTypeNames[evaluation.type] : '未知';
 };
 
-// 辅助函数：将牌ID数组映射回牌对象（用于AI牌墩展示）
-// 注意：这个函数需要能访问到AI玩家的完整手牌，如果后端不直接提供AI的原始手牌给前端
-// 那么在展示AI牌墩时，如果只有ID，就无法显示图片。
-// 假设后端在 'showResults' 或 'roomStateUpdate' 的 players 对象中，
-// AI的 arrangedHands 已经是包含完整牌对象的了（或者有一个单独的字段）。
-// 如果不是，这里的映射逻辑需要调整，或者让后端直接发送AI的牌墩对象。
-// 为简化，我们假设后端在适当的时候会提供AI的完整牌墩对象。
-const mapAiCardIdsToObjects = (cardIds, allCardsInGameDeck) => { // allCardsInGameDeck 可以是一个包含所有可能牌的查找表
-    if (!cardIds || !allCardsInGameDeck) return [];
-    // 这个实现比较粗糙，理想情况下后端应该直接提供AI摆好的牌墩对象
-    // 或者前端在收到AI的牌墩ID时，能从某个地方（如一个完整的牌库副本）查到牌对象
-    // 暂时我们假设 cardIds 里的元素已经是牌对象，或者需要一种方式从ID转换
-    // 如果后端发送的AI.arrangedHands已经是对象数组，则这个函数用不上
-    return cardIds.map(idOrCard => {
-        if (typeof idOrCard === 'object' && idOrCard.id) return idOrCard; // 已经是对象
-        const card = allCardsInGameDeck.find(c => c.id === idOrCard);
-        return card || { id: idOrCard, rank: '?', suit: '?', value: 0 }; // 未找到则返回占位符
-    });
-};
+// 移除了未使用的 mapAiCardIdsToObjects 函数
+// const mapAiCardIdsToObjects = (cardIds, allCardsInGameDeck) => { ... };
 
 
 const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid }) => {
@@ -44,10 +27,10 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid }) => {
     }
 
     const { players, gameState, gameLog, isAIRoom, prompt } = roomData;
-    const me = players.find(p => p.id === myPlayerId && !p.isAI); // 确保 me 是真人玩家
+    const me = players.find(p => p.id === myPlayerId && !p.isAI);
     const aiOpponents = players.filter(p => p.isAI);
 
-    if (!me && isAIRoom) { // 如果是AI房但找不到真人玩家（可能ID还未同步或出错）
+    if (!me && isAIRoom) {
         console.error("Room.js: Human player (me) not found in AI room. My ID:", myPlayerId, "Players:", players);
         return (
             <div className="room-container">
@@ -57,28 +40,21 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid }) => {
         );
     }
     
-    // 如果不是AI房，或者没有真人玩家且不是AI房（理论上不应该发生），可以显示不同的UI或错误
     if (!isAIRoom && !me) {
          return <div className="room-container"><p>错误：非AI房间缺少玩家信息。</p></div>;
     }
 
-
     return (
         <div className="room-container">
-            {/* 房间号和游戏状态显示 */}
             <div className="room-header-info">
                 <h2>房间号: {roomId} {isAIRoom && "(AI对战)"}</h2>
                 {me && <h4>欢迎, {me.name}! 分数: {me.score}</h4>}
             </div>
             {gameState && <div className={`game-state-banner ${gameState.toLowerCase()}`}>游戏状态: {gameState}</div>}
 
-
-            {/* 第1道横幅：AI对手区域 */}
             {isAIRoom && aiOpponents.length > 0 && (
                 <div className="ai-opponents-banner">
                     {aiOpponents.map(ai => {
-                        // 假设 ai.arrangedHands 已经是包含牌对象的墩了（由后端处理好）
-                        // 或者我们需要一种方式将 ai.arrangedHands (如果是ID数组) 转换为对象数组
                         const aiFrontDunCards = ai.arrangedHands?.front || [];
                         const aiMiddleDunCards = ai.arrangedHands?.middle || [];
                         const aiBackDunCards = ai.arrangedHands?.back || [];
@@ -90,8 +66,6 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid }) => {
                                 {gameState === 'arranging' && <p className="status-text">{ai.hasSubmitted ? '已提交' : 'AI思考中...'}</p>}
                                 {(gameState === 'comparing' || gameState === 'ended' || (gameState === 'arranging' && ai.hasSubmitted)) && (
                                     <div className="arranged-hands-display opponent-hands">
-                                        {/* AI的牌墩通常在比牌时才完全展示，或者只展示背面/张数 */}
-                                        {/* 这里我们假设后端在适当的时候会填充 ai.arrangedHands 和 ai.arrangedHandsEvaluated */}
                                         <HandDisplay title="头" cardObjects={aiFrontDunCards} handEvaluation={{name: getHandTypeNameFromEval(ai.arrangedHandsEvaluated?.front)}} cardStyle={{width: '30px', height: '45px', margin: '1px'}} />
                                         <HandDisplay title="中" cardObjects={aiMiddleDunCards} handEvaluation={{name: getHandTypeNameFromEval(ai.arrangedHandsEvaluated?.middle)}} cardStyle={{width: '30px', height: '45px', margin: '1px'}} />
                                         <HandDisplay title="尾" cardObjects={aiBackDunCards} handEvaluation={{name: getHandTypeNameFromEval(ai.arrangedHandsEvaluated?.back)}} cardStyle={{width: '30px', height: '45px', margin: '1px'}} />
@@ -104,7 +78,6 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid }) => {
                 </div>
             )}
 
-            {/* 包裹 GameBoard 的容器，GameBoard 内部实现第2、3、4、5道横幅 */}
             {me && (gameState === 'arranging' || gameState === 'waiting' || gameState === 'dealing') && (
                  <div className="game-board-layout-container">
                     {gameState === 'waiting' && !me.isReady && (
@@ -120,7 +93,7 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid }) => {
                         <GameBoard 
                             roomId={roomId} 
                             myPlayerId={myPlayerId} 
-                            initialHand={me.hand} // 传递真人玩家的手牌
+                            initialHand={me.hand}
                             onArrangementInvalid={onArrangementInvalid}
                         />
                     )}
@@ -130,11 +103,8 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid }) => {
                  </div>
             )}
             
-            {/* 比牌结果和游戏日志区 (可以放在 GameBoard 外部，占据下方空间) */}
-            {/* 如果希望这些也在横幅中，需要调整 GameBoard 或这里的结构 */}
             {(gameState === 'comparing' || gameState === 'ended') && (
                 <div className="results-and-log-area">
-                    {/* 真人玩家的最终牌墩展示 (比牌时) */}
                     {me && me.arrangedHands && (
                          <div className="player-info my-info final-hands-display">
                             <h4>{me.name}的最终牌墩:</h4>
@@ -146,51 +116,76 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid }) => {
                         </div>
                     )}
 
-                    {/* 比牌结果 */}
                     {gameState === 'comparing' && roomData.comparisonDetails && (
                         <div className="comparison-results">
                             <h4>比牌结果:</h4>
                             <ul>
                                 {roomData.comparisonDetails.map((detail, index) => {
-                                    // ... (比牌细节的渲染逻辑保持不变) ...
-                                     const playerA = players.find(p => p.id === detail.playerA_id); // 可能是真人
-                                     const playerB = players.find(p => p.id === detail.playerB_id); // 可能是AI
+                                     const playerA = players.find(p => p.id === detail.playerA_id);
+                                     const playerB = players.find(p => p.id === detail.playerB_id);
                                      let message = "";
                                      if (detail.type === 'shoot') {
-                                         message = `${playerA?.name} 打枪 ${playerB?.name}! (+${detail.extraPoints}水)`;
+                                         const shooterPlayer = players.find(p => p.id === detail.shooter);
+                                         const targetPlayer = players.find(p => p.id === detail.target);
+                                         message = `${shooterPlayer?.name || '玩家'} 打枪 ${targetPlayer?.name || '玩家'}! (+${detail.extraPoints}水)`;
                                      } else if (detail.winner === 'Draw') {
                                          message = `${detail.dun.toUpperCase()}: 平局`;
                                      } else {
                                          const winnerPlayer = players.find(p => p.id === detail.winner);
-                                         message = `${detail.dun.toUpperCase()}: ${winnerPlayer?.name} 胜 (+${detail.points}水)`;
+                                         message = `${detail.dun.toUpperCase()}: ${winnerPlayer?.name || '玩家'} 胜 (+${detail.points}水)`;
                                      }
                                      if (detail.evalA && detail.evalB && detail.winner !== 'Draw') {
                                         message += ` (${getHandTypeNameFromEval(detail.evalA)} vs ${getHandTypeNameFromEval(detail.evalB)})`;
                                      } else if (detail.specialHandName) {
-                                        message = `${detail.winner === playerA?.id ? playerA?.name : playerB?.name} 特殊牌型 ${detail.specialHandName} (+${detail.waters}水)`;
+                                        const winnerOfSpecial = detail.winner === playerA?.id ? playerA : (detail.winner === playerB?.id ? playerB : null);
+                                        message = `${winnerOfSpecial?.name || '玩家'} 特殊牌型 ${detail.specialHandName} (+${detail.waters}水)`;
                                      }
-
-
                                     return <li key={index}>{message}</li>;
                                 })}
                             </ul>
                         </div>
                     )}
 
-                    {/* 游戏日志 */}
                     {gameLog && gameLog.length > 0 && (
                         <div className="game-log-section">
                             <h4>游戏记录 (最近{gameLog.slice(-3).length}局):</h4>
-                            {/* ... (游戏日志渲染逻辑保持不变) ... */}
-                            {gameLog.slice(-3).reverse().map((log, idx) => (
-                                <details key={idx} className="log-entry">
-                                   {/* ... */}
-                                </details>
-                            ))}
+                            {gameLog.slice(-3).reverse().map((log, idx) => {
+                                const playerAName = players.find(p=>p.id === log.playerA_id)?.name || '玩家A';
+                                const playerBName = players.find(p=>p.id === log.playerB_id)?.name || '玩家B';
+                                return (
+                                    <details key={idx} className="log-entry">
+                                       <summary>第 {log.round}局 - {playerAName} vs {playerBName}</summary>
+                                       <div>
+                                            {log.comparisonSummary?.map((d, i) => { // Changed from log.details to log.comparisonSummary
+                                                 const winnerPlayer = players.find(p => p.id === d.winner);
+                                                 const shooterPlayer = players.find(p => p.id === d.shooter);
+                                                 const targetPlayer = players.find(p => p.id === d.target);
+                                                return (
+                                                    <p key={i}>
+                                                        {d.type === 'shoot' 
+                                                            ? `${shooterPlayer?.name || '玩家'} 打枪 ${targetPlayer?.name || '玩家'}!`
+                                                            : `${d.dun}: ${d.winner === 'Draw' ? '平' : ((winnerPlayer?.name || '玩家') + ' 胜')}`
+                                                        }
+                                                    </p>
+                                                );
+                                            })}
+                                            {/* 假设 finalScoresInRound 存储了每个玩家ID和该局总分 */}
+                                            {log.finalScoresInRound && Object.keys(log.finalScoresInRound).length > 0 && (
+                                                <p>
+                                                    当局后总分: {Object.entries(log.finalScoresInRound)
+                                                        .map(([pid, score]) => `${players.find(p=>p.id===pid)?.name || '未知'}: ${score}`)
+                                                        .join(', ')}
+                                                </p>
+                                            )}
+                                       </div>
+                                    </details>
+                                );
+                             })}
                         </div>
                     )}
                      {/* 下一局提示/按钮 */}
-                    {gameState === 'ended' || (gameState === 'comparing' && roomData.prompt) && (
+                     {/* 修正 Line 193 的 no-mixed-operators 错误 */}
+                    {(gameState === 'ended' || (gameState === 'comparing' && !!roomData.prompt)) && ( // 使用 !!roomData.prompt 确保是布尔值
                         <div className="next-round-controls">
                             {roomData.prompt && <p className="game-prompt">{roomData.prompt}</p>}
                              <button onClick={() => socket.emit('playerIsReady', { roomId })} className="ready-button">
@@ -198,12 +193,13 @@ const Room = ({ roomId, roomData, myPlayerId, onArrangementInvalid }) => {
                              </button>
                         </div>
                     )}
-
                 </div>
             )}
 
-            {/* 全局提示信息，例如等待AI */}
-            {prompt && (!roomData.comparisonDetails && gameState !== 'ended') && <p className="game-prompt global-prompt">{prompt}</p>}
+            {/* 全局提示信息，修正 Line 193 的 no-mixed-operators 错误 */}
+            {prompt && (!roomData.comparisonDetails && gameState !== 'ended') && ( // 使用括号明确优先级
+                 <p className="game-prompt global-prompt">{prompt}</p>
+            )}
         </div>
     );
 };
