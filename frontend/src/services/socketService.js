@@ -6,7 +6,7 @@ import { io } from 'socket.io-client';
 // const SOCKET_URL = "https://9525.ip-ddns.com";
 
 // 示例2: 如果 Serv00 仍然要求通过 14722 端口访问，并且该端口是 HTTPS 代理
-const SOCKET_URL = "https://9525.ip-ddns.com:14722";
+const SOCKET_URL = "https://9525.ip-ddns.com";
 
 // 示例3: 如果 Serv00 将你的应用放在某个子路径下 (例如 /myapp/)
 // const SOCKET_URL = "https://9525.ip-ddns.com"; // 主域名
