@@ -1,9 +1,9 @@
 // frontend/src/components/GameBoard.js
-import React, { useState, useEffect } from 'react'; // 移除了 useCallback
+import React, { useState, useEffect } from 'react';
 import socket from '../socket';
 import Card from './Card';
 import HandDisplay from './HandDisplay';
-import { sortHand } from '../utils/cardUtils'; // 假设 sortHand 还是需要的，如果不是，也移除
+import { sortHand } from '../utils/cardUtils';
 import './GameBoard.css';
 
 const DUN_NAMES = { FRONT: "头墩", MIDDLE: "中墩", BACK: "尾墩" };
@@ -44,9 +44,9 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
         setError('');
 
         let currentDun, setDun, capacity;
-        if (dunName === DUN_NAMES.FRONT) { [currentDun, setDun, capacity] = [frontDun, setFrontDun, DUN_CAPACITIES.头墩]; }
-        else if (dunName === DUN_NAMES.MIDDLE) { [currentDun, setDun, capacity] = [middleDun, setMiddleDun, DUN_CAPACITIES.中墩]; }
-        else if (dunName === DUN_NAMES.BACK) { [currentDun, setDun, capacity] = [backDun, setBackDun, DUN_CAPACITIES.尾墩]; }
+        if (dunName === DUN_NAMES.FRONT) { [currentDun, setDun, capacity] = [frontDun, setFrontDun, DUN_CAPACITIES[DUN_NAMES.FRONT]]; } // 使用 DUN_NAMES.FRONT 作为 key
+        else if (dunName === DUN_NAMES.MIDDLE) { [currentDun, setDun, capacity] = [middleDun, setMiddleDun, DUN_CAPACITIES[DUN_NAMES.MIDDLE]]; } // 使用 DUN_NAMES.MIDDLE 作为 key
+        else if (dunName === DUN_NAMES.BACK) { [currentDun, setDun, capacity] = [backDun, setBackDun, DUN_CAPACITIES[DUN_NAMES.BACK]]; } // 使用 DUN_NAMES.BACK 作为 key
         else return;
 
         if (currentDun.length + selectedCards.length > capacity) {
@@ -73,9 +73,9 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
 
     const handleSubmitArrangement = () => {
         setError('');
-        if (frontDun.length !== DUN_CAPACITIES.头墩 || 
-            middleDun.length !== DUN_CAPACITIES.中墩 || 
-            backDun.length !== DUN_CAPACITIES.尾墩) {
+        if (frontDun.length !== DUN_CAPACITIES[DUN_NAMES.FRONT] || 
+            middleDun.length !== DUN_CAPACITIES[DUN_NAMES.MIDDLE] || 
+            backDun.length !== DUN_CAPACITIES[DUN_NAMES.BACK]) {
             setError('请将所有墩都摆满正确的牌数 (3-5-5)。');
             return;
         }
@@ -97,10 +97,10 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             }
         };
         socket.on('arrangementInvalid', handleInvalid);
-        return () => { // 清理函数
+        return () => {
             socket.off('arrangementInvalid', handleInvalid);
         };
-    }, [onArrangementInvalid]); // 从依赖数组中移除了 socket
+    }, [onArrangementInvalid]);
 
 
     if (!initialHand || initialHand.length === 0) {
@@ -108,7 +108,6 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
     }
 
     return (
-        // ... JSX 保持不变 ...
         <div className="game-board-container">
             <h3>我的手牌 (拖拽或点击选择后放入对应墩)</h3>
             {error && <p className="error-message">{error}</p>}
@@ -128,9 +127,10 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             {selectedCards.length > 0 && (
                 <div className="selected-cards-info">
                     已选择 {selectedCards.length} 张牌.
-                    <button onClick={() => addSelectedToDun(DUN_NAMES.FRONT)} disabled={frontDun.length >= DUN_CAPACities.头墩}>放入头墩</button>
-                    <button onClick={() => addSelectedToDun(DUN_NAMES.MIDDLE)} disabled={middleDun.length >= DUN_CAPACITIES.中墩}>放入中墩</button>
-                    <button onClick={() => addSelectedToDun(DUN_NAMES.BACK)} disabled={backDun.length >= DUN_CAPACITIES.尾墩}>放入尾墩</button>
+                    {/* 修正这里的 DUN_CAPACities 为 DUN_CAPACITIES，并使用正确的 key */}
+                    <button onClick={() => addSelectedToDun(DUN_NAMES.FRONT)} disabled={frontDun.length >= DUN_CAPACITIES[DUN_NAMES.FRONT]}>放入头墩</button>
+                    <button onClick={() => addSelectedToDun(DUN_NAMES.MIDDLE)} disabled={middleDun.length >= DUN_CAPACITIES[DUN_NAMES.MIDDLE]}>放入中墩</button>
+                    <button onClick={() => addSelectedToDun(DUN_NAMES.BACK)} disabled={backDun.length >= DUN_CAPACITIES[DUN_NAMES.BACK]}>放入尾墩</button>
                 </div>
             )}
 
@@ -156,7 +156,7 @@ const GameBoard = ({ roomId, myPlayerId, initialHand, onArrangementInvalid }) =>
             <button 
                 className="submit-arrangement-button"
                 onClick={handleSubmitArrangement}
-                disabled={isSubmitting || frontDun.length !== DUN_CAPACITIES.头墩 || middleDun.length !== DUN_CAPACITIES.中墩 || backDun.length !== DUN_CAPACITIES.尾墩 || hand.length > 0}
+                disabled={isSubmitting || frontDun.length !== DUN_CAPACITIES[DUN_NAMES.FRONT] || middleDun.length !== DUN_CAPACITIES[DUN_NAMES.MIDDLE] || backDun.length !== DUN_CAPACITIES[DUN_NAMES.BACK] || hand.length > 0}
             >
                 {isSubmitting ? '提交中...' : '确认出牌'}
             </button>
