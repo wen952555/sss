@@ -1,5 +1,4 @@
 <template>
-  <!-- Template is the same as the last version that successfully built -->
   <div id="app-container" class="app-flex-container">
     <div v-if="generalError" class="error global-error">{{ generalError }}</div>
 
@@ -27,7 +26,7 @@
         <button @click="startNewAIGame" :disabled="isDealing" class="restart-button-inline">
           {{ playerHandInitial.length > 0 ? '重新开始' : '开始牌局' }}
         </button>
-      </div>
+      </div> <!-- Closing top-info-bar div -->
 
       <GameBoardComponent
         v-if="playerHandInitial.length > 0 || currentLocalGameState === 'showdown'"
@@ -40,28 +39,26 @@
         :isRoomHost="true"
         :canStartGame="false"
         @custom-drag-start="handleDragStartLogic"
-        @desktop-card-dropped="handleDesktopDropLogic" <!-- Listen to the new specific event -->
+        @desktop-card-dropped="handleDesktopDropLogic"
         @custom-drag-end="handleTouchDragEndLogic"
         @custom-drag-over-segment="handleDragOverSegmentLogic"
         :aiHandVisible="currentLocalGameState === 'showdown'"
         :aiArrangedHand="aiArrangedHand"
         :isDynamicMiddleDunActive="isDynamicMiddleDunActive"
         class="game-board-main-area app-flex-grow"
-      />
+      /> <!-- GameBoardComponent is self-closing and seems correct here -->
       <div v-else-if="currentLocalGameState === 'idle' && !isDealing" class="idle-message app-flex-grow">
         <p>点击“开始牌局”与 AI 对战。</p>
       </div>
-       <div v-if="isDealing" class="dealing-message app-flex-grow">
+      <div v-if="isDealing" class="dealing-message app-flex-grow"> <!-- This v-if is independent -->
         <p>正在发牌...</p>
       </div>
-    </div>
-  </div>
+    </div> <!-- Closing game-area div -->
+  </div> <!-- Closing app-container div -->
 </template>
 
 <script setup>
-// Script is identical to the last version that successfully built,
-// except for the desktop drop handler name change and ensuring
-// `activeDraggedCardInfo` is correctly used/cleared.
+// Script部分与之前相同
 import { ref, computed, reactive, onMounted } from 'vue';
 import GameBoardComponent from './components/GameBoard.vue';
 import Deck from './game_logic_local/Deck';
@@ -78,12 +75,13 @@ const aiIsReady = ref(false);
 const showdownResults = ref(null);
 const generalError = ref('');
 const isDealing = ref(false);
-let activeDraggedCardInfo = null; // { card, fromSegment }
+let activeDraggedCardInfo = null;
 
-const isDynamicMiddleDunActive = computed(() => { /* ... */ 
+const isDynamicMiddleDunActive = computed(() => {
   return playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5;
 });
-const validationMessage = computed(() => { /* ... */ 
+
+const validationMessage = computed(() => {
   if (playerArrangedHand.front.length !== 3) return "头墩需3张牌";
   if (playerArrangedHand.middle.length !== 5) return "中墩需5张牌";
   if (playerArrangedHand.back.length !== 5) return "尾墩需5张牌";
@@ -102,7 +100,8 @@ const validationMessage = computed(() => { /* ... */
   }
   return "可以提交";
 });
-const showdownResultsForBoard = computed(() => { /* ... */ 
+
+const showdownResultsForBoard = computed(() => {
     if (!showdownResults.value) return null;
     const results = {};
     if (showdownResults.value.player) {
@@ -123,7 +122,7 @@ const showdownResultsForBoard = computed(() => { /* ... */
     return results;
 });
 
-function startNewAIGame() { /* ... */ 
+function startNewAIGame() {
   isDealing.value = true;
   generalError.value = '';
   currentLocalGameState.value = 'dealing';
@@ -144,47 +143,37 @@ function startNewAIGame() { /* ... */
     isDealing.value = false;
   }, 500);
 }
-function rankCard(card) { /* ... */ 
+
+function rankCard(card) {
     const valueOrder = ['2','3','4','5','6','7','8','9','10','jack','queen','king','ace'];
     const suitOrder = ['clubs', 'diamonds', 'hearts', 'spades'];
     return valueOrder.indexOf(card.value) * 4 + suitOrder.indexOf(card.suit);
 }
 
 function handleDragStartLogic(payload) {
-  // console.log("App.vue: Drag Start:", payload);
   activeDraggedCardInfo = { card: payload.card, fromSegment: payload.fromSegment };
 }
 
-function handleDesktopDropLogic(payload) { // payload: { card, toSegment }
-  // console.log("App.vue: Desktop Drop:", payload, "Active Drag Info:", activeDraggedCardInfo);
-  if (!activeDraggedCardInfo) {
-      console.warn("DesktopDrop: No active drag info.");
-      return;
+function handleDesktopDropLogic(payload) {
+  if (!activeDraggedCardInfo || activeDraggedCardInfo.card.id !== payload.card.id) {
+      activeDraggedCardInfo = null; return;
   }
-  // For desktop, the card in payload is the one from dataTransfer. 
-  // We should use the card from activeDraggedCardInfo to ensure consistency.
-  const cardToMove = activeDraggedCardInfo.card;
   const fromSegmentName = activeDraggedCardInfo.fromSegment;
   const toSegmentName = payload.toSegment;
-
   if (!toSegmentName || fromSegmentName === toSegmentName) {
-    activeDraggedCardInfo = null;
-    return;
+    activeDraggedCardInfo = null; return;
   }
-  performCardMove(cardToMove, fromSegmentName, toSegmentName);
+  performCardMove(activeDraggedCardInfo.card, fromSegmentName, toSegmentName);
   activeDraggedCardInfo = null;
 }
 
-function handleTouchDragEndLogic(payload) { // payload: { card, targetSegment }
-    // console.log("App.vue: Touch Drag End:", payload, "Active Drag Info:", activeDraggedCardInfo);
+function handleTouchDragEndLogic(payload) {
     if (!activeDraggedCardInfo || !payload || activeDraggedCardInfo.card.id !== payload.card.id) {
-        console.warn("TouchDragEnd: No active drag info or mismatched card.");
         activeDraggedCardInfo = null;
         return;
     }
     const toSegmentName = payload.targetSegment;
     const fromSegmentName = activeDraggedCardInfo.fromSegment;
-
     if (toSegmentName && toSegmentName !== fromSegmentName) {
         performCardMove(activeDraggedCardInfo.card, fromSegmentName, toSegmentName);
     }
@@ -192,53 +181,48 @@ function handleTouchDragEndLogic(payload) { // payload: { card, targetSegment }
 }
 
 function handleDragOverSegmentLogic(segmentName) {
-    // console.log('App.vue: Hovering over segment (touch):', segmentName);
+    // For visual feedback if needed
 }
 
 function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
   if (!cardToMove || typeof cardToMove.id === 'undefined') {
-    console.error("PerformCardMove: Invalid card object:", cardToMove);
+    console.error("PerformCardMove: Attempted to move an invalid card object:", cardToMove);
     return;
   }
-  // console.log(`Perform Move: ${cardToMove.id} from ${fromSegmentName} to ${toSegmentName}`);
-
-  let sourceArray = null;
-  if (fromSegmentName !== 'initial_hand') {
-      sourceArray = playerArrangedHand[fromSegmentName];
-  }
-  // If from initial_hand, removal is implicit as it's not in a dun yet.
-
-  if (sourceArray && Array.isArray(sourceArray)) {
-    const index = sourceArray.findIndex(c => c && c.id === cardToMove.id);
-    if (index > -1) {
-      sourceArray.splice(index, 1);
+  if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName]) {
+    const arr = playerArrangedHand[fromSegmentName];
+    if (Array.isArray(arr)) {
+        const index = arr.findIndex(c => c && c.id === cardToMove.id);
+        if (index > -1) {
+          arr.splice(index, 1);
+        }
     }
   }
-
   const targetSegmentArray = playerArrangedHand[toSegmentName];
   if (targetSegmentArray && Array.isArray(targetSegmentArray)) {
     if (!targetSegmentArray.find(c => c && c.id === cardToMove.id)) {
       targetSegmentArray.push(cardToMove);
       targetSegmentArray.sort((a, b) => rankCard(a) - rankCard(b));
-    } else { // Card already in target, revert removal if applicable
-      if (sourceArray && Array.isArray(sourceArray) && !sourceArray.find(c => c && c.id === cardToMove.id)) {
-        sourceArray.push(cardToMove);
-        sourceArray.sort((a, b) => rankCard(a) - rankCard(b));
+    } else {
+      if (fromSegmentName !== 'initial_hand' && 
+          playerArrangedHand[fromSegmentName] && 
+          Array.isArray(playerArrangedHand[fromSegmentName]) &&
+          !playerArrangedHand[fromSegmentName].find(c => c && c.id === cardToMove.id)) {
+        playerArrangedHand[fromSegmentName].push(cardToMove);
+        playerArrangedHand[fromSegmentName].sort((a, b) => rankCard(a) - rankCard(b));
       }
     }
   } else if (toSegmentName === 'initial_hand') {
-    // Moving back to initial area, if card was removed from a dun, it's effectively back.
-    // No direct push to playerHandInitial as it's the source of truth for all cards.
-    // GameBoard's computed property for initial/middle area will pick it up.
+    // Card is moved back
   } else {
-      console.warn(`Invalid toSegmentName or targetSegmentArray for ${toSegmentName}`);
-      // Revert removal if target is invalid
-      if (sourceArray && Array.isArray(sourceArray) && !sourceArray.find(c => c && c.id === cardToMove.id)) {
-        sourceArray.push(cardToMove);
-        sourceArray.sort((a, b) => rankCard(a) - rankCard(b));
+      if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName] &&
+          Array.isArray(playerArrangedHand[fromSegmentName]) &&
+          !playerArrangedHand[fromSegmentName].find(c => c && c.id === cardToMove.id) ) {
+          playerArrangedHand[fromSegmentName].push(cardToMove);
+          playerArrangedHand[fromSegmentName].sort((a, b) => rankCard(a) - rankCard(b));
       }
   }
-  // Auto-fill middle dun logic (same as before)
+
   if (playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5) {
       const assignedToFrontIds = new Set(playerArrangedHand.front.filter(c => c).map(c => c.id));
       const assignedToBackIds = new Set(playerArrangedHand.back.filter(c => c).map(c => c.id));
@@ -260,7 +244,7 @@ function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
   }
 }
 
-function submitPlayerHand() { /* ... (不变) ... */ 
+function submitPlayerHand() {
   if (validationMessage.value !== "可以提交") {
     generalError.value = "牌型不符合要求: " + validationMessage.value;
     return;
@@ -270,7 +254,7 @@ function submitPlayerHand() { /* ... (不变) ... */
   aiProcessHand();
   checkForShowdown();
 }
-function aiProcessHand() { /* ... (不变) ... */ 
+function aiProcessHand() {
   const handToArrange = [...aiHand.value];
   handToArrange.sort(() => 0.5 - Math.random());
   aiArrangedHand.front = handToArrange.slice(0, 3).sort((a,b) => rankCard(a) - rankCard(b));
@@ -278,13 +262,13 @@ function aiProcessHand() { /* ... (不变) ... */
   aiArrangedHand.back = handToArrange.slice(8, 13).sort((a,b) => rankCard(a) - rankCard(b));
   aiIsReady.value = true;
 }
-function checkForShowdown() { /* ... (不变) ... */ 
+function checkForShowdown() {
   if (playerIsReady.value && aiIsReady.value) {
     currentLocalGameState.value = 'showdown';
     showdownResults.value = compareHands(playerArrangedHand, aiArrangedHand);
   }
 }
-function getHandType(dun) { /* ... (不变) ... */ 
+function getHandType(dun) {
     if (!dun || dun.length === 0) return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
     if (dun.length === 3) {
         const values = dun.map(c => c.value);
@@ -294,7 +278,7 @@ function getHandType(dun) { /* ... (不变) ... */
     }
     return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
 }
-function compareSingleDuns(playerDun, aiDun) { /* ... (不变) ... */ 
+function compareSingleDuns(playerDun, aiDun) {
     const playerType = getHandType(playerDun);
     const aiType = getHandType(aiDun);
     if (playerType.rank > aiType.rank) return 1;
@@ -305,7 +289,7 @@ function compareSingleDuns(playerDun, aiDun) { /* ... (不变) ... */
     if (playerMaxRank < aiMaxRank) return -1;
     return 0;
 }
-function compareHands(pHand, aHand) { /* ... (不变) ... */ 
+function compareHands(pHand, aHand) {
   let playerScore = 0;
   let aiScore = 0;
   const comparisonDetails = {
@@ -339,20 +323,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Styles are identical to the last working version for build */
+/* Style 部分与之前相同 */
 .app-flex-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  height: 100%; 
+  height: 100%;
   background-color: #e0e0e0;
   padding: 5px;
   box-sizing: border-box;
-  overflow: hidden; 
+  overflow: hidden;
 }
 .global-error {
   margin-bottom: 10px;
-  flex-shrink: 0; 
+  flex-shrink: 0;
 }
 .game-area {
   border: 1px solid #90a4ae;
@@ -360,13 +344,13 @@ onMounted(() => {
   border-radius: 6px;
   display: flex;
   flex-direction: column;
-  overflow: hidden; 
+  overflow: hidden;
 }
 .app-flex-grow {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; 
+  min-height: 0;
 }
 .top-info-bar {
   background-color: #b0bec5;
