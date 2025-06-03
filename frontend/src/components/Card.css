@@ -1,0 +1,54 @@
+/* frontend/src/components/Card.css */
+.card {
+    width: 70px; /* 根据你的SVG图片调整 */
+    height: 100px; /* 根据你的SVG图片调整 */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: inline-flex; /* 改为inline-flex使其可以并排 */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 2px;
+    background-color: white;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 7px rgba(0,0,0,0.2);
+}
+
+.card.selected {
+    border: 2px solid dodgerblue;
+    transform: translateY(-5px);
+    box-shadow: 0 0 10px dodgerblue;
+}
+
+.card-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* 保持SVG比例 */
+}
+
+.empty-slot {
+    background-color: #f0f0f0;
+    border-style: dashed;
+}
+
+/* 如果直接显示文字 */
+.card-rank {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+.card-suit {
+    font-size: 1.2em;
+}
+.hearts, .diamonds { /* 可选，如果需要给红牌特定样式 */
+    /* color: red; */
+}
+.clubs, .spades { /* 可选，如果需要给黑牌特定样式 */
+    /* color: black; */
+}
