@@ -2,8 +2,8 @@
 .card {
     width: 128px; 
     height: 180px; 
-    /* border: 1px solid #888; */ /* ★★★ 移除边框 ★★★ */
-    border-radius: 6px; /* 保留圆角，即使没有边框也好看 */
+    border: none; /* ★★★ 确保完全没有边框 ★★★ */
+    border-radius: 6px; 
     display: inline-flex;
     flex-direction: column;
     justify-content: center;
@@ -11,42 +11,44 @@
     margin: 2px 3px; 
     background-color: #ffffff; 
     color: #111; 
-    cursor: pointer;
+    cursor: grab; /* ★★★ 改为 grab 光标，提示可拖拽 ★★★ */
     user-select: none;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.2); /* 调整阴影使其更柔和 */
+    /* box-shadow: 2px 2px 5px rgba(0,0,0,0.2); */ /* ★★★ 暂时移除默认阴影，以便观察边框问题 ★★★ */
+                                                /* 后续可以加一个更柔和的、不产生误解的阴影 */
     transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
     position: relative; 
     z-index: 5; 
 }
+.card:active { /* 拖拽激活时的光标 */
+    cursor: grabbing;
+}
 
-.card:hover:not(.empty-slot) {
+
+.card:hover:not(.empty-slot):not(.dragging) { /* 非拖拽时的悬停 */
     transform: translateY(-4px) scale(1.03); 
-    box-shadow: 3px 3px 8px rgba(0,0,0,0.3); /* 悬停阴影 */
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.3);
     z-index: 20; 
 }
 
 .card.selected {
-    /* border: 3px solid #4a90e2; */ /* ★★★ 移除选中时的边框 ★★★ */
-    /* 可以用其他方式表示选中，例如更强的阴影或轻微的背景色变化 */
-    transform: translateY(-6px) scale(1.05); /* 选中效果调整 */
-    box-shadow: 0 0 15px rgba(74, 144, 226, 0.7); /* 增强选中阴影 */
+    /* border: none; */ /* 确保选中时也没有边框 */
+    transform: translateY(-6px) scale(1.05); 
+    box-shadow: 0 0 12px rgba(88, 101, 242, 0.7); /* 选中时用阴影突出 */
     z-index: 25; 
 }
 
 .card-image {
-    max-width: 100%; /* 图片可以占满无边框的卡牌 */
+    max-width: 100%; 
     max-height: 100%;
     object-fit: contain;
-    border-radius: 6px; /* ★★★ 让图片也带上圆角，因为卡牌没边框了 ★★★ */
-    /* padding: 0; */ /* 移除内边距，让图片贴合卡牌边缘 */
+    border-radius: 6px; 
 }
 
 .empty-slot, .empty-slot-placeholder {
     width: 128px;  
     height: 180px; 
-    background-color: rgba(54, 57, 63, 0.6); 
-    /* border: 2px dashed #4f545c; */ /* ★★★ 空槽的边框也可以考虑移除或改用其他指示 ★★★ */
-    /* 如果移除边框，可能需要其他方式指示空槽，例如一个内部的浅色背景或图标 */
+    background-color: rgba(54, 57, 63, 0.3); /* 更淡的空槽背景 */
+    border: 1px dashed #5c6168; /* 保留虚线边框以指示空槽区域 */
     border-radius: 6px;
     margin: 2px 3px; 
     display: inline-flex; 
@@ -55,22 +57,17 @@
     cursor: default;
     z-index: 1; 
 }
-/* 如果希望空槽也有一个细虚线，可以保留并调整 */
-.empty-slot-placeholder { 
-    border: 1px dashed #5c6168;
-}
-.card.empty-slot { 
-     background-color: rgba(54, 57, 63, 0.6);
-     /* border: 2px dashed #4f545c; */
-}
+/* .card.empty-slot { ... } */ /* Card.js 中不再直接渲染 .empty-slot 类 */
+
 
 .card.dragging {
-    opacity: 0.8;
-    box-shadow: 0px 8px 20px rgba(0,0,0,0.45);
+    opacity: 0.85; /* 拖拽时稍微不透明一点 */
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.5); /* 拖拽时阴影更强 */
     transform: rotate(1.5deg) scale(1.08); 
     z-index: 30; 
+    cursor: grabbing !important; /* 强制拖拽光标 */
 }
 
 /* 后备文字样式 (保持不变) */
-.card-rank { /* ... */ }
-.card-suit { /* ... */ }
+.card-rank { font-size: 2.5em; font-weight: bold;}
+.card-suit { font-size: 2em; }
