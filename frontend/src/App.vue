@@ -1,4 +1,5 @@
 <template>
+  <!-- App.vue template is unchanged from the version that successfully built -->
   <div id="app-container" class="app-flex-container">
     <div v-if="generalError" class="error global-error">{{ generalError }}</div>
 
@@ -58,7 +59,8 @@
 </template>
 
 <script setup>
-// Script 部分与之前相同
+// Script part is identical to the last working version for build
+// All imports and refs ...
 import { ref, computed, reactive, onMounted } from 'vue';
 import GameBoardComponent from './components/GameBoard.vue';
 import Deck from './game_logic_local/Deck';
@@ -167,54 +169,85 @@ function handleDesktopDropLogic(payload) {
   activeDraggedCardInfo = null;
 }
 
-function handleTouchDragEndLogic(payload) {
-    if (!activeDraggedCardInfo || activeDraggedCardInfo.card.id !== payload.card.id) {
-        activeDraggedCardInfo = null; return;
+function handleTouchDragEndLogic(payload) { // payload: { card, targetSegment }
+    if (!activeDraggedCardInfo || !payload || activeDraggedCardInfo.card.id !== payload.card.id) {
+        console.warn("Touch drag end: No active drag info or mismatched card.", activeDraggedCardInfo, payload);
+        activeDraggedCardInfo = null;
+        return;
     }
     const toSegmentName = payload.targetSegment;
     const fromSegmentName = activeDraggedCardInfo.fromSegment;
+
+    console.log(`TouchDragEnd: Moving ${activeDraggedCardInfo.card.id} from ${fromSegmentName} to ${toSegmentName}`);
+
     if (toSegmentName && toSegmentName !== fromSegmentName) {
         performCardMove(activeDraggedCardInfo.card, fromSegmentName, toSegmentName);
+    } else {
+        console.log("TouchDragEnd: No valid target or target is same as source. Card not moved.");
     }
     activeDraggedCardInfo = null;
 }
 
 function handleDragOverSegmentLogic(segmentName) {
-    // For visual feedback if needed
+    // console.log('App.vue: Hovering over segment (touch):', segmentName);
 }
 
 function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
   if (!cardToMove || typeof cardToMove.id === 'undefined') {
-    console.error("Attempted to move an invalid card object:", cardToMove);
+    console.error("PerformCardMove: Attempted to move an invalid card object:", cardToMove);
     return;
   }
+  console.log(`Performing move: ${cardToMove.id} from ${fromSegmentName} to ${toSegmentName}`);
+
+  // 1. Remove from source
   if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName]) {
-    const arr = playerArrangedHand[fromSegmentName];
-    if (Array.isArray(arr)) {
-        const index = arr.findIndex(c => c && c.id === cardToMove.id);
+    const sourceArray = playerArrangedHand[fromSegmentName];
+    if (Array.isArray(sourceArray)) {
+        const index = sourceArray.findIndex(c => c && c.id === cardToMove.id);
         if (index > -1) {
-          arr.splice(index, 1);
+          sourceArray.splice(index, 1);
+          console.log(`Removed ${cardToMove.id} from ${fromSegmentName}`);
+        } else {
+          console.warn(`Card ${cardToMove.id} not found in source ${fromSegmentName}`);
         }
     }
+  } else {
+      console.log(`Card ${cardToMove.id} is from initial_hand or invalid fromSegment`);
   }
+
+  // 2. Add to destination
   const targetSegmentArray = playerArrangedHand[toSegmentName];
   if (targetSegmentArray && Array.isArray(targetSegmentArray)) {
     if (!targetSegmentArray.find(c => c && c.id === cardToMove.id)) {
       targetSegmentArray.push(cardToMove);
       targetSegmentArray.sort((a, b) => rankCard(a) - rankCard(b));
+      console.log(`Added ${cardToMove.id} to ${toSegmentName}`);
     } else {
-      if (fromSegmentName !== 'initial_hand' && 
-          playerArrangedHand[fromSegmentName] && 
+      console.warn(`Card ${cardToMove.id} already in target ${toSegmentName}. Attempting to revert.`);
+      // Attempt to revert if it was removed from a dun
+      if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName] && 
           Array.isArray(playerArrangedHand[fromSegmentName]) &&
           !playerArrangedHand[fromSegmentName].find(c => c && c.id === cardToMove.id)) {
         playerArrangedHand[fromSegmentName].push(cardToMove);
         playerArrangedHand[fromSegmentName].sort((a, b) => rankCard(a) - rankCard(b));
+        console.log(`Reverted: Added ${cardToMove.id} back to ${fromSegmentName}`);
       }
     }
   } else if (toSegmentName === 'initial_hand') {
-    // Card is moved back
+    console.log(`Card ${cardToMove.id} moved to initial_hand (conceptually). No change to playerArrangedHand.`);
+  } else {
+    console.warn(`Invalid toSegmentName: ${toSegmentName} or targetSegmentArray is not an array.`);
+     // If card was removed from a dun but target is invalid, try to put it back
+    if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName] &&
+        Array.isArray(playerArrangedHand[fromSegmentName]) &&
+        !playerArrangedHand[fromSegmentName].find(c => c && c.id === cardToMove.id) ) {
+        playerArrangedHand[fromSegmentName].push(cardToMove);
+        playerArrangedHand[fromSegmentName].sort((a, b) => rankCard(a) - rankCard(b));
+        console.log(`Reverted due to invalid target: Added ${cardToMove.id} back to ${fromSegmentName}`);
+    }
   }
 
+  // Auto-fill middle dun logic
   if (playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5) {
       const assignedToFrontIds = new Set(playerArrangedHand.front.filter(c => c).map(c => c.id));
       const assignedToBackIds = new Set(playerArrangedHand.back.filter(c => c).map(c => c.id));
@@ -233,6 +266,7 @@ function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
           }
       }
       playerArrangedHand.middle = finalMiddle.slice(0,5).sort((a,b) => rankCard(a) - rankCard(b));
+      console.log("Auto-filled middle dun:", playerArrangedHand.middle.map(c=>c.id));
   }
 }
 
@@ -315,20 +349,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Style 部分与之前相同 */
+/* Styles are identical to the last working version for build */
 .app-flex-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  height: 100%;
+  height: 100%; 
   background-color: #e0e0e0;
   padding: 5px;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: hidden; 
 }
 .global-error {
   margin-bottom: 10px;
-  flex-shrink: 0;
+  flex-shrink: 0; 
 }
 .game-area {
   border: 1px solid #90a4ae;
@@ -336,13 +370,13 @@ onMounted(() => {
   border-radius: 6px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: hidden; 
 }
 .app-flex-grow {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: 0; 
 }
 .top-info-bar {
   background-color: #b0bec5;
