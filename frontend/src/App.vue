@@ -1,11 +1,9 @@
 <template>
   <div id="app-container" class="app-flex-container">
-    <!-- ... (template 其他部分与上一版类似，确保 GameBoardComponent 监听新的事件) ... -->
     <div v-if="generalError" class="error global-error">{{ generalError }}</div>
 
     <div class="game-area app-flex-grow">
       <div class="top-info-bar">
-        <!-- ... top-info-bar 内容 ... -->
         <div class="game-status-mode">
           模式: AI 练习 | 游戏状态: {{ currentLocalGameState }}
         </div>
@@ -40,27 +38,27 @@
         :showdownResults="showdownResultsForBoard"
         :isRoomHost="true"
         :canStartGame="false"
-        @card-drag-start="handleDragStartLogic" <!-- 改为统一的拖拽开始处理 -->
-        @card-dropped="handleDropLogic"       <!-- 桌面端 drop -->
-        @card-drag-end="handleDragEndLogic"   <!-- 触摸端 drag end -->
-        @card-drag-over-segment="handleDragOverSegmentLogic" <!-- 触摸端 drag over -->
+        @card-drag-start="handleDragStartLogic"
+        @card-dropped="handleDropLogic"
+        @card-drag-end="handleDragEndLogic"
+        @card-drag-over-segment="handleDragOverSegmentLogic"
         :aiHandVisible="currentLocalGameState === 'showdown'"
         :aiArrangedHand="aiArrangedHand"
         :isDynamicMiddleDunActive="isDynamicMiddleDunActive"
         class="game-board-main-area app-flex-grow"
-      />
+      /> <!-- Correctly self-closed or ensure it has a closing tag if it wraps content -->
       <div v-else-if="currentLocalGameState === 'idle' && !isDealing" class="idle-message app-flex-grow">
         <p>点击“开始牌局”与 AI 对战。</p>
       </div>
        <div v-if="isDealing" class="dealing-message app-flex-grow">
         <p>正在发牌...</p>
       </div>
-    </div>
-  </div>
+    </div> <!-- Closes game-area div -->
+  </div> <!-- Closes app-container div -->
 </template>
 
 <script setup>
-// ... (大部分 imports 和 refs 与之前相同) ...
+// Script 部分与之前相同
 import { ref, computed, reactive, onMounted } from 'vue';
 import GameBoardComponent from './components/GameBoard.vue';
 import Deck from './game_logic_local/Deck';
@@ -77,15 +75,14 @@ const aiIsReady = ref(false);
 const showdownResults = ref(null);
 const generalError = ref('');
 const isDealing = ref(false);
+let activeDraggedCardInfo = null;
+let currentDragOverSegment = null;
 
-// --- 拖拽状态 ---
-let activeDraggedCardInfo = null; // { card, fromSegment }
-let currentDragOverSegment = null; // 触摸拖拽时，当前悬停的segment
-
-const isDynamicMiddleDunActive = computed(() => { /* ... (不变) ... */
+const isDynamicMiddleDunActive = computed(() => {
   return playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5;
 });
-const validationMessage = computed(() => { /* ... (不变) ... */
+
+const validationMessage = computed(() => {
   if (playerArrangedHand.front.length !== 3) return "头墩需3张牌";
   if (playerArrangedHand.middle.length !== 5) return "中墩需5张牌";
   if (playerArrangedHand.back.length !== 5) return "尾墩需5张牌";
@@ -104,7 +101,8 @@ const validationMessage = computed(() => { /* ... (不变) ... */
   }
   return "可以提交";
 });
-const showdownResultsForBoard = computed(() => { /* ... (不变) ... */
+
+const showdownResultsForBoard = computed(() => {
     if (!showdownResults.value) return null;
     const results = {};
     if (showdownResults.value.player) {
@@ -125,7 +123,7 @@ const showdownResultsForBoard = computed(() => { /* ... (不变) ... */
     return results;
 });
 
-function startNewAIGame() { /* ... (不变) ... */
+function startNewAIGame() {
   isDealing.value = true;
   generalError.value = '';
   currentLocalGameState.value = 'dealing';
@@ -147,86 +145,65 @@ function startNewAIGame() { /* ... (不变) ... */
   }, 500);
 }
 
-function rankCard(card) { /* ... (不变) ... */
+function rankCard(card) {
     const valueOrder = ['2','3','4','5','6','7','8','9','10','jack','queen','king','ace'];
     const suitOrder = ['clubs', 'diamonds', 'hearts', 'spades'];
     return valueOrder.indexOf(card.value) * 4 + suitOrder.indexOf(card.suit);
 }
 
-// --- 统一的拖拽处理逻辑 ---
-function handleDragStartLogic(payload) { // payload: { card, fromSegment, event? }
+function handleDragStartLogic(payload) {
   activeDraggedCardInfo = { card: payload.card, fromSegment: payload.fromSegment };
-  currentDragOverSegment = null; // 重置悬停区
+  currentDragOverSegment = null;
 }
 
-function handleDragOverSegmentLogic(segmentName) { // 触摸拖拽时，卡片悬停在哪个区域
+function handleDragOverSegmentLogic(segmentName) {
     currentDragOverSegment = segmentName;
-    // 可以在这里给悬停的 segment 添加视觉反馈 (通过修改一个 ref，让 PlayerHandComponent 响应)
 }
 
-function handleDropLogic(payload) { // payload: { card, toSegment, type: 'desktop' | undefined }
-  // 这个函数现在主要由桌面端的原生 drop 事件触发，或者由触摸的 dragEnd 逻辑调用
+function handleDropLogic(payload) {
   if (!activeDraggedCardInfo) return;
-
   const cardToMove = activeDraggedCardInfo.card;
   const fromSegmentName = activeDraggedCardInfo.fromSegment;
-  const toSegmentName = payload.toSegment; // 对于桌面 drop，toSegment 直接来自 PlayerHand
-
+  const toSegmentName = payload.toSegment;
   if (!toSegmentName || fromSegmentName === toSegmentName) {
     activeDraggedCardInfo = null;
     currentDragOverSegment = null;
     return;
   }
-
   performCardMove(cardToMove, fromSegmentName, toSegmentName);
-  
   activeDraggedCardInfo = null;
   currentDragOverSegment = null;
 }
 
-function handleDragEndLogic() { // 触摸拖拽结束时触发 payload: { card, event }
+function handleDragEndLogic() {
     if (!activeDraggedCardInfo) return;
-
-    // 在触摸结束时，我们依赖 currentDragOverSegment 来确定放置目标
     if (currentDragOverSegment && currentDragOverSegment !== activeDraggedCardInfo.fromSegment) {
         performCardMove(activeDraggedCardInfo.card, activeDraggedCardInfo.fromSegment, currentDragOverSegment);
     }
-    // 如果没有有效的 currentDragOverSegment，牌会回到原处（通过不执行移动）
-
     activeDraggedCardInfo = null;
     currentDragOverSegment = null;
 }
 
-
 function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
-  // 1. 从原位置移除
   if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName]) {
     const index = playerArrangedHand[fromSegmentName].findIndex(c => c.id === cardToMove.id);
     if (index > -1) {
       playerArrangedHand[fromSegmentName].splice(index, 1);
     }
   }
-
-  // 2. 添加到新位置 (不限制数量，只检查是否已存在)
   const targetSegmentArray = playerArrangedHand[toSegmentName];
   if (targetSegmentArray) {
     if (!targetSegmentArray.find(c => c.id === cardToMove.id)) {
       targetSegmentArray.push(cardToMove);
       targetSegmentArray.sort((a, b) => rankCard(a) - rankCard(b));
     } else {
-      // 牌已存在，尝试放回原处 (如果不是从 initial_hand 来的)
       if (fromSegmentName !== 'initial_hand' && playerArrangedHand[fromSegmentName] && 
           !playerArrangedHand[fromSegmentName].find(c => c.id === cardToMove.id)) {
         playerArrangedHand[fromSegmentName].push(cardToMove);
         playerArrangedHand[fromSegmentName].sort((a, b) => rankCard(a) - rankCard(b));
       }
     }
-  } else if (toSegmentName === 'initial_hand') {
-    // 牌被拖回到概念上的“初始区域”
-    // 确保它从某个墩中被移除了
   }
-
-  // 自动填充中墩逻辑
   if (playerArrangedHand.front.length === 3 && playerArrangedHand.back.length === 5) {
       const assignedToFrontIds = new Set(playerArrangedHand.front.map(c => c.id));
       const assignedToBackIds = new Set(playerArrangedHand.back.map(c => c.id));
@@ -248,8 +225,7 @@ function performCardMove(cardToMove, fromSegmentName, toSegmentName) {
   }
 }
 
-
-function submitPlayerHand() { /* ... (不变) ... */
+function submitPlayerHand() {
   if (validationMessage.value !== "可以提交") {
     generalError.value = "牌型不符合要求: " + validationMessage.value;
     return;
@@ -259,7 +235,7 @@ function submitPlayerHand() { /* ... (不变) ... */
   aiProcessHand();
   checkForShowdown();
 }
-function aiProcessHand() { /* ... (不变) ... */
+function aiProcessHand() {
   const handToArrange = [...aiHand.value];
   handToArrange.sort(() => 0.5 - Math.random());
   aiArrangedHand.front = handToArrange.slice(0, 3).sort((a,b) => rankCard(a) - rankCard(b));
@@ -267,13 +243,13 @@ function aiProcessHand() { /* ... (不变) ... */
   aiArrangedHand.back = handToArrange.slice(8, 13).sort((a,b) => rankCard(a) - rankCard(b));
   aiIsReady.value = true;
 }
-function checkForShowdown() { /* ... (不变) ... */
+function checkForShowdown() {
   if (playerIsReady.value && aiIsReady.value) {
     currentLocalGameState.value = 'showdown';
     showdownResults.value = compareHands(playerArrangedHand, aiArrangedHand);
   }
 }
-function getHandType(dun) { /* ... (不变) ... */
+function getHandType(dun) {
     if (!dun || dun.length === 0) return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
     if (dun.length === 3) {
         const values = dun.map(c => c.value);
@@ -283,7 +259,7 @@ function getHandType(dun) { /* ... (不变) ... */
     }
     return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
 }
-function compareSingleDuns(playerDun, aiDun) { /* ... (不变) ... */
+function compareSingleDuns(playerDun, aiDun) {
     const playerType = getHandType(playerDun);
     const aiType = getHandType(aiDun);
     if (playerType.rank > aiType.rank) return 1;
@@ -294,7 +270,7 @@ function compareSingleDuns(playerDun, aiDun) { /* ... (不变) ... */
     if (playerMaxRank < aiMaxRank) return -1;
     return 0;
 }
-function compareHands(pHand, aHand) { /* ... (不变) ... */
+function compareHands(pHand, aHand) {
   let playerScore = 0;
   let aiScore = 0;
   const comparisonDetails = {
@@ -328,20 +304,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ... (App.vue 的样式与上一版类似，确保响应式) ... */
+/* Style 部分与之前相同 */
 .app-flex-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  height: 100%; /* 强制占满 */
+  height: 100%;
   background-color: #e0e0e0;
   padding: 5px;
   box-sizing: border-box;
-  overflow: hidden; /* 防止整个 app 滚动 */
+  overflow: hidden;
 }
 .global-error {
   margin-bottom: 10px;
-  flex-shrink: 0; /* 防止错误信息被压缩 */
+  flex-shrink: 0;
 }
 .game-area {
   border: 1px solid #90a4ae;
@@ -349,13 +325,13 @@ onMounted(() => {
   border-radius: 6px;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 确保 game-area 内部滚动，而不是整个页面 */
+  overflow: hidden;
 }
 .app-flex-grow {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* 对于 flex 子元素，允许其收缩而不是溢出 */
+  min-height: 0;
 }
 .top-info-bar {
   background-color: #b0bec5;
@@ -397,7 +373,6 @@ onMounted(() => {
   margin-top: 0;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-  /* flex-grow: 1; GameBoard 自己会处理 */
 }
 .idle-message, .dealing-message {
     text-align: center;
