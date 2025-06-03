@@ -3,219 +3,114 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: sans-serif;
-  background-color: #f0f0f0;
-  color: #333;
+  /* 将背景色修改为深绿色，例如像扑克桌的绿色 */
+  background-color: #006400; /* 深绿色 (DarkGreen) */
+  /* 或者其他你喜欢的深绿色, 例如:
+     background-color: #004d00; 
+     background-color: #105E26; (一种常见的扑克桌绿)
+  */
+  color: #f0f0f0; /* 默认文字颜色可以改为浅色，以在深色背景上显示 */
   overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+  -webkit-tap-highlight-color: transparent;
 }
 
 #app {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  /* 移除 max-width，让其在手机上能撑满 */
-  /* max-width: 900px; */
-  /* margin: 0 auto; */ /* 在手机上通常不需要左右居中 */
+  /* background-color: #e0e0e0; */ /* 移除或注释掉 #app 的浅色背景，让body的深绿色透出来 */
 }
 
-/* 卡片尺寸可以考虑用 vw 或 rem 来做响应式，但这里先保持固定，通过容器的 flex-wrap 来换行 */
+/* --- 卡片和卡片容器样式调整 --- */
 .card {
-  width: 60px; /* 稍微缩小卡片以便在手机上显示更多 */
+  width: 60px;
   height: 85px;
-  border: 1px solid #ccc;
-  border-radius: 4px; /* 统一圆角 */
-  background-color: white;
+  border: 1px solid #aaa; /* 边框颜色在深色背景下可能需要更亮一些 */
+  border-radius: 4px;
+  background-color: white; /* 卡片背景保持白色 */
+  color: #333; /* 卡片上的文字颜色保持深色 */
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: grab;
   user-select: none;
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.1); /* 轻微阴影 */
-  transition: transform 0.1s ease-out; /* 为拖拽添加一点过渡 */
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.3); /* 阴影可以稍微明显一点 */
+  transition: transform 0.1s ease-out;
 }
 .card img {
   max-width: 90%;
   max-height: 90%;
   object-fit: contain;
+  pointer-events: none;
 }
-.card.dragging { /* 拖拽时卡片的样式 */
+.card.dragging {
   opacity: 0.7;
   transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  z-index: 1000; /*确保在最上层 */
-  position: relative; /* 配合 z-index */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  z-index: 1000;
+  position: relative;
 }
-
 
 .card-container {
   display: flex;
-  flex-wrap: wrap; /* 允许卡片换行 */
-  gap: 4px; /* 缩小卡片间距 */
-  min-height: 90px; /* 调整最小高度 */
-  border: 1px dashed #b0bec5; /* 边框颜色调整 */
-  padding: 8px; /* 调整内边距 */
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 90px;
+  border: 1px dashed #90a4ae; /* 虚线边框颜色调整 */
+  padding: 8px;
   border-radius: 4px;
   position: relative;
-  align-items: flex-start; /* 从顶部开始对齐卡片 */
-  justify-content: flex-start; /* 从左边开始对齐卡片 */
-  background-color: rgba(255,255,255,0.5); /* 半透明背景 */
+  align-items: flex-start;
+  justify-content: flex-start;
+  background-color: rgba(255, 255, 255, 0.1); /* 卡片容器背景可以带一点透明的浅色或无色 */
 }
 .card-container.is-empty {
-  background-color: rgba(236, 239, 241, 0.7); /* #eceff1 半透明 */
-  display: flex; /* 确保即使为空，placeholder也能居中 */
+  background-color: rgba(0, 0, 0, 0.1); /* 空容器背景，深色背景下的深一点的透明 */
+  display: flex;
   align-items: center;
   justify-content: center;
 }
-.drag-over { /* 拖拽到可放置区域的样式 */
-  border-color: #00796b; /* 强调颜色 */
+.drag-over {
+  border-color: #81c784; /* 亮绿色 */
   border-style: solid;
-  background-color: rgba(178, 223, 219, 0.5); /* #b2dfdb 半透明 */
+  background-color: rgba(102, 187, 106, 0.3); /* 半透明亮绿色 */
 }
 .drop-placeholder {
-  color: #78909c; /* 占位符颜色 */
+  color: #bdbdbd; /* 占位符文字颜色，确保在深色背景上可见 */
   font-style: italic;
   text-align: center;
   width: 100%;
   font-size: 0.9em;
-  padding: 10px 0; /* 给占位符一些呼吸空间 */
+  padding: 10px 0;
 }
 
-/* --- App.vue specific styles for responsiveness --- */
-.app-flex-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh; /* 确保占满视口 */
-  height: 100%; /* 尝试强制高度 */
-  background-color: #e0e0e0; /* 页面背景色 */
-  padding: 5px; /* 手机上边距小一点 */
-  box-sizing: border-box;
-}
-
-.game-area {
-  border: 1px solid #90a4ae; /* 边框细一点 */
-  background-color: #f5f5f5; /* 游戏区域背景 */
-  border-radius: 6px; /* 圆角小一点 */
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1; /* 占据剩余空间 */
-  overflow: hidden; /* 防止内部内容溢出导致整个页面滚动 */
-  padding: 8px; /* 游戏区域内边距 */
-}
-
-.top-info-bar {
-  background-color: #b0bec5; /* 信息栏背景 */
-  padding: 6px 10px;
-  border-radius: 4px; /* 圆角与游戏区一致 */
-  margin-bottom: 8px; /* 与下方牌桌的间距 */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.85em; /* 字体再小一点 */
-  flex-shrink: 0;
-  flex-wrap: wrap; /* 允许内容换行 */
-  gap: 5px; /* 换行时的间距 */
-}
-.game-status-mode {
-  /* flex-grow: 1; */ /* 移除，让其自然宽度 */
-  margin-right: auto; /* 将其推到左边 */
-}
-.player-statuses-inline {
-  display: flex;
-  gap: 10px;
-  /* margin: 0 10px; */ /* 调整间距 */
-  flex-wrap: nowrap; /* 玩家状态不换行 */
-  overflow-x: auto; /* 如果太长允许滚动 */
-}
-.restart-button-inline {
-  /* margin-left: auto; */ /* 移除，让其自然排列 */
-  white-space: nowrap; /* 防止按钮文字换行 */
-}
-
-/* --- GameBoard.vue specific styles for responsiveness --- */
-.game-board-container {
-  /* background-color: transparent; */ /* GameBoard 背景可以透明，由 game-area 控制 */
-  /* border: none; */ /* 移除 GameBoard 自身的边框和 padding */
-  /* padding: 0; */
-  /* border-radius: 0; */
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  overflow: hidden; /* GameBoard 内部自行处理滚动 */
-}
-
-.player-area {
-  margin-bottom: 10px; /* 与提交按钮的间距 */
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  overflow-y: auto; /* 理牌区域内部可以滚动 */
-  padding: 5px; /* 理牌区域内边距 */
-  -webkit-overflow-scrolling: touch; /* iOS 滚动优化 */
-}
-
-.dun-area, .initial-hand-area {
-  margin-bottom: 6px; /* 墩之间的间距 */
-}
-.initial-hand-area .card-container {
-  /* 如果希望初始手牌区能容纳更多牌而不显得拥挤 */
-  min-height: 100px; /* 可以根据需要调整 */
-}
-.dun-area-expand .card-container {
-  flex-grow: 1;
-  /* min-height: 120px; */ /* 这个可能需要调整或移除，取决于整体布局 */
-}
-
-
-.submit-hand-button {
-  margin-top: 10px;
-  padding: 8px 15px; /* 按钮小一点 */
-  font-size: 0.95em;
-  align-self: center;
-  width: 80%; /* 按钮宽度 */
-  max-width: 250px; /* 最大宽度 */
-}
-
-.showdown-area {
-  background-color: #fffde7; /* 比牌结果背景 */
-  padding: 10px;
+/* --- 其他组件的颜色调整 --- */
+button {
+  /* 按钮颜色可能需要调整以适应深色背景 */
+  background-color: #2e7d32; /* 一种较深的绿色按钮 */
+  color: white;
+  padding: 10px 15px;
+  margin: 5px;
+  border: none;
   border-radius: 4px;
-  border: 1px solid #fff9c4;
-  overflow-y: auto;
-  max-height: 40vh; /* 比牌结果区域最大高度为视口的40% */
-  flex-shrink: 0; /* 防止被压缩 */
+  cursor: pointer;
+  font-size: 1em;
+  box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+}
+button:hover {
+  background-color: #388e3c; /* 悬停时更亮的绿色 */
+}
+button:disabled {
+  background-color: #555; /* 深灰色禁用按钮 */
+  color: #aaa;
+  cursor: not-allowed;
 }
 
-/* 消息区域样式 */
-.message-area, .idle-message, .dealing-message {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1em; /* 调整字体大小 */
-    color: #546e7a;
-    padding: 15px;
-}
-
-/* 针对小屏幕的媒体查询示例 */
-@media (max-width: 400px) {
-  .card {
-    width: 50px;
-    height: 70px;
-  }
-  .card-container {
-    min-height: 75px;
-    gap: 3px;
-    padding: 5px;
-  }
-  .top-info-bar {
-      font-size: 0.75em;
-      padding: 5px 8px;
-  }
-  .player-statuses-inline {
-      gap: 8px;
-  }
-  .submit-hand-button {
-      font-size: 0.9em;
-      padding: 6px 12px;
-  }
+input[type="text"] {
+  padding: 8px;
+  margin: 5px;
+  border-radius: 4px;
+  border: 1px solid #757575; /* 边框颜色 */
+  background-color: #f5f5f5; /* 输入框背景 */
+  color: #333; /* 输入框文字颜色 */
 }
