@@ -1,373 +1,382 @@
 <template>
   <div id="app-container">
-    <h1>十三水游戏</h1>
+    <h1>十三水 AI 练习</h1>
+    <div v-if="generalError" class="error">{{ generalError }}</div>
 
-    <div v-if="error" class="error">{{ error }}</div>
-
-    <!-- 连接和房间管理 -->
-    <div v-if="!connected">
-      <p>正在连接服务器...</p>
-    </div>
-    <div v-else-if="!roomId">
-      <input type="text" v-model="playerName" placeholder="输入你的名字" />
-      <button @click="createRoomHandler">创建房间</button>
-      <br>
-      <input type="text" v-model="joinRoomIdInput" placeholder="输入房间号加入" />
-      <button @click="joinRoomHandler">加入房间</button>
-    </div>
-
-    <!-- 游戏内 -->
-    <div v-else class="game-area">
+    <div class="game-area">
       <div class="game-info">
-        <p>房间号: <strong>{{ roomId }}</strong> | 我的ID: {{ playerId }} ({{ playerName }})</p>
-        <p>游戏状态: <strong>{{ gameState.gameState }}</strong></p>
-        <button @click="leaveRoom" style="background-color: #f44336;">离开房间</button>
-      </div>
-
-      <div class="player-info">
-        <h2>玩家列表 ({{ gameState.players?.length || 0 }})</h2>
-        <ul class="player-list">
-          <li v-for="p in gameState.players" :key="p.id">
-            {{ p.name }} ({{ p.id === playerId ? '你' : '' }}) -
-            状态: {{ p.isReady ? '已准备' : '未准备' }} -
-            得分: {{ p.score }}
-          </li>
-        </ul>
-      </div>
-
-      <div v-if="gameState.gameState === 'waiting' && isRoomHost">
-        <button @click="startGameHandler" :disabled="(gameState.players?.length || 0) < 2">
-          开始游戏 (至少2人)
+        <p>模式: <strong>AI 练习</strong> | 游戏状态: <strong>{{ currentLocalGameState }}</strong></p>
+        <button @click="startNewAIGame" :disabled="isDealing">
+          {{ playerHand.length > 0 ? '重新开始' : '开始新牌局' }}
         </button>
       </div>
 
-      <!-- 玩家手牌展示和理牌区域 -->
-      <div v-if="playerHand.length > 0 && (gameState.gameState === 'playing' || gameState.gameState === 'scoring' || gameState.gameState === 'finished')">
-        <h2>我的手牌 (拖拽理牌)</h2>
-        <PlayerHandComponent
-          title="未分配的牌"
-          :cards="unassignedCards"
-          :draggableCards="true"
-          :droppable="true"
-          segmentName="initial"
-          @cardDropped="handleCardDrop"
-          @cardDragStart="handleCardDragStart"
-        />
-
-        <div class="segments">
-          <PlayerHandComponent
-            title="头墩 (3张)"
-            :cards="arrangedHand.front"
-            :draggableCards="true"
-            :droppable="true"
-            segmentName="front"
-            @cardDropped="handleCardDrop"
-            @cardDragStart="handleCardDragStart"
-          />
-          <PlayerHandComponent
-            title="中墩 (5张)"
-            :cards="arrangedHand.middle"
-            :draggableCards="true"
-            :droppable="true"
-            segmentName="middle"
-            @cardDropped="handleCardDrop"
-            @cardDragStart="handleCardDragStart"
-          />
-          <PlayerHandComponent
-            title="尾墩 (5张)"
-            :cards="arrangedHand.back"
-            :draggableCards="true"
-            :droppable="true"
-            segmentName="back"
-            @cardDropped="handleCardDrop"
-            @cardDragStart="handleCardDragStart"
-          />
+      <!-- 玩家信息和 AI 信息 -->
+      <div class="player-info-container">
+        <div class="player-info local-player">
+          <h2>你 ({{ playerName }})</h2>
+          <p v-if="currentLocalGameState === 'arranging' || currentLocalGameState === 'showdown'">
+            状态: {{ playerIsReady ? '已提交牌型' : '正在理牌...' }}
+          </p>
         </div>
-
-        <button
-          v-if="gameState.gameState === 'playing' && !currentPlayerIsReady"
-          @click="submitHandHandler"
-          :disabled="!isHandArrangementValid()"
-        >
-          提交牌型 ({{ validationMessage }})
-        </button>
-        <p v-if="currentPlayerIsReady && gameState.gameState === 'playing'">已提交，等待其他玩家...</p>
+        <div class="player-info ai-player">
+          <h2>电脑 AI</h2>
+           <p v-if="currentLocalGameState === 'arranging' || currentLocalGameState === 'showdown'">
+            状态: {{ aiIsReady ? '已提交牌型' : '思考中...' }}
+          </p>
+        </div>
       </div>
 
-      <!-- 比牌结果 -->
-      <div v-if="showdownResults && (gameState.gameState === 'scoring' || gameState.gameState === 'finished')">
-         <h2>比牌结果</h2>
-         <div v-for="(data, pId) in showdownResults" :key="pId" class="player-showdown">
-             <h4>{{ data.name }} (得分: {{data.score}})</h4>
-             <p>头墩:</p>
-             <div class="card-container"><CardComponent v-for="c in data.arrangedHand.front" :key="c.id" :card="c"/></div>
-             <p>中墩:</p>
-             <div class="card-container"><CardComponent v-for="c in data.arrangedHand.middle" :key="c.id" :card="c"/></div>
-             <p>尾墩:</p>
-             <div class="card-container"><CardComponent v-for="c in data.arrangedHand.back" :key="c.id" :card="c"/></div>
-         </div>
-         <button v-if="isRoomHost && gameState.gameState === 'finished'" @click="startGameHandler">再来一局</button>
-      </div>
 
+      <!-- 牌桌核心组件 -->
+      <GameBoardComponent
+        v-if="playerHand.length > 0 || currentLocalGameState === 'showdown'"
+        :playerHand="playerHand"
+        :arrangedHand="playerArrangedHand"
+        :unassignedCards="unassignedCards"
+        :currentGameState="currentLocalGameState === 'arranging' && !playerIsReady ? 'playing' : currentLocalGameState"
+        :currentPlayerIsReady="playerIsReady"
+        :validationMessage="validationMessage"
+        :showdownResults="showdownResultsForBoard"
+        :isRoomHost="true"
+        :canStartGame="false" /* 在AI模式下，开始游戏由App.vue控制 */
+        @card-drag-start="handleCardDragStart"
+        @card-dropped="handleCardDrop"
+        @submit-hand="submitPlayerHand"
+        :aiHandVisible="currentLocalGameState === 'showdown'"
+        :aiArrangedHand="aiArrangedHand"
+      />
+      <div v-else-if="currentLocalGameState === 'idle' && !isDealing">
+        <p>点击“开始新牌局”与 AI 对战。</p>
+      </div>
+       <div v-if="isDealing">
+        <p>正在发牌...</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, reactive } from 'vue';
-import { connectSocket, getSocket, emitPromise } from './services/socketService';
-import PlayerHandComponent from './components/PlayerHand.vue';
-import CardComponent from './components/Card.vue';
+import { ref, computed, reactive, onMounted } from 'vue';
+import GameBoardComponent from './components/GameBoard.vue';
+// 我们需要前端的游戏逻辑 (牌、牌堆等)
+import Deck from './game_logic_local/Deck'; // 假设我们将后端 Deck.js 移到前端并适配
+import { Card } from './game_logic_local/Card'; // 假设我们将后端 Card.js 移到前端并适配
+// 你可能还需要一个简化的 Player 类或直接在 App.vue 中管理玩家状态
 
-const connected = ref(false);
-const socket = ref(null);
-const error = ref('');
-const playerName = ref(`玩家${Math.floor(Math.random() * 1000)}`);
-const playerId = ref('');
-const roomId = ref('');
-const joinRoomIdInput = ref('');
-const gameState = ref({}); // 从服务器获取的完整游戏状态
-const playerHand = ref([]); // 玩家自己的手牌
-const isRoomHost = ref(false); // 简单判断是否是房主（第一个加入的）
+// --- 本地游戏状态 ---
+const playerName = ref("玩家");
+const currentLocalGameState = ref('idle'); // idle, dealing, arranging, showdown
+const playerHand = ref([]);
+const aiHand = ref([]);
+const playerArrangedHand = reactive({ front: [], middle: [], back: [] });
+const aiArrangedHand = reactive({ front: [], middle: [], back: [] });
+const playerIsReady = ref(false);
+const aiIsReady = ref(false);
+const showdownResults = ref(null); // { player: { hand, score }, ai: { hand, score }, winner: 'player' | 'ai' | 'draw' }
+const generalError = ref('');
+const isDealing = ref(false);
 
-const arrangedHand = reactive({
-  front: [],
-  middle: [],
-  back: []
-});
-let draggedCardInfo = null; // { card, fromSegment }
+let draggedCardInfo = null; // 用于拖拽
 
+// --- 计算属性 ---
 const unassignedCards = computed(() => {
+  if (!playerHand.value || playerHand.value.length === 0) return [];
   const assignedIds = new Set([
-    ...arrangedHand.front.map(c => c.id),
-    ...arrangedHand.middle.map(c => c.id),
-    ...arrangedHand.back.map(c => c.id)
+    ...playerArrangedHand.front.map(c => c.id),
+    ...playerArrangedHand.middle.map(c => c.id),
+    ...playerArrangedHand.back.map(c => c.id)
   ]);
   return playerHand.value.filter(c => !assignedIds.has(c.id));
 });
 
 const validationMessage = computed(() => {
-   if (arrangedHand.front.length !== 3) return "头墩需3张牌";
-   if (arrangedHand.middle.length !== 5) return "中墩需5张牌";
-   if (arrangedHand.back.length !== 5) return "尾墩需5张牌";
-   if (unassignedCards.value.length > 0) return "还有未分配的牌";
-   return "可以提交";
+  if (playerArrangedHand.front.length !== 3) return "头墩需3张牌";
+  if (playerArrangedHand.middle.length !== 5) return "中墩需5张牌";
+  if (playerArrangedHand.back.length !== 5) return "尾墩需5张牌";
+  if (unassignedCards.value.length > 0) return "还有未分配的牌";
+  // TODO: 前端墩序比较验证
+  return "可以提交";
 });
 
-const currentPlayerIsReady = computed(() => {
-   const me = gameState.value.players?.find(p => p.id === playerId.value);
-   return me?.isReady || false;
-});
-
-const showdownResults = ref(null);
-
-
-onMounted(() => {
-  socket.value = connectSocket();
-
-  socket.value.on('connect', () => {
-    connected.value = true;
-    playerId.value = socket.value.id;
-  });
-
-  socket.value.on('disconnect', () => {
-    connected.value = false;
-    error.value = "与服务器断开连接";
-    // roomId.value = ''; // Reset room state
-    // playerHand.value = [];
-  });
-
-  socket.value.on('gameStateUpdate', (newGameState) => {
-    gameState.value = newGameState;
-    // 更新是否是房主（简陋判断，第一个玩家是房主）
-    if (newGameState.players && newGameState.players.length > 0) {
-        isRoomHost.value = newGameState.players[0].id === playerId.value;
+const showdownResultsForBoard = computed(() => {
+    if (!showdownResults.value) return null;
+    // 转换成 GameBoardComponent 期望的格式
+    // GameBoardComponent 的 showdownResults 期望是一个对象，key 是玩家ID/名称，value 是牌面信息
+    // 这里简化为直接传递，GameBoardComponent 可能需要调整或App.vue传递符合其期望的结构
+    const results = {};
+    if (showdownResults.value.player) {
+        results[playerName.value] = {
+            name: playerName.value,
+            arrangedHand: showdownResults.value.player.arrangedHand,
+            // score: showdownResults.value.player.score, // 如果有计分
+            // scoreChange: showdownResults.value.player.scoreChange // 如果有计分
+        };
     }
-  });
-
-  socket.value.on('playerHand', (hand) => {
-    playerHand.value = hand;
-    // 重置已排列的牌
-    arrangedHand.front = [];
-    arrangedHand.middle = [];
-    arrangedHand.back = [];
-    showdownResults.value = null; // 清除上一局的比牌结果
-  });
-
-  socket.value.on('showdown', (results) => {
-     showdownResults.value = results;
-  });
-
+    if (showdownResults.value.ai) {
+         results['电脑 AI'] = {
+            name: '电脑 AI',
+            arrangedHand: showdownResults.value.ai.arrangedHand,
+            // score: showdownResults.value.ai.score,
+            // scoreChange: showdownResults.value.ai.scoreChange
+        };
+    }
+    if(showdownResults.value.comparisonDetails){
+        // 可以把比较结果也放进去，让GameBoard显示
+        results.comparisonDetails = showdownResults.value.comparisonDetails;
+    }
+    return results;
 });
 
-onUnmounted(() => {
-  if (socket.value) {
-    socket.value.disconnect();
-  }
-});
 
-async function createRoomHandler() {
-  error.value = '';
-  try {
-    const response = await emitPromise('createRoom', { playerName: playerName.value });
-    roomId.value = response.roomId;
-    isRoomHost.value = true; // 创建者是房主
-    // gameState.value.players = [response.player]; //  Update local state immediately or wait for gameStateUpdate
-  } catch (err) {
-    error.value = `创建房间失败: ${err.message}`;
-  }
+// --- 游戏方法 ---
+function startNewAIGame() {
+  isDealing.value = true;
+  generalError.value = '';
+  currentLocalGameState.value = 'dealing';
+  playerHand.value = [];
+  aiHand.value = [];
+  playerArrangedHand.front = []; playerArrangedHand.middle = []; playerArrangedHand.back = [];
+  aiArrangedHand.front = []; aiArrangedHand.middle = []; aiArrangedHand.back = [];
+  playerIsReady.value = false;
+  aiIsReady.value = false;
+  showdownResults.value = null;
+
+  // 模拟异步发牌
+  setTimeout(() => {
+    const deck = new Deck();
+    deck.shuffle();
+    playerHand.value = deck.deal(13).sort((a,b) => rankCard(a) - rankCard(b)); // 按点数排序
+    aiHand.value = deck.deal(13).sort((a,b) => rankCard(a) - rankCard(b));
+    currentLocalGameState.value = 'arranging';
+    isDealing.value = false;
+  }, 500);
 }
 
-async function joinRoomHandler() {
-  if (!joinRoomIdInput.value.trim()) {
-    error.value = "请输入房间号";
-    return;
-  }
-  error.value = '';
-  try {
-    const response = await emitPromise('joinRoom', { roomId: joinRoomIdInput.value.toUpperCase(), playerName: playerName.value });
-    roomId.value = response.roomId;
-    // gameState.value = response.gameState;
-    isRoomHost.value = false; // 加入者不是房主 (除非房间只有他一人，但后端逻辑会处理)
-  } catch (err) {
-    error.value = `加入房间失败: ${err.message}`;
-  }
+// 辅助函数：给牌排序用 (确保 Card 类有 rank 属性)
+function rankCard(card) {
+    const valueOrder = ['2','3','4','5','6','7','8','9','10','jack','queen','king','ace'];
+    const suitOrder = ['clubs', 'diamonds', 'hearts', 'spades']; // 梅花<方块<红桃<黑桃 (可选)
+    return valueOrder.indexOf(card.value) * 4 + suitOrder.indexOf(card.suit);
 }
 
-async function startGameHandler() {
-  error.value = '';
-  try {
-    await emitPromise('startGame', { roomId: roomId.value });
-    // 服务端会广播 gameStateUpdate 和 playerHand
-  } catch (err) {
-    error.value = `开始游戏失败: ${err.message}`;
-  }
-}
 
-function leaveRoom() {
-     if (socket.value && roomId.value) {
-         // 后端会在 disconnect 时处理，也可以主动发一个 'leaveRoom' 事件
-         socket.value.disconnect(); // 这会触发服务端的 disconnect 清理
-         // 手动重置前端状态
-         roomId.value = '';
-         playerHand.value = [];
-         gameState.value = {};
-         arrangedHand.front = [];
-         arrangedHand.middle = [];
-         arrangedHand.back = [];
-         showdownResults.value = null;
-         error.value = '已离开房间，请重新连接或创建/加入房间。';
-         // 重新连接以便可以创建或加入新房间
-         setTimeout(() => {
-              socket.value = connectSocket();
-              socket.value.on('connect', () => {
-                 connected.value = true;
-                 playerId.value = socket.value.id;
-                 error.value = ''; // 清除离开信息
-             });
-         }, 500);
-
-     }
- }
-
-function handleCardDragStart(payload) { // payload: { card, fromSegment }
+function handleCardDragStart(payload) {
   draggedCardInfo = payload;
 }
 
-function handleCardDrop(payload) { // payload: { card (optional, if not from drag event), toSegment }
-  if (!draggedCardInfo && !payload.card) return;
+function handleCardDrop(payload) {
+  // ... (与之前 App.vue 中相同的拖拽逻辑，操作 playerArrangedHand) ...
+  // 为简洁，这里省略，请从之前的 App.vue 复制过来
+  // 注意：确保这里的逻辑正确操作 playerArrangedHand
+    if (!draggedCardInfo && !payload.card) return;
+    const cardToMove = draggedCardInfo ? draggedCardInfo.card : payload.card;
+    const fromSegmentName = draggedCardInfo ? draggedCardInfo.fromSegment : 'initial';
+    const toSegmentName = payload.toSegment;
 
-  const cardToMove = draggedCardInfo ? draggedCardInfo.card : payload.card;
-  const fromSegmentName = draggedCardInfo ? draggedCardInfo.fromSegment : 'initial'; // Assume from initial if not specified
-  const toSegmentName = payload.toSegment;
+    if (fromSegmentName !== toSegmentName) {
+        if (fromSegmentName !== 'initial') {
+            const index = playerArrangedHand[fromSegmentName].findIndex(c => c.id === cardToMove.id);
+            if (index > -1) playerArrangedHand[fromSegmentName].splice(index, 1);
+        }
 
-  // 1. 从原位置移除
-  if (fromSegmentName === 'initial') {
-    // unassignedCards is computed, so we modify playerHand if it was truly initial
-    // This logic is tricky because unassigned is derived.
-    // A simpler way: just add to target, and unassigned will recompute.
-    // However, if we need to remove from specific segment:
-  } else if (arrangedHand[fromSegmentName]) {
-    const index = arrangedHand[fromSegmentName].findIndex(c => c.id === cardToMove.id);
-    if (index > -1) arrangedHand[fromSegmentName].splice(index, 1);
-  }
-
-
-  // 2. 添加到新位置 (如果目标是墩，检查墩的容量)
-  const targetSegment = toSegmentName === 'initial' ? null : arrangedHand[toSegmentName]; // 'initial' is not a segment in arrangedHand
-
-  if (targetSegment) { // Moving to front, middle, or back
-     let limit = 0;
-     if (toSegmentName === 'front') limit = 3;
-     else if (toSegmentName === 'middle' || toSegmentName === 'back') limit = 5;
-
-     if (targetSegment.length < limit) {
-         // Ensure card isn't already there (in case of bad drag/drop sequence)
-         if (!targetSegment.find(c => c.id === cardToMove.id)) {
-             targetSegment.push(cardToMove);
-         }
-     } else {
-         // Target segment is full, put it back to 'initial' or original segment
-         // This needs more robust handling. For now, we might just not add it.
-         // Or, if fromSegment was not 'initial', add it back there.
-          console.warn(`Segment ${toSegmentName} is full.`);
-          // Re-add to original segment if it was moved from one of the arranged hands
-          if (fromSegmentName !== 'initial' && arrangedHand[fromSegmentName]) {
-             if (!arrangedHand[fromSegmentName].find(c => c.id === cardToMove.id)) {
-                  arrangedHand[fromSegmentName].push(cardToMove); // Put it back
-             }
-          }
-          // If it came from initial and target is full, it effectively stays in initial.
-     }
-  } else if (toSegmentName === 'initial') {
-     // Card is moved to 'unassigned' area.
-     // It's already handled by being removed from a segment and unassignedCards is computed.
-     // No specific add needed here unless it was from another source.
-  }
-
-  // Sort segments for consistent display (optional)
-  Object.values(arrangedHand).forEach(segment => segment.sort((a,b) => a.rank - b.rank || SUITS.indexOf(a.suit) - SUITS.indexOf(b.suit)));
-
-  draggedCardInfo = null; // Reset after drop
+        const targetSegmentArray = playerArrangedHand[toSegmentName];
+        if (targetSegmentArray) {
+            let limit = (toSegmentName === 'front') ? 3 : 5;
+            if (targetSegmentArray.length < limit && !targetSegmentArray.find(c => c.id === cardToMove.id)) {
+                targetSegmentArray.push(cardToMove);
+                targetSegmentArray.sort((a,b) => rankCard(a) - rankCard(b));
+            } else {
+                if (fromSegmentName !== 'initial' && playerArrangedHand[fromSegmentName] && !playerArrangedHand[fromSegmentName].find(c => c.id === cardToMove.id)) {
+                    playerArrangedHand[fromSegmentName].push(cardToMove);
+                    playerArrangedHand[fromSegmentName].sort((a,b) => rankCard(a) - rankCard(b));
+                }
+            }
+        }
+    }
+    draggedCardInfo = null;
 }
 
-function isHandArrangementValid() {
-  return arrangedHand.front.length === 3 &&
-         arrangedHand.middle.length === 5 &&
-         arrangedHand.back.length === 5 &&
-         unassignedCards.value.length === 0;
-}
-
-async function submitHandHandler() {
-  if (!isHandArrangementValid()) {
-    error.value = "牌型不符合要求: " + validationMessage.value;
+function submitPlayerHand() {
+  if (validationMessage.value !== "可以提交") {
+    generalError.value = "牌型不符合要求: " + validationMessage.value;
     return;
   }
-  error.value = '';
-  try {
-    const handToSubmit = {
-      front: arrangedHand.front.map(c => ({id: c.id, suit: c.suit, value: c.value})), // Send minimal data
-      middle: arrangedHand.middle.map(c => ({id: c.id, suit: c.suit, value: c.value})),
-      back: arrangedHand.back.map(c => ({id: c.id, suit: c.suit, value: c.value})),
-    };
-    await emitPromise('submitHand', { roomId: roomId.value, arrangedHand: handToSubmit });
-    // Server will send gameStateUpdate, which will reflect player's ready state
-  } catch (err) {
-    error.value = `提交牌型失败: ${err.message}`;
+  // TODO: 前端墩序比较验证 (非常重要！)
+  // if (!isArrangementValid(playerArrangedHand)) {
+  //    generalError.value = "墩序错误！头墩牌力必须 ≤ 中墩牌力，中墩牌力必须 ≤ 尾墩牌力。";
+  //    return;
+  // }
+
+  playerIsReady.value = true;
+  generalError.value = '';
+  // AI 理牌并准备
+  aiProcessHand();
+  checkForShowdown();
+}
+
+function aiProcessHand() {
+  // 非常非常简化的 AI 理牌逻辑：随机或按某种简单规则摆放
+  // 目标：将 aiHand 中的13张牌分配到 aiArrangedHand.front, .middle, .back
+  // 这里仅作示意，你需要实现一个更智能（或者至少能合法摆放）的AI
+  const handToArrange = [...aiHand.value]; // 复制一份，避免修改原手牌
+  handToArrange.sort(() => 0.5 - Math.random()); // 打乱顺序，模拟随机性
+
+  aiArrangedHand.front = handToArrange.slice(0, 3);
+  aiArrangedHand.middle = handToArrange.slice(3, 8);
+  aiArrangedHand.back = handToArrange.slice(8, 13);
+
+  // 确保墩内排序 (可选，但好看)
+  aiArrangedHand.front.sort((a,b) => rankCard(a) - rankCard(b));
+  aiArrangedHand.middle.sort((a,b) => rankCard(a) - rankCard(b));
+  aiArrangedHand.back.sort((a,b) => rankCard(a) - rankCard(b));
+
+  // 真实AI需要验证墩序合法性，这里假设AI总是合法的（或先不管）
+  aiIsReady.value = true;
+}
+
+function checkForShowdown() {
+  if (playerIsReady.value && aiIsReady.value) {
+    currentLocalGameState.value = 'showdown';
+    // 执行比牌逻辑
+    showdownResults.value = compareHands(playerArrangedHand, aiArrangedHand);
   }
 }
+
+// --- 核心比牌逻辑 (简化版，需要详细实现) ---
+// 你需要一个强大的牌型判断函数和墩比较函数
+// import { getHandType, compareSingleDuns } from './game_logic_local/rules';
+
+function getHandType(dun) {
+    // 简化示例，你需要一个完整的牌型判断函数
+    if (!dun || dun.length === 0) return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' };
+    if (dun.length === 3 && dun[0].value === dun[1].value && dun[1].value === dun[2].value) {
+        return { type: '三条', rank: 4, cards: dun, description: `三条-${dun[0].value}` };
+    }
+    // ... 更多牌型判断：对子、两对、顺子、同花、葫芦、铁支、同花顺等
+    return { type: '乌龙', rank: 0, cards: dun, description: '乌龙' }; // 默认乌龙
+}
+
+function compareSingleDuns(playerDun, aiDun) {
+    // 返回值: 1 表示玩家赢, -1 表示 AI 赢, 0 表示平局
+    // 这个函数需要根据十三水规则比较两个墩的牌力
+    const playerType = getHandType(playerDun);
+    const aiType = getHandType(aiDun);
+
+    // 简化比较：仅比较牌型等级，然后比较最大牌（需要更复杂逻辑）
+    if (playerType.rank > aiType.rank) return 1;
+    if (playerType.rank < aiType.rank) return -1;
+
+    // 牌型相同，比较最大牌 (极度简化)
+    // 你需要正确实现同牌型下的具体比较规则
+    const playerMaxRank = playerDun.length > 0 ? Math.max(...playerDun.map(c => rankCard(c))) : -1;
+    const aiMaxRank = aiDun.length > 0 ? Math.max(...aiDun.map(c => rankCard(c))) : -1;
+
+    if (playerMaxRank > aiMaxRank) return 1;
+    if (playerMaxRank < aiMaxRank) return -1;
+    return 0;
+}
+
+
+function compareHands(pHand, aHand) {
+  // 比较头、中、尾墩
+  let playerScore = 0;
+  let aiScore = 0;
+  const comparisonDetails = {
+      front: '', middle: '', back: '', overallWinner: ''
+  };
+
+  // 比较头墩
+  const frontResult = compareSingleDuns(pHand.front, aHand.front);
+  if (frontResult > 0) { playerScore++; comparisonDetails.front = '玩家胜'; }
+  else if (frontResult < 0) { aiScore++; comparisonDetails.front = 'AI胜'; }
+  else { comparisonDetails.front = '平'; }
+
+  // 比较中墩
+  const middleResult = compareSingleDuns(pHand.middle, aHand.middle);
+  if (middleResult > 0) { playerScore++; comparisonDetails.middle = '玩家胜'; }
+  else if (middleResult < 0) { aiScore++; comparisonDetails.middle = 'AI胜'; }
+  else { comparisonDetails.middle = '平'; }
+
+  // 比较尾墩
+  const backResult = compareSingleDuns(pHand.back, aHand.back);
+  if (backResult > 0) { playerScore++; comparisonDetails.back = '玩家胜'; }
+  else if (backResult < 0) { aiScore++; comparisonDetails.back = 'AI胜'; }
+  else { comparisonDetails.back = '平'; }
+
+  // TODO: 实现打枪、全垒打等特殊计分
+  // 简单判断总体赢家
+  if (playerScore > aiScore) comparisonDetails.overallWinner = playerName.value;
+  else if (aiScore > playerScore) comparisonDetails.overallWinner = '电脑 AI';
+  else comparisonDetails.overallWinner = '平局';
+
+  return {
+    player: { arrangedHand: pHand, score: playerScore, scoreChange: playerScore /* 简化 */ },
+    ai: { arrangedHand: aHand, score: aiScore, scoreChange: aiScore /* 简化 */ },
+    winner: comparisonDetails.overallWinner,
+    comparisonDetails
+  };
+}
+
+// --- 生命周期函数 ---
+onMounted(() => {
+  // 可以在这里自动开始第一局AI游戏
+  // startNewAIGame();
+  // 或者让用户点击按钮开始
+  currentLocalGameState.value = 'idle';
+});
 
 </script>
 
 <style scoped>
-/* App.vue specific styles, if any. Most are in main.css */
+/* App.vue specific styles */
 .game-area {
   margin-top: 20px;
+  border: 2px solid #607d8b; /* 深蓝灰色边框 */
+  padding: 15px;
+  background-color: #eceff1; /* 浅蓝灰色背景 */
+  border-radius: 10px;
 }
-.player-showdown {
-     border: 1px solid #eee;
-     padding: 10px;
-     margin-bottom: 10px;
-     background-color: #f9f9f9;
+.game-info {
+  background-color: #cfd8dc; /* 更浅的蓝灰色 */
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.game-info button {
+    background-color: #00796b; /* 青色 */
+}
+.player-info-container {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+.player-info {
+    padding: 10px;
+    border: 1px solid #b0bec5; /* 蓝灰色 */
+    border-radius: 5px;
+    width: 45%;
+    background-color: #fff;
+}
+.player-info h2 {
+    margin-top: 0;
+    color: #37474f; /* 深蓝灰色 */
+}
+.local-player {
+    border-left: 5px solid #4caf50; /* 绿色标记玩家 */
+}
+.ai-player {
+    border-left: 5px solid #f44336; /* 红色标记AI */
+}
+.error { /* 确保错误信息醒目 */
+    background-color: #ffcdd2;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    border: 1px solid #ef9a9a;
 }
 </style>
