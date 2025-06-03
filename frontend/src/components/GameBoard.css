@@ -2,37 +2,92 @@
 
 /* 通用墩区域样式 */
 .dun-area {
-    padding: 6px; /* 调整内边距，让虚线框和HandDisplay之间有空间 */
-    margin-bottom: 10px; /* 墩之间的垂直间距 */
-    border: 2px dashed #6a7078; /* 虚线框更明显 */
+    padding: 8px; /* 内边距，让虚线框和内部内容有间隙 */
+    margin-bottom: 10px; 
+    border: 2px dashed #72767d; 
     border-radius: 6px;
-    background-color: rgba(35, 39, 42, 0.4); /* 背景颜色调整 */
+    background-color: rgba(47, 49, 54, 0.2); /* 背景更透明一点，让主背景透出 */
     display: flex; 
-    align-items: center; /* 内部 HandDisplay 和可能的按钮垂直居中 */
+    align-items: center; 
     width: 100%; 
     box-sizing: border-box;
     position: relative; 
-    /* ★★★ 高度将由内部的 HandDisplay (进而由卡牌) 决定 ★★★ */
-    /* min-height: 190px; */ /* 可以设置一个略大于卡牌+padding的最小高度作为保险 */
+    /* ★★★ 核心修改：确保空墩也有高度 ★★★ */
+    min-height: 190px; /* 设定一个最小高度，略大于卡牌高度(180px) + 上下padding/border */
+                       /* 这个值应与 Card.css 中的卡牌高度 和 HandDisplay.css 中的 .cards-wrapper padding 协调 */
+    /* 或者，如果希望墩的高度严格由 HandDisplay 内部的 .cards-wrapper 决定，
+       那么需要确保 .cards-wrapper 即使为空也有高度，
+       但更简单的是给 .dun-area 一个基于卡牌的 min-height */
 }
 .dun-area .HandDisplay-container { 
     flex-grow: 1; 
-    /* background-color: lightgreen; */ /* 调试用 */
+    width: 100%; /* ★★★ 让 HandDisplay 容器也尝试占满宽度 ★★★ */
+    /* background-color: rgba(0, 255, 0, 0.1); */ /* 调试用 */
 }
-/* 移除 .dun-area h4，因为标题现在是 HandDisplay 的一部分，并作为背景文字 */
+/* 移除 .dun-area h4，因为标题是 HandDisplay 的一部分作为背景 */
 
-/* ... (其他 .header-dun-area, .footer-dun-area, .place-here-button, 
-         .hand-middle-dun-area, .action-buttons-banner 等样式保持我们之前的版本) ... */
+/* 第2道横幅：头墩置牌区 */
+.header-dun-area {
+    /* 特定样式 */
+}
 
-/* 例如，手牌区的特定调整 */
+/* 第5道横幅：尾墩置牌区 */
+.footer-dun-area {
+    margin-top: 0; 
+    margin-bottom: 10px; /* 与下方按钮区的间距 */
+}
+
+/* 墩旁边的放置按钮 (样式保持或微调) */
+.place-here-button { /* ... (保持不变) ... */ }
+
+
+/* 第3道横幅：手牌区 / 中墩置牌区 */
 .hand-middle-dun-area {
-    /* ... (之前的样式) ... */
-    min-height: 190px; /* 确保手牌区至少有卡牌那么高 */
-    /* background-color: lightseagreen; */ /* 调试用 */
+    flex-grow: 1; 
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #5c6168; 
+    border-radius: 5px;
+    background-color: rgba(35, 39, 42, 0.6); /* 手牌区背景可以稍深 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; 
+    overflow-y: auto; 
+    min-height: 190px; /* ★★★ 手牌/中墩区也需要最小高度 ★★★ */
+    width: 100%; 
+    box-sizing: border-box;
 }
-.current-hand-pool-display.cards-wrapper {
-    /* ... (之前的样式) ... */
-    /* background-color: lightgoldenrodyellow; */ /* 调试用 */
+.hand-middle-dun-area h4 { /* 手牌区/中墩区的标题 (如果 HandDisplay 不用背景文字) */
+    color: #7289da;
+    margin-bottom: 8px;
+    font-size: 1em;
+    position: relative; /* 确保在卡牌之上，如果卡牌有绝对定位 */
+    z-index: 3; /* 比卡牌容器高 */
+}
+.current-hand-pool-display.cards-wrapper { 
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: center; 
+    gap: 2px; 
+    width: 100%; 
+    padding: 4px; /* 调整内边距 */
     min-height: 188px; /* 确保手牌池的wrapper也有足够高度 */
-    padding: 4px; /* 保持和墩内wrapper一致的padding */
+    /* background-color: rgba(255,255,0,0.1); */ /* 调试用 */
 }
+.remaining-for-middle-dun.cards-wrapper { /* ... (保持不变) ... */ }
+.remaining-for-middle-dun h5 { /* ... (保持不变) ... */ }
+.info-prompt { /* ... (保持不变) ... */ }
+
+.hand-middle-dun-area .HandDisplay-container { 
+    width: auto; 
+    /* background-color: rgba(0,0,255,0.1); */ /* 调试用 */
+}
+.hand-middle-dun-area .middle-place-button { /* ... (保持不变) ... */ }
+
+
+/* 第4道横幅：按钮区 (现在在尾墩下方) */
+.action-buttons-banner { /* ... (保持不变) ... */ }
+.ai-arrange-button, .submit-arrangement-button { /* ... (保持不变) ... */ }
+.gameboard-error.error-message { /* ... (保持不变) ... */ }
+.loading-text-inner { /* ... (保持不变) ... */ }
