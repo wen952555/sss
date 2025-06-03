@@ -2,9 +2,9 @@
   <div 
     class="player-hand-container"
     :data-segment-name="segmentName"
-    @dragover.prevent="onDesktopDragOver" <!-- Renamed for clarity -->
-    @drop.prevent="onDesktopDrop"        <!-- Renamed and added .prevent -->
-    @dragleave="onDesktopDragLeave"     <!-- Renamed -->
+    @dragover.prevent="onDesktopDragOver"
+    @drop.prevent="onDesktopDrop"
+    @dragleave="onDesktopDragLeave"
     :class="{ 'drag-over': isDragOverDesktop }"
     ref="handContainerElement"
   >
@@ -13,34 +13,35 @@
       :class="{ 'is-empty': cards.length === 0 }"
     >
       <CardComponent
-        v-for="card_item_loop_var in cards" :key="card_item_loop_var.id" <!-- Renamed loop var -->
+        v-for="card_item_loop_var in cards" :key="card_item_loop_var.id"
         :card="card_item_loop_var"
-        :draggable="draggableCards" <!-- This prop should be controlled by parent -->
+        :draggable="draggableCards"
         @customDragStart="passCustomDragStartThrough"
         @customDragEnd="passCustomDragEndThrough"
         @customDragOverSegment="passCustomDragOverSegmentThrough"
-      />
+      /> <!-- Ensured CardComponent is self-closed -->
       <span v-if="cards.length === 0 && placeholderText" class="drop-placeholder">
         {{ placeholderText }}
       </span>
-    </div>
-  </div>
+    </div> <!-- Closing card-container div -->
+  </div> <!-- Closing player-hand-container div -->
 </template>
 
 <script setup>
+// Script part is identical to the last version that successfully built (or was intended to)
 import { ref } from 'vue';
 import CardComponent from './Card.vue';
 
 const props = defineProps({
   cards: { type: Array, default: () => [] },
   placeholderText: { type: String, default: '' },
-  draggableCards: { type: Boolean, default: false }, // Whether cards *from* this hand are draggable
-  droppable: { type: Boolean, default: true },      // Whether this hand *accepts* drops
+  draggableCards: { type: Boolean, default: false },
+  droppable: { type: Boolean, default: true },
   segmentName: { type: String, required: true }
 });
 
 const emit = defineEmits([
-    'desktopCardDropped', // New specific event for desktop
+    'desktopCardDropped',
     'customDragStart', 
     'customDragEnd', 
     'customDragOverSegment'
@@ -49,11 +50,10 @@ const emit = defineEmits([
 const isDragOverDesktop = ref(false);
 const handContainerElement = ref(null);
 
-
 function onDesktopDragOver(event) {
   if (props.droppable) {
-    event.preventDefault(); // Necessary to allow drop
-    event.dataTransfer.dropEffect = 'move'; // Visual feedback
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
     isDragOverDesktop.value = true;
   }
 }
@@ -71,7 +71,6 @@ function onDesktopDrop(event) {
     }
     try {
       const card = JSON.parse(cardData);
-      // Emit a more specific event for desktop drops
       emit('desktopCardDropped', { card, toSegment: props.segmentName });
     } catch (e) {
       console.error("Failed to parse dropped card data:", e, cardData);
@@ -79,7 +78,6 @@ function onDesktopDrop(event) {
   }
 }
 
-// 透传来自 CardComponent 的自定义拖拽事件
 function passCustomDragStartThrough(payload) {
   emit('customDragStart', { ...payload, fromSegment: props.segmentName });
 }
@@ -92,7 +90,7 @@ function passCustomDragOverSegmentThrough(segmentName) {
 </script>
 
 <style scoped>
-/* Styles are the same as the last working version for build */
+/* Styles are identical to the last version that successfully built */
 .player-hand-container {
   margin-bottom: 10px;
 }
