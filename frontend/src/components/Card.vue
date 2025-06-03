@@ -2,7 +2,7 @@
   <div
     class="card"
     :class="{ dragging: isBeingDraggedVisualState }" 
-    :draggable="!isTouchDevice"
+    :draggable="!isTouchDevice" <!-- 桌面端启用原生拖拽 -->
     @dragstart="onDesktopDragStart"
     @touchstart.stop="onTouchStart" 
     ref="cardElementRef"
@@ -13,6 +13,7 @@
 </template>
 
 <script setup>
+// ... ( imports 和其他 props/refs/computed 与上一版相同 ) ...
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
@@ -25,14 +26,15 @@ const altText = computed(() => props.card && props.card.value && props.card.suit
 const cardElementRef = ref(null);
 const isBeingDraggedVisualState = ref(false);
 const isTouchDevice = ref(false);
-
+// ... (触摸拖拽相关的变量与上一版相同) ...
 let touchStartX = 0;
 let touchStartY = 0;
 let elementInitialViewportX = 0;
 let elementInitialViewportY = 0;
 let draggedCardCloneNode = null;
 let isDraggingConfirmed = false;
-let lastKnownOverSegment = null; // 新增：记录最后悬停的 segment
+let lastKnownOverSegment = null;
+
 
 onMounted(() => {
   isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -53,39 +55,51 @@ function cleanupDocumentTouchListeners() {
 }
 
 function getParentSegmentName() {
-    let parent = cardElementRef.value?.parentElement;
-    while(parent) {
-        if (parent.classList && parent.classList.contains('player-hand-container')) {
-            return parent.dataset.segmentName || null;
+    let el = cardElementRef.value;
+    while(el && el.parentElement) {
+        const parentContainer = el.closest('.player-hand-container');
+        if (parentContainer && parentContainer.dataset.segmentName) {
+            return parentContainer.dataset.segmentName;
         }
-        if (parent.classList && parent.classList.contains('card-container')) {
-            const grandParent = parent.parentElement;
-            if (grandParent && grandParent.classList.contains('player-hand-container')) {
-                 return grandParent.dataset.segmentName || null;
-            }
-        }
-        parent = parent.parentElement;
+        el = el.parentElement; // 向上查找，以防卡片嵌套较深
     }
-    return 'unknown_segment';
+    // console.warn("Could not determine parent segment for card:", props.card?.id);
+    return 'unknown_segment'; // 应该总能找到，除非 Card.vue 不在 PlayerHand.vue 内
 }
 
+// --- 桌面拖拽 ---
 function onDesktopDragStart(event) {
   if (isTouchDevice.value) {
     event.preventDefault(); return;
   }
-  event.dataTransfer.setData('text/plain', JSON.stringify(props.card));
-  event.dataTransfer.effectAllowed = 'move';
-  emit('customDragStart', { card: props.card, fromSegment: getParentSegmentName() });
+  // 确保 props.card 是有效的
+  if (!props.card || !props.card.id) {
+      console.error("Card data is invalid for drag start.");
+      event.preventDefault();
+      return;
+  }
+  try {
+      event.dataTransfer.setData('text/plain', JSON.stringify(props.card));
+      event.dataTransfer.effectAllowed = 'move';
+      // 对于桌面拖拽，App.vue 会在 PlayerHand 的 drop 事件中获取 card 和 toSegment
+      // 但 customDragStart 仍然可以用来设置 App.vue 中的 activeDraggedCardInfo
+      emit('customDragStart', { card: props.card, fromSegment: getParentSegmentName() });
+  } catch (e) {
+      console.error("Error setting drag data:", e);
+  }
 }
 
+// --- 触摸拖拽 (与上一版相同，保持健壮性) ---
 function onTouchStart(event) {
   if (!isTouchDevice.value || event.touches.length !== 1) return;
-  
+  if (!props.card || !props.card.id) {
+    console.error("Card data is invalid for touch start.");
+    return;
+  }
   const touch = event.touches[0];
   isDraggingConfirmed = false;
   isBeingDraggedVisualState.value = true; 
-  lastKnownOverSegment = null; // 重置
-  
+  lastKnownOverSegment = null;
   if (cardElementRef.value) {
     const rect = cardElementRef.value.getBoundingClientRect();
     elementInitialViewportX = rect.left;
@@ -93,14 +107,11 @@ function onTouchStart(event) {
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
   }
-  
   emit('customDragStart', { card: props.card, fromSegment: getParentSegmentName() });
-
   document.addEventListener('touchmove', handleDocumentTouchMove, { passive: false });
   document.addEventListener('touchend', handleDocumentTouchEnd);
   document.addEventListener('touchcancel', handleDocumentTouchEnd);
 }
-
 function createCloneIfNeeded() {
     if (!draggedCardCloneNode && cardElementRef.value) {
         draggedCardCloneNode = cardElementRef.value.cloneNode(true);
@@ -117,7 +128,6 @@ function createCloneIfNeeded() {
         cardElementRef.value.style.opacity = '0.4';
     }
 }
-
 function updateClonePosition(currentX, currentY) {
   if (draggedCardCloneNode) {
     const deltaX = currentX - touchStartX;
@@ -125,13 +135,10 @@ function updateClonePosition(currentX, currentY) {
     draggedCardCloneNode.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.1) rotate(3deg)`;
   }
 }
-
 function handleDocumentTouchMove(event) {
   if (!isBeingDraggedVisualState.value || event.touches.length !== 1) return;
   event.preventDefault(); 
-  
   const touch = event.touches[0];
-
   if (!isDraggingConfirmed) {
     const moveThreshold = 10;
     if (Math.abs(touch.clientX - touchStartX) > moveThreshold || Math.abs(touch.clientY - touchStartY) > moveThreshold) {
@@ -139,16 +146,12 @@ function handleDocumentTouchMove(event) {
       createCloneIfNeeded();
     }
   }
-  
   if (isDraggingConfirmed && draggedCardCloneNode) {
     updateClonePosition(touch.clientX, touch.clientY);
-
-    // 暂时隐藏克隆体以进行元素检测
     const originalDisplay = draggedCardCloneNode.style.display;
     draggedCardCloneNode.style.display = 'none';
     const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
-    draggedCardCloneNode.style.display = originalDisplay; // 恢复显示
-      
+    draggedCardCloneNode.style.display = originalDisplay;
     let targetSegment = null;
     if (elementUnderTouch) {
         const dropZone = elementUnderTouch.closest('.player-hand-container');
@@ -156,26 +159,20 @@ function handleDocumentTouchMove(event) {
             targetSegment = dropZone.dataset.segmentName;
         }
     }
-    lastKnownOverSegment = targetSegment; // 持续更新最后悬停的 segment
+    lastKnownOverSegment = targetSegment;
     emit('customDragOverSegment', targetSegment);
   }
 }
-
 function handleDocumentTouchEnd(event) {
   if (!isBeingDraggedVisualState.value) {
-      cleanupDocumentTouchListeners();
-      return;
+      cleanupDocumentTouchListeners(); return;
   }
-
-  let finalTargetSegment = lastKnownOverSegment; // 使用 touchmove 时记录的最后一个 segment
-
-  // 尝试在 touchend 时再次检测，以防万一，但优先使用 lastKnownOverSegment
+  let finalTargetSegment = lastKnownOverSegment;
   const touch = event.changedTouches && event.changedTouches.length > 0 ? event.changedTouches[0] : null;
-  if (touch && isDraggingConfirmed && !finalTargetSegment) { // 如果 lastKnownOverSegment 是 null，再尝试检测一次
-    if (draggedCardCloneNode) draggedCardCloneNode.style.display = 'none'; // 隐藏以便检测
+  if (touch && isDraggingConfirmed && !finalTargetSegment) {
+    if (draggedCardCloneNode) draggedCardCloneNode.style.display = 'none';
     const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
     if (draggedCardCloneNode) draggedCardCloneNode.style.display = '';
-
     if (elementUnderTouch) {
       const dropZone = elementUnderTouch.closest('.player-hand-container');
       if (dropZone && dropZone.dataset.segmentName) {
@@ -183,26 +180,21 @@ function handleDocumentTouchEnd(event) {
       }
     }
   }
-  
   if (cardElementRef.value) {
       cardElementRef.value.style.opacity = '1';
   }
-  
   if (draggedCardCloneNode) {
     draggedCardCloneNode.remove();
     draggedCardCloneNode = null;
   }
-  
   if (isDraggingConfirmed) {
       emit('customDragEnd', { card: props.card, targetSegment: finalTargetSegment });
   }
-
   isBeingDraggedVisualState.value = false;
   isDraggingConfirmed = false;
   lastKnownOverSegment = null;
   cleanupDocumentTouchListeners();
 }
-
 const displayValue = computed(() => {
     if (!props.card || typeof props.card.value === 'undefined') return '?';
     if (parseInt(props.card.value) >= 2 && parseInt(props.card.value) <= 10) return props.card.value;
@@ -234,9 +226,7 @@ const suitSymbol = computed(() => {
   box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
   transition: opacity 0.2s;
 }
-.card.dragging {
-  /* Visual feedback for dragging is now primarily on the clone */
-}
+/* .card.dragging is applied by main.css or App.vue style if needed for clone */
 .card img {
   max-width: 90%;
   max-height: 90%;
