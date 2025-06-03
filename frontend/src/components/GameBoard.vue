@@ -1,25 +1,26 @@
 <template>
   <div class="game-board-container game-board-flex-fill">
-    <!-- ... (game-controls div) ... -->
     <div v-if="currentGameState === 'waiting' && isRoomHost && canStartGame" class="game-controls">
       <button @click="$emit('startGame')" class="start-game-button">开始游戏</button>
     </div>
 
     <div v-if="playerHandInitial.length > 0 && (currentGameState === 'playing' || currentGameState === 'arranging' || currentGameState === 'showdown')" class="player-area player-area-flex-fill">
-      
+      <!-- 外部标题已移除 -->
+      <!-- 1. 头墩 -->
       <PlayerHandComponent
         :placeholderText="placeholderForFront"
         :cards="arrangedHand.front"
         :draggableCards="currentGameState !== 'showdown' && !currentPlayerIsReady"
         :droppable="currentGameState !== 'showdown' && !currentPlayerIsReady"
         segmentName="front"
-        @desktopCardDropped="passDesktopCardDropped" <!-- Listen to new event -->
+        @desktopCardDropped="passDesktopCardDropped"
         @customDragStart="passCustomDragStart"
         @customDragEnd="passCustomDragEnd"
         @customDragOverSegment="passCustomDragOverSegment"
         class="dun-area"
       />
 
+      <!-- 2. 初始手牌区 / 或形成后的中墩 -->
       <PlayerHandComponent
         :placeholderText="placeholderForInitialOrMiddle"
         :cards="cardsForMiddleOrInitialArea"
@@ -55,19 +56,18 @@
           @customDragOverSegment="passCustomDragOverSegment"
           class="dun-area"
         />
-      </div>
+      </div> <!-- Closing .segments div -->
 
       <button
         v-if="currentGameState === 'playing' && !currentPlayerIsReady"
-        @click="onSubmitHandProxy" <!-- Renamed to avoid conflict if emit name changes -->
+        @click="onSubmitHandProxy"
         :disabled="validationMessage !== '可以提交'"
         class="submit-hand-button"
       >
         提交牌型 {{ validationMessage !== '可以提交' ? '('+validationMessage+')' : '' }}
       </button>
       <p v-if="currentPlayerIsReady && currentGameState === 'playing'">已提交，等待 AI...</p>
-    </div>
-    <!-- ... (v-else-if and showdown-area divs) ... -->
+    </div> <!-- Closing .player-area div -->
     <div v-else-if="currentGameState === 'dealing'" class="message-area">
         <p>正在发牌，请稍候...</p>
     </div>
@@ -91,11 +91,11 @@
             <PlayerHandComponent placeholderText="AI 尾墩" :cards="aiArrangedHand.back" :draggableCards="false" :droppable="false" segmentName="ai-back"/>
         </div>
     </div>
-  </div>
+  </div> <!-- Closing .game-board-container div -->
 </template>
 
 <script setup>
-// ... (script setup props and computed properties are the same as last working build version) ...
+// Script 部分与之前相同
 import { computed } from 'vue';
 import PlayerHandComponent from './PlayerHand.vue';
 
@@ -114,12 +114,12 @@ const props = defineProps({
 });
 
 const emit = defineEmits([
-    'desktopCardDropped', // Emit the new specific event
+    'desktopCardDropped',
     'customDragStart', 
     'customDragEnd', 
     'customDragOverSegment',
-    'submitHand', // Keep this for the button
-    'startGame'   // Keep this for the button
+    'submitHand',
+    'startGame'
 ]);
 
 const initialOrMiddleDunTitle = computed(() => {
@@ -163,7 +163,6 @@ const placeholderForBack = computed(() => {
     return `尾墩 (${count}/5) - 拖拽牌到这里`;
 });
 
-// 透传事件
 function passDesktopCardDropped(payload) { emit('desktopCardDropped', payload); }
 function passCustomDragStart(payload) { emit('customDragStart', payload); }
 function passCustomDragEnd(payload) { emit('customDragEnd', payload); }
@@ -173,7 +172,7 @@ function onSubmitHandProxy() { emit('submitHand'); }
 </script>
 
 <style scoped>
-/* Styles are the same as the last working version for build */
+/* Style 部分与之前相同 */
 .game-board-container {
   border: 1px solid #90a4ae;
   padding: 15px;
@@ -231,7 +230,7 @@ function onSubmitHandProxy() { emit('submitHand'); }
     background-color: #fff9c4;
     padding: 15px;
     border-radius: 6px;
-    border: 1px solid #fff9d;
+    border: 1px solid #fff59d;
     overflow-y: auto;
     max-height: 300px;
 }
@@ -243,7 +242,6 @@ function onSubmitHandProxy() { emit('submitHand'); }
     font-size: 1.1em;
     color: #546e7a;
 }
-/* ... (rest of the styles) ... */
 .comparison-summary {
     margin-bottom: 15px;
     padding-bottom: 10px;
