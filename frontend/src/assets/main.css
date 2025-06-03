@@ -1,0 +1,101 @@
+/* frontend/src/assets/main.css */
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+#app {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h1, h2 {
+  color: #2c3e50;
+}
+
+button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  margin: 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+}
+button:hover {
+  background-color: #45a049;
+}
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+input[type="text"] {
+  padding: 8px;
+  margin: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* 卡片间距 */
+  margin-bottom: 10px;
+  min-height: 100px; /* 防止拖拽时塌陷 */
+  border: 1px dashed #ccc;
+  padding: 5px;
+}
+
+.card {
+  width: 70px; /* 根据SVG调整 */
+  height: 100px; /* 根据SVG调整 */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  user-select: none; /* 防止拖拽时选中文本 */
+}
+.card img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+
+.player-info, .game-info {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #e9e9e9;
+  border-radius: 4px;
+}
+.player-list li {
+  list-style: none;
+  padding: 5px 0;
+}
+.error {
+  color: red;
+  font-weight: bold;
+}
+.segments {
+    margin-top: 20px;
+}
+.segment {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+.segment h3 {
+    margin-top: 0;
+}
