@@ -1,3 +1,6 @@
+body {
+  background-color: red !important; /* 使用一个非常显眼的颜色 */
+}
 /* frontend/src/assets/main.css */
 html, body {
   height: 100%;
