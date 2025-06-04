@@ -15,7 +15,6 @@
       <button @click="handleJoinGame" :disabled="gameStore.loading || !gameCodeToJoin.trim()" class="btn-secondary">加入房间</button>
     </div>
 
-    <!-- 修改 v-if 条件，现在基于 gameStore.gameState 和 players 数组来判断是否显示 -->
     <div v-if="gameStore.gameId && gameStore.gameCode && gameStore.gameState && gameStore.gameState.status === 'waiting'">
       <h3>
         等待玩家加入 - 房间码: 
@@ -46,6 +45,7 @@
           正在加载玩家列表或房间内当前只有您...
       </p>
       
+      <!-- 开始游戏按钮，条件是 gameStore.canStartGame -->
       <button
         v-if="gameStore.canStartGame"  
         @click="triggerStartGame" 
@@ -54,24 +54,27 @@
       >
         开始游戏 ({{ gameStore.players.length }}人)
       </button>
+      <!-- 提示信息 -->
+      <p v-else-if="gameStore.myPlayerDetails && gameStore.myPlayerDetails.order === 1 && gameStore.gameState && gameStore.players.length < gameStore.gameState.max_players && !gameStore.loading">
+          等待更多玩家加入 (还差 {{ gameStore.gameState.max_players - gameStore.players.length }} 人)...
+      </p>
+      <p v-else-if="gameStore.gameState && gameStore.players.length === gameStore.gameState.max_players && gameStore.myPlayerDetails && gameStore.myPlayerDetails.order !== 1 && !gameStore.loading">
+          房间已满，等待房主开始游戏...
+      </p>
+      
       <button @click="handleLeaveGame" :disabled="gameStore.loading" class="btn-leave">
         退出房间
       </button>
     </div>
-    <!-- 当有 gameId 和 gameCode，但 gameState 还在加载中时显示 -->
     <div v-else-if="gameStore.gameId && gameStore.gameCode && !gameStore.gameState && gameStore.loading">
         <p class="loading-message">正在加载房间信息...</p>
     </div>
-    <!-- 当有 gameId 和 gameCode，但 gameState 加载失败或状态不是 waiting -->
      <div v-else-if="gameStore.gameId && gameStore.gameCode && gameStore.gameState && gameStore.gameState.status !== 'waiting' && gameStore.gameState.status !== 'finished'">
-        <!-- 如果游戏已不在等待状态，GameSetup 组件理论上不应该显示，App.vue 会切换到游戏板 -->
-        <!-- 但这里可以加一个回退，或者提示用户游戏正在进行 -->
         <p>正在进入游戏房间...</p>
     </div>
 
-
     <div v-if="gameStore.error && !gameStore.loading" class="error-message">{{ gameStore.error }}</div>
-    <div v-if="!gameStore.gameId && gameStore.loading" class="loading-message">操作中，请稍候...</div> <!-- 只在没有gameId时显示全局loading -->
+    <div v-if="!gameStore.gameId && gameStore.loading" class="loading-message">操作中，请稍候...</div>
   </div>
 </template>
 
@@ -94,7 +97,10 @@ async function handleJoinGame() {
   localStorage.setItem('playerName', playerName.value.trim());
   await gameStore.joinGame(gameCodeToJoin.value.trim(), playerName.value.trim());
 }
-async function triggerStartGame() { await gameStore.startGame(); }
+async function triggerStartGame() { 
+    // console.log("GameSetup: triggerStartGame called");
+    await gameStore.startGame(); 
+}
 async function handleLeaveGame() { await gameStore.leaveGame(); }
 async function copyGameCode() {
   if (!gameStore.gameCode) return;
@@ -103,19 +109,13 @@ async function copyGameCode() {
 }
 
 onMounted(async () => {
-    // console.log("[GameSetup.vue] onMounted. GameId:", gameStore.gameId, "GameCode:", gameStore.gameCode, "PlayerSessionId:", gameStore.playerSessionId);
     if (gameStore.gameId && gameStore.gameCode) {
-        // 如果 gameState 不存在，或者 gameState 的 id 与 store 中的 gameId 不匹配，则尝试恢复
         if (!gameStore.gameState || (gameStore.gameState.id !== parseInt(gameStore.gameId))) {
-            // console.log("[GameSetup.vue] onMounted: Attempting to restore session due to missing or mismatched gameState.");
             await gameStore.tryRestoreSession();
         } else if (gameStore.isGameActive && !gameStore.pollingInterval) {
-            // 如果状态是活跃的但轮询未启动
-            // console.log("[GameSetup.vue] onMounted: Game is active, ensuring polling is started.");
             gameStore.startPolling();
         }
     } else {
-        // console.log("[GameSetup.vue] onMounted: No gameId or gameCode in store, ensuring data is cleared.");
         gameStore.clearGameData();
     }
 });
