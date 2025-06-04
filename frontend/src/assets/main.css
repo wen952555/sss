@@ -1,151 +1,150 @@
 /* frontend/src/assets/main.css */
-/* ... (html, body, #app, .card基础样式, .card img, .card.dragging, 按钮, 输入框, 错误提示, App.vue基础布局等保持不变，使用上一版最终调整好的版本) ... */
-/* 我将主要展示 .card-container 及相关媒体查询的修改 */
-
-html, body { /* ... */ }
-#app, #app-container.app-flex-container { /* ... */ }
-.card, .hand-card-item { /* 桌面基础尺寸 */ width: 90px; height: 126px; /* ...其他与上一版相同... */ }
-.card img, .hand-card-item img { /* ... */ }
-.card.dragging, .hand-card-item.dragging { /* ... */ }
-
-/* --- 卡片容器 (通用样式) --- */
-.card-container {
-  display: flex; 
-  gap: 0; /* 默认无gap，由具体模式控制 */
-  border: 1px dashed rgba(255, 255, 255, 0.2); 
-  padding: 8px; /* 默认padding */
-  border-radius: 5px;
-  position: relative; 
-  align-items: center; 
-  background-color: rgba(0, 0, 0, 0.1); 
-  margin-bottom: 8px; 
-  width: 100%; 
-  box-sizing: border-box;
-  overflow: hidden !important; /* !!! 强制所有容器默认隐藏所有溢出 !!! */
-  height: auto; /* 默认高度自适应内容 */
-  min-height: 0; /* 允许收缩 */
+html, body {
+  height: 100%; margin: 0; 
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #006400; /* 深绿色 */
+  color: #e8f5e9; 
+  overflow: hidden !important; -webkit-tap-highlight-color: transparent;
 }
-.card-container.is-empty { /* ... */ }
-.drag-over { /* ... */ }
-.drop-placeholder { /* ... */ }
 
-/* --- 媒体查询 --- */
+#app, #app-container.app-flex-container {
+  min-height: 100vh; height: 100%; display: flex; flex-direction: column;
+  padding: 5px; box-sizing: border-box; overflow: hidden;
+  background-color: transparent;
+}
 
-/* 宽屏/桌面 (> 1024px): 完全平铺，允许换行和手牌区垂直滚动 */
-@media (min-width: 1025px) {
+/* --- 卡片样式 --- */
+.card, .hand-card-item {
+  /* 基础尺寸，会被媒体查询覆盖 */
+  width: 50px; 
+  height: 70px;
+  border: none !important; 
+  outline: none !important;
+  box-sizing: border-box !important; 
+  border-radius: 4px !important; /* 手机端小圆角 */
+  background-color: #FFFFFF !important; 
+  color: #212121 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  cursor: grab !important;
+  user-select: none !important;
+  box-shadow: 0px 1px 1px rgba(0,0,0,0.25) !important; /* 给重叠牌一点阴影 */
+  transition: transform 0.15s ease-out, margin-left 0.15s ease-out, z-index 0.05s linear !important;
+  overflow: hidden !important;
+  padding: 0 !important; 
+  flex-shrink: 0 !important; /* 卡片不被压缩 */
+  position: relative !important; 
+  margin: 0 !important; /* 移除自身margin */
+}
+.card img, .hand-card-item img {
+  display: block !important; width: 100% !important; height: 100% !important;
+  object-fit: contain !important; pointer-events: none !important;
+  border-radius: 3px !important; /* 图片圆角略小于卡片 */
+}
+.card.dragging, .hand-card-item.dragging { /* ... (保持不变) ... */ }
+
+/* --- 卡片容器 (所有墩共用 - 默认手机端紧贴样式) --- */
+.card-container {
+  display: flex !important; 
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;   /* !!! 强制不换行 !!! */
+  gap: 0 !important;              /* 移除gap，完全靠负margin */
+  height: calc(70px + 8px) !important; /* 基于手机卡片高度 + 上下padding，保持高度不变 */
+  min-height: calc(70px + 8px) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+  padding: 4px 2px !important; /* 上下4px, 左右2px padding */
+  border-radius: 5px !important;
+  position: relative !important; 
+  align-items: center !important; /* 卡片在行内垂直居中 */
+  justify-content: flex-start !important; /* 卡片从左开始排列 */
+  background-color: rgba(0, 0, 0, 0.08) !important; 
+  margin-bottom: 5px !important; /* 墩之间的间距 */
+  width: 100% !important; 
+  box-sizing: border-box !important;
+  overflow: hidden !important; /* !!! 强制隐藏所有溢出，不产生任何滚动条 !!! */
+}
+.card-container .hand-card-item {
+  /* 手机卡片宽度50px。目标露出8px。负 margin = -(50 - 8) = -42px */
+  /* 13张牌总视觉宽度 = 50px (第一张) + 12 * 8px = 146px */
+  margin-left: -42px !important; 
+}
+.card-container .hand-card-item:first-child {
+  margin-left: 0 !important;
+}
+/* z-index for overlap */
+.card-container .hand-card-item:nth-child(1) { z-index: 1 ; }
+/* ... (up to 13) ... */
+.card-container .hand-card-item:nth-child(2) { z-index: 2 ; }
+.card-container .hand-card-item:nth-child(3) { z-index: 3 ; }
+.card-container .hand-card-item:nth-child(4) { z-index: 4 ; }
+.card-container .hand-card-item:nth-child(5) { z-index: 5 ; }
+.card-container .hand-card-item:nth-child(6) { z-index: 6 ; }
+.card-container .hand-card-item:nth-child(7) { z-index: 7 ; }
+.card-container .hand-card-item:nth-child(8) { z-index: 8 ; }
+.card-container .hand-card-item:nth-child(9) { z-index: 9 ; }
+.card-container .hand-card-item:nth-child(10) { z-index: 10 ; }
+.card-container .hand-card-item:nth-child(11) { z-index: 11 ; }
+.card-container .hand-card-item:nth-child(12) { z-index: 12 ; }
+.card-container .hand-card-item:nth-child(13) { z-index: 13 ; }
+
+.initial-hand-area > .card-container .hand-card-item:hover {
+  transform: translateY(-8px) scale(1.05) !important; 
+  z-index: 100 !important;
+}
+.card-container.is-empty { background-color: rgba(0, 0, 0, 0.1) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+.drag-over { border-color: #a5d6a7 !important; border-style: solid !important; background-color: rgba(129, 199, 132, 0.3) !important; }
+.drop-placeholder { color: #a7ffeb !important; font-style: italic !important; text-align: center !important; width: 100% !important; font-size: 0.85em !important; padding: 10px 0 !important; }
+
+
+/* --- 媒体查询：只用于宽屏 (>600px) 时覆盖手机端的紧贴效果，变为平铺 --- */
+@media (min-width: 601px) {
   .card, .hand-card-item { /* 桌面卡片尺寸 */
-    width: 90px; 
-    height: 126px;
-    margin: 2px; /* 桌面卡片间用正常margin */
+    width: 90px !important; 
+    height: 126px !important;
+    margin: 2px !important; /* 恢复桌面卡片间的外边距 */
+    border-radius: 6px !important;
   }
+  .card img, .hand-card-item img { border-radius: 5px !important;}
+
+
   .card-container { /* 所有墩在桌面 */
-    flex-wrap: wrap;
-    justify-content: center; /* 桌面卡片居中 */
-    gap: 6px; /* 桌面卡片间隙 */
-    padding: 8px;
-    height: auto; /* 高度自适应 */
-    min-height: calc(126px + 16px); /* 桌面至少一行高度 */
-    overflow-x: hidden; /* 桌面不应有水平滚动 */
+    flex-wrap: wrap !important; /* 桌面允许换行 */
+    justify-content: center !important; /* 桌面卡片居中 */
+    gap: 6px !important; /* 桌面卡片间隙 */
+    height: auto !important; /* 桌面高度自适应内容 */
+    min-height: calc(126px + 16px) !important; /* 桌面至少一行高度 */
+    overflow-x: hidden !important; /* 桌面不应有水平滚动 */
+    overflow-y: hidden !important; /* 默认隐藏垂直滚动 */
+    padding: 8px !important;
+    margin-bottom: 8px !important;
   }
-  .initial-hand-area > .card-container { /* 手牌区 */
-    overflow-y: auto;   /* 允许垂直滚动 */
-    max-height: calc(126px * 2 + 6px + 16px); /* 最多两行桌面卡片的高度 */
-    align-content: flex-start;
+  /* 特指手牌区，在桌面可以多行并垂直滚动 */
+  .initial-hand-area > .card-container {
+    overflow-y: auto !important;   /* 允许垂直滚动 */
+    max-height: calc(126px * 2 + 6px + 16px) !important; /* 最多两行桌面卡片的高度 */
+    align-content: flex-start !important; /* 多行时从顶部对齐 */
   }
   .card-container .hand-card-item { /* 桌面不重叠 */
-    margin-left: 0;
+    margin-left: 0 !important;
   }
+  /* nth-child z-index 在桌面平铺时不需要，可以移除或设为auto */
+  .card-container .hand-card-item:nth-child(n) { z-index: auto !important; }
 }
 
-/* 中等屏幕 (例如平板，601px 到 1024px): 单行紧贴重叠 */
-@media (min-width: 601px) and (max-width: 1024px) {
-  .card, .hand-card-item { /* 中等屏幕卡片尺寸 */
-    width: 70px; 
-    height: 98px; 
-    border-radius: 5px;
-    margin: 0; /* 无外边距，靠负margin */
-  }
-  .card-container { /* 所有墩 */
-    height: calc(98px + 10px); /* 固定单行高度 */
-    min-height: calc(98px + 10px);
-    flex-wrap: nowrap; /* 强制不换行 */
-    justify-content: flex-start; /* 从左排列 */
-    overflow: hidden !important; /* 严格禁止滚动条 */
-    padding: 5px 3px; /* 调整padding */
-    gap: 0;
-  }
-  .card-container .hand-card-item {
-    /* 卡片宽70px。目标露出约15px。负margin = -(70-15) = -55px */
-    /* 13张牌视觉宽度 = 70 + 12*15 = 70 + 180 = 250px */
-    margin-left: -55px; 
-    box-shadow: 0px 0px 1px rgba(0,0,0,0.3);
-  }
-  .card-container .hand-card-item:first-child {
-    margin-left: 0;
-  }
-  /* nth-child z-index rules from previous version should be here */
-  .card-container .hand-card-item:nth-child(1) { z-index: 1 ; } /* ... up to 13 ... */
-  .card-container .hand-card-item:nth-child(2) { z-index: 2 ; }
-  .card-container .hand-card-item:nth-child(3) { z-index: 3 ; }
-  .card-container .hand-card-item:nth-child(4) { z-index: 4 ; }
-  .card-container .hand-card-item:nth-child(5) { z-index: 5 ; }
-  .card-container .hand-card-item:nth-child(6) { z-index: 6 ; }
-  .card-container .hand-card-item:nth-child(7) { z-index: 7 ; }
-  .card-container .hand-card-item:nth-child(8) { z-index: 8 ; }
-  .card-container .hand-card-item:nth-child(9) { z-index: 9 ; }
-  .card-container .hand-card-item:nth-child(10) { z-index: 10 ; }
-  .card-container .hand-card-item:nth-child(11) { z-index: 11 ; }
-  .card-container .hand-card-item:nth-child(12) { z-index: 12 ; }
-  .card-container .hand-card-item:nth-child(13) { z-index: 13 ; }
-
-  .initial-hand-area .card-container .hand-card-item:hover {
-    transform: translateY(-10px) scale(1.1); 
-    z-index: 100;
-  }
+/* 顶部信息栏 (只保留一个手机端样式，桌面端会继承并可能需要微调) */
+.top-info-bar { 
+  background-color: rgba(0, 0, 0, 0.35) !important; color: #c8e6c9 !important; 
+  padding: 4px 5px !important; border-radius: 4px !important; margin-bottom: 6px !important; 
+  display: flex !important; flex-direction: column !important; align-items: stretch !important; 
+  font-size: 0.75em !important; flex-shrink: 0 !important; gap: 4px !important; 
 }
+.game-status-mode { width: 100% !important; text-align: center !important; margin-bottom: 3px !important; order: 1 !important;}
+.player-statuses-inline { width: 100% !important; justify-content: center !important; display: flex !important; gap: 5px !important; font-size: 0.85em !important; margin: 0 0 3px 0 !important; order: 2 !important;}
+.restart-button-inline { width: 100% !important; text-align: center !important; margin-left: 0 !important; order: 3 !important; padding: 6px 10px !important; font-size: 0.85em !important;
+  background-color: #004d40 !important; border: 1px solid #00796b !important; color: #b2dfdb !important; }
+.restart-button-inline:hover { background-color: #00695c !important; }
 
-/* 手机端 (<= 600px): 单行更紧贴重叠 */
-@media (max-width: 600px) { 
-  .card, .hand-card-item { /* 手机卡片尺寸 */
-    width: 50px; 
-    height: 70px; 
-    border-radius: 3px;
-  }
-  .card-container { /* 所有墩容器 */
-    height: calc(70px + 8px); /* 固定单行高度 */
-    min-height: calc(70px + 8px);
-    flex-wrap: nowrap; 
-    justify-content: flex-start; 
-    overflow: hidden !important; 
-    padding: 4px 1px; /* 左右padding极小 */
-  }
-  .card-container .hand-card-item {
-    /* 卡片宽度50px。目标露出8px。负margin = -(50-8) = -42px */
-    margin-left: -42px; 
-  }
-  /* nth-child z-index rules from previous version should be here */
-  .card-container .hand-card-item:nth-child(1) { z-index: 1 ; } /* ... up to 13 ... */
-  .card-container .hand-card-item:nth-child(2) { z-index: 2 ; }
-  .card-container .hand-card-item:nth-child(3) { z-index: 3 ; }
-  .card-container .hand-card-item:nth-child(4) { z-index: 4 ; }
-  .card-container .hand-card-item:nth-child(5) { z-index: 5 ; }
-  .card-container .hand-card-item:nth-child(6) { z-index: 6 ; }
-  .card-container .hand-card-item:nth-child(7) { z-index: 7 ; }
-  .card-container .hand-card-item:nth-child(8) { z-index: 8 ; }
-  .card-container .hand-card-item:nth-child(9) { z-index: 9 ; }
-  .card-container .hand-card-item:nth-child(10) { z-index: 10 ; }
-  .card-container .hand-card-item:nth-child(11) { z-index: 11 ; }
-  .card-container .hand-card-item:nth-child(12) { z-index: 12 ; }
-  .card-container .hand-card-item:nth-child(13) { z-index: 13 ; }
 
-  .initial-hand-area .card-container .hand-card-item:hover {
-    transform: translateY(-8px) scale(1.05); 
-    z-index: 100;
-  }
-  /* 顶部信息栏手机样式 (保持之前能用的版本) */
-  .top-info-bar { font-size: 0.75em; flex-direction: column; align-items: stretch; gap: 4px; padding: 4px 5px;}
-  /* ... (其他手机端顶部信息栏子元素样式) ... */
-}
-
-/* 其他所有全局样式 (按钮, App布局, GameBoard布局等) 请沿用上一版，移除大部分 !important */
+/* 其他所有全局样式 (按钮, App布局, GameBoard布局等) 请沿用上一版，但移除大部分 !important */
 /* ... (省略) ... */
