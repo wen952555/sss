@@ -1,60 +1,39 @@
-html, body {
-  height: 100%; 
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  background-color: #006400;
-  color: #e8f5e9;
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-}
-
-#app, #app-container.app-flex-container {
-  min-height: 100vh;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 5px;
-  box-sizing: border-box;
-  overflow: hidden;
-  background-color: transparent;
-}
-
-/* 置牌区容器：始终单行，禁止换行，溢出隐藏 */
 .card-container {
   display: flex;
   flex-direction: row;
   align-items: center;
-  flex-wrap: nowrap;      /* 重点：禁止换行！ */
-  overflow-x: hidden;     /* 超出部分裁剪（如需横向滚动可改为auto） */
-  overflow-y: visible;
+  flex-wrap: nowrap;
+  overflow: hidden; /* 禁止滚动 */
+  width: 100%;
+  min-width: 0;
   padding: 4px 2px;
-  gap: 0;
+  box-sizing: border-box;
   background: transparent;
   border: none;
-  box-sizing: border-box;
   margin-bottom: 8px;
-  width: 100%;
-  min-height: 74px;       /* 卡片高度+padding，防止塌陷 */
+  position: relative;
+  /* 容器高度由卡片撑起 */
 }
 
-/* 卡片样式（小尺寸、重叠、单行） */
 .hand-card-item {
+  /* 基础尺寸：手机端 */
   width: 50px;
   height: 70px;
   border-radius: 3px;
   box-shadow: 0 0 2px rgba(0,0,0,0.2);
-  margin-left: -44px;   /* 只露出6px，可根据需要调整 */
   position: relative;
   z-index: 1;
   background: #fff;
   display: flex; justify-content: center; align-items: center;
-  overflow: visible;
   cursor: pointer;
   transition: transform 0.1s, z-index 0.1s;
+  flex-shrink: 0;
+  /* 以下为动态重叠核心 */
+  margin-left: calc(-1 * ((100% - 50px) / 12)); /* 13张牌时刚好铺满一行，每张只露出一点 */
 }
 .hand-card-item:first-child { margin-left: 0; }
 
-/* 递增z-index，确保后面的牌在上面 */
+/* z-index递增 */
 .card-container .hand-card-item:nth-child(1) { z-index: 1; }
 .card-container .hand-card-item:nth-child(2) { z-index: 2; }
 .card-container .hand-card-item:nth-child(3) { z-index: 3; }
@@ -69,23 +48,21 @@ html, body {
 .card-container .hand-card-item:nth-child(12) { z-index: 12; }
 .card-container .hand-card-item:nth-child(13) { z-index: 13; }
 
-/* 鼠标悬浮时放大并置顶 */
 .hand-card-item:hover {
   transform: scale(1.08) translateY(-8px);
   z-index: 100;
 }
 
-/* 桌面端（如需更大尺寸和更宽重叠） */
+/* 桌面端适配更大卡片，重叠动态自适应 */
 @media (min-width: 601px) {
-  .card-container {
-    min-height: 130px;
-  }
   .hand-card-item {
     width: 90px;
     height: 126px;
-    margin-left: -75px; /* 只露出15px */
+    border-radius: 6px;
+    margin-left: calc(-1 * ((100% - 90px) / 12));
   }
   .hand-card-item:first-child { margin-left: 0; }
+  .card-container { min-height: 130px;}
 }
 
-/* 其他全局样式(略) */
+/* 保证最多13张都能显示，溢出时每张仅露出几像素 */
