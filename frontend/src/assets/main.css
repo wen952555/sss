@@ -1,206 +1,141 @@
 /* frontend/src/assets/main.css */
 html, body {
-  height: 100% !important;
-  margin: 0 !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  background-color: #006400 !important; /* 深绿色，强制 */
-  color: #e8f5e9 !important; /* 默认文字浅色，强制 */
-  overflow: hidden !important;
-  -webkit-tap-highlight-color: transparent !important;
+  height: 100%; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #006400 !important; /* 深绿色 */
+  color: #e8f5e9 !important; 
+  overflow: hidden !important; -webkit-tap-highlight-color: transparent !important;
 }
 
-#app, 
-#app-container.app-flex-container { /* 确保匹配 App.vue 的根元素 */
-  min-height: 100vh !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  padding: 5px !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-  background-color: transparent !important; 
+#app, #app-container.app-flex-container { /* 确保匹配 App.vue 的根元素 */
+  min-height: 100vh !important; height: 100% !important; display: flex !important; flex-direction: column !important;
+  padding: 5px !important; box-sizing: border-box !important; overflow: hidden !important;
+  background-color: transparent !important;
 }
 
 /* --- 卡片样式 --- */
 .card {
-  width: 90px !important; 
-  height: 126px !important;
+  /* 桌面端尺寸再增大 */
+  width: 100px !important;  /* 例如，增加到100px */
+  height: 140px !important; /* 保持约 2.5:3.5 (或 5:7) 的比例 */
   
-  border-style: none !important;
-  border-width: 0px !important;
-  border-color: transparent !important;
   border: none !important; 
-  outline-style: none !important;
-  outline-width: 0px !important;
+  outline: none !important;
   box-sizing: border-box !important; 
   
-  border-radius: 6px !important;
-  background-color: #FFFFFF !important;
-  color: #212121 !important;
+  border-radius: 7px !important; /* 圆角配合新尺寸 */
+  /* 卡片背景色，尝试与SVG图片中的白色区域精确匹配，如果不是纯#FFFFFF */
+  /* 如果SVG中的白色是纯#FFFFFF，那么这里也用#FFFFFF */
+  background-color: #FFFFFF !important; 
   
+  color: #212121 !important;
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
   cursor: grab !important;
   user-select: none !important;
-  
-  box-shadow: none !important; 
-  
-  transition: none !important; /* 暂时移除所有过渡 */
-  overflow: hidden !important;
-  padding: 0 !important;
-  margin: 2px !important;
+  box-shadow: none !important; /* 保持移除阴影以排查边框 */
+  transition: transform 0.1s ease-out !important;
+  overflow: hidden !important; /* 非常重要 */
+  padding: 0 !important; 
+  margin: 2px !important; 
 }
 
 .card img {
   display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: contain !important;
+  /* 技巧：让图片略微放大一点点，然后被 .card 的 overflow:hidden 裁剪掉最边缘的抗锯齿像素 */
+  width: 101% !important;   /* 尝试大于100%，例如 100.5% 或 101% */
+  height: 101% !important;  /* 尝试大于100% */
+  object-fit: contain !important; 
   pointer-events: none !important;
-  border: none !important;
-  outline: none !important;
-  border-radius: 5px !important; 
+  /* 图片本身的圆角应该与卡片一致或略小，如果卡片圆角较大 */
+  border-radius: 6px !important; 
 }
 
 .card.dragging {
-  opacity: 0.8 !important; /* 降低透明度，更易于看到 */
+  opacity: 0.8 !important;
   transform: scale(1.1) rotate(3deg) !important;
   z-index: 2000 !important;
-  /* box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important; /* 如果需要拖拽阴影 */
 }
 
 /* --- 卡片容器 --- */
 .card-container {
-  display: flex !important; 
-  flex-wrap: wrap !important; 
-  gap: 5px !important; 
-  min-height: calc(126px + 10px) !important;
+  display: flex !important; flex-wrap: wrap !important; gap: 6px !important; 
+  min-height: calc(140px + 12px) !important; /* 基于新卡片高度 */
   border: 1px dashed rgba(255, 255, 255, 0.2) !important; 
-  padding: 5px !important; 
-  border-radius: 5px !important;
-  position: relative !important; 
-  align-items: flex-start !important; 
-  justify-content: flex-start !important;
+  padding: 6px !important; border-radius: 5px !important;
+  position: relative !important; align-items: flex-start !important; justify-content: flex-start !important;
   background-color: rgba(0, 0, 0, 0.1) !important; 
-  margin-bottom: 8px !important; 
-  width: 100% !important; 
-  box-sizing: border-box !important;
+  margin-bottom: 10px !important; width: 100% !important; box-sizing: border-box !important;
 }
+/* ... (其他 .card-container, .drag-over, .drop-placeholder 与之前类似，确保 !important) ... */
 .card-container.is-empty { background-color: rgba(0, 0, 0, 0.12) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
 .drag-over { border-color: #a5d6a7 !important; border-style: solid !important; background-color: rgba(129, 199, 132, 0.3) !important; }
-.drop-placeholder { color: #a7ffeb !important; font-style: italic !important; text-align: center !important; width: 100% !important; font-size: 0.9em !important; padding: 10px 0 !important; }
+.drop-placeholder { color: #a7ffeb !important; font-style: italic !important; text-align: center !important; width: 100% !important; font-size: 0.95em !important; padding: 12px 0 !important; }
 
+/* --- 按钮、输入框、布局、媒体查询等其他样式，保持上一版的 !important 强度 --- */
+/* ... (此处省略，使用上一版 main.css 中除了 .card 和 .card img 之外的所有内容，并确保关键属性有 !important) ... */
+/* 为简洁，我将只粘贴修改过的 .card 和 .card img，其他部分请沿用上一版并确保重要属性的 !important */
 
-/* --- 您提供的按钮和输入框样式 (已包含) --- */
-button {
-  background-color: #1b5e20; /* 与深绿色背景协调 */
-  color: #e8f5e9;
-  padding: 10px 16px;
-  margin: 5px;
-  border: 1px solid #003300; /* 给按钮一个微妙的边框 */
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1em; /* 确保字体大小合适 */
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-  transition: background-color 0.2s, box-shadow 0.2s;
-}
+/* --- 按钮和输入框通用样式 --- */
+button { background-color: #1b5e20 !important; color: #e8f5e9 !important; padding: 10px 16px !important; margin: 5px !important;
+  border: 1px solid #003300 !important; border-radius: 4px !important; cursor: pointer !important; font-size: 1em !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2) !important; transition: background-color 0.2s, box-shadow 0.2s !important; }
+button:hover { background-color: #2e7d32 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.25) !important; }
+button:disabled { background-color: rgba(255,255,255,0.1) !important; color: rgba(255,255,255,0.4) !important;
+  border-color: rgba(255,255,255,0.2) !important; cursor: not-allowed !important; box-shadow: none !important; }
+input[type=text] { padding: 8px !important; margin: 5px !important; border-radius: 4px !important; border: 1px solid rgba(255,255,255,.3) !important;
+  background-color: rgba(0,0,0,0.15) !important; color: #e8f5e9 !important; }
+input[type=text]::placeholder { color: rgba(255,255,255,0.5) !important; }
 
-button:hover {
-    background-color: #2e7d32;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.25); /* 您提供的阴影颜色值 #00000040 对应的rgba */
-}
-
-button:disabled {
-    background-color: rgba(255,255,255,0.1); /* 您提供的 #ffffff1a */
-    color: rgba(255,255,255,0.38); /* 您提供的 #fff6 */
-    border-color: rgba(255,255,255,0.19); /* 您提供的 #fff3 */
-    cursor: not-allowed;
-    box-shadow: none;
-}
-
-input[type=text] { /* type=text 选择器 */
-    padding: 8px;
-    margin: 5px;
-    border-radius: 4px;
-    border: 1px solid rgba(255,255,255,.3);
-    background-color: rgba(0,0,0,0.15); /* 您提供的 #00000026 */
-    color: #e8f5e9;
-}
-
-input[type=text]::placeholder { /* type=text 选择器 */
-    color: rgba(255,255,255,0.5); /* 您提供的 #ffffff80 */
-}
-
-/* --- 您提供的布局样式 (已包含) --- */
-.global-error {
-    margin-bottom: 10px;
-    flex-shrink: 0;
-    /* 确保错误信息在深色背景下可见 */
-    background-color: #d32f2f !important; 
-    color: #ffcdd2 !important; 
-    padding: 10px !important; 
-    border-radius: 4px !important;
-    border: 1px solid #c62828 !important;
-}
-
-.game-area {
-    background-color: transparent !important; /* 确保它透明 */
-    border-radius: 6px !important; /* 可以保留圆角 */
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    flex-grow: 1 !important; /* 让游戏区域填充 */
-    border: none !important; /* 移除 game-area 的边框，让牌桌直接融入背景 */
-}
-
-/* --- 其他确保布局和可见性的样式 --- */
-.app-flex-grow { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-.top-info-bar { background-color: rgba(0, 0, 0, 0.35); color: #c8e6c9; padding: 7px 10px; border-radius: 4px;
-  margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.9em; flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
-.player-status-item strong { color: #fffde7; }
+/* --- App.vue 布局 --- */
+.global-error { margin-bottom: 10px !important; flex-shrink: 0 !important; }
+.game-area { background-color: transparent !important; border-radius: 6px !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; flex-grow: 1 !important; border: none !important; }
+.app-flex-grow { flex-grow: 1 !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; overflow: hidden !important; }
+.top-info-bar { background-color: rgba(0, 0, 0, 0.35) !important; color: #c8e6c9 !important; padding: 7px 10px !important; border-radius: 4px !important;
+  margin-bottom: 10px !important; display: flex !important; justify-content: space-between !important; align-items: center !important;
+  font-size: 0.9em !important; flex-shrink: 0 !important; flex-wrap: wrap !important; gap: 8px !important; }
+.player-status-item strong { color: #fffde7 !important; }
 .restart-button-inline { background-color: #004d40 !important; border: 1px solid #00796b !important;
   color: #b2dfdb !important; padding: 6px 10px !important; font-size: 0.9em !important; }
 .restart-button-inline:hover { background-color: #00695c !important; }
-.game-board-main-area { margin-top: 0; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-.idle-message, .dealing-message, .message-area { text-align: center; padding: 20px; font-size: 1.05em; color: #80cbc4;
-    flex-grow: 1; display: flex; align-items: center; justify-content: center; }
+.game-board-main-area { margin-top: 0 !important; flex-grow: 1 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+.idle-message, .dealing-message, .message-area { text-align: center !important; padding: 20px !important; font-size: 1.05em !important; color: #80cbc4 !important;
+    flex-grow: 1 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+.error { background-color: #d32f2f !important; color: #ffcdd2 !important; padding: 10px !important; border-radius: 4px !important; margin-bottom: 10px !important; border: 1px solid #c62828 !important; }
 
 /* GameBoard.vue 内部组件的样式 */
-.game-board-container { padding: 5px 2px; display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
-.player-area { margin-bottom: 8px; display: flex; flex-direction: column; flex-grow: 1;
-  overflow-y: auto; padding: 5px 2px; -webkit-overflow-scrolling: touch; gap: 8px; }
-.dun-area, .initial-hand-area { margin-bottom: 0; }
-.initial-hand-area .card-container { flex-grow: 1; min-height: calc(126px * 2 + 6px + 10px); align-content: flex-start; }
-.segments { display: flex; flex-direction: column; gap: 8px; }
-.segments.showdown-view .card-container { background-color: rgba(121, 134, 203, 0.15); border-style: solid; border-color: rgba(255,255,255,0.2); }
-.submit-hand-button { margin: 12px auto; padding: 10px 20px; font-size: 1em; width: auto;
-  min-width: 160px; max-width: 90%; flex-shrink: 0; }
-.status-text { text-align: center; margin-top: 5px; color: #b2dfdb; font-style: italic; font-size: 0.9em; flex-shrink: 0; }
-.showdown-area { background-color: rgba(0,0,0,0.25); color: #e0f2f1; padding: 12px; border-radius: 4px;
-    overflow-y: auto; max-height: 28vh; flex-shrink: 0; margin-top: auto; }
-.showdown-area h3, .showdown-area h4 { color: #fff; margin-top: 0; margin-bottom: 6px; font-size: 1.1em; }
-.comparison-summary p { font-size: 0.95em; margin: 3px 0; }
-.comparison-summary h4 { color: #fff176; margin-top: 8px; font-size: 1.05em; }
-.ai-hand-showdown h4 { color: #81d4fa; }
-.ai-hand-showdown .card-container { background-color: rgba(0,0,0,0.12); }
-
+.game-board-container { padding: 5px 2px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; overflow: hidden !important; }
+.player-area { margin-bottom: 8px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important;
+  overflow-y: auto !important; padding: 5px 2px !important; -webkit-overflow-scrolling: touch !important; gap: 8px !important; }
+.dun-area, .initial-hand-area { margin-bottom: 0 !important; }
+.initial-hand-area .card-container { flex-grow: 1 !important; min-height: calc(140px * 2 + 6px + 10px) !important; align-content: flex-start !important; }
+.segments { display: flex !important; flex-direction: column !important; gap: 8px !important; }
+.segments.showdown-view .card-container { background-color: rgba(121, 134, 203, 0.15) !important; border-style: solid !important; border-color: rgba(255,255,255,0.2) !important; }
+.submit-hand-button { margin: 12px auto !important; padding: 10px 20px !important; font-size: 1em !important; width: auto !important;
+  min-width: 160px !important; max-width: 90% !important; flex-shrink: 0 !important; }
+.status-text { text-align: center !important; margin-top: 5px !important; color: #b2dfdb !important; font-style: italic !important; font-size: 0.9em !important; flex-shrink: 0 !important; }
+.showdown-area { background-color: rgba(0,0,0,0.25) !important; color: #e0f2f1 !important; padding: 12px !important; border-radius: 4px !important;
+    overflow-y: auto !important; max-height: 28vh !important; flex-shrink: 0 !important; margin-top: auto !important; }
+.showdown-area h3, .showdown-area h4 { color: #fff !important; margin-top: 0 !important; margin-bottom: 6px !important; font-size: 1.1em !important; }
+.comparison-summary p { font-size: 0.95em !important; margin: 3px 0 !important; }
+.comparison-summary h4 { color: #fff176 !important; margin-top: 8px !important; font-size: 1.05em !important; }
+.ai-hand-showdown h4 { color: #81d4fa !important; }
+.ai-hand-showdown .card-container { background-color: rgba(0,0,0,0.12) !important; }
 
 /* 媒体查询 */
 @media (max-width: 768px) {
-  .card { width: 70px !important; height: 98px !important; border-radius: 5px !important; padding: 0 !important; }
+  .card { width: 75px !important; height: 105px !important; border-radius: 5px !important; padding: 0 !important; } /* 平板尺寸调整 */
   .card img { border-radius: 4px !important; }
-  .card-container { min-height: calc(98px + 10px) !important; gap: 5px !important; padding: 5px !important; }
-  .initial-hand-area .card-container { min-height: calc(98px * 2 + 5px + 10px) !important; }
+  .card-container { min-height: calc(105px + 10px) !important; gap: 5px !important; padding: 5px !important; }
+  .initial-hand-area .card-container { min-height: calc(105px * 2 + 5px + 10px) !important; }
   .top-info-bar { font-size: 0.85em !important; }
   .submit-hand-button { font-size: 0.95em !important; padding: 9px 15px !important; }
 }
 @media (max-width: 480px) {
-  .card { width: calc(100% / 6 - 4px) !important; min-width: 50px !important; max-width: 65px !important;
-    height: auto !important; aspect-ratio: 2.5 / 3.5 !important; border-radius: 3px !important; padding: 0 !important; }
-  .card img { border-radius: 2px !important; }
-  .card-container { min-height: calc(70px + 8px) !important; gap: 3px !important; padding: 4px !important; }
-  .initial-hand-area .card-container { min-height: calc(70px * 2 + 3px + 8px) !important; }
-  .top-info-bar { font-size: 0.75em !important; }
+  .card { width: calc(100% / 6 - 5px) !important; min-width: 55px !important; max-width: 70px !important; /* 手机尺寸调整 */
+    height: auto !important; aspect-ratio: 2.5 / 3.5 !important; border-radius: 4px !important; padding: 0 !important; }
+  .card img { border-radius: 3px !important; }
+  .card-container { min-height: calc(75px + 8px) !important; gap: 4px !important; padding: 4px !important; }
+  .initial-hand-area .card-container { min-height: calc(75px * 2 + 4px + 8px) !important; }
+  .top-info-bar { font-size: 0.8em !important; } /* 手机上顶部信息栏字体再小一点 */
 }
