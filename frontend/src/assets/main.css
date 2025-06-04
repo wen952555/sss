@@ -3,7 +3,7 @@
   flex-direction: row;
   align-items: center;
   flex-wrap: nowrap;
-  overflow: hidden; /* 禁止滚动 */
+  overflow: hidden; /* 禁止横向滚动和换行 */
   width: 100%;
   min-width: 0;
   padding: 4px 2px;
@@ -12,11 +12,12 @@
   border: none;
   margin-bottom: 8px;
   position: relative;
-  /* 容器高度由卡片撑起 */
+  --card-count: 13; /* 由JS或模板层动态设置总牌数 */
+  min-height: 74px;
 }
 
+/* 卡片样式 */
 .hand-card-item {
-  /* 基础尺寸：手机端 */
   width: 50px;
   height: 70px;
   border-radius: 3px;
@@ -28,12 +29,17 @@
   cursor: pointer;
   transition: transform 0.1s, z-index 0.1s;
   flex-shrink: 0;
-  /* 以下为动态重叠核心 */
-  margin-left: calc(-1 * ((100% - 50px) / 12)); /* 13张牌时刚好铺满一行，每张只露出一点 */
+  /* 关键：根据容器宽度和牌数自动计算重叠宽度 */
+  margin-left: calc(
+    var(--card-count, 13) > 1
+      ? max(-1 * ((100% - 50px) / (var(--card-count, 13) - 1)), -45px)
+      : 0
+  );
 }
 .hand-card-item:first-child { margin-left: 0; }
 
 /* z-index递增 */
+.card-container .hand-card-item:nth-child(n) { z-index: auto; }
 .card-container .hand-card-item:nth-child(1) { z-index: 1; }
 .card-container .hand-card-item:nth-child(2) { z-index: 2; }
 .card-container .hand-card-item:nth-child(3) { z-index: 3; }
@@ -53,16 +59,18 @@
   z-index: 100;
 }
 
-/* 桌面端适配更大卡片，重叠动态自适应 */
+/* 桌面端大尺寸（宽度、重叠同理自适应） */
 @media (min-width: 601px) {
   .hand-card-item {
     width: 90px;
     height: 126px;
     border-radius: 6px;
-    margin-left: calc(-1 * ((100% - 90px) / 12));
+    margin-left: calc(
+      var(--card-count, 13) > 1
+        ? max(-1 * ((100% - 90px) / (var(--card-count, 13) - 1)), -75px)
+        : 0
+    );
   }
   .hand-card-item:first-child { margin-left: 0; }
-  .card-container { min-height: 130px;}
+  .card-container { min-height: 130px; }
 }
-
-/* 保证最多13张都能显示，溢出时每张仅露出几像素 */
