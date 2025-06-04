@@ -1,8 +1,18 @@
 /* frontend/src/assets/main.css */
-/* ... (html, body, #app 等基础样式与上一最终版相同，确保背景色和文字颜色正确) ... */
-html, body { /* ... */ background-color: #006400 !important; color: #e8f5e9 !important; overflow: hidden !important; /* ... */ }
-#app, #app-container.app-flex-container { /* ... */ background-color: transparent !important; overflow: hidden !important; /* ... */ }
+html, body {
+  height: 100%; margin: 0; 
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #006400; /* 深绿色 */
+  color: #e8f5e9; 
+  overflow: hidden !important; 
+  -webkit-tap-highlight-color: transparent;
+}
 
+#app, #app-container.app-flex-container {
+  min-height: 100vh; height: 100%; display: flex; flex-direction: column;
+  padding: 5px; box-sizing: border-box; overflow: hidden;
+  background-color: transparent;
+}
 
 /* --- 卡片样式 --- */
 .card, .hand-card-item {
@@ -12,7 +22,7 @@ html, body { /* ... */ background-color: #006400 !important; color: #e8f5e9 !imp
   border: none !important; 
   outline: none !important;
   box-sizing: border-box !important; 
-  border-radius: 3px !important; /* 手机端小圆角 */
+  border-radius: 3px !important;
   background-color: #FFFFFF !important; 
   color: #212121 !important;
   display: flex !important;
@@ -20,13 +30,13 @@ html, body { /* ... */ background-color: #006400 !important; color: #e8f5e9 !imp
   align-items: center !important;
   cursor: grab !important;
   user-select: none !important;
-  box-shadow: 0px 1px 1px rgba(0,0,0,0.2) !important; 
+  box-shadow: 0px 0px 1px rgba(0,0,0,0.3) !important; /* 非常细微的阴影用于区分重叠 */
   transition: transform 0.1s ease-out, margin-left 0.1s ease-out, z-index 0.05s linear !important;
   overflow: hidden !important;
   padding: 0 !important; 
-  flex-shrink: 0 !important; 
+  flex-shrink: 0 !important; /* 卡片不被压缩其视觉尺寸 */
   position: relative !important; 
-  margin: 0 !important;
+  margin: 0 !important; /* 移除卡片自身外边距 */
 }
 .card img, .hand-card-item img {
   display: block !important; width: 100% !important; height: 100% !important;
@@ -35,53 +45,52 @@ html, body { /* ... */ background-color: #006400 !important; color: #e8f5e9 !imp
 }
 .card.dragging, .hand-card-item.dragging { /* ... (保持不变) ... */ }
 
-/* --- 卡片容器 (所有墩共用 - 默认强制单行紧贴，手机端样式) --- */
+/* --- 卡片容器 (所有墩共用 - 默认手机端紧贴样式) --- */
 .card-container {
   display: flex !important; 
-  flex-direction: row !important;
+  flex-direction: row !important; /* 强制水平排列 */
   flex-wrap: nowrap !important;   /* !!! 绝对强制不换行 !!! */
-  gap: 0 !important;              
-  height: calc(70px + 6px) !important; /* 基于手机卡片高度(70px) + 上下padding(3px*2)，保持高度不变 */
-  min-height: calc(70px + 6px) !important;
+  gap: 0 !important;               
+  height: calc(70px + 8px) !important; /* 基于手机卡片高度(70px) + 上下padding(4px*2)，保持高度不变 */
+  min-height: calc(70px + 8px) !important;
   border: 1px dashed rgba(255, 255, 255, 0.15) !important;
-  padding: 3px 1px !important; /* 上下3px, 左右1px padding (非常小) */
-  border-radius: 4px !important;
+  padding: 4px 2px !important; /* 上下4px, 左右2px padding */
+  border-radius: 5px !important;
   position: relative !important; 
-  align-items: center !important; 
-  justify-content: flex-start !important; /* 卡片从左开始排列 */
+  align-items: center !important; /* 卡片在行内垂直居中 */
+  /* justify-content: flex-start !important; */ /* 改为居中，让紧贴的牌组在容器内居中 */
+  justify-content: center !important; 
   background-color: rgba(0, 0, 0, 0.08) !important; 
-  margin-bottom: 4px !important; /* 墩之间的间距 */
+  margin-bottom: 5px !important; 
   width: 100% !important; 
   box-sizing: border-box !important;
   overflow: hidden !important; /* !!! 强制隐藏所有溢出，不产生任何滚动条 !!! */
 }
 .card-container .hand-card-item {
-  /* 卡片宽度50px。目标是紧密重叠，类似参考图。 */
-  /* 假设每张牌（除了第一张）露出大约 6px 到 8px。 */
-  /* 如果露出 6px: 负 margin = -(50 - 6) = -44px */
-  /* 13张牌总视觉宽度 = 50px (第一张) + 12 * 6px = 50 + 72 = 122px */
-  /* 这个宽度应该能适应非常非常窄的屏幕（如 320px 左右的 viewport 减去容器 padding） */
-  margin-left: -44px !important; 
+  /* 卡片宽度50px。参考图片中，每张牌露出约其宽度的1/5到1/4。 */
+  /* 假设露出 10px (即卡片宽度的 1/5)，则重叠 50 - 10 = 40px */
+  margin-left: -40px !important; 
 }
 .card-container .hand-card-item:first-child {
-  margin-left: 0 !important;
+  margin-left: 0 !important; /* 第一张牌不左移 */
 }
 /* z-index for overlap (确保右边的叠在左边上面) */
-.card-container .hand-card-item:nth-child(1) { z-index: 1 !important; }
-.card-container .hand-card-item:nth-child(2) { z-index: 2 !important; }
-.card-container .hand-card-item:nth-child(3) { z-index: 3 !important; }
-.card-container .hand-card-item:nth-child(4) { z-index: 4 !important; }
-.card-container .hand-card-item:nth-child(5) { z-index: 5 !important; }
-.card-container .hand-card-item:nth-child(6) { z-index: 6 !important; }
-.card-container .hand-card-item:nth-child(7) { z-index: 7 !important; }
-.card-container .hand-card-item:nth-child(8) { z-index: 8 !important; }
-.card-container .hand-card-item:nth-child(9) { z-index: 9 !important; }
-.card-container .hand-card-item:nth-child(10) { z-index: 10 !important; }
-.card-container .hand-card-item:nth-child(11) { z-index: 11 !important; }
-.card-container .hand-card-item:nth-child(12) { z-index: 12 !important; }
-.card-container .hand-card-item:nth-child(13) { z-index: 13 !important; }
+.card-container .hand-card-item:nth-child(1) { z-index: 1 ; }
+.card-container .hand-card-item:nth-child(2) { z-index: 2 ; }
+.card-container .hand-card-item:nth-child(3) { z-index: 3 ; }
+.card-container .hand-card-item:nth-child(4) { z-index: 4 ; }
+.card-container .hand-card-item:nth-child(5) { z-index: 5 ; }
+.card-container .hand-card-item:nth-child(6) { z-index: 6 ; }
+.card-container .hand-card-item:nth-child(7) { z-index: 7 ; }
+.card-container .hand-card-item:nth-child(8) { z-index: 8 ; }
+.card-container .hand-card-item:nth-child(9) { z-index: 9 ; }
+.card-container .hand-card-item:nth-child(10) { z-index: 10 ; }
+.card-container .hand-card-item:nth-child(11) { z-index: 11 ; }
+.card-container .hand-card-item:nth-child(12) { z-index: 12 ; }
+.card-container .hand-card-item:nth-child(13) { z-index: 13 ; }
 
-.initial-hand-area > .card-container .hand-card-item:hover { /* 仅手牌区悬停 */
+/* 简单的悬停效果，让牌稍微突出 */
+.card-container .hand-card-item:hover { /* 应用于所有墩的悬停 */
   transform: translateY(-8px) scale(1.05) !important; 
   z-index: 100 !important; /* 确保悬停的在最上面 */
 }
@@ -95,28 +104,28 @@ html, body { /* ... */ background-color: #006400 !important; color: #e8f5e9 !imp
   .card, .hand-card-item { /* 桌面卡片尺寸 */
     width: 90px !important; 
     height: 126px !important;
-    margin: 2px !important; 
+    margin: 2px !important; /* 恢复桌面卡片间的外边距 */
     border-radius: 6px !important;
     box-shadow: 1px 1px 2px rgba(0,0,0,0.15) !important;
   }
   .card img, .hand-card-item img { border-radius: 5px !important;}
 
   .card-container { /* 所有墩在桌面 */
-    flex-wrap: wrap !important; 
-    justify-content: center !important; 
-    gap: 6px !important; 
-    height: auto !important; 
-    min-height: calc(126px + 16px) !important; 
+    flex-wrap: wrap !important; /* 桌面允许换行 */
+    justify-content: center !important; /* 桌面卡片居中 */
+    gap: 6px !important; /* 桌面卡片间隙 */
+    height: auto !important; /* 桌面高度自适应内容 */
+    min-height: calc(126px + 16px) !important; /* 桌面至少一行高度 */
     overflow-x: hidden !important; 
     overflow-y: hidden !important; /* 默认不滚动 */
     padding: 8px !important;
     margin-bottom: 8px !important;
   }
-  /* 特指手牌区，在桌面可以多行并垂直滚动 */
+  /* 特指手牌区，在桌面可以多行并允许垂直滚动 */
   .initial-hand-area > .card-container {
     overflow-y: auto !important;   
-    max-height: calc(126px * 2 + 6px + 16px) !important; 
-    align-content: flex-start !important;
+    max-height: calc(126px * 2 + 6px + 16px) !important; /* 最多两行桌面卡片的高度 */
+    align-content: flex-start !important; /* 多行时从顶部对齐 */
   }
   /* 头墩和尾墩在桌面，因为牌少，通常不需要滚动 */
   .dun-area > .card-container {
