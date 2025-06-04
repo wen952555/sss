@@ -1,14 +1,15 @@
+// frontend/src/stores/gameStore.js
 import { defineStore } from 'pinia';
 import apiService from '../services/apiService';
 
 export const useGameStore = defineStore('game', {
     state: () => ({
-        gameId: localStorage.getItem('currentGameId') || null, // 尝试从localStorage恢复
+        gameId: localStorage.getItem('currentGameId') || null,
         gameCode: localStorage.getItem('currentGameCode') || null,
-        gameState: null, // 后端返回的 games 表信息
-        players: [],     // 后端返回的 players 表信息 (处理后)
-        myCards: [],     // 当前玩家手牌
-        myPlayerId: null, // 当前玩家在 players 表中的 ID
+        gameState: null, // 后端返回的 games 表信息 (例如: { id, game_code, status, num_players, max_players, ... })
+        players: [],     // 后端返回的玩家列表 (例如: [{ id, name, order, is_me, is_ready, score, ... }])
+        myCards: [],
+        myPlayerId: null, // 当前玩家在 players 表中的 ID (通过 is_me 找到)
         playerSessionId: localStorage.getItem('playerSessionId') || null,
         error: null,
         loading: false,
@@ -17,23 +18,40 @@ export const useGameStore = defineStore('game', {
     }),
     getters: {
         isGameActive: (state) => !!state.gameId && state.gameState && state.gameState.status !== 'finished',
-        isMyTurnToSubmit: (state) => {
-            if (!state.isGameActive || state.gameState.status !== 'playing') return false;
-            const me = state.players.find(p => p.is_me);
-            return me && !me.is_ready;
+        myPlayerDetails: (state) => state.players.find(p => p.is_me === true), // 明确检查 is_me
+        
+        // 核心：判断是否可以开始游戏
+        canStartGame(state) {
+            if (!this.myPlayerDetails) { // 如果无法识别当前玩家，则不能开始
+                // console.warn("canStartGame: myPlayerDetails is undefined");
+                return false;
+            }
+            if (!state.gameState || state.gameState.status !== 'waiting') {
+                // console.warn("canStartGame: game not in waiting state or gameState undefined", state.gameState?.status);
+                return false;
+            }
+            if (state.players.length < 2) { // 至少需要2名玩家
+                // console.warn("canStartGame: not enough players", state.players.length);
+                return false;
+            }
+
+            // 假设 order 为 1 的玩家是房主，并且只有房主可以开始游戏
+            // 同时，确保玩家数量在允许范围内（虽然 start_game API 也会检查）
+            const isHost = this.myPlayerDetails.order === 1;
+            const enoughPlayers = state.players.length >= 2 && state.players.length <= state.gameState.max_players;
+            
+            // console.log(`canStartGame check: isHost=${isHost}, enoughPlayers=${enoughPlayers}, myOrder=${this.myPlayerDetails.order}, totalPlayers=${state.players.length}, maxPlayers=${state.gameState.max_players}`);
+            return isHost && enoughPlayers;
         },
-        canStartGame: (state) => {
-            if (!state.gameState || state.gameState.status !== 'waiting' || !state.players.length) return false;
-            const me = state.players.find(p => p.is_me);
-            // 假设第一个加入的玩家（order 1）是房主，或者可以由后端指定房主
-            // 并且玩家人数达到下限 (例如2人)
-            return me && me.order === 1 && state.players.length >= 2 && state.players.length <= state.gameState.max_players;
+
+        isMyTurnToSubmit: (state) => {
+            if (!state.isGameActive || state.gameState?.status !== 'playing' || !state.myPlayerDetails) return false;
+            return !state.myPlayerDetails.is_ready;
         },
         allPlayersReady: (state) => {
             if (!state.players.length || state.gameState?.status !== 'playing') return false;
             return state.players.every(p => p.is_ready);
         },
-        myPlayerDetails: (state) => state.players.find(p => p.is_me),
     },
     actions: {
         _updateStateFromResponse(data) {
@@ -45,17 +63,20 @@ export const useGameStore = defineStore('game', {
                 this.gameCode = data.game_code;
                 localStorage.setItem('currentGameCode', this.gameCode);
             }
-             if (data.player_session_id && !this.playerSessionId) { // 后端可能主动下发
+            if (data.player_session_id && (!this.playerSessionId || this.playerSessionId !== data.player_session_id)) {
                 this.playerSessionId = data.player_session_id;
                 localStorage.setItem('playerSessionId', this.playerSessionId);
             }
             if (data.game_state) this.gameState = data.game_state;
             if (data.players) {
-                this.players = data.players;
-                const me = data.players.find(p => p.is_me);
+                this.players = data.players.map(p => ({ ...p, is_me: p.session_id === this.playerSessionId })); // 确保 is_me 正确设置
+                const me = this.players.find(p => p.is_me);
                 if (me) {
                     this.myCards = me.my_cards || [];
                     this.myPlayerId = me.id;
+                } else { // 如果在players里找不到自己，可能意味着会话ID不匹配或数据问题
+                    this.myCards = [];
+                    this.myPlayerId = null;
                 }
             }
         },
@@ -65,13 +86,16 @@ export const useGameStore = defineStore('game', {
                 const response = await apiService.createGame(maxPlayers);
                 if (response.data.success) {
                     this._updateStateFromResponse(response.data);
-                    // 创建成功后自动加入
-                    await this.joinGame(this.gameCode, `房主_${this.playerSessionId?.substring(0,4) || '玩家'}`);
+                    // 确保 playerName 传递正确
+                    const defaultPlayerName = localStorage.getItem('playerName') || `房主_${this.playerSessionId?.substring(0,4) || '玩家'}`;
+                    await this.joinGame(this.gameCode, defaultPlayerName);
                 } else {
                     this.error = response.data.error || '创建房间失败';
+                    this.clearGameData();
                 }
             } catch (err) {
                 this.error = err.response?.data?.error || err.message || '创建房间请求错误';
+                this.clearGameData();
             } finally {
                 this.loading = false;
             }
@@ -81,10 +105,10 @@ export const useGameStore = defineStore('game', {
             try {
                 const response = await apiService.joinGame(gameCode, playerName);
                 if (response.data.success) {
-                    this._updateStateFromResponse(response.data); // game_id, player_session_id等
-                    this.gameCode = gameCode; // 确保gameCode被设置
+                    this._updateStateFromResponse(response.data);
+                    this.gameCode = gameCode; 
                     localStorage.setItem('currentGameCode', this.gameCode);
-                    await this.fetchGameState(true); // 加入后立即获取一次状态
+                    await this.fetchGameState(true);
                     this.startPolling();
                 } else {
                     this.error = response.data.error || '加入房间失败';
@@ -96,12 +120,17 @@ export const useGameStore = defineStore('game', {
             }
         },
         async startGame() {
-            if (!this.gameId) return;
+            if (!this.gameId || !this.canStartGame) { // 增加对canStartGame的检查
+                this.error = "不满足开始游戏条件或权限不足。";
+                return;
+            }
             this.loading = true; this.error = null;
             try {
                 const response = await apiService.startGame(this.gameId);
                 if (response.data.success) {
-                    await this.fetchGameState(true); // 开始后立即获取状态，此时应有牌
+                    // 后端会将游戏状态变为 'playing' 并发牌
+                    // fetchGameState 会更新 myCards 和 gameState.status
+                    await this.fetchGameState(true);
                 } else {
                     this.error = response.data.error || '开始游戏失败';
                 }
@@ -113,19 +142,16 @@ export const useGameStore = defineStore('game', {
         },
         async fetchGameState(forceUpdateLoading = false) {
             if (!this.gameId) {
-                 this.clearGameData(); // 如果没有gameId，清理状态
+                 this.clearGameData();
                  return;
             }
             if (forceUpdateLoading) this.loading = true;
-            // this.error = null; // 轮询时不清除之前的错误，除非成功
             try {
                 const response = await apiService.getGameState(this.gameId);
                 if (response.data.success) {
                     this._updateStateFromResponse(response.data);
-                    this.error = null; // 成功获取状态后清除错误
+                    this.error = null; 
                     this.lastPollFailed = false;
-
-                    // 如果游戏结束，停止轮询
                     if (this.gameState?.status === 'finished') {
                         this.stopPolling();
                     }
@@ -136,8 +162,6 @@ export const useGameStore = defineStore('game', {
             } catch (err) {
                 this.error = err.response?.data?.error || err.message || '获取游戏状态请求错误';
                 this.lastPollFailed = true;
-                 // 连续多次失败则停止轮询
-                // if (consecutive_failures > 3) this.stopPolling();
             } finally {
                 if (forceUpdateLoading) this.loading = false;
             }
@@ -148,7 +172,7 @@ export const useGameStore = defineStore('game', {
             try {
                 const response = await apiService.submitHand(this.gameId, front, mid, back);
                 if (response.data.success) {
-                    await this.fetchGameState(true); // 提交后立即更新状态
+                    await this.fetchGameState(true);
                 } else {
                     this.error = response.data.error || '提交牌型失败';
                 }
@@ -164,8 +188,10 @@ export const useGameStore = defineStore('game', {
             try {
                 const response = await apiService.resetGameForNewRound(this.gameId);
                 if (response.data.success) {
-                    await this.fetchGameState(true);
-                    this.startPolling(); // 重置后可能需要重新开始轮询
+                    await this.fetchGameState(true); // 获取重置后的状态
+                    if (this.gameState?.status === 'waiting') { // 如果重置到waiting状态
+                        this.startPolling(); // 重新开始轮询等待玩家
+                    }
                 } else {
                     this.error = response.data.error || '重置游戏失败';
                 }
@@ -178,14 +204,14 @@ export const useGameStore = defineStore('game', {
         startPolling() {
             this.stopPolling();
             if (this.gameId) {
-                this.fetchGameState(true); // 立即获取一次
+                this.fetchGameState(false); // 第一次获取时不强制loading，除非之前没有数据
                 this.pollingInterval = setInterval(() => {
                     if (this.gameId && this.gameState?.status !== 'finished' && !this.lastPollFailed) {
                         this.fetchGameState();
                     } else if (this.gameState?.status === 'finished' || this.lastPollFailed) {
-                        this.stopPolling(); // 如果游戏结束或上次轮询失败，则停止
+                        this.stopPolling();
                     }
-                }, 5000); // 每5秒轮询一次
+                }, 5000);
             }
         },
         stopPolling() {
@@ -202,26 +228,21 @@ export const useGameStore = defineStore('game', {
             this.players = [];
             this.myCards = [];
             this.myPlayerId = null;
-            // this.playerSessionId = null; // Session ID 通常应该保留，除非用户明确登出或重置会话
             this.error = null;
             this.loading = false;
             localStorage.removeItem('currentGameId');
             localStorage.removeItem('currentGameCode');
-            // localStorage.removeItem('playerSessionId'); // 考虑是否要清除
         },
-        // 当组件挂载时，尝试恢复游戏状态
         async tryRestoreSession() {
-            if (this.playerSessionId && this.gameId) {
-                console.log("尝试恢复会话和游戏状态...");
+            if (this.playerSessionId && this.gameId) { // 确保 gameId 也存在
                 await this.fetchGameState(true);
-                if (this.isGameActive) {
+                if (this.isGameActive) { // isGameActive 会检查 gameState.status
                     this.startPolling();
-                } else if (this.gameState?.status === 'finished') {
-                    // 如果恢复后发现游戏已结束，则不需要轮询
-                } else {
-                     // 如果恢复失败（例如gameId无效或已过期），清理状态
-                     // this.clearGameData(); // fetchGameState内部会处理错误
+                } else if (!this.gameState){ // 如果 fetchGameState 后 gameState 仍然是 null (例如房间不存在了)
+                    this.clearGameData(); // 清理无效的 gameId 和 gameCode
                 }
+            } else { // 如果 localStorage 中没有 gameId，也清理一下
+                this.clearGameData();
             }
         }
     }
