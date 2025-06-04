@@ -1,22 +1,88 @@
-/* 保证手牌紧贴横排重叠 */
-.card-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  overflow: hidden;
-  padding: 4px 2px;
-  gap: 0; /* 不用gap，用负margin控制重叠 */
-  background: transparent;
-  border: none;
+html, body {
+  height: 100%; 
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  background-color: #006400; /* 深绿色 */
+  color: #e8f5e9; 
+  overflow: hidden; /* 禁止根滚动条 */
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* 单张手牌样式 */
+#app, #app-container.app-flex-container { /* App.vue 的根元素 */
+  min-height: 100vh; 
+  height: 100%; 
+  display: flex; 
+  flex-direction: column;
+  padding: 5px; 
+  box-sizing: border-box; 
+  overflow: hidden; /* 应用容器不滚动 */
+  background-color: transparent;
+}
+
+/* --- 卡片样式 --- */
+.card, .hand-card-item {
+  /* 桌面端基础尺寸 */
+  width: 90px; 
+  height: 126px;
+  border: none; 
+  outline: none;
+  box-sizing: border-box; 
+  border-radius: 6px;
+  background-color: #FFFFFF; 
+  color: #212121;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.15); 
+  transition: transform 0.15s ease-out, margin-left 0.15s ease-out, z-index 0.05s linear;
+  overflow: hidden;
+  padding: 0; 
+  flex-shrink: 0; /* 卡片不被压缩其视觉尺寸 */
+  position: relative; 
+  margin: 0; /* 外边距由父容器的 gap 或负 margin 控制 */
+}
+.card img, .hand-card-item img {
+  display: block; 
+  width: 100%; 
+  height: 100%;
+  object-fit: contain; 
+  pointer-events: none;
+  border-radius: 5px; /* 图片圆角略小于卡片 */
+}
+.card.dragging, .hand-card-item.dragging {
+  opacity: 0.8;
+  transform: scale(1.1) translateY(-5px) rotate(3deg);
+  z-index: 2000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+}
+
+/* --- 卡片容器 (所有墩共用) --- */
+.card-container {
+  display: flex; 
+  flex-direction: row;
+  align-items: center; 
+  overflow: hidden;
+  padding: 4px 2px; /* 容器的左右padding */
+  gap: 0;           /* 重要：重叠效果必须 gap 为0 */
+  background: transparent;
+  border: none;
+  box-sizing: border-box;
+  margin-bottom: 8px; 
+  width: 100%; 
+}
+.card-container.is-empty { background-color: rgba(0, 0, 0, 0.12); display: flex; align-items: center; justify-content: center; }
+.drag-over { border-color: #a5d6a7; border-style: solid; background-color: rgba(129, 199, 132, 0.3); }
+.drop-placeholder { color: #a7ffeb; font-style: italic; text-align: center; width: 100%; font-size: 0.95em; padding: 12px 0; }
+
+/* --- 扑克牌堆叠效果（移动端+桌面） --- */
 .hand-card-item {
   width: 50px;
   height: 70px;
   border-radius: 3px;
   box-shadow: 0 0 2px rgba(0,0,0,0.2);
-  margin-left: -38px; /* 露出12px，可根据实际需求调整 */
+  margin-left: -38px; /* 负值，确保堆叠，数值可根据实际需求调整 */
   position: relative;
   z-index: 1;
   transition: transform 0.1s, z-index 0.1s;
@@ -25,12 +91,9 @@
   overflow: visible;
   cursor: pointer;
 }
-
-/* 第一张牌不重叠 */
 .hand-card-item:first-child { margin-left: 0; }
 
 /* z-index递增，确保后面的牌在上面 */
-.card-container .hand-card-item:nth-child(n) { z-index: auto; }
 .card-container .hand-card-item:nth-child(1) { z-index: 1; }
 .card-container .hand-card-item:nth-child(2) { z-index: 2; }
 .card-container .hand-card-item:nth-child(3) { z-index: 3; }
@@ -50,3 +113,34 @@
   transform: scale(1.08) translateY(-8px);
   z-index: 100;
 }
+
+/* --- 媒体查询：桌面端可使用更大尺寸和不同堆叠宽度 --- */
+@media (min-width: 601px) {
+  .card, .hand-card-item {
+    width: 90px;
+    height: 126px;
+    border-radius: 6px;
+  }
+  .card img, .hand-card-item img { border-radius: 5px; }
+  .hand-card-item {
+    margin-left: -60px; /* 只露出30px，可根据实际需求调整 */
+    height: 126px;
+    width: 90px;
+  }
+  .hand-card-item:first-child { margin-left: 0; }
+}
+
+/* 顶部信息栏 */
+.top-info-bar { 
+  background-color: rgba(0, 0, 0, 0.35); color: #c8e6c9; padding: 4px 5px; 
+  border-radius: 4px; margin-bottom: 6px; display: flex; flex-direction: column; 
+  align-items: stretch; font-size: 0.75em; flex-shrink: 0; gap: 4px; 
+}
+.game-status-mode { width: 100%; text-align: center; margin-bottom: 3px; order: 1;}
+.player-statuses-inline { width: 100%; justify-content: center; display: flex; gap: 5px; font-size: 0.85em; margin: 0 0 3px 0; order: 2;}
+.restart-button-inline { width: 100%; text-align: center; margin-left: 0; order: 3; padding: 6px 10px; font-size: 0.85em;
+  background-color: #004d40; border: 1px solid #00796b; color: #b2dfdb;}
+.restart-button-inline:hover { background-color: #00695c; }
+
+/* 其他全局样式 (按钮, App布局, GameBoard布局等) 请沿用，确保一致性 */
+/* ... (省略) ... */
