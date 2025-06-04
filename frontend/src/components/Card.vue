@@ -1,6 +1,4 @@
-<!-- frontend/src/components/Card.vue -->
 <template>
-  <!-- ... (template 部分不变) ... -->
   <div
     class="card"
     :class="{ dragging: isBeingDraggedVisualState }" 
@@ -15,7 +13,7 @@
 </template>
 
 <script setup>
-// ... (script setup 部分与上一版相同) ...
+// Script部分与之前能成功构建和运行的版本相同
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
@@ -118,7 +116,7 @@ function createCloneIfNeeded() {
         draggedCardCloneNode.style.transition = 'none';
         draggedCardCloneNode.classList.add('dragging'); 
         document.body.appendChild(draggedCardCloneNode);
-        cardElementRef.value.style.opacity = '0.4';
+        if (cardElementRef.value) cardElementRef.value.style.opacity = '0.4';
     }
 }
 function updateClonePosition(currentX, currentY) {
@@ -198,6 +196,7 @@ const suitSymbol = computed(() => {
     const symbols = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
     return symbols[props.card.suit] || '';
 });
+
 </script>
 
 <style scoped>
@@ -209,20 +208,20 @@ const suitSymbol = computed(() => {
   user-select: none;
   width: 60px;
   height: 85px;
-  /* border: 1px solid #ccc; */ /* 移除或注释掉边框 */
-  border: none; /* 明确设置无边框 */
+  /* --- 核心修改：确保无边框 --- */
+  border: none !important; /* 使用 !important 强制覆盖其他可能的边框规则 */
+  outline: none !important; /* 移除可能的轮廓线，有时会被误认为边框 */
+  /* --- 核心修改结束 --- */
   border-radius: 4px;
   background-color: white;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: grab;
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.2); /* 保留阴影，以便在背景上区分 */
-  transition: opacity 0.2s, transform 0.1s ease-out; /* 添加 transform 过渡 */
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+  transition: opacity 0.2s, transform 0.1s ease-out;
 }
-.card.dragging {
-  /* 原始卡片在拖拽开始时 opacity 会被JS调整 */
-}
+/* .card.dragging 样式用于克隆体，在全局或App.vue中定义 */
 .card img {
   max-width: 90%;
   max-height: 90%;
