@@ -9,12 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.0.0",  // 根据你实际安装的版本调整
-    "pinia": "^2.0.0",   // 根据你实际安装的版本调整
-    "vue": "^3.3.0"     // 根据你实际安装的版本调整
+    "axios": "^1.7.2",   اليمن
+    "pinia": "^2.1.7",   
+    "vue": "^3.4.27"     
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.2.0", // 根据你实际安装的版本调整
-    "vite": "^4.4.0"              // 根据你实际安装的版本调整
+    "@vitejs/plugin-vue": "^5.0.5", 
+    "vite": "^5.2.12"              
   }
 }
