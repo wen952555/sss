@@ -1,6 +1,5 @@
 <template>
   <div class="game-setup-panel">
-    <!-- 条件调整：只有当 gameId 和 gameCode 都为空时，才显示创建/加入表单 -->
     <div v-if="!gameStore.gameId && !gameStore.gameCode">
       <h3>创建或加入房间</h3>
       <div class="form-group">
@@ -16,30 +15,37 @@
       <button @click="handleJoinGame" :disabled="gameStore.loading || !gameCodeToJoin.trim()" class="btn-secondary">加入房间</button>
     </div>
 
-    <!-- 条件调整：确保 gameId, gameCode 和 gameState.status 都符合条件 -->
-    <div v-if="gameStore.gameId && gameStore.gameCode && gameStore.gameState?.status === 'waiting'">
+    <!-- 修改 v-if 条件，现在基于 gameStore.gameState 和 players 数组来判断是否显示 -->
+    <div v-if="gameStore.gameId && gameStore.gameCode && gameStore.gameState && gameStore.gameState.status === 'waiting'">
       <h3>
         等待玩家加入 - 房间码: 
-        <strong 
-            class="game-code-display" 
-            title="点击复制房间码" 
-            @click="copyGameCode" 
-            v-if="gameStore.gameCode"
-        >
+        <strong class="game-code-display" title="点击复制房间码" @click="copyGameCode" v-if="gameStore.gameCode">
             {{ gameStore.gameCode }}
         </strong>
         <span v-else class="game-code-loading">获取中...</span>
       </h3>
-      <p>将房间码分享给好友邀请他们加入！ (当前 {{ gameStore.players.length }} / {{ gameStore.gameState.max_players }} 人)</p>
-      <p>玩家列表:</p>
-      <ul>
-        <li v-for="player in gameStore.players" :key="player.id">
-            {{ player.name }} 
-            <span v-if="player.is_me">(你)</span>
-            <span v-if="player.order === 1 && !player.is_me">(房主)</span>
-            <span v-if="player.order === 1 && player.is_me">(你, 房主)</span>
-        </li>
-      </ul>
+      <p>
+        将房间码分享给好友邀请他们加入！ 
+        <span v-if="gameStore.gameState.max_players !== undefined">
+            (当前 {{ gameStore.players.length }} / {{ gameStore.gameState.max_players }} 人)
+        </span>
+      </p>
+      
+      <div v-if="gameStore.players && gameStore.players.length > 0">
+          <p>玩家列表:</p>
+          <ul>
+            <li v-for="player in gameStore.players" :key="player.id">
+                {{ player.name }} 
+                <span v-if="player.is_me">(你)</span>
+                <span v-if="player.order === 1 && player.is_me">(房主)</span>
+                <span v-else-if="player.order === 1">(房主)</span>
+            </li>
+          </ul>
+      </div>
+      <p v-else-if="!gameStore.loading">
+          正在加载玩家列表或房间内当前只有您...
+      </p>
+      
       <button
         v-if="gameStore.canStartGame"  
         @click="triggerStartGame" 
@@ -52,8 +58,20 @@
         退出房间
       </button>
     </div>
+    <!-- 当有 gameId 和 gameCode，但 gameState 还在加载中时显示 -->
+    <div v-else-if="gameStore.gameId && gameStore.gameCode && !gameStore.gameState && gameStore.loading">
+        <p class="loading-message">正在加载房间信息...</p>
+    </div>
+    <!-- 当有 gameId 和 gameCode，但 gameState 加载失败或状态不是 waiting -->
+     <div v-else-if="gameStore.gameId && gameStore.gameCode && gameStore.gameState && gameStore.gameState.status !== 'waiting' && gameStore.gameState.status !== 'finished'">
+        <!-- 如果游戏已不在等待状态，GameSetup 组件理论上不应该显示，App.vue 会切换到游戏板 -->
+        <!-- 但这里可以加一个回退，或者提示用户游戏正在进行 -->
+        <p>正在进入游戏房间...</p>
+    </div>
+
+
     <div v-if="gameStore.error && !gameStore.loading" class="error-message">{{ gameStore.error }}</div>
-    <div v-if="gameStore.loading" class="loading-message">操作中，请稍候...</div>
+    <div v-if="!gameStore.gameId && gameStore.loading" class="loading-message">操作中，请稍候...</div> <!-- 只在没有gameId时显示全局loading -->
   </div>
 </template>
 
@@ -66,97 +84,61 @@ const gameCodeToJoin = ref('');
 const playerName = ref(localStorage.getItem('playerName') || `玩家${Math.random().toString(36).substring(2, 6)}`);
 
 async function handleCreateGame() {
-  // console.log("[GameSetup.vue] handleCreateGame called. Player name:", playerName.value);
   if (!playerName.value.trim()) { alert('请输入你的昵称！'); return; }
   localStorage.setItem('playerName', playerName.value.trim());
-  await gameStore.createGame(); // 默认4人
-  // console.log("[GameSetup.vue] gameStore.createGame() finished. Game ID:", gameStore.gameId, "Game Code:", gameStore.gameCode, "Error:", gameStore.error);
+  await gameStore.createGame();
 }
-
 async function handleJoinGame() {
-  // console.log("[GameSetup.vue] handleJoinGame called. Game code:", gameCodeToJoin.value, "Player name:", playerName.value);
   if (!gameCodeToJoin.value.trim()) { alert('请输入房间码！'); return; }
   if (!playerName.value.trim()) { alert('请输入你的昵称！'); return; }
   localStorage.setItem('playerName', playerName.value.trim());
   await gameStore.joinGame(gameCodeToJoin.value.trim(), playerName.value.trim());
-  // console.log("[GameSetup.vue] gameStore.joinGame() finished. Game ID:", gameStore.gameId, "Game Code:", gameStore.gameCode, "Error:", gameStore.error);
 }
-
-async function triggerStartGame() {
-    // console.log("[GameSetup.vue] triggerStartGame called.");
-    await gameStore.startGame();
-    // console.log("[GameSetup.vue] gameStore.startGame() finished. Error:", gameStore.error);
-}
-
-async function handleLeaveGame() {
-    // console.log("[GameSetup.vue] handleLeaveGame called.");
-    await gameStore.leaveGame();
-    // console.log("[GameSetup.vue] gameStore.leaveGame() finished. Error:", gameStore.error);
-}
-
+async function triggerStartGame() { await gameStore.startGame(); }
+async function handleLeaveGame() { await gameStore.leaveGame(); }
 async function copyGameCode() {
   if (!gameStore.gameCode) return;
-  try {
-    await navigator.clipboard.writeText(gameStore.gameCode);
-    alert(`房间码 "${gameStore.gameCode}" 已复制到剪贴板！`);
-  } catch (err) {
-    alert('复制房间码失败，请手动复制。');
-    console.error('无法复制房间码:', err);
-  }
+  try { await navigator.clipboard.writeText(gameStore.gameCode); alert(`房间码 "${gameStore.gameCode}" 已复制!`); } 
+  catch (err) { alert('复制失败'); }
 }
 
-onMounted(() => {
+onMounted(async () => {
     // console.log("[GameSetup.vue] onMounted. GameId:", gameStore.gameId, "GameCode:", gameStore.gameCode, "PlayerSessionId:", gameStore.playerSessionId);
-    // 调整逻辑：如果localStorage中有gameId/gameCode，就尝试恢复会话
-    // tryRestoreSession 内部会调用 fetchGameState，后者会更新 gameState
     if (gameStore.gameId && gameStore.gameCode) {
-        // console.log("[GameSetup.vue] onMounted: Found gameId and gameCode in store, attempting to restore session.");
-        gameStore.tryRestoreSession();
+        // 如果 gameState 不存在，或者 gameState 的 id 与 store 中的 gameId 不匹配，则尝试恢复
+        if (!gameStore.gameState || (gameStore.gameState.id !== parseInt(gameStore.gameId))) {
+            // console.log("[GameSetup.vue] onMounted: Attempting to restore session due to missing or mismatched gameState.");
+            await gameStore.tryRestoreSession();
+        } else if (gameStore.isGameActive && !gameStore.pollingInterval) {
+            // 如果状态是活跃的但轮询未启动
+            // console.log("[GameSetup.vue] onMounted: Game is active, ensuring polling is started.");
+            gameStore.startPolling();
+        }
     } else {
-        // console.log("[GameSetup.vue] onMounted: No gameId or gameCode in store, clearing data.");
-        gameStore.clearGameData(); // 确保在没有gameId时状态是干净的
+        // console.log("[GameSetup.vue] onMounted: No gameId or gameCode in store, ensuring data is cleared.");
+        gameStore.clearGameData();
     }
 });
 </script>
 
 <style scoped>
-/* 样式与上一版相同，此处省略 */
+/* 样式与上一版相同 */
 .game-setup-panel { background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
 .form-group input[type="text"] { width: calc(100% - 22px); padding: 10px; border: 1px solid #ced4da; border-radius: 4px; }
 button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; margin-right: 10px; transition: background-color 0.2s ease; }
-.btn-primary { background-color: #007bff; color: white; }
-.btn-primary:hover { background-color: #0056b3; }
-.btn-secondary { background-color: #6c757d; color: white; }
-.btn-secondary:hover { background-color: #545b62; }
-.btn-start-game { background-color: #28a745; color: white; }
-.btn-start-game:hover { background-color: #1e7e34; }
-.btn-leave { background-color: #dc3545; color: white; }
-.btn-leave:hover:not(:disabled) { background-color: #c82333; }
+.btn-primary { background-color: #007bff; color: white; } .btn-primary:hover { background-color: #0056b3; }
+.btn-secondary { background-color: #6c757d; color: white; } .btn-secondary:hover { background-color: #545b62; }
+.btn-start-game { background-color: #28a745; color: white; } .btn-start-game:hover { background-color: #1e7e34; }
+.btn-leave { background-color: #dc3545; color: white; } .btn-leave:hover:not(:disabled) { background-color: #c82333; }
 button:disabled { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; }
 hr { margin: 20px 0; border-top: 1px solid #dee2e6; }
-.game-code-display {
-  font-family: monospace;
-  background-color: #d1ecf1;
-  padding: 3px 8px;
-  border-radius: 4px;
-  color: #0c5460;
-  font-size: 1.1em;
-  cursor: pointer;
-  border: 1px solid #bee5eb;
-  transition: background-color 0.2s;
-}
-.game-code-display:hover {
-  background-color: #b8e2eb; /* 更明显的hover效果 */
-}
-.game-code-loading {
-  font-style: italic;
-  color: #666;
-}
+.game-code-display { font-family: monospace; background-color: #d1ecf1; padding: 3px 8px; border-radius: 4px; color: #0c5460; font-size: 1.1em; cursor: pointer; border: 1px solid #bee5eb; transition: background-color 0.2s; }
+.game-code-display:hover { background-color: #b8e2eb; }
+.game-code-loading { font-style: italic; color: #666; }
 .error-message, .loading-message { margin-top: 15px; padding: 10px; border-radius: 4px; }
 .error-message { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;}
 .loading-message { background-color: #cce5ff; color: #004085; border: 1px solid #b8daff;}
-ul { padding-left: 20px; }
-li { margin-bottom: 5px; }
+ul { padding-left: 20px; } li { margin-bottom: 5px; }
 </style>
