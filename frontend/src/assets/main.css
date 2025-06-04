@@ -1,51 +1,87 @@
 /* frontend/src/assets/main.css */
-/* ... (html, body, #app 等其他全局样式保持不变) ... */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  background-color: #006400; /* 深绿色背景 */
+  color: #e8f5e9;
+  overflow: hidden; 
+  -webkit-tap-highlight-color: transparent;
+}
 
-.card {
-  width: 90px; 
-  height: 126px;
-  
-  border: none !important; 
-  outline: none !important;
-  box-sizing: border-box; 
-  
-  border-radius: 6px;
-  background-color: #FFFFFF; /* 卡片背景用纯白，确保与图片内容区的白色一致 */
-  color: #212121;
+#app, .app-flex-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: grab;
-  user-select: none;
-  box-shadow: none !important; /* 彻底移除阴影 */
-  overflow: hidden; /* 非常重要，配合下面的图片缩放 */
-  padding: 0; /* 移除所有内边距，让图片尝试完全填充 */
+  flex-direction: column;
+  height: 100vh; 
+  max-height: 100vh; /* 防止内容溢出导致滚动 */
+  padding: 5px; /* 页面边缘留白 */
+  box-sizing: border-box;
+  overflow: hidden; /* 应用本身不滚动 */
 }
+
+/* --- 卡片样式 --- */
+.card {
+  /* 尺寸调整 - 桌面端再次增大 */
+  width: 90px; 
+  height: 126px; /* 保持约 2.5:3.5 的比例 */
+  
+  /* --- 强制移除任何可能的边框或轮廓 --- */
+  border: 0px solid transparent !important; /* 边框宽度为0，颜色透明 */
+  outline-style: none !important; /* 确保没有轮廓线 */
+  outline-width: 0px !important;
+  box-sizing: border-box !important; 
+  
+  border-radius: 6px !important; /* 圆角 */
+  background-color: #FFFFFF !important; /* 卡片背景纯白 */
+  color: #212121 !important; /* 卡片上文字用深色 */
+  
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  cursor: grab !important;
+  user-select: none !important;
+  
+  /* --- 彻底移除阴影 --- */
+  box-shadow: none !important; 
+  
+  transition: transform 0.1s ease-out !important; /* 保留拖拽时的变换过渡 */
+  overflow: hidden !important; /* 再次强调，防止子元素溢出 */
+  padding: 0 !important; /* 移除所有内边距，让图片直接贴合 */
+  margin: 2px !important; /* 卡片之间的外边距 */
+}
+
 .card img {
-  display: block;
-  /* 关键技巧：让图片比卡片容器稍微大一点点，然后通过卡片的 overflow:hidden 裁掉边缘 */
-  width: 102%; /* 比 100% 略大 */
-  height: 102%;/* 比 100% 略大 */
-  object-fit: contain; /* 仍然保持比例 */
-  pointer-events: none;
-  /* 如果图片有圆角，并且卡片也有圆角，这里的圆角应该与卡片匹配或略小 */
-  /* border-radius: 5px; */ 
-  /* transform: scale(1.02); */ /* 另一种放大图片的思路，但 width/height 102% 更直接 */
+  display: block !important;
+  width: 100% !important; /* 图片宽度充满卡片 */
+  height: 100% !important; /* 图片高度充满卡片 */
+  object-fit: contain !important; /* 保持图片比例并完整显示在容器内 */
+  pointer-events: none !important;
+  /* 图片本身不应有边框或背景，如果SVG有，需要从SVG源文件修改 */
+  border-radius: 5px !important; /* 让图片圆角略小于或等于卡片圆角 */
 }
-/* ... (其他所有样式，如 .card-container, 按钮, 布局等，保持与上一版能成功构建的一致或根据您的喜好调整) ... */
+
+.card.dragging { /* 这个 class 是JS动态添加给拖拽克隆体的 */
+  opacity: 0.8 !important;
+  transform: scale(1.1) rotate(3deg) !important;
+  /* box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important; */ /* 拖拽时阴影也禁用 */
+  z-index: 2000 !important;
+}
 
 /* --- 卡片容器 --- */
+/* ... (卡片容器样式与上一版基本保持不变，确保其背景和边框与卡片有区分度) ... */
 .card-container {
-  display: flex; flex-wrap: wrap; gap: 6px; min-height: calc(126px + 12px);
-  border: 1px dashed rgba(255, 255, 255, 0.2); padding: 6px; border-radius: 5px;
+  display: flex; flex-wrap: wrap; gap: 5px; min-height: calc(126px + 10px); /* 基于新卡片高度 */
+  border: 1px dashed rgba(255, 255, 255, 0.2); padding: 5px; border-radius: 5px;
   position: relative; align-items: flex-start; justify-content: flex-start;
-  background-color: rgba(0, 0, 0, 0.1); margin-bottom: 10px; width: 100%; box-sizing: border-box;
+  background-color: rgba(0, 0, 0, 0.1); margin-bottom: 8px; width: 100%; box-sizing: border-box;
 }
 .card-container.is-empty { background-color: rgba(0, 0, 0, 0.12); display: flex; align-items: center; justify-content: center; }
 .drag-over { border-color: #a5d6a7 !important; border-style: solid !important; background-color: rgba(129, 199, 132, 0.3) !important; }
-.drop-placeholder { color: #a7ffeb; font-style: italic; text-align: center; width: 100%; font-size: 0.95em; padding: 12px 0; }
+.drop-placeholder { color: #a7ffeb; font-style: italic; text-align: center; width: 100%; font-size: 0.9em; padding: 10px 0; }
+
 
 /* --- 按钮和输入框通用样式 --- */
+/* ... (与上一版一致，确保对比度) ... */
 button { background-color: #1b5e20; color: #e8f5e9; padding: 10px 16px; margin: 5px;
   border: 1px solid #003300; border-radius: 4px; cursor: pointer; font-size: 1em;
   box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: background-color 0.2s, box-shadow 0.2s; }
@@ -56,7 +92,9 @@ input[type="text"] { padding: 8px; margin: 5px; border-radius: 4px; border: 1px 
   background-color: rgba(0,0,0,0.15); color: #e8f5e9; }
 input[type="text"]::placeholder { color: rgba(255,255,255,0.5); }
 
+
 /* --- App.vue 布局 --- */
+/* ... (与上一版一致) ... */
 .global-error { margin-bottom: 10px; flex-shrink: 0; }
 .game-area { background-color: transparent; border-radius: 6px; display: flex; flex-direction: column; overflow: hidden; flex-grow: 1; }
 .app-flex-grow { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
@@ -72,7 +110,9 @@ input[type="text"]::placeholder { color: rgba(255,255,255,0.5); }
     flex-grow: 1; display: flex; align-items: center; justify-content: center; }
 .error { background-color: #d32f2f; color: #ffcdd2; padding: 10px; border-radius: 4px; margin-bottom: 10px; border: 1px solid #c62828; }
 
+
 /* GameBoard.vue 内部组件的样式 */
+/* ... (与上一版一致) ... */
 .game-board-container { padding: 5px 2px; display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
 .player-area { margin-bottom: 8px; display: flex; flex-direction: column; flex-grow: 1;
   overflow-y: auto; padding: 5px 2px; -webkit-overflow-scrolling: touch; gap: 8px; }
@@ -91,26 +131,27 @@ input[type="text"]::placeholder { color: rgba(255,255,255,0.5); }
 .ai-hand-showdown h4 { color: #81d4fa; }
 .ai-hand-showdown .card-container { background-color: rgba(0,0,0,0.12); }
 
-
 /* 媒体查询，针对手机等小屏幕 */
 @media (max-width: 768px) {
-  .card { width: 70px; height: 98px; border-radius: 5px; padding: 1px; /* 手机上更小的 padding */ }
-  .card img { width: calc(100% - 2px); height: calc(100% - 2px); }
-  .card-container { min-height: calc(98px + 10px); gap: 5px; padding: 5px; }
-  .initial-hand-area .card-container { min-height: calc(98px * 2 + 5px + 10px); }
-  .top-info-bar { font-size: 0.85em; }
-  .submit-hand-button { font-size: 0.95em; padding: 9px 15px; }
+  .card { width: 70px !important; height: 98px !important; border-radius: 5px !important; padding: 0 !important; }
+  .card img { border-radius: 4px !important; } /* 配合卡片圆角 */
+  .card-container { min-height: calc(98px + 10px) !important; gap: 5px !important; padding: 5px !important; }
+  .initial-hand-area .card-container { min-height: calc(98px * 2 + 5px + 10px) !important; }
+  .top-info-bar { font-size: 0.85em !important; }
+  .submit-hand-button { font-size: 0.95em !important; padding: 9px 15px !important; }
 }
 @media (max-width: 480px) {
   .card {
-    width: calc(100% / 6 - 4px); /* 尝试一行放6张 */
-    min-width: 50px; /* 最小宽度调整 */
-    max-width: 65px;
-    border-radius: 3px;
-    padding: 1px; /* 确保有padding */
+    width: calc(100% / 6 - 4px) !important; /* 手机上一行6张 */
+    min-width: 50px !important; 
+    max-width: 65px !important; /* 调整最大宽度 */
+    height: auto !important; /* 高度自适应 */
+    aspect-ratio: 2.5 / 3.5 !important; /* 保持比例 */
+    border-radius: 3px !important;
+    padding: 0 !important;
   }
-  .card img { width: calc(100% - 2px); height: calc(100% - 2px); }
-  .card-container { min-height: calc(70px + 8px); gap: 3px; padding: 4px; }
-  .initial-hand-area .card-container { min-height: calc(70px * 2 + 3px + 8px); }
-  .top-info-bar { font-size: 0.75em; }
+  .card img { border-radius: 2px !important; }
+  .card-container { min-height: calc(70px + 8px) !important; gap: 3px !important; padding: 4px !important; }
+  .initial-hand-area .card-container { min-height: calc(70px * 2 + 3px + 8px) !important; }
+  .top-info-bar { font-size: 0.75em !important; }
 }
