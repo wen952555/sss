@@ -1,37 +1,63 @@
 .card-container {
   display: flex;
   flex-direction: row;
-  flex-wrap: nowrap;
   align-items: center;
+  /* 重点！ */
+  flex-wrap: nowrap;
   overflow: hidden;
-  position: relative;
   width: 100%;
-  --card-count: 13; /* 这里记得用js或模板赋为实际牌数 */
-  min-height: 80px; /* 适配牌高 */
+  min-width: 0;
+  background: transparent;
+  padding: 4px 2px;
+  box-sizing: border-box;
+  --card-overlap: -42px;    /* 负值，决定重叠多少，实际可调，比如 -40~-48px */
 }
 
-/* 保持卡片尺寸不变 */
+/* 保持卡片尺寸不变，重叠显示 */
 .hand-card-item {
-  width: 50px;
-  height: 70px;
+  width: 50px;          /* 牌宽 */
+  height: 70px;         /* 牌高 */
   border-radius: 4px;
   background: #fff;
   box-shadow: 0 0 2px rgba(0,0,0,0.2);
-  display: flex; justify-content: center; align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: relative;
   z-index: 1;
   transition: transform 0.1s, z-index 0.1s;
   flex-shrink: 0;
-  margin-left: calc(
-    var(--card-count, 13) > 1
-      ? max(-1 * ((100% - 50px) / (var(--card-count, 13) - 1)), -44px)
-      : 0
-  );
+  margin-left: var(--card-overlap);
 }
 .hand-card-item:first-child { margin-left: 0; }
 
-/* 提升悬浮效果 */
+/* z-index递增，确保牌堆叠时后面的在最上 */
+.card-container .hand-card-item:nth-child(1) { z-index: 1; }
+.card-container .hand-card-item:nth-child(2) { z-index: 2; }
+.card-container .hand-card-item:nth-child(3) { z-index: 3; }
+.card-container .hand-card-item:nth-child(4) { z-index: 4; }
+.card-container .hand-card-item:nth-child(5) { z-index: 5; }
+.card-container .hand-card-item:nth-child(6) { z-index: 6; }
+.card-container .hand-card-item:nth-child(7) { z-index: 7; }
+.card-container .hand-card-item:nth-child(8) { z-index: 8; }
+.card-container .hand-card-item:nth-child(9) { z-index: 9; }
+.card-container .hand-card-item:nth-child(10) { z-index: 10; }
+.card-container .hand-card-item:nth-child(11) { z-index: 11; }
+.card-container .hand-card-item:nth-child(12) { z-index: 12; }
+.card-container .hand-card-item:nth-child(13) { z-index: 13; }
+
+/* 鼠标悬浮时效果 */
 .hand-card-item:hover {
   transform: scale(1.08) translateY(-8px);
   z-index: 100;
+}
+
+/* 桌面端大牌可选 */
+@media (min-width: 601px) {
+  .card-container { --card-overlap: -60px; }
+  .hand-card-item {
+    width: 90px;
+    height: 126px;
+    border-radius: 6px;
+  }
 }
