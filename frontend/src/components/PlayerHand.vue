@@ -14,6 +14,7 @@
         'is-empty': cards.length === 0,
         'fan-layout': layoutMode === 'fan' && cards.length > 0 
       }"
+      ref="cardContainerRef" 
     >
       <CardComponent
         v-for="(cardItem, index) in cards" :key="cardItem.id"
@@ -32,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'; // Added watch
 import CardComponent from './Card.vue';
 
 const props = defineProps({
@@ -41,8 +42,7 @@ const props = defineProps({
   draggableCards: { type: Boolean, default: false },
   droppable: { type: Boolean, default: true },
   segmentName: { type: String, required: true },
-  // 新增 prop，用于外部控制布局模式，或者内部通过媒体查询判断
-  initialLayoutMode: { type: String, default: 'flat' } // 'flat' or 'fan'
+  initialLayoutMode: { type: String, default: 'flat' }
 });
 
 const emit = defineEmits([
@@ -54,106 +54,94 @@ const emit = defineEmits([
 
 const isDragOverDesktop = ref(false);
 const handContainerElement = ref(null);
-const layoutMode = ref(props.initialLayoutMode); // 初始布局模式
+const cardContainerRef = ref(null); // Ref for the card container
+const layoutMode = ref(props.initialLayoutMode);
 
-// --- 扇形布局计算 ---
-// 这些参数可以根据喜好调整
-const FAN_MAX_ANGLE_SPREAD = 60; // 整个扇形的最大展开角度 (e.g., 60度)
-const FAN_CARD_OVERLAP_OFFSET_X = -25; // 卡片在X轴上的重叠量 (负值表示重叠)
-const FAN_CARD_OFFSET_Y_ARC = 10; // 卡片Y轴偏移，形成弧度
+// --- 扇形布局参数 (这些值需要仔细调整以达到期望效果) ---
+const FAN_TOTAL_ANGLE_SPREAD = 30;    // 整个扇形的最大角度 (例如 30-45 度)
+const FAN_CARD_ROTATION_STEP = 3;    // 如果不用总角度，可以设置每张牌的旋转步长
+const FAN_CARD_X_OFFSET = 25;        // 卡片在X轴上的偏移量 (决定重叠程度, 原始卡片宽度的一部分)
+const FAN_CARD_Y_OFFSET_ARC_PEAK = 15; // 扇形顶点（中间的牌）的Y轴向上偏移量，形成弧度
+const FAN_Z_INDEX_BASE = 10;         // z-index 基础值
 
 function getFanCardStyle(index, totalCards) {
   if (totalCards <= 1) {
-    return { transform: 'rotate(0deg) translateY(0px)', zIndex: index };
+    return { transform: 'translateX(0px) rotate(0deg) translateY(0px)', zIndex: FAN_Z_INDEX_BASE + index };
   }
-  // 计算每张卡片相对于中心卡片的旋转角度
-  // 中心卡片的索引是 (totalCards - 1) / 2
-  // 角度从 -FAN_MAX_ANGLE_SPREAD / 2 到 FAN_MAX_ANGLE_SPREAD / 2 分布
-  const anglePerCard = FAN_MAX_ANGLE_SPREAD / (totalCards -1);
-  const rotation = (index - (totalCards - 1) / 2) * anglePerCard;
-  
-  // 计算Y轴偏移，形成弧形 (简单的sin曲线)
-  // const मध्यबिंदु = (totalCards - 1) / 2;
-  // const normalizedIndex = index - मध्यबिंदु; // -n/2 to n/2
-  // const yOffset = FAN_CARD_OFFSET_Y_ARC * Math.sin((normalizedIndex / मध्यबिंदु) * (Math.PI / 2));
-  // 更简单的Y轴偏移，让中间的牌靠下一点点
-  const yOffsetFactor = Math.abs(index - (totalCards - 1) / 2);
-  const yOffset = yOffsetFactor * - (FAN_CARD_OFFSET_Y_ARC / (totalCards/2)) ; // 中间最低
 
-  // 计算X轴偏移以实现重叠
-  // 这个计算比较复杂，简单的重叠可以通过CSS的负margin或这里的translateX实现
-  // 这里用一个简化的方式，让卡片基于旋转点稍微平移以靠近
-  // const xOffset = (index - (totalCards - 1) / 2) * FAN_CARD_OVERLAP_OFFSET_X * (Math.abs(rotation) / (FAN_MAX_ANGLE_SPREAD / 2)) ;
-  // 如果只是想让它们在旋转后自然靠近，可以不加 xOffset，或者只加一个小的固定值
+  const मध्यबिंदु = (totalCards - 1) / 2; // 中心卡片的索引 (可以是小数)
+  const distanceFromCenter = index - मध्यबिंदु; // 当前卡片与中心的距离 (-n/2 to n/2)
+
+  // 1. 计算旋转角度
+  let rotation = distanceFromCenter * FAN_CARD_ROTATION_STEP;
+  // 或者，如果想让整个扇形固定在一个总角度内：
+  // const anglePerCard = FAN_TOTAL_ANGLE_SPREAD / (totalCards -1);
+  // rotation = distanceFromCenter * anglePerCard;
+  
+  // 2. 计算X轴平移 (基于卡片宽度和重叠量)
+  // FAN_CARD_X_OFFSET 应该是实际px值，或者基于卡片宽度的百分比
+  // 假设卡片宽度是 W, 我们想让每张牌露出 W * (1 - overlap_percentage)
+  // 这里 FAN_CARD_X_OFFSET 代表每张牌相对前一张牌的偏移
+  const translateX = distanceFromCenter * FAN_CARD_X_OFFSET;
+
+  // 3. 计算Y轴平移 (形成弧形)
+  // 使用抛物线或正弦函数使中间的牌最低（或最高，取决于你想要的弧形）
+  // (distanceFromCenter / मध्यबिंदु)^2 会得到一个 0 到 1 的值 (中心为0，边缘为1)
+  // 我们希望中间的牌Y偏移最大（如果是向上拱起）或最小（如果是向下凹陷）
+  // 这里我们让边缘的牌Y偏移大，中间的牌Y偏移小（更靠下）
+  let translateY = 0;
+  if (मध्यबिंदु !== 0) { // 避免除以0
+      // (distanceFromCenter / मध्यबिंदु) 的平方，范围 0 (中心) 到 1 (边缘)
+      // 我们希望中间的牌translateY小（更靠下），边缘的牌translateY大（更靠上）
+      // 或者反过来，让中间的牌translateY大（更靠上）
+      translateY = FAN_CARD_Y_OFFSET_ARC_PEAK * (1 - Math.pow(distanceFromCenter / (totalCards/2), 2));
+      // 为了让中间的牌更靠上，形成您图中的弧度，应该是：
+      translateY = -FAN_CARD_Y_OFFSET_ARC_PEAK * (1 - Math.abs(distanceFromCenter / (totalCards/2))); // 负值向上
+      // 或者更简单的抛物线，让边缘的牌向上偏移
+      translateY = Math.pow(distanceFromCenter, 2) * (FAN_CARD_Y_OFFSET_ARC_PEAK / Math.pow(totalCards/2, 2)) * -0.5; // 调整系数
+      // 尝试更符合图中效果的：中间的牌在最下方（Y偏移最小或为0），两边的牌向上抬起并旋转
+      // Y偏移基于到中心的距离的平方，越远越高
+      const normalizedDistSq = Math.pow(distanceFromCenter / (totalCards / 2), 2); // 0 at center, 1 at edges
+      translateY = -FAN_CARD_Y_OFFSET_ARC_PEAK * normalizedDistSq; // 负值向上
+
+  }
+
+
+  // 4. 计算 z-index，让中间的牌在最上面，或者边缘的牌在最上面
+  // 这里让边缘的牌在下面，中间的牌在上面
+  const zIndex = FAN_Z_INDEX_BASE + totalCards - Math.abs(Math.round(distanceFromCenter));
 
   return {
-    transform: `rotate(${rotation}deg) translateY(${yOffset}px)`,
-    // transform: `translateX(${xOffset}px) rotate(${rotation}deg) translateY(${yOffset}px)`,
-    zIndex: index, // 控制叠放顺序，中间的牌在上面或边缘的牌在上面
+    transform: `translateX(${translateX}px) translateY(${translateY}px) rotate(${rotation}deg)`,
+    zIndex: zIndex,
+    // 如果卡片容器的 align-items 是 flex-end, bottom:0 可能不需要了
+    // position: 'absolute', // 这个由 .fan-layout .card 在 CSS 中设置
+    // bottom: '5px', // 也在 CSS 中设置
   };
 }
 
-
-// --- 响应式布局切换 ---
+// --- 响应式布局切换 (与上一版相同) ---
 const mediaQueryList = ref(null);
 function checkLayoutMode() {
-  if (window.matchMedia("(max-width: 600px)").matches) {
+  if (window.matchMedia("(max-width: 768px)").matches) { // 将断点调整为768px
     layoutMode.value = 'fan';
   } else {
     layoutMode.value = 'flat';
   }
-  // console.log(`Segment ${props.segmentName} layout mode: ${layoutMode.value}`);
 }
-
 onMounted(() => {
-  checkLayoutMode(); // 初始检查
-  mediaQueryList.value = window.matchMedia("(max-width: 600px)");
+  checkLayoutMode();
+  mediaQueryList.value = window.matchMedia("(max-width: 768px)");
   mediaQueryList.value.addEventListener('change', checkLayoutMode);
 });
-
 onBeforeUnmount(() => {
   if (mediaQueryList.value) {
     mediaQueryList.value.removeEventListener('change', checkLayoutMode);
   }
 });
 
-
-// --- 桌面拖拽和自定义事件透传 (与上一版相同) ---
+// --- 拖拽事件处理 (与上一版相同) ---
 function onDesktopDragOver(event) { /* ... */ 
   if (props.droppable) {
     event.preventDefault(); 
-    event.dataTransfer.dropEffect = 'move'; 
-    isDragOverDesktop.value = true;
-  }
-}
-function onDesktopDragLeave() { /* ... */ 
-  isDragOverDesktop.value = false;
-}
-function onDesktopDrop(event) { /* ... */ 
-  if (props.droppable) {
-    event.preventDefault();
-    isDragOverDesktop.value = false;
-    const cardData = event.dataTransfer.getData('text/plain');
-    if (!cardData) return;
-    try {
-      const card = JSON.parse(cardData);
-      emit('desktopCardDropped', { card, toSegment: props.segmentName });
-    } catch (e) { console.error("Failed to parse dropped card data:", e, cardData); }
-  }
-}
-function passCustomDragStartThrough(payload) { emit('customDragStart', { ...payload, fromSegment: props.segmentName }); }
-function passCustomDragEndThrough(payload) { emit('customDragEnd', payload); }
-function passCustomDragOverSegmentThrough(segmentName) { emit('customDragOverSegment', segmentName); }
-
-</script>
-
-<style scoped>
-/* PlayerHand.vue specific styles, if any */
-.player-hand-container {
-  margin-bottom: 10px;
-  /* background-color: #f0f0f0; */ /* For debugging touch targets if needed */
-  width: 100%; /* 确保容器占满其在GameBoard中的分配空间 */
-  box-sizing: border-box;
-}
-/* .card-container and other styles are now primarily in main.css */
-</style>
+    event.dataTransfer.
