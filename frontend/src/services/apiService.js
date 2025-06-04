@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 后端API基础URL (根据你的Serv00部署路径修改)
-const API_BASE_URL = 'https://9525.ip-ddns.com/thirteen-water-api/api/'; // 注意最后的斜杠
+const API_BASE_URL = 'https://9525.ip-ddns.com/backend/api/'; // 注意最后的斜杠
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
