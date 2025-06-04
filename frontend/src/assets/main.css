@@ -1,11 +1,11 @@
 /* frontend/src/assets/main.css */
-/* ... (之前的 html, body, #app, .top-info-bar, button, input, error, game-area 等样式保持不变) ... */
-/* 为了简洁，这里只展示与卡片、卡片容器和扇形布局相关的核心改动 */
+/* ... (html, body, #app, general card, button, input, layout styles remain largely the same as the last working version) ... */
+/* I will only list the critical changes for fan layout and mobile card size */
 
 /* --- 卡片样式 --- */
 .card {
-  width: 80px !important;  /* 桌面端基础宽度 */
-  height: 112px !important; /* 桌面端基础高度 */
+  width: 100px !important;  /* 桌面端基础宽度 */
+  height: 140px !important; /* 桌面端基础高度 */
   border: none !important; 
   outline: none !important;
   box-sizing: border-box !important; 
@@ -17,12 +17,12 @@
   align-items: center !important;
   cursor: grab !important;
   user-select: none !important;
-  box-shadow: 0px 1px 2px rgba(0,0,0,0.15) !important; /* 恢复一个非常细微的阴影 */
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out !important; /* 过渡平滑些 */
+  box-shadow: none !important; 
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* Smoother transition for fan hover */
   overflow: hidden !important;
   padding: 0 !important; 
-  margin: 0 !important; /* 移除卡片外边距，由容器的gap或扇形布局控制 */
-  position: relative; /* 为扇形布局中的 z-index 和 transform 做准备 */
+  margin: 0 !important; /* Remove margin, positioning handled by JS/absolute for fan */
+  /* position: relative; */ /* This will be overridden by absolute in fan layout */
 }
 .card img {
   display: block !important;
@@ -32,81 +32,91 @@
   pointer-events: none !important;
   border-radius: 5px !important; 
 }
-.card.dragging { /* 这个class由JS动态添加给拖拽克隆体 */
-  opacity: 0.8 !important;
-  transform: scale(1.1) rotate(3deg) !important;
-  z-index: 2000 !important;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
-}
+/* .card.dragging - no change needed here from last working version */
 
 /* --- 卡片容器 --- */
 .card-container {
   display: flex !important; 
-  /* flex-wrap: wrap; */ /* 默认平铺时允许换行，扇形时由JS或特定CSS控制 */
   gap: 5px !important; 
-  min-height: calc(112px + 10px) !important; /* 基于卡片高度 */
+  min-height: calc(140px + 12px) !important;
   border: 1px dashed rgba(255, 255, 255, 0.2) !important; 
-  padding: 8px !important; /* 调整内边距 */
+  padding: 6px !important; 
   border-radius: 5px !important;
   position: relative !important; 
-  align-items: center !important; /* 平铺时卡片垂直居中 */
-  justify-content: center !important; /* 平铺时卡片水平居中 */
+  align-items: center !important; /* Default alignment for flat layout */
+  justify-content: center !important; /* Default alignment for flat layout */
   background-color: rgba(0, 0, 0, 0.1) !important; 
   margin-bottom: 8px !important; 
   width: 100% !important; 
   box-sizing: border-box !important;
-  overflow: hidden; /* 防止扇形牌溢出容器 */
+  overflow: hidden; /* Default to hidden, fan layout might make it visible */
 }
-.card-container.is-empty { /* ... (保持不变) ... */ }
-.drag-over { /* ... (保持不变) ... */ }
-.drop-placeholder { /* ... (保持不变) ... */ }
+/* ... (.card-container.is-empty, .drag-over, .drop-placeholder no change from last working version) ... */
 
 /* --- 扇形布局特定样式 --- */
 .card-container.fan-layout {
-  justify-content: center; /* 扇形通常从中间展开 */
-  align-items: flex-end; /* 卡片底部对齐，形成扇形弧度 */
-  padding-bottom: 20px; /* 给扇形底部留出一些空间 */
-  min-height: 150px; /* 扇形可能需要更高的高度 */
+  display: block !important; /* Override flex for absolute positioning of children */
+  /* justify-content: center;  No longer needed due to block and absolute children */
+  /* align-items: flex-end; */
+  padding-bottom: 10px !important; /* Space for the fan base */
+  min-height: 100px !important; /* Adjust based on card size and arc */
+  position: relative; /* Crucial for absolute positioning of cards */
+  overflow: hidden; /* Clip cards that go too far out if not desired */
 }
 .fan-layout .card {
-  position: absolute; /* 扇形布局中的卡片需要绝对定位 */
-  bottom: 5px; /* 控制卡片在容器底部的偏移 */
-  transform-origin: bottom center; /* 以卡片底部中心为旋转点 */
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 平滑的扇形展开/收起动画 */
-  box-shadow: 0px -2px 5px rgba(0,0,0,0.1); /* 扇形卡片阴影向上 */
+  position: absolute !important; /* Cards are absolutely positioned within .fan-layout */
+  bottom: 0px !important; /* Align to the bottom of the container */
+  left: 50% !important; /* Start from the horizontal center */
+  transform-origin: bottom center !important; /* Rotate around bottom center */
+  /* transform: translateX(-50%); */ /* Initial offset to truly center, JS will add more translateX */
+  box-shadow: 0px -1px 3px rgba(0,0,0,0.1) !important; /* Subtle shadow for fanned cards */
 }
 .fan-layout .card:hover {
-    transform: translateY(-15px) scale(1.05) !important; /* 鼠标悬停时卡片上移并放大 */
-    z-index: 100; /* 确保悬停的卡片在最上面 */
+    /* transform a bit more, ensure translateY is relative to its fanned position */
+    /* The JS calculated transform will be the base */
+    /* This hover effect might need to be applied via JS if transforms conflict heavily */
+    /* For now, let's assume JS sets the base fan transform, and CSS hover adds to it */
+    /* This is tricky: CSS transform on hover will override JS style.transform */
+    /* Best to handle hover transforms in JS for fanned layout if complex */
+    /* z-index: 150 !important; */ /* Ensure hovered card is on top */
 }
 
 
-/* --- 媒体查询，用于切换布局 --- */
-/* 默认是平铺，当屏幕变窄时切换到扇形 */
-/* 您可以调整这个断点，例如 768px 或更小 */
-@media (max-width: 600px) { /* 假设600px是切换到扇形布局的断点 */
+/* 媒体查询，针对手机等小屏幕 */
+@media (max-width: 600px) { /* Breakpoint for fan layout */
   .card {
-    width: 55px !important; /* 手机上扇形卡片的基础宽度 */
-    height: 77px !important;
+    /* Mobile card size for fan - should match PlayerHand.vue FAN_CARD_WIDTH_MOBILE */
+    width: 55px !important; 
+    height: 77px !important; /* Approx 2.5:3.5 */
     border-radius: 4px !important;
   }
-  .card img { border-radius: 3px !important; }
-
-  /* 针对 player-area 内的特定手牌区应用扇形布局 */
-  /* 我们需要在 PlayerHand.vue 中根据条件添加 .fan-layout 类 */
-  /* 或者，如果所有 card-container 在小屏幕都应该扇形： */
-  /* .card-container { */
-  /*   justify-content: center; */
-  /*   align-items: flex-end; */
-  /*   padding-bottom: 15px; */
-  /*   min-height: 120px; */
-  /* } */
-  /* .card-container .card { */ /* 这个选择器会覆盖上面的 .fan-layout .card */
-  /*   position: absolute; */
-  /*   bottom: 3px; */
-  /*   transform-origin: bottom center; */
-  /* } */
+  .card-container { /* General card container on mobile */
+    min-height: calc(77px + 10px) !important;
+    gap: 3px !important;
+    padding: 5px !important;
+  }
+  .initial-hand-area .card-container.fan-layout { /* Specifically the hand area when fanned */
+     min-height: 110px !important; /* Needs enough height for the fan arc */
+  }
+  .initial-hand-area .card-container { /* For flat layout on mobile if breakpoint changes */
+     min-height: calc(77px * 2 + 3px + 10px) !important; 
+  }
+  /* Other mobile adjustments for top-info-bar, buttons etc. from previous version */
+  .top-info-bar { font-size: 0.8em !important; padding: 5px !important; gap: 4px !important; flex-direction: column; align-items: stretch; }
+  .game-status-mode { width: 100%; text-align: center; margin-bottom: 3px; order: 1;}
+  .player-statuses-inline { width: 100%; justify-content: space-around; gap: 5px !important; font-size: 0.85em !important; margin: 0 0 3px 0; order: 2;}
+  .restart-button-inline { width: 100%; text-align: center; margin-left: 0; order: 3; padding: 6px 10px !important; font-size: 0.85em !important;}
 }
 
-/* 其他全局样式，如按钮、输入框、App布局等，请沿用上一版能成功构建的 */
+@media (max-width: 380px) {
+    .card {
+        width: 48px !important;
+        height: 67px !important;
+    }
+    .card-container.fan-layout { min-height: 100px !important; }
+    .card-container { min-height: calc(67px + 8px) !important; }
+    .initial-hand-area .card-container { min-height: calc(67px * 2 + 2px + 8px) !important; }
+}
+
+/* Ensure all other styles from the previous complete main.css are present and have !important */
 /* ... */
