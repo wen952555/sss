@@ -3,13 +3,8 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: sans-serif;
-  /* 将背景色修改为深绿色，例如像扑克桌的绿色 */
-  background-color: #006400; /* 深绿色 (DarkGreen) */
-  /* 或者其他你喜欢的深绿色, 例如:
-     background-color: #004d00; 
-     background-color: #105E26; (一种常见的扑克桌绿)
-  */
-  color: #f0f0f0; /* 默认文字颜色可以改为浅色，以在深色背景上显示 */
+  background-color: #006400;
+  color: #f0f0f0;
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
 }
@@ -18,65 +13,45 @@ html, body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  /* background-color: #e0e0e0; */ /* 移除或注释掉 #app 的浅色背景，让body的深绿色透出来 */
 }
 
-/* --- 卡片和卡片容器样式调整 --- */
+/* 全局的 .card 样式，如果存在，也确保无边框 */
+/* 如果您主要在 Card.vue 中定义 .card 样式，这里的规则可能不需要或可以移除 */
+/* 为了保险起见，也可以在这里设置，但 Card.vue 中的 scoped !important 优先级更高 */
+/*
 .card {
-  width: 60px;
-  height: 85px;
-  border: 1px solid #aaa; /* 边框颜色在深色背景下可能需要更亮一些 */
-  border-radius: 4px;
-  background-color: white; /* 卡片背景保持白色 */
-  color: #333; /* 卡片上的文字颜色保持深色 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: grab;
-  user-select: none;
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.3); /* 阴影可以稍微明显一点 */
-  transition: transform 0.1s ease-out;
+  border: none !important;
+  outline: none !important;
 }
-.card img {
-  max-width: 90%;
-  max-height: 90%;
-  object-fit: contain;
-  pointer-events: none;
-}
-.card.dragging {
-  opacity: 0.7;
-  transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-  z-index: 1000;
-  position: relative;
-}
+*/
 
+/* 卡片容器等其他样式保持不变，但确保它们不添加意外的边框给卡片本身 */
 .card-container {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   min-height: 90px;
-  border: 1px dashed #90a4ae; /* 虚线边框颜色调整 */
+  border: 1px dashed #90a4ae; /* 这是容器的边框，不是卡片的 */
   padding: 8px;
   border-radius: 4px;
   position: relative;
   align-items: flex-start;
   justify-content: flex-start;
-  background-color: rgba(255, 255, 255, 0.1); /* 卡片容器背景可以带一点透明的浅色或无色 */
+  background-color: rgba(255, 255, 255, 0.1);
 }
 .card-container.is-empty {
-  background-color: rgba(0, 0, 0, 0.1); /* 空容器背景，深色背景下的深一点的透明 */
+  background-color: rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .drag-over {
-  border-color: #81c784; /* 亮绿色 */
+  border-color: #81c784;
   border-style: solid;
-  background-color: rgba(102, 187, 106, 0.3); /* 半透明亮绿色 */
+  background-color: rgba(102, 187, 106, 0.3);
 }
 .drop-placeholder {
-  color: #bdbdbd; /* 占位符文字颜色，确保在深色背景上可见 */
+  color: #bdbdbd;
   font-style: italic;
   text-align: center;
   width: 100%;
@@ -84,10 +59,8 @@ html, body {
   padding: 10px 0;
 }
 
-/* --- 其他组件的颜色调整 --- */
 button {
-  /* 按钮颜色可能需要调整以适应深色背景 */
-  background-color: #2e7d32; /* 一种较深的绿色按钮 */
+  background-color: #2e7d32;
   color: white;
   padding: 10px 15px;
   margin: 5px;
@@ -98,10 +71,10 @@ button {
   box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
 }
 button:hover {
-  background-color: #388e3c; /* 悬停时更亮的绿色 */
+  background-color: #388e3c;
 }
 button:disabled {
-  background-color: #555; /* 深灰色禁用按钮 */
+  background-color: #555;
   color: #aaa;
   cursor: not-allowed;
 }
@@ -110,7 +83,175 @@ input[type="text"] {
   padding: 8px;
   margin: 5px;
   border-radius: 4px;
-  border: 1px solid #757575; /* 边框颜色 */
-  background-color: #f5f5f5; /* 输入框背景 */
-  color: #333; /* 输入框文字颜色 */
+  border: 1px solid #757575;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* App.vue specific styles for responsiveness - from previous App.vue style block */
+.app-flex-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100%;
+  /* background-color: #e0e0e0; */ /* 由 body 控制 */
+  padding: 5px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.global-error {
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+.game-area {
+  /* border: 1px solid #90a4ae; */ /* 可以移除，让牌桌直接融入深绿背景 */
+  background-color: transparent;
+  border-radius: 6px; /* 如果还有其他元素，可以保留 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.app-flex-grow {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.top-info-bar {
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #e0e0e0;
+  padding: 6px 10px;
+  border-radius: 4px; /* 如果 game-area 有圆角，这里也可以有 */
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85em;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap:5px;
+}
+.player-status-item strong {
+  color: #fff;
+}
+.restart-button-inline {
+  background-color: #004d40 !important;
+  border: 1px solid #00695c;
+  color: #e0f2f1 !important;
+  padding: 5px 8px !important;
+  font-size: 0.85em !important;
+}
+.restart-button-inline:hover {
+    background-color: #00695c !important;
+}
+.game-board-main-area {
+  margin-top: 0;
+}
+.idle-message, .dealing-message {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.1em;
+    color: #b0bec5;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.error {
+    background-color: #ffccbc;
+    color: #bf360c;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    border: 1px solid #ffab91;
+}
+
+/* GameBoard.vue specific styles - from previous GameBoard.vue style block */
+.game-board-container {
+  padding: 10px 5px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+}
+.player-area {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 5px;
+  -webkit-overflow-scrolling: touch;
+}
+.player-area-flex-fill {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+.dun-area {
+  margin-bottom: 6px;
+}
+.initial-hand-area {
+  margin-bottom: 6px;
+}
+.dun-area-expand .card-container {
+    flex-grow: 1;
+    min-height: 100px;
+}
+.segments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.segments.showdown-view .player-hand-container {
+    background-color: rgba(200, 200, 255, 0.2);
+    border-style: solid;
+    border-color: rgba(255,255,255,0.3);
+}
+.submit-hand-button, .start-game-button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  font-size: 0.95em;
+  align-self: center;
+  width: 70%;
+  max-width: 220px;
+}
+.status-text {
+    text-align: center;
+    margin-top: 10px;
+    color: #e0e0e0;
+    font-style: italic;
+}
+.showdown-area {
+    background-color: rgba(0,0,0,0.1);
+    color: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-y: auto;
+    max-height: 35vh;
+    flex-shrink: 0;
+}
+.showdown-area h3, .showdown-area h4 {
+    color: #fff;
+}
+.comparison-summary p {
+    font-size: 1em;
+}
+.comparison-summary h4 {
+    color: #ffeb3b;
+}
+.ai-hand-showdown h4 {
+    color: #bbdefb;
+}
+.ai-hand-showdown .player-hand-container {
+    background-color: rgba(0,0,0,0.05);
+}
+.message-area {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1em;
+    color: #b0bec5;
+    padding: 15px;
 }
