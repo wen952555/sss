@@ -9,13 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "1.6.8",         // 固定到一个稍早的稳定版本
-    "pinia": "2.1.7",         // 保持这个版本，它比较稳定
-    "vue": "3.3.11",          // Vue 3.3.x 的一个稳定版本
-    "vue-draggable-next": "2.2.1" // 保持这个版本
+    "axios": "1.6.8",
+    "pinia": "2.1.7",
+    "vue": "3.3.11",
+    "vue-draggable-next": "2.2.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "4.5.2", // 对应 Vue 3.3.x 和 Vite 4.x 的一个版本
-    "vite": "4.5.2"                // Vite 4.x 的一个稳定版本
+    "@vitejs/plugin-vue": "4.5.2",
+    "vite": "4.5.2"
   }
 }
