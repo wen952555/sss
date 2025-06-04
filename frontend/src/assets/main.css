@@ -2,348 +2,297 @@
 html, body {
   height: 100%;
   margin: 0;
-  font-family: sans-serif;
-  background-color: #006400; /* 深绿色背景 */
-  color: #f0f0f0;
-  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  background-color: #005020; /* 调整为一个稍微柔和的深绿色 */
+  color: #e8f5e9; /* 默认文字用非常浅的绿色或白色 */
+  overflow: hidden; /* 防止整个页面出现滚动条 */
   -webkit-tap-highlight-color: transparent;
 }
 
-#app {
-  min-height: 100%;
+#app, .app-flex-container {
+  min-height: 100vh; /* 确保占满视口 */
+  height: 100%; /* 强制高度 */
   display: flex;
   flex-direction: column;
+  padding: 5px; /* 整体边距 */
+  box-sizing: border-box;
+  overflow: hidden; /* 应用级别也防止溢出 */
 }
 
-/* --- 卡片样式调整 --- */
+/* --- 卡片样式 --- */
 .card {
-  /* 桌面端的基础尺寸 */
-  width: 75px;  /* 增大基础宽度 */
-  height: 105px; /* 增大基础高度 */
+  /* 尺寸调整 - 使用视口单位配合最大最小值，或固定值 */
+  width: calc(100% / 7 - 6px); /* 尝试让一行能放下约7张牌，减去gap */
+  max-width: 80px;  /* 桌面端最大宽度 */
+  min-width: 55px;  /* 手机端最小宽度 */
+  aspect-ratio: 2.5 / 3.5; /* 保持扑克牌的宽高比 */
+  height: auto; /* 高度由宽度和宽高比决定 */
   
-  /* --- 强制移除边框 --- */
-  border-style: none !important;
-  border-width: 0 !important;
-  border: none !important; 
-  outline: none !important;
+  /* --- 再次强制移除边框 --- */
+  border: 0 none !important; 
+  outline: 0 none !important;
+  box-sizing: border-box; /* 确保 padding 和 border 不增加元素总尺寸 */
   /* --- 强制移除边框结束 --- */
 
-  border-radius: 5px; /* 可以适当增大圆角 */
-  background-color: white;
-  color: #333;
+  border-radius: 6px; /* 圆角 */
+  background-color: #ffffff; /* 卡片背景纯白 */
+  color: #212121; /* 卡片上文字用深色 */
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: grab;
   user-select: none;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.3); /* 阴影可以更明显一些 */
-  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out; /* 添加阴影过渡 */
-  margin: 2px; /* 给卡片之间一点点外边距，避免紧贴 */
+  box-shadow: 0px 1px 3px rgba(0,0,0,0.3), 0px 0px 1px rgba(0,0,0,0.1); /* 精细调整阴影 */
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  /* margin: 1px; /* 移除，使用父容器的 gap */
 }
 .card img {
-  max-width: 92%; /* 图片可以稍微再大一点点 */
-  max-height: 92%;
+  display: block; /* 消除图片下方可能的空白 */
+  width: 90%;
+  height: 90%;
   object-fit: contain;
   pointer-events: none;
-  border-radius: 3px; /* 如果SVG图片本身可能有奇怪的边缘，可以给图片也加个小圆角 */
+  border-radius: 3px; /* 图片自身的圆角，以防SVG边缘问题 */
 }
-.card.dragging { /* 拖拽时的视觉效果 */
-  opacity: 0.8;
-  transform: scale(1.15) rotate(4deg); /* 拖拽时放大和旋转更明显 */
-  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-  z-index: 1000;
-  position: relative;
+/* 拖拽时的视觉效果 */
+.card.dragging { /* 这个 class 是JS动态添加给克隆体的 */
+  opacity: 0.85 !important;
+  transform: scale(1.15) rotate(5deg) !important;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3) !important;
+  z-index: 2000 !important; /* 确保在最上层 */
+  /* position: fixed !important;  由JS控制 */
 }
 
-/* --- 卡片容器样式 --- */
+/* --- 卡片容器 --- */
 .card-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px; /* 卡片之间的间隙 */
-  min-height: 115px; /* 根据新的卡片高度调整 */
-  border: 1px dashed rgba(255, 255, 255, 0.3); /* 容器虚线边框用浅色 */
-  padding: 10px;
+  gap: 4px;
+  min-height: calc(85px + 16px); /* 基于最小卡片高度 + padding 估算 */
+  border: 1px dashed rgba(255, 255, 255, 0.25); /* 容器虚线边框，更柔和 */
+  padding: 8px;
   border-radius: 6px;
   position: relative;
-  align-items: flex-start; /* 卡片从顶部开始对齐 */
-  justify-content: flex-start; /* 卡片从左边开始对齐 */
-  background-color: rgba(0, 0, 0, 0.1); /* 卡片容器背景，深色背景下的深一点的透明 */
-  margin-bottom: 10px; /* 容器之间的间距 */
+  align-items: flex-start;
+  justify-content: flex-start;
+  background-color: rgba(0, 0, 0, 0.08); /* 容器背景，深色背景下的深一点的透明 */
+  margin-bottom: 8px;
 }
 .card-container.is-empty {
-  background-color: rgba(0, 0, 0, 0.15); /* 空容器背景可以更明显一点 */
+  background-color: rgba(0, 0, 0, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.drag-over { /* 拖拽到可放置区域的样式 */
-  border-color: #a5d6a7; /* 更亮的绿色 */
+.drag-over {
+  border-color: #a5d6a7;
   border-style: solid;
-  background-color: rgba(129, 199, 132, 0.4); /* 半透明亮绿色 */
+  background-color: rgba(129, 199, 132, 0.4);
 }
 .drop-placeholder {
-  color: #c5e1a5; /* 占位符文字颜色，确保在深色背景上非常可见 */
+  color: #a7ffeb; /* 占位符文字颜色 */
   font-style: italic;
   text-align: center;
   width: 100%;
-  font-size: 1em; /* 占位符文字大一点 */
-  padding: 15px 0;
+  font-size: 0.9em;
+  padding: 10px 0;
 }
 
-/* --- 按钮和输入框通用样式 --- */
+/* --- 通用按钮等 --- */
 button {
-  background-color: #2e7d32;
-  color: white;
-  padding: 10px 15px;
+  background-color: #1b5e20; /* 更深的绿色按钮 */
+  color: #e8f5e9; /* 浅色文字 */
+  padding: 9px 14px;
   margin: 5px;
-  border: none;
+  border: 1px solid #003300; /* 按钮边框 */
   border-radius: 4px;
   cursor: pointer;
-  font-size: 1em;
-  box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
-  transition: background-color 0.2s;
+  font-size: 0.95em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: background-color 0.2s, box-shadow 0.2s;
 }
 button:hover {
-  background-color: #388e3c;
+  background-color: #2e7d32;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
 }
 button:disabled {
-  background-color: #555;
-  color: #aaa;
+  background-color: rgba(0,0,0,0.2); /* 半透明深灰色禁用按钮 */
+  color: rgba(255,255,255,0.5);
+  border-color: rgba(0,0,0,0.1);
   cursor: not-allowed;
+  box-shadow: none;
 }
 input[type="text"] {
   padding: 8px;
   margin: 5px;
   border-radius: 4px;
-  border: 1px solid #757575;
-  background-color: #f5f5f5;
-  color: #333;
+  border: 1px solid rgba(255,255,255,0.3);
+  background-color: rgba(0,0,0,0.1);
+  color: #e8f5e9;
+}
+input[type="text"]::placeholder {
+  color: rgba(255,255,255,0.5);
 }
 
-/* --- App.vue 布局和样式 --- */
-.app-flex-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  height: 100%;
-  padding: 8px; /* 整体边距 */
-  box-sizing: border-box;
-  overflow: hidden;
-}
-.global-error {
-  margin-bottom: 10px;
-  flex-shrink: 0;
-}
+
+/* --- App.vue 布局 --- */
+.global-error { margin-bottom: 10px; flex-shrink: 0; }
 .game-area {
   background-color: transparent;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  flex-grow: 1; /* 让 game-area 占据剩余空间 */
+  overflow: hidden; /* 重要 */
+  flex-grow: 1;
 }
-.app-flex-grow {
+.app-flex-grow { /* 应用于 game-area 的子元素，如果它们需要填充空间 */
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: 0; /* 允许 flex item 收缩 */
 }
 .top-info-bar {
-  background-color: rgba(0, 0, 0, 0.25); /* 信息栏背景更深一点 */
-  color: #e8f5e9; /* 信息栏文字更亮 */
-  padding: 8px 12px; /* 调整 padding */
+  background-color: rgba(0, 0, 0, 0.3); /* 信息栏背景 */
+  color: #c8e6c9; /* 信息栏文字 */
+  padding: 7px 10px;
   border-radius: 4px;
-  margin-bottom: 10px; /* 与牌桌间距 */
+  margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9em; /* 字体可以稍大一点 */
+  font-size: 0.8em; /* 进一步缩小 */
   flex-shrink: 0;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
-.player-status-item strong {
-  color: #fffde7; /* 玩家名字用更亮的黄色系 */
-}
+.player-status-item strong { color: #fff; }
 .restart-button-inline {
-  background-color: #00695c !important; /* 按钮颜色 */
+  background-color: #004d40 !important;
   border: 1px solid #00796b;
-  color: #c8e6c9 !important; /* 按钮文字颜色 */
-  padding: 6px 10px !important;
-  font-size: 0.9em !important;
+  color: #b2dfdb !important;
+  padding: 5px 8px !important;
+  font-size: 0.85em !important;
 }
-.restart-button-inline:hover {
-    background-color: #00796b !important;
-}
+.restart-button-inline:hover { background-color: #00695c !important; }
 
 /* GameBoard.vue 的主要容器 */
 .game-board-main-area {
   margin-top: 0;
-  flex-grow: 1; /* 让牌桌主体区域填充 game-area 的剩余空间 */
-  display: flex; /* 启用 flex 布局 */
-  flex-direction: column; /* GameBoard 内部也是垂直排列 */
-  overflow: hidden; /* 防止 GameBoard 自身溢出 */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .idle-message, .dealing-message, .message-area {
     text-align: center;
     padding: 20px;
-    font-size: 1.1em;
-    color: #a7ffeb; /* 在深绿色背景上的亮青色提示 */
+    font-size: 1.05em;
+    color: #80cbc4; /* 提示文字颜色 */
     flex-grow: 1;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .error {
-    background-color: #ff8a65; /* 错误提示用更醒目的橙红色 */
-    color: #3e2723; /* 文字用深棕色 */
+    background-color: #e57373; /* 错误提示背景 */
+    color: #212121; /* 错误提示文字 */
     padding: 10px;
     border-radius: 4px;
     margin-bottom: 10px;
-    border: 1px solid #ff7043;
+    border: 1px solid #ef5350;
 }
 
 /* GameBoard.vue 内部组件的样式 */
 .game-board-container {
-  padding: 5px; /* GameBoard 内部边距缩小 */
+  padding: 5px 2px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
   overflow: hidden;
 }
 .player-area {
-  margin-bottom: 10px;
+  margin-bottom: 8px; /* 和提交按钮的间距 */
   display: flex;
   flex-direction: column;
-  flex-grow: 1; /* 让玩家理牌区占据大部分可用空间 */
-  overflow-y: auto;
-  padding: 5px;
+  flex-grow: 1; /* 关键：让理牌区域占据大部分可用空间 */
+  overflow-y: auto; /* 如果墩牌内容过多，允许其内部滚动 */
+  padding: 5px 2px; /* 内部padding */
   -webkit-overflow-scrolling: touch;
-  gap: 8px; /* 各个墩之间的垂直间距 */
+  gap: 6px;
 }
 .dun-area, .initial-hand-area {
   margin-bottom: 0; /* 由 player-area 的 gap 控制 */
 }
-.initial-hand-area .card-container { /* 初始手牌/中墩区域 */
-    flex-grow: 1; /* 允许这个区域在垂直方向上扩展 */
-    min-height: 120px; /* 保持一个合理的最小高度 */
-    align-content: flex-start; /* 当牌换行时，从顶部开始排列 */
+.initial-hand-area .card-container {
+    flex-grow: 1; /* 让这个手牌区能尽可能地扩展 */
+    min-height: 110px; /* 至少能放两行小卡片 */
+    align-content: flex-start;
 }
-.dun-area-expand .card-container { /* 这个 class 可能不再需要，因为上面已经处理了 */
-    /* flex-grow: 1; */
-    /* min-height: 100px; */
-}
-.segments {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.segments.showdown-view .player-hand-container {
-    background-color: rgba(121, 134, 203, 0.2); /* 摊牌时墩背景 */
+
+.segments { display: flex; flex-direction: column; gap: 6px; }
+.segments.showdown-view .card-container { /* 修正选择器 */
+    background-color: rgba(121, 134, 203, 0.15);
     border-style: solid;
-    border-color: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.2);
 }
 .submit-hand-button {
-  margin-top: 15px; /* 与上方牌区的间距 */
-  padding: 10px 18px;
-  font-size: 1em;
-  align-self: center;
-  width: 80%;
-  max-width: 280px; /* 按钮最大宽度 */
-  flex-shrink: 0; /* 防止按钮被压缩 */
+  margin: 10px auto; /* 上下间距，并水平居中 */
+  padding: 9px 16px;
+  font-size: 0.95em;
+  width: auto; /* 根据内容自动宽度 */
+  min-width: 150px; /* 最小宽度 */
+  max-width: 90%; /* 最大宽度不超过父容器90% */
+  flex-shrink: 0;
 }
 .status-text {
     text-align: center;
-    margin-top: 8px;
-    color: #e0e0e0;
+    margin-top: 5px;
+    color: #b2dfdb; /* 浅青色文字 */
     font-style: italic;
+    font-size: 0.85em;
     flex-shrink: 0;
 }
 .showdown-area {
-    background-color: rgba(0,0,0,0.15);
-    color: #f5f5f5;
-    padding: 12px;
+    background-color: rgba(0,0,0,0.2);
+    color: #e0f2f1;
+    padding: 10px;
     border-radius: 4px;
     overflow-y: auto;
-    max-height: 30vh; /* 比牌结果区域最大高度 */
-    flex-shrink: 0; /* 固定高度，不被压缩 */
-    margin-top: auto; /* 将比牌结果推到底部（如果希望如此） */
+    max-height: 28vh; /* 调整最大高度 */
+    flex-shrink: 0;
+    margin-top: auto;
 }
-.showdown-area h3, .showdown-area h4 {
-    color: #fff;
-    margin-top: 0;
-    margin-bottom: 8px;
-}
-.comparison-summary p {
-    font-size: 0.95em; /* 调整字体大小 */
-    margin: 4px 0;
-}
-.comparison-summary h4 {
-    color: #ffee58; /* 赢家高亮 */
-    margin-top: 8px;
-}
-.ai-hand-showdown h4 {
-    color: #90caf9;
-}
-.ai-hand-showdown .card-container {
-    background-color: rgba(0,0,0,0.08);
-}
+.showdown-area h3, .showdown-area h4 { color: #fff; margin-top: 0; margin-bottom: 6px; font-size: 1.1em; }
+.comparison-summary p { font-size: 0.9em; margin: 3px 0; }
+.comparison-summary h4 { color: #fff176; margin-top: 6px; font-size: 1em; }
+.ai-hand-showdown h4 { color: #81d4fa; }
+.ai-hand-showdown .card-container { background-color: rgba(0,0,0,0.1); }
 
 /* 媒体查询，针对手机等小屏幕 */
 @media (max-width: 600px) {
+  #app, .app-flex-container { padding: 3px; }
   .card {
-    width: 50px;
-    height: 70px;
+    width: calc(100% / 7 - 4px); /* 一行大约7张牌 */
+    min-width: 48px; /* 进一步缩小 */
+    max-width: 60px;
     border-radius: 3px;
-    box-shadow: 1px 1px 2px rgba(0,0,0,0.25);
-    margin: 1px;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
   }
   .card-container {
-    min-height: 75px; /* 适应小卡片 */
+    min-height: calc(70px + 10px); /* 适应小卡片 */
     gap: 3px;
-    padding: 6px;
-    margin-bottom: 6px;
+    padding: 5px;
+    margin-bottom: 4px;
   }
-  .initial-hand-area .card-container {
-      min-height: 80px;
-  }
-  .top-info-bar {
-      font-size: 0.75em;
-      padding: 5px 8px;
-      margin-bottom: 6px;
-      gap: 5px;
-  }
-  .player-statuses-inline {
-      gap: 8px;
-  }
-  .restart-button-inline {
-      padding: 4px 8px !important;
-      font-size: 0.8em !important;
-  }
-  .submit-hand-button {
-      font-size: 0.9em;
-      padding: 8px 12px;
-      width: 90%;
-  }
-  .drop-placeholder {
-      font-size: 0.8em;
-      padding: 8px 0;
-  }
-  .showdown-area {
-      padding: 8px;
-      max-height: 35vh;
-  }
-  .showdown-area h3, .showdown-area h4 {
-      font-size: 1em;
-  }
-   .game-board-container {
-      padding: 5px 2px;
-   }
-   .player-area {
-       padding: 2px;
-       gap: 5px;
-   }
-   .segments {
-       gap: 5px;
-   }
+  .initial-hand-area .card-container { min-height: 75px; }
+  .top-info-bar { font-size: 0.7em; padding: 4px 6px; margin-bottom: 5px; gap: 4px; }
+  .player-statuses-inline { gap: 6px; }
+  .restart-button-inline { padding: 3px 6px !important; font-size: 0.75em !important; }
+  .submit-hand-button { font-size: 0.85em; padding: 7px 10px; }
+  .drop-placeholder { font-size: 0.75em; padding: 6px 0; }
+  .showdown-area { padding: 6px; max-height: 30vh; }
+  .showdown-area h3, .showdown-area h4 { font-size: 0.95em; }
+  .game-board-container { padding: 3px 1px; }
+  .player-area { padding: 3px 1px; gap: 4px; }
+  .segments { gap: 4px; }
 }
