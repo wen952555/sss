@@ -1,76 +1,37 @@
 .card-container {
   display: flex;
   flex-direction: row;
-  align-items: center;
   flex-wrap: nowrap;
-  overflow: hidden; /* 禁止横向滚动和换行 */
-  width: 100%;
-  min-width: 0;
-  padding: 4px 2px;
-  box-sizing: border-box;
-  background: transparent;
-  border: none;
-  margin-bottom: 8px;
+  align-items: center;
+  overflow: hidden;
   position: relative;
-  --card-count: 13; /* 由JS或模板层动态设置总牌数 */
-  min-height: 74px;
+  width: 100%;
+  --card-count: 13; /* 这里记得用js或模板赋为实际牌数 */
+  min-height: 80px; /* 适配牌高 */
 }
 
-/* 卡片样式 */
+/* 保持卡片尺寸不变 */
 .hand-card-item {
   width: 50px;
   height: 70px;
-  border-radius: 3px;
+  border-radius: 4px;
+  background: #fff;
   box-shadow: 0 0 2px rgba(0,0,0,0.2);
+  display: flex; justify-content: center; align-items: center;
   position: relative;
   z-index: 1;
-  background: #fff;
-  display: flex; justify-content: center; align-items: center;
-  cursor: pointer;
   transition: transform 0.1s, z-index 0.1s;
   flex-shrink: 0;
-  /* 关键：根据容器宽度和牌数自动计算重叠宽度 */
   margin-left: calc(
     var(--card-count, 13) > 1
-      ? max(-1 * ((100% - 50px) / (var(--card-count, 13) - 1)), -45px)
+      ? max(-1 * ((100% - 50px) / (var(--card-count, 13) - 1)), -44px)
       : 0
   );
 }
 .hand-card-item:first-child { margin-left: 0; }
 
-/* z-index递增 */
-.card-container .hand-card-item:nth-child(n) { z-index: auto; }
-.card-container .hand-card-item:nth-child(1) { z-index: 1; }
-.card-container .hand-card-item:nth-child(2) { z-index: 2; }
-.card-container .hand-card-item:nth-child(3) { z-index: 3; }
-.card-container .hand-card-item:nth-child(4) { z-index: 4; }
-.card-container .hand-card-item:nth-child(5) { z-index: 5; }
-.card-container .hand-card-item:nth-child(6) { z-index: 6; }
-.card-container .hand-card-item:nth-child(7) { z-index: 7; }
-.card-container .hand-card-item:nth-child(8) { z-index: 8; }
-.card-container .hand-card-item:nth-child(9) { z-index: 9; }
-.card-container .hand-card-item:nth-child(10) { z-index: 10; }
-.card-container .hand-card-item:nth-child(11) { z-index: 11; }
-.card-container .hand-card-item:nth-child(12) { z-index: 12; }
-.card-container .hand-card-item:nth-child(13) { z-index: 13; }
-
+/* 提升悬浮效果 */
 .hand-card-item:hover {
   transform: scale(1.08) translateY(-8px);
   z-index: 100;
-}
-
-/* 桌面端大尺寸（宽度、重叠同理自适应） */
-@media (min-width: 601px) {
-  .hand-card-item {
-    width: 90px;
-    height: 126px;
-    border-radius: 6px;
-    margin-left: calc(
-      var(--card-count, 13) > 1
-        ? max(-1 * ((100% - 90px) / (var(--card-count, 13) - 1)), -75px)
-        : 0
-    );
-  }
-  .hand-card-item:first-child { margin-left: 0; }
-  .card-container { min-height: 130px; }
 }
