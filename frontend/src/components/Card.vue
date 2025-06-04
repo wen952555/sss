@@ -1,4 +1,6 @@
+<!-- frontend/src/components/Card.vue -->
 <template>
+  <!-- ... (template 部分不变) ... -->
   <div
     class="card"
     :class="{ dragging: isBeingDraggedVisualState }" 
@@ -13,7 +15,7 @@
 </template>
 
 <script setup>
-// Script part is identical to the last provided working version for build
+// ... (script setup 部分与上一版相同) ...
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
@@ -207,15 +209,19 @@ const suitSymbol = computed(() => {
   user-select: none;
   width: 60px;
   height: 85px;
-  border: 1px solid #ccc;
+  /* border: 1px solid #ccc; */ /* 移除或注释掉边框 */
+  border: none; /* 明确设置无边框 */
   border-radius: 4px;
   background-color: white;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: grab;
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-  transition: opacity 0.2s;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2); /* 保留阴影，以便在背景上区分 */
+  transition: opacity 0.2s, transform 0.1s ease-out; /* 添加 transform 过渡 */
+}
+.card.dragging {
+  /* 原始卡片在拖拽开始时 opacity 会被JS调整 */
 }
 .card img {
   max-width: 90%;
