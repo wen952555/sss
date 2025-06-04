@@ -1,12 +1,15 @@
 /* frontend/src/assets/main.css */
 html, body {
-  height: 100%; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  height: 100% !important;
+  margin: 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   background-color: #006400 !important; /* 深绿色 */
   color: #e8f5e9 !important; 
-  overflow: hidden !important; -webkit-tap-highlight-color: transparent !important;
+  overflow: hidden !important; 
+  -webkit-tap-highlight-color: transparent !important;
 }
 
-#app, #app-container.app-flex-container { /* 确保匹配 App.vue 的根元素 */
+#app, #app-container.app-flex-container {
   min-height: 100vh !important; height: 100% !important; display: flex !important; flex-direction: column !important;
   padding: 5px !important; box-sizing: border-box !important; overflow: hidden !important;
   background-color: transparent !important;
@@ -14,41 +17,37 @@ html, body {
 
 /* --- 卡片样式 --- */
 .card {
-  /* 桌面端尺寸再增大 */
-  width: 100px !important;  /* 例如，增加到100px */
-  height: 140px !important; /* 保持约 2.5:3.5 (或 5:7) 的比例 */
+  /* 您可以根据需要调整这里的桌面端基础尺寸 */
+  width: 100px !important;  /* 当前桌面尺寸 */
+  height: 140px !important; /* 当前桌面尺寸 */
   
   border: none !important; 
   outline: none !important;
   box-sizing: border-box !important; 
   
-  border-radius: 7px !important; /* 圆角配合新尺寸 */
-  /* 卡片背景色，尝试与SVG图片中的白色区域精确匹配，如果不是纯#FFFFFF */
-  /* 如果SVG中的白色是纯#FFFFFF，那么这里也用#FFFFFF */
+  border-radius: 6px !important;
   background-color: #FFFFFF !important; 
-  
   color: #212121 !important;
+  
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
   cursor: grab !important;
   user-select: none !important;
-  box-shadow: none !important; /* 保持移除阴影以排查边框 */
+  box-shadow: none !important; 
   transition: transform 0.1s ease-out !important;
-  overflow: hidden !important; /* 非常重要 */
+  overflow: hidden !important;
   padding: 0 !important; 
   margin: 2px !important; 
 }
 
 .card img {
   display: block !important;
-  /* 技巧：让图片略微放大一点点，然后被 .card 的 overflow:hidden 裁剪掉最边缘的抗锯齿像素 */
-  width: 101% !important;   /* 尝试大于100%，例如 100.5% 或 101% */
-  height: 101% !important;  /* 尝试大于100% */
+  width: 101% !important;   /* 保持这个技巧来尝试隐藏图片边缘 */
+  height: 101% !important;
   object-fit: contain !important; 
   pointer-events: none !important;
-  /* 图片本身的圆角应该与卡片一致或略小，如果卡片圆角较大 */
-  border-radius: 6px !important; 
+  border-radius: 5px !important; 
 }
 
 .card.dragging {
@@ -57,26 +56,20 @@ html, body {
   z-index: 2000 !important;
 }
 
-/* --- 卡片容器 --- */
+/* --- 卡片容器及其他元素样式 (与上一版基本一致，确保 !important) --- */
 .card-container {
   display: flex !important; flex-wrap: wrap !important; gap: 6px !important; 
-  min-height: calc(140px + 12px) !important; /* 基于新卡片高度 */
+  min-height: calc(140px + 12px) !important; /* 基于当前卡片高度 */
   border: 1px dashed rgba(255, 255, 255, 0.2) !important; 
   padding: 6px !important; border-radius: 5px !important;
   position: relative !important; align-items: flex-start !important; justify-content: flex-start !important;
   background-color: rgba(0, 0, 0, 0.1) !important; 
   margin-bottom: 10px !important; width: 100% !important; box-sizing: border-box !important;
 }
-/* ... (其他 .card-container, .drag-over, .drop-placeholder 与之前类似，确保 !important) ... */
 .card-container.is-empty { background-color: rgba(0, 0, 0, 0.12) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
 .drag-over { border-color: #a5d6a7 !important; border-style: solid !important; background-color: rgba(129, 199, 132, 0.3) !important; }
 .drop-placeholder { color: #a7ffeb !important; font-style: italic !important; text-align: center !important; width: 100% !important; font-size: 0.95em !important; padding: 12px 0 !important; }
 
-/* --- 按钮、输入框、布局、媒体查询等其他样式，保持上一版的 !important 强度 --- */
-/* ... (此处省略，使用上一版 main.css 中除了 .card 和 .card img 之外的所有内容，并确保关键属性有 !important) ... */
-/* 为简洁，我将只粘贴修改过的 .card 和 .card img，其他部分请沿用上一版并确保重要属性的 !important */
-
-/* --- 按钮和输入框通用样式 --- */
 button { background-color: #1b5e20 !important; color: #e8f5e9 !important; padding: 10px 16px !important; margin: 5px !important;
   border: 1px solid #003300 !important; border-radius: 4px !important; cursor: pointer !important; font-size: 1em !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.2) !important; transition: background-color 0.2s, box-shadow 0.2s !important; }
@@ -87,7 +80,6 @@ input[type=text] { padding: 8px !important; margin: 5px !important; border-radiu
   background-color: rgba(0,0,0,0.15) !important; color: #e8f5e9 !important; }
 input[type=text]::placeholder { color: rgba(255,255,255,0.5) !important; }
 
-/* --- App.vue 布局 --- */
 .global-error { margin-bottom: 10px !important; flex-shrink: 0 !important; }
 .game-area { background-color: transparent !important; border-radius: 6px !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; flex-grow: 1 !important; border: none !important; }
 .app-flex-grow { flex-grow: 1 !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; overflow: hidden !important; }
@@ -103,7 +95,6 @@ input[type=text]::placeholder { color: rgba(255,255,255,0.5) !important; }
     flex-grow: 1 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
 .error { background-color: #d32f2f !important; color: #ffcdd2 !important; padding: 10px !important; border-radius: 4px !important; margin-bottom: 10px !important; border: 1px solid #c62828 !important; }
 
-/* GameBoard.vue 内部组件的样式 */
 .game-board-container { padding: 5px 2px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; overflow: hidden !important; }
 .player-area { margin-bottom: 8px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important;
   overflow-y: auto !important; padding: 5px 2px !important; -webkit-overflow-scrolling: touch !important; gap: 8px !important; }
@@ -122,20 +113,20 @@ input[type=text]::placeholder { color: rgba(255,255,255,0.5) !important; }
 .ai-hand-showdown h4 { color: #81d4fa !important; }
 .ai-hand-showdown .card-container { background-color: rgba(0,0,0,0.12) !important; }
 
-/* 媒体查询 */
+/* 媒体查询，针对手机等小屏幕 */
 @media (max-width: 768px) {
-  .card { width: 75px !important; height: 105px !important; border-radius: 5px !important; padding: 0 !important; } /* 平板尺寸调整 */
-  .card img { border-radius: 4px !important; }
+  .card { width: 75px !important; height: 105px !important; border-radius: 5px !important; padding: 0 !important; }
+  .card img { border-radius: 4px !important; width: 101% !important; height: 101% !important; }
   .card-container { min-height: calc(105px + 10px) !important; gap: 5px !important; padding: 5px !important; }
   .initial-hand-area .card-container { min-height: calc(105px * 2 + 5px + 10px) !important; }
   .top-info-bar { font-size: 0.85em !important; }
   .submit-hand-button { font-size: 0.95em !important; padding: 9px 15px !important; }
 }
 @media (max-width: 480px) {
-  .card { width: calc(100% / 6 - 5px) !important; min-width: 55px !important; max-width: 70px !important; /* 手机尺寸调整 */
+  .card { width: calc(100% / 6 - 4px) !important; min-width: 58px !important; max-width: 70px !important; /* 手机上卡片尺寸再大一点 */
     height: auto !important; aspect-ratio: 2.5 / 3.5 !important; border-radius: 4px !important; padding: 0 !important; }
-  .card img { border-radius: 3px !important; }
-  .card-container { min-height: calc(75px + 8px) !important; gap: 4px !important; padding: 4px !important; }
-  .initial-hand-area .card-container { min-height: calc(75px * 2 + 4px + 8px) !important; }
-  .top-info-bar { font-size: 0.8em !important; } /* 手机上顶部信息栏字体再小一点 */
+  .card img { border-radius: 3px !important; width: 101% !important; height: 101% !important;}
+  .card-container { min-height: calc(80px + 8px) !important; gap: 3px !important; padding: 4px !important; } /* 基于约58x80的卡片 */
+  .initial-hand-area .card-container { min-height: calc(80px * 2 + 3px + 8px) !important; }
+  .top-info-bar { font-size: 0.75em !important; }
 }
