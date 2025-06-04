@@ -7,13 +7,13 @@
     @touchstart.stop="onTouchStart" 
     ref="cardElementRef"
   >
-    <img v-if="imageSrc" :src="imageSrc" :alt="altText" />
+    <!-- 修改了这里的 src 计算，确保图片能正确显示 -->
+    <img v-if="imageSrc" :src="imageSrc" :alt="altText" @error="onImageError" />
     <span v-else>{{ displayValue }}{{ suitSymbol }}</span>
   </div>
 </template>
 
 <script setup>
-// Script部分与之前能成功构建和运行的版本相同
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
@@ -21,12 +21,21 @@ const props = defineProps({
 });
 const emit = defineEmits(['customDragStart', 'customDragEnd', 'customDragOverSegment']);
 
-const imageSrc = computed(() => props.card && props.card.id ? `/cards/${props.card.id}.svg` : '');
+// --- 核心修改：将 .svg 后缀改为 .png ---
+const imageSrc = computed(() => {
+  if (props.card && props.card.id) {
+    return `/cards/${props.card.id}.png`; // 修改后缀为 .png
+  }
+  return '';
+});
+// --- 核心修改结束 ---
+
 const altText = computed(() => props.card && props.card.value && props.card.suit ? `${props.card.value} of ${props.card.suit}` : 'Card');
 const cardElementRef = ref(null);
 const isBeingDraggedVisualState = ref(false);
 const isTouchDevice = ref(false);
 
+// ... (触摸拖拽相关的变量与之前相同，无需修改) ...
 let touchStartX = 0;
 let touchStartY = 0;
 let elementInitialViewportX = 0;
@@ -116,7 +125,7 @@ function createCloneIfNeeded() {
         draggedCardCloneNode.style.transition = 'none';
         draggedCardCloneNode.classList.add('dragging'); 
         document.body.appendChild(draggedCardCloneNode);
-        if (cardElementRef.value) cardElementRef.value.style.opacity = '0.4';
+        if(cardElementRef.value) cardElementRef.value.style.opacity = '0.4';
     }
 }
 function updateClonePosition(currentX, currentY) {
@@ -186,6 +195,7 @@ function handleDocumentTouchEnd(event) {
   lastKnownOverSegment = null;
   cleanupDocumentTouchListeners();
 }
+
 const displayValue = computed(() => {
     if (!props.card || typeof props.card.value === 'undefined') return '?';
     if (parseInt(props.card.value) >= 2 && parseInt(props.card.value) <= 10) return props.card.value;
@@ -197,35 +207,51 @@ const suitSymbol = computed(() => {
     return symbols[props.card.suit] || '';
 });
 
+// 图片加载失败时的处理函数
+function onImageError(event) {
+  console.warn(`Failed to load card image: ${event.target.src}`);
+  // 可以在这里设置一个默认的占位图，或者显示文字提示
+  // event.target.src = '/cards/default_card_back.png'; // 例如
+}
 </script>
 
 <style scoped>
+/* Styles are the same as the last provided main.css .card and .card img rules */
+/* Ensure these are consistent with your global styles or main.css */
 .card {
   touch-action: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  width: 60px;
-  height: 85px;
-  /* --- 核心修改：确保无边框 --- */
-  border: none !important; /* 使用 !important 强制覆盖其他可能的边框规则 */
-  outline: none !important; /* 移除可能的轮廓线，有时会被误认为边框 */
-  /* --- 核心修改结束 --- */
-  border-radius: 4px;
-  background-color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: grab;
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-  transition: opacity 0.2s, transform 0.1s ease-out;
+  /* --- 从 main.css 复制过来的卡片样式 --- */
+  width: 100px !important; 
+  height: 140px !important;
+  border: none !important; 
+  outline: none !important;
+  box-sizing: border-box !important; 
+  border-radius: 6px !important;
+  background-color: #FFFFFF !important; 
+  color: #212121 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  cursor: grab !important;
+  box-shadow: none !important; 
+  transition: transform 0.1s ease-out !important;
+  overflow: hidden !important;
+  padding: 0 !important; 
+  margin: 2px !important; 
 }
-/* .card.dragging 样式用于克隆体，在全局或App.vue中定义 */
 .card img {
-  max-width: 90%;
-  max-height: 90%;
-  object-fit: contain;
-  pointer-events: none;
+  display: block !important;
+  width: 100% !important; /* 之前是101%，改为100%看PNG效果 */
+  height: 100% !important;/* 之前是101%，改为100%看PNG效果 */
+  object-fit: contain !important; 
+  pointer-events: none !important;
+  border-radius: 5px !important; 
+}
+.card.dragging { /* 仅用于克隆体的类 */
+  /* 这个样式实际由JS在克隆体上应用，或者如果全局有.dragging也可以 */
 }
 </style>
