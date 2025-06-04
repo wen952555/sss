@@ -1,11 +1,17 @@
 /* frontend/src/assets/main.css */
-/* ... (html, body, #app, general card, button, input, layout styles remain largely the same as the last working version) ... */
-/* I will only list the critical changes for fan layout and mobile card size */
+/* ... (html, body, #app, button, input, error, App.vue布局等其他全局样式与上一版能成功构建的类似，确保颜色对比度) ... */
+/* 我将主要展示 .card 和 .card-container 以及相关的媒体查询修改 */
+
+html, body { /* ... */ background-color: #006400 !important; color: #e8f5e9 !important; /* ... */ }
+#app, #app-container.app-flex-container { /* ... */ background-color: transparent !important; /* ... */ }
+
 
 /* --- 卡片样式 --- */
-.card {
-  width: 100px !important;  /* 桌面端基础宽度 */
-  height: 140px !important; /* 桌面端基础高度 */
+.card, .hand-card-item { /* .hand-card-item 是 PlayerHand.vue 内部 CardComponent 的 class */
+  /* 桌面端的基础尺寸 */
+  width: 90px !important; 
+  height: 126px !important;
+  
   border: none !important; 
   outline: none !important;
   box-sizing: border-box !important; 
@@ -17,14 +23,14 @@
   align-items: center !important;
   cursor: grab !important;
   user-select: none !important;
-  box-shadow: none !important; 
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* Smoother transition for fan hover */
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2) !important; /* 可以加回一个细微阴影 */
+  transition: transform 0.15s ease-out, margin-left 0.2s ease-out !important; /* 添加 margin-left 过渡 */
   overflow: hidden !important;
   padding: 0 !important; 
-  margin: 0 !important; /* Remove margin, positioning handled by JS/absolute for fan */
-  /* position: relative; */ /* This will be overridden by absolute in fan layout */
+  /* margin: 2px !important; */ /* 外边距由父容器的 gap 或负 margin 控制 */
+  flex-shrink: 0; /* 防止卡片在 flex 容器中被压缩变形 */
 }
-.card img {
+.card img, .hand-card-item img {
   display: block !important;
   width: 100% !important;
   height: 100% !important;
@@ -32,91 +38,124 @@
   pointer-events: none !important;
   border-radius: 5px !important; 
 }
-/* .card.dragging - no change needed here from last working version */
+.card.dragging, .hand-card-item.dragging { /* 这个class是JS动态添加给拖拽克隆体的 */
+  opacity: 0.8 !important;
+  transform: scale(1.1) translateY(-10px) rotate(3deg) !important; /* 拖拽时上浮并旋转 */
+  z-index: 2000 !important;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.25) !important;
+}
 
 /* --- 卡片容器 --- */
 .card-container {
   display: flex !important; 
-  gap: 5px !important; 
-  min-height: calc(140px + 12px) !important;
+  /* flex-wrap: nowrap; */ /* 在窄屏时我们不希望换行，而是重叠 */
+  /* overflow-x: auto; */  /* 如果希望窄屏时可以水平滚动查看所有牌，取消注释此行和 nowrap */
+  /* 如果不希望滚动，而是重叠，则保持默认或 flex-wrap: wrap 然后通过负margin控制 */
+  flex-wrap: wrap; /* 先允许换行，再通过媒体查询调整 */
+  gap: 6px !important; /* 桌面端卡片间隙 */
+  min-height: calc(126px + 12px) !important; 
   border: 1px dashed rgba(255, 255, 255, 0.2) !important; 
-  padding: 6px !important; 
+  padding: 8px !important; /* 调整内边距 */
   border-radius: 5px !important;
   position: relative !important; 
-  align-items: center !important; /* Default alignment for flat layout */
-  justify-content: center !important; /* Default alignment for flat layout */
+  align-items: center !important; /* 卡片垂直居中 */
+  justify-content: center !important; /* 卡片水平居中 */
   background-color: rgba(0, 0, 0, 0.1) !important; 
   margin-bottom: 8px !important; 
   width: 100% !important; 
   box-sizing: border-box !important;
-  overflow: hidden; /* Default to hidden, fan layout might make it visible */
+  /* overflow: hidden; */ /* 移除，如果希望看到部分重叠的牌 */
 }
-/* ... (.card-container.is-empty, .drag-over, .drop-placeholder no change from last working version) ... */
-
-/* --- 扇形布局特定样式 --- */
-.card-container.fan-layout {
-  display: block !important; /* Override flex for absolute positioning of children */
-  /* justify-content: center;  No longer needed due to block and absolute children */
-  /* align-items: flex-end; */
-  padding-bottom: 10px !important; /* Space for the fan base */
-  min-height: 100px !important; /* Adjust based on card size and arc */
-  position: relative; /* Crucial for absolute positioning of cards */
-  overflow: hidden; /* Clip cards that go too far out if not desired */
-}
-.fan-layout .card {
-  position: absolute !important; /* Cards are absolutely positioned within .fan-layout */
-  bottom: 0px !important; /* Align to the bottom of the container */
-  left: 50% !important; /* Start from the horizontal center */
-  transform-origin: bottom center !important; /* Rotate around bottom center */
-  /* transform: translateX(-50%); */ /* Initial offset to truly center, JS will add more translateX */
-  box-shadow: 0px -1px 3px rgba(0,0,0,0.1) !important; /* Subtle shadow for fanned cards */
-}
-.fan-layout .card:hover {
-    /* transform a bit more, ensure translateY is relative to its fanned position */
-    /* The JS calculated transform will be the base */
-    /* This hover effect might need to be applied via JS if transforms conflict heavily */
-    /* For now, let's assume JS sets the base fan transform, and CSS hover adds to it */
-    /* This is tricky: CSS transform on hover will override JS style.transform */
-    /* Best to handle hover transforms in JS for fanned layout if complex */
-    /* z-index: 150 !important; */ /* Ensure hovered card is on top */
-}
+/* ... (.card-container.is-empty, .drag-over, .drop-placeholder 与上一版类似) ... */
+.card-container.is-empty { background-color: rgba(0, 0, 0, 0.12) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+.drag-over { border-color: #a5d6a7 !important; border-style: solid !important; background-color: rgba(129, 199, 132, 0.3) !important; }
+.drop-placeholder { color: #a7ffeb !important; font-style: italic !important; text-align: center !important; width: 100% !important; font-size: 0.95em !important; padding: 12px 0 !important; }
 
 
-/* 媒体查询，针对手机等小屏幕 */
-@media (max-width: 600px) { /* Breakpoint for fan layout */
-  .card {
-    /* Mobile card size for fan - should match PlayerHand.vue FAN_CARD_WIDTH_MOBILE */
-    width: 55px !important; 
-    height: 77px !important; /* Approx 2.5:3.5 */
+/* --- 媒体查询，实现平铺伸缩折叠 --- */
+@media (max-width: 1024px) { /* 桌面端较窄或大平板 */
+    .card, .hand-card-item {
+        width: 80px !important;
+        height: 112px !important;
+    }
+    .card-container {
+        min-height: calc(112px + 10px) !important;
+        gap: 5px !important;
+    }
+    .initial-hand-area .card-container { /* 初始手牌区 */
+        min-height: calc(112px + 10px) !important; /* 至少一行 */
+        flex-wrap: nowrap !important; /* 不换行 */
+        overflow-x: auto !important;  /* 允许水平滚动查看所有牌 */
+        justify-content: flex-start !important; /* 从左开始排列 */
+        padding-left: 10px; /* 给左边一点滚动空间 */
+        padding-right: 10px; /* 给右边一点滚动空间 */
+    }
+    .initial-hand-area .card-container .hand-card-item {
+        margin-left: -30px !important; /* 卡片向左重叠30px */
+    }
+    .initial-hand-area .card-container .hand-card-item:first-child {
+        margin-left: 0 !important; /* 第一张牌不重叠 */
+    }
+    .initial-hand-area .card-container .hand-card-item:hover {
+        transform: translateY(-10px) scale(1.05); /* 鼠标悬停时上浮 */
+        z-index: 100; /* 确保在最上层 */
+        margin-right: 10px; /* 给右边的牌留出空间 */
+    }
+    .initial-hand-area .card-container .hand-card-item:hover + .hand-card-item {
+        margin-left: 10px; /* 被悬停牌的下一张牌向右移动一点 */
+    }
+}
+
+@media (max-width: 768px) { /* 平板/大手机 */
+  .card, .hand-card-item {
+    width: 65px !important; 
+    height: 91px !important; 
+    border-radius: 5px !important;
+  }
+  .card-container {
+    min-height: calc(91px + 10px) !important;
+    gap: 4px !important;
+    padding: 6px !important;
+  }
+  .initial-hand-area .card-container {
+    min-height: calc(91px + 10px) !important;
+    /* overflow-x: auto; 保持滚动 */
+  }
+  .initial-hand-area .card-container .hand-card-item {
+    margin-left: -35px !important; /* 手机上重叠更多 */
+  }
+  .initial-hand-area .card-container .hand-card-item:first-child { margin-left: 0 !important; }
+
+  /* 其他小屏幕特定样式 */
+  .top-info-bar { font-size: 0.85em !important; }
+  .submit-hand-button { font-size: 0.95em !important; padding: 9px 15px !important; }
+}
+
+@media (max-width: 480px) { /* 小手机 */
+  .card, .hand-card-item {
+    width: 55px !important; /* 进一步缩小卡片 */
+    height: 77px !important;
     border-radius: 4px !important;
   }
-  .card-container { /* General card container on mobile */
-    min-height: calc(77px + 10px) !important;
+  .card-container {
+    min-height: calc(77px + 8px) !important;
     gap: 3px !important;
     padding: 5px !important;
   }
-  .initial-hand-area .card-container.fan-layout { /* Specifically the hand area when fanned */
-     min-height: 110px !important; /* Needs enough height for the fan arc */
+  .initial-hand-area .card-container {
+    min-height: calc(77px + 8px) !important;
   }
-  .initial-hand-area .card-container { /* For flat layout on mobile if breakpoint changes */
-     min-height: calc(77px * 2 + 3px + 10px) !important; 
+  .initial-hand-area .card-container .hand-card-item {
+    margin-left: -40px !important; /* 手机上重叠更多 */
   }
-  /* Other mobile adjustments for top-info-bar, buttons etc. from previous version */
-  .top-info-bar { font-size: 0.8em !important; padding: 5px !important; gap: 4px !important; flex-direction: column; align-items: stretch; }
+  .initial-hand-area .card-container .hand-card-item:first-child { margin-left: 0 !important; }
+
+  /* 顶部信息栏垂直堆叠 */
+  .top-info-bar { font-size: 0.75em !important; flex-direction: column; align-items: stretch; gap: 4px !important; }
   .game-status-mode { width: 100%; text-align: center; margin-bottom: 3px; order: 1;}
-  .player-statuses-inline { width: 100%; justify-content: space-around; gap: 5px !important; font-size: 0.85em !important; margin: 0 0 3px 0; order: 2;}
+  .player-statuses-inline { width: 100%; justify-content: center; gap: 5px !important; font-size: 0.85em !important; margin: 0 0 3px 0; order: 2;}
   .restart-button-inline { width: 100%; text-align: center; margin-left: 0; order: 3; padding: 6px 10px !important; font-size: 0.85em !important;}
 }
 
-@media (max-width: 380px) {
-    .card {
-        width: 48px !important;
-        height: 67px !important;
-    }
-    .card-container.fan-layout { min-height: 100px !important; }
-    .card-container { min-height: calc(67px + 8px) !important; }
-    .initial-hand-area .card-container { min-height: calc(67px * 2 + 2px + 8px) !important; }
-}
-
-/* Ensure all other styles from the previous complete main.css are present and have !important */
+/* 其他所有全局样式，如按钮、App布局、GameBoard布局等，请沿用上一版能成功构建的，并确保重要属性有 !important */
 /* ... */
