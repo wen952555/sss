@@ -1,63 +1,52 @@
-/* ...保留原有样式... */
-
-/* ---- 新增/增强样式 ---- */
-
-/* 扑克牌内容布局 */
-.hand-card-item .card-face {
-  width: 100%;
-  height: 100%;
+/* 保证手牌紧贴横排重叠 */
+.card-container {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  padding: 4px 0 0 4px;
-  font-family: 'Times New Roman', Times, serif;
-  font-size: 1.1em;
-  position: relative;
-}
-.hand-card-item .card-rank {
-  font-weight: bold;
-  font-size: 1.1em;
-  line-height: 1;
-}
-.hand-card-item .card-suit {
-  font-size: 0.9em;
-  margin-top: 2px;
-  line-height: 1;
-}
-
-/* 红色花色 */
-.hand-card-item .red {
-  color: #D32F2F;
-}
-/* 黑色花色 */
-.hand-card-item .black {
-  color: #222;
-}
-
-/* JOKER竖排显示 */
-.hand-card-item.card-joker .card-face {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  justify-content: center;
+  flex-direction: row;
   align-items: center;
-  font-size: 1.05em;
-  letter-spacing: 2px;
-  padding: 0;
-}
-.hand-card-item.card-joker {
-  background: #fffbe7;
+  overflow: hidden;
+  padding: 4px 2px;
+  gap: 0; /* 不用gap，用负margin控制重叠 */
+  background: transparent;
+  border: none;
 }
 
-/* 细节美化 */
+/* 单张手牌样式 */
 .hand-card-item {
+  width: 50px;
+  height: 70px;
+  border-radius: 3px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.2);
+  margin-left: -38px; /* 露出12px，可根据实际需求调整 */
   position: relative;
-  /* ...保留原有... */
-  box-shadow: 1px 2px 3px rgba(0,0,0,0.20);
+  z-index: 1;
+  transition: transform 0.1s, z-index 0.1s;
+  background: #fff;
+  display: flex; justify-content: center; align-items: center;
+  overflow: visible;
+  cursor: pointer;
 }
 
-/* 可选：增加鼠标悬停更明显的浮起 */
-.initial-hand-area > .card-container .hand-card-item:hover {
-  transform: translateY(-12px) scale(1.08);
-  z-index: 200;
+/* 第一张牌不重叠 */
+.hand-card-item:first-child { margin-left: 0; }
+
+/* z-index递增，确保后面的牌在上面 */
+.card-container .hand-card-item:nth-child(n) { z-index: auto; }
+.card-container .hand-card-item:nth-child(1) { z-index: 1; }
+.card-container .hand-card-item:nth-child(2) { z-index: 2; }
+.card-container .hand-card-item:nth-child(3) { z-index: 3; }
+.card-container .hand-card-item:nth-child(4) { z-index: 4; }
+.card-container .hand-card-item:nth-child(5) { z-index: 5; }
+.card-container .hand-card-item:nth-child(6) { z-index: 6; }
+.card-container .hand-card-item:nth-child(7) { z-index: 7; }
+.card-container .hand-card-item:nth-child(8) { z-index: 8; }
+.card-container .hand-card-item:nth-child(9) { z-index: 9; }
+.card-container .hand-card-item:nth-child(10) { z-index: 10; }
+.card-container .hand-card-item:nth-child(11) { z-index: 11; }
+.card-container .hand-card-item:nth-child(12) { z-index: 12; }
+.card-container .hand-card-item:nth-child(13) { z-index: 13; }
+
+/* 鼠标悬浮时放大并置顶 */
+.hand-card-item:hover {
+  transform: scale(1.08) translateY(-8px);
+  z-index: 100;
 }
