@@ -105,12 +105,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted }
-from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useGameStore } from '../stores/gameStore';
 import CardDisplay from './CardDisplay.vue';
-import draggable from 'vue-draggable-next'; // 导入 draggable
-import { GameLogic as FrontendGameLogic } from '../utils/frontendGameLogic'; // 假设我们有一个前端的牌型判断工具
+import { draggable } from 'vue-draggable-next'; // <--- 修改在这里：使用命名导入
+import { GameLogic as FrontendGameLogic } from '../utils/frontendGameLogic';
 
 const gameStore = useGameStore();
 
@@ -131,20 +130,20 @@ const 倒水提示 = ref('');
 
 // 初始化和重置摆牌的逻辑
 function initializeHands(cards) {
-    if (props.isSubmitted) { // 如果已提交，则从store或props中加载已提交的牌墩
+    if (props.isSubmitted) {
         const me = gameStore.myPlayerDetails;
         if (me && me.hand_front && me.hand_mid && me.hand_back) {
             frontDun.value = [...me.hand_front];
             midDun.value = [...me.hand_mid];
             backDun.value = [...me.hand_back];
             availableToSortCards.value = [];
-        } else { // 正常用 initialCards 初始化
+        } else {
              availableToSortCards.value = [...cards].sort((a, b) => b.value - a.value);
              frontDun.value = [];
              midDun.value = [];
              backDun.value = [];
         }
-    } else { // 未提交状态，正常初始化
+    } else {
         availableToSortCards.value = [...cards].sort((a, b) => b.value - a.value);
         frontDun.value = [];
         midDun.value = [];
@@ -155,8 +154,6 @@ function initializeHands(cards) {
 }
 
 watch(() => props.initialCards, (newCards) => {
-    // 只有在未提交状态下，或者 initialCards 真正变化时（例如新一局开始）才重置
-    // 避免在已提交状态下，因为父组件 props 更新导致牌墩被清空
     if (!props.isSubmitted || (newCards.length > 0 && availableToSortCards.value.length === 0 && frontDun.value.length === 0)) {
         initializeHands(newCards);
     }
@@ -166,54 +163,40 @@ watch(() => props.isSubmitted, (newVal, oldVal) => {
     if (newVal) {
         submissionMessage.value = "您的牌型已提交。";
         messageType.value = "success";
-        // 如果提交了，从 store 更新牌墩以显示最终提交的牌
         const me = gameStore.myPlayerDetails;
         if (me && me.hand_front) frontDun.value = [...me.hand_front];
         if (me && me.hand_mid) midDun.value = [...me.hand_mid];
         if (me && me.hand_back) backDun.value = [...me.hand_back];
         availableToSortCards.value = [];
-    } else if (oldVal && !newVal) { // 从已提交变为未提交 (例如新一局)
+    } else if (oldVal && !newVal) {
         initializeHands(props.initialCards);
     }
 });
 
 
-// 拖拽结束后的处理，主要是确保牌墩数量限制
 function onDragEnd(evt) {
-    // evt.to 是目标列表的DOM元素, evt.from 是来源列表
-    // evt.newIndex, evt.oldIndex
-    // console.log('Drag end:', evt);
     enforceDunLimits();
     validateOverallStructure();
 }
 
 function onAddCardToDun(dunName, evt) {
-    // console.log(`Card added to ${dunName}:`, evt.item.__vueParentComponent.props.card);
-    // evt.item 是被拖拽的DOM元素
-    // 通常在 onDragEnd 中统一处理限制，或者在这里做即时反馈
-    // draggable 会自动更新 v-model 绑定的数组
     enforceDunLimits();
     validateOverallStructure();
 }
 
 function enforceDunLimits() {
-    // 头墩限制3张
     while (frontDun.value.length > 3) {
         availableToSortCards.value.push(frontDun.value.pop());
     }
-    // 中墩限制5张
     while (midDun.value.length > 5) {
         availableToSortCards.value.push(midDun.value.pop());
     }
-    // 尾墩限制5张
     while (backDun.value.length > 5) {
         availableToSortCards.value.push(backDun.value.pop());
     }
-    // 将 availableToSortCards 重新排序，方便查看
     availableToSortCards.value.sort((a, b) => b.value - a.value);
 }
 
-// 计算属性用于验证和UI反馈
 const isFrontDunValidCount = computed(() => frontDun.value.length === 3);
 const isMidDunValidCount = computed(() => midDun.value.length === 5);
 const isBackDunValidCount = computed(() => backDun.value.length === 5);
@@ -223,21 +206,18 @@ const canSubmitHand = computed(() => {
     return isFrontDunValidCount.value &&
            isMidDunValidCount.value &&
            isBackDunValidCount.value &&
-           availableToSortCards.value.length === 0 && // 所有牌都已摆放
-           !倒水提示.value; // 没有倒水提示
+           availableToSortCards.value.length === 0 &&
+           !倒水提示.value;
 });
 
-
-// 前端牌型判断 (使用简化的前端逻辑)
 const frontDunTypeInfo = computed(() => FrontendGameLogic.getHandType(frontDun.value));
 const midDunTypeInfo = computed(() => FrontendGameLogic.getHandType(midDun.value));
 const backDunTypeInfo = computed(() => FrontendGameLogic.getHandType(backDun.value));
 
-// 验证整体牌墩结构是否倒水 (前端初步验证)
 function validateOverallStructure() {
-    倒水提示.value = ''; // 先清除
+    倒水提示.value = '';
     if (!isFrontDunValidCount.value || !isMidDunValidCount.value || !isBackDunValidCount.value) {
-        return; // 牌墩数量不足，不判断倒水
+        return;
     }
 
     const frontType = frontDunTypeInfo.value;
@@ -253,7 +233,6 @@ function validateOverallStructure() {
         return;
     }
 }
-// 每次牌墩变化时都进行验证
 watch([frontDun, midDun, backDun], validateOverallStructure, { deep: true });
 
 
@@ -279,14 +258,12 @@ async function submitPlayerHand() {
     if (gameStore.error) {
         submissionMessage.value = `提交失败: ${gameStore.error}`;
         messageType.value = 'error';
-    } else {
-        // isSubmitted 状态将由 gameStore 更新后通过 props 传入，并触发 watch
     }
 }
 
 function autoArrangeSimple() {
     if (props.isSubmitted || props.initialCards.length !== 13) return;
-    initializeHands(props.initialCards); // 从原始牌开始
+    initializeHands(props.initialCards);
 
     const sorted = [...availableToSortCards.value].sort((a, b) => a.value - b.value);
 
@@ -297,7 +274,7 @@ function autoArrangeSimple() {
     availableToSortCards.value = [];
     submissionMessage.value = "已使用简单自动摆牌，请检查并提交。";
     messageType.value = 'info';
-    validateOverallStructure(); // 自动摆牌后也验证一下
+    validateOverallStructure();
 }
 
 function resetCurrentArrangement() {
@@ -328,16 +305,16 @@ onMounted(() => {
   background-color: #fff;
 }
 .available-cards-area {
-  min-height: 120px; /* 确保有足够空间显示手牌 */
+  min-height: 120px;
   background-color: #eef8ff;
 }
 .arranged-hands-container {
   display: flex;
   justify-content: space-between;
-  gap: 10px; /* 三个墩之间的间隔 */
+  gap: 10px;
 }
 .arranged-dun-wrapper {
-  flex: 1; /* 让三个墩平分空间 */
+  flex: 1;
   padding: 8px;
   border: 1px solid #d0d0d0;
   border-radius: 4px;
@@ -354,13 +331,13 @@ onMounted(() => {
 
 .card-list {
   display: flex;
-  flex-wrap: wrap; /* 允许卡牌换行 */
-  justify-content: flex-start; /* 卡牌左对齐 */
-  align-items: flex-start; /* 卡牌顶部对齐 */
-  min-height: 105px; /* 至少能放下一行牌的高度，防止拖拽时塌陷 */
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  min-height: 105px;
   padding: 5px;
   border-radius: 4px;
-  background-color: #e9ecef; /* 给拖拽区域一个背景色 */
+  background-color: #e9ecef;
 }
 .dun-list.dun-invalid {
     border: 2px dashed red;
@@ -379,7 +356,7 @@ onMounted(() => {
 
 .draggable-card {
   cursor: grab;
-  margin: 2px !important; /* 覆盖CardDisplay内部的margin，使其更紧凑 */
+  margin: 2px !important;
   transition: transform 0.2s;
 }
 .draggable-card:active {
@@ -388,10 +365,10 @@ onMounted(() => {
   z-index: 100;
 }
 .draggable-card.in-dun {
-  /* 墩内卡牌可以有特定样式 */
+  /* Dun-specific styles if needed */
 }
 
-.sortable-ghost { /* 拖拽占位符的样式 */
+.sortable-ghost {
   opacity: 0.4;
   background-color: #c0e0ff;
   border: 1px dashed #007bff;
@@ -400,10 +377,10 @@ onMounted(() => {
 .action-buttons {
     margin-top: 15px;
     display: flex;
-    gap: 10px; /* 按钮之间的间隔 */
+    gap: 10px;
 }
 .submit-button, .auto-arrange-button, .reset-arrange-button {
-  padding: 10px 15px; /* 统一按钮大小 */
+  padding: 10px 15px;
   font-size: 0.9em;
   cursor: pointer;
   border: none;
