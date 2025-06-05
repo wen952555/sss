@@ -22,13 +22,16 @@
       </section>
 
       <!-- 第3道: 理牌区 - 手牌 (占25%) -->
-      <section class="layout-row-modular card-dun-row-modular" style="height: 25%;">
+      <section class="layout-row-modular card-dun-row-modular hand-display-section" style="height: 25%;">
         <div class="dun-label placeholder-text semi-transparent-text">手牌</div>
-        <div class="dun-cards-area hand-display-area">
+        <!-- 修改：应用新的堆叠样式 -->
+        <div class="dun-cards-area stacked-hand-display-area">
           <CardDisplay 
-            v-for="card in gameStore.currentHand" 
+            v-for="(card, index) in gameStore.currentHand" 
             :key="card.id" 
             :card="card"
+            class="stacked-card"
+            :style="getCardStyle(index, gameStore.currentHand.length)"
           />
         </div>
       </section>
@@ -47,7 +50,6 @@
           <button @click="handleTryPlay" :disabled="gameStore.isLoading">
             {{ gameStore.currentHand.length > 0 ? '重新试玩 (换牌)' : '试玩 (获取手牌)' }}
           </button>
-          <!-- 以后可以添加更多按钮 -->
         </div>
       </section>
     </main>
@@ -66,141 +68,93 @@ import CardDisplay from './components/CardDisplay.vue'; // 确保路径正确
 const gameStore = useGameStore();
 
 async function handleTryPlay() {
-  // console.log("试玩按钮点击");
   await gameStore.fetchInitialHand();
 }
 
+// 计算每张牌的样式以实现堆叠效果
+function getCardStyle(index, totalCards) {
+  if (totalCards <= 1) {
+    return {}; // 只有一张牌或没有牌，不需要特殊样式
+  }
+  // 这个值需要根据牌的宽度和期望的重叠度进行调整
+  // 假设牌的宽度是60px (CardDisplay.vue 中定义的)
+  // 我们希望13张牌能在容器内显示完，即使有重叠
+  const cardWidth = 60; 
+  // 容器的可用宽度，可以尝试获取，但这里为了简单先估算一个值
+  // 或者让重叠固定，例如每张牌向左偏移自身宽度的70-80%
+  const overlapFactor = 0.75; // 每张牌覆盖前一张牌的75%宽度
+  const overlap = cardWidth * overlapFactor; 
+  
+  // 对于第一张牌 (index 0)，不应用 marginLeft
+  // 后续的牌，相对于正常位置向左移动 overlap * index 的距离
+  // 但由于它们是inline-flex, 直接设置负的marginLeft会导致它们挤压前面的元素
+  // 所以我们改为让除了第一张牌之外的牌，都有一个负的左边距
+  // 或者使用绝对定位，但这会使父容器高度塌陷，需要额外处理
+  
+  // 简单方式：给除了第一张牌以外的牌一个负的左边距
+  if (index > 0) {
+      // return { marginLeft: `-${overlap}px` };
+      // 为了让牌看起来是从左到右“发”出来的，并且后面的牌盖住前面的牌一点点
+      // 我们需要让每张牌都相对于其“自然”位置向左移动
+      // 并且可能需要 z-index 来控制堆叠顺序 (虽然默认顺序可能就正确)
+      // 一个更简单的堆叠是每张牌都向左移动，并且后面的牌z-index更高
+      // 但如果只用 margin-left: -Xpx，它们会简单地并排然后重叠
+      
+      // 使用绝对定位来实现精确堆叠
+      // 父容器 .stacked-hand-display-area 需要 position: relative;
+      const leftOffset = index * (cardWidth - overlap); // 每张牌的起始位置
+      return {
+          position: 'absolute',
+          left: `${leftOffset}px`,
+          zIndex: index // 后发的牌在上面
+      };
+  }
+  return { position: 'absolute', left: '0px', zIndex: index }; // 第一张牌
+}
+
+
 onMounted(() => {
   // 页面加载时不自动发牌，等待用户点击“试玩”
-  // console.log("App.vue (Modular) mounted.");
 });
 </script>
 
 <style>
 /* 全局 Reset 和基础样式 */
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  overflow: hidden; 
-  background-color: #f0f4f8; 
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
-}
-
-#thirteen-water-app-modular {
-  display: flex; 
-  flex-direction: column;
-  height: 100vh; 
-  width: 100vw;
-  box-sizing: border-box;
-}
-
-.app-header-modular {
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  text-align: center;
-  flex-shrink: 0; 
-}
+html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f0f4f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
+#thirteen-water-app-modular { display: flex; flex-direction: column; height: 100vh; width: 100vw; box-sizing: border-box; }
+.app-header-modular { padding: 10px 20px; background-color: #007bff; color: white; text-align: center; flex-shrink: 0; }
 .app-header-modular h1 { margin: 0; font-size: 1.5em; }
 .header-info-modular { margin-top: 3px; font-size: 0.75em; opacity: 0.9; }
 
-.game-board-layout-modular {
-  flex-grow: 1; 
-  display: flex;
-  flex-direction: column; 
-  width: 100%;
-  height: 100%; 
-  padding: 5px; 
-  gap: 5px; 
-  box-sizing: border-box;
-  overflow: hidden;
+.game-board-layout-modular { flex-grow: 1; display: flex; flex-direction: column; width: 100%; height: 100%; padding: 5px; gap: 5px; box-sizing: border-box; overflow: hidden; }
+.layout-row-modular { width: 100%; box-sizing: border-box; border: 1px dashed #d0d0d0; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f9f9f9; border-radius: 3px; position: relative; overflow: visible; /* 改为 visible 或 clip，以便绝对定位的牌能正确显示 */ }
+
+.placeholder-text { color: #aaa; font-style: italic; font-size: 0.9em; }
+.semi-transparent-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5em; color: rgba(0, 0, 0, 0.08); font-weight: bold; z-index: 0; pointer-events: none; white-space: nowrap; }
+
+.status-banner-row-modular { flex-shrink: 0; }
+.card-dun-row-modular { flex-shrink: 0; justify-content: flex-start; align-items: center; }
+.dun-label { width: 100%; text-align: center; margin-bottom: 5px; font-weight: bold; color: #555; z-index: 1; position: relative; }
+.dun-cards-area { display: flex; flex-wrap: nowrap; /* 防止牌换行 */ justify-content: center; align-items: center; width: 100%; min-height: 95px; /* 确保牌的高度 */ gap: 3px; z-index: 1; position: relative; /* 为了绝对定位的子元素 */ padding-left: 5px; /* 给第一张牌留出空间 */ }
+
+/* 手牌区（第3道横幅）的特殊样式 */
+.hand-display-section .dun-cards-area {
+  /* 允许内容水平溢出，但不显示滚动条，依赖卡牌的绝对定位来控制显示范围 */
+  overflow-x: visible; /* 或者 clip，如果计算精确 */
+  justify-content: flex-start; /* 卡牌从左边开始堆叠 */
+  padding-left: 10px; /* 给堆叠的牌一些起始边距 */
+  padding-right: 10px;
 }
 
-.layout-row-modular {
-  width: 100%;
-  box-sizing: border-box; 
-  border: 1px dashed #d0d0d0; /* 浅色虚线边框 */
-  padding: 8px; 
-  display: flex; 
-  flex-direction: column; /* 默认内容垂直排列 */
-  justify-content: center; 
-  align-items: center; 
-  background-color: #f9f9f9; /* 非常浅的背景色 */
-  border-radius: 3px;
-  position: relative; /* 为了绝对定位内部的半透明文字 */
-  overflow: auto; /* 如果内容超出，允许滚动 */
-}
-
-.placeholder-text { /* 用于所有横幅的占位文字 */
-  color: #aaa;
-  font-style: italic;
-  font-size: 0.9em;
-}
-.semi-transparent-text { /* 用于墩位名称的半透明效果 */
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 2.5em; /* 调大字号 */
-  color: rgba(0, 0, 0, 0.08); /* 非常淡的半透明黑色 */
-  font-weight: bold;
-  z-index: 0; /* 确保在牌的下方 */
-  pointer-events: none; /* 文字不干扰鼠标事件 */
-  white-space: nowrap; /* 防止文字换行 */
-}
-
-.status-banner-row-modular { /* 10% */
-  flex-shrink: 0;
-}
-
-.card-dun-row-modular { /* 25% */
-  flex-shrink: 0;
-  justify-content: flex-start; /* 内容从顶部开始，方便牌的显示 */
-  align-items: center; /* 水平居中 */
-}
-.dun-label { /* 用于显示 "头道", "手牌", "尾道" */
-  width: 100%;
-  text-align: center;
-  margin-bottom: 5px; /* 与牌区隔开一点 */
-  font-weight: bold;
-  color: #555;
-  z-index: 1; /* 确保在半透明文字上方 */
-  position: relative; /* 使 z-index 生效 */
-}
-.dun-cards-area {
-  display: flex;
-  flex-wrap: wrap; /* 允许牌换行 */
-  justify-content: center; /* 牌在区域内居中 */
-  align-items: center; /* 牌垂直居中 */
-  width: 100%;
-  min-height: 70px; /* 给点最小高度 */
-  gap: 3px; /* 牌之间的间隙 */
-  z-index: 1; /* 确保牌在半透明文字上方 */
-  position: relative;
-}
-.hand-display-area { /* 第三道手牌区的特殊样式，如果需要 */
-  /* background-color: #e8f4fd; */ /* 可以给个不同的背景色调试 */
+.stacked-card {
+  /* CardDisplay.vue 自身的样式会定义宽高 */
+  /* 这里通过 getCardStyle 动态设置 left 和 z-index */
+  transition: left 0.3s ease-out; /* 添加一点动画效果 */
 }
 
 
-.button-action-row-modular { /* 15% */
-  flex-shrink: 0;
-  flex-direction: row; 
-  gap: 10px;
-  align-items: center; 
-}
-.button-action-row-modular button { 
-  font-size: 0.9em; padding: 8px 15px; 
-  background-color: #007bff; color:white; border:none; border-radius: 4px; cursor:pointer;
-}
+.button-action-row-modular { flex-shrink: 0; flex-direction: row; gap: 10px; align-items: center; }
+.button-action-row-modular button { font-size: 0.9em; padding: 8px 15px; background-color: #007bff; color:white; border:none; border-radius: 4px; cursor:pointer; }
 .button-action-row-modular button:disabled { background-color: #ccc; }
-
-
-.app-footer-modular { 
-  padding: 8px 20px; text-align: center; font-size: 0.8em; 
-  color: #6c757d; border-top: 1px solid #eee; flex-shrink: 0; 
-}
+.app-footer-modular { padding: 8px 20px; text-align: center; font-size: 0.8em; color: #6c757d; border-top: 1px solid #eee; flex-shrink: 0; }
 </style>
