@@ -9,56 +9,67 @@
 
     <main class="game-board-layout">
       <!-- 第1道: 各玩家状态横幅显示 (占10%) -->
-      <section class="layout-row status-banner-row">
+      <section class="layout-row status-banner-row" style="height: 10%;">
         <div class="status-banner-content">
-          <!-- 暂时占位，以后可以放多个玩家的简要状态 -->
           <div v-if="gameStore.myPlayerDetails" class="player-status-summary">
             玩家: {{ gameStore.myPlayerDetails.name || '当前玩家' }} 
             (分数: {{ gameStore.myPlayerDetails.score || 0 }})
           </div>
-          <div v-else-if="!gameStore.isLoading">请先获取手牌</div>
-          <!-- 以后这里可以 v-for 渲染其他玩家的摘要 -->
+          <div v-else-if="!gameStore.isLoading && (!gameStore.myCards || gameStore.myCards.length === 0)">请先获取手牌</div>
+          <div v-else-if="gameStore.isLoading">状态加载中...</div>
         </div>
       </section>
 
-      <!-- 第2, 3, 4道: 理牌区 (各占25%，合并为一个大区域或分三块) -->
-      <!-- 为了简化，先将 PlayerHandInput 放入一个占据整体75%的区域 -->
-      <section class="layout-row card-arrangement-area">
-        <PlayerHandInput 
-          v-if="gameStore.myCards && gameStore.myCards.length > 0 && !handIsSubmitted"
-          :initial-cards="gameStore.myCards"
-          :is-submitted="handIsSubmitted" 
-          @hand-submitted="onHandSubmitted" 
-        />
-        <div v-else-if="handIsSubmitted" class="submitted-info-main">
-            <p>牌型已提交！等待处理...</p>
-            <!-- 可以考虑显示已提交的牌墩 -->
+      <!-- 第2道: 理牌区 - 头墩 (占25%) -->
+      <section class="layout-row card-arrangement-dun front-dun-area" style="height: 25%;">
+        <h4>头墩 (3张) <span v-if="arrangedCards.front.length > 0">- {{ FrontendGameLogic.getHandType(arrangedCards.front).name }}</span></h4>
+        <div class="dun-cards-display">
+            <CardDisplay v-for="card in arrangedCards.front" :key="'f-'+card.id" :card="card" @click="moveCardFromDunToAvailable('front', card)" class="clickable-card"/>
         </div>
-        <div v-else-if="!gameStore.isLoading && !gameStore.hasError && (!gameStore.myCards || gameStore.myCards.length === 0)" class="no-cards-info">
-            <p>请点击下方“获取新手牌”开始游戏。</p>
-        </div>
-         <div v-if="gameStore.isLoading && (!gameStore.myCards || gameStore.myCards.length === 0)" class="loading-message-main">
-            正在加载手牌...
-        </div>
-        <div v-if="gameStore.hasError" class="error-message-main">
-            错误: {{ gameStore.error }}
-        </div>
+        <button v-if="selectedAvailableCard && arrangedCards.front.length < 3" @click="placeSelectedCardInDun('front')" class="place-button">放入头墩</button>
+        <p v-else-if="arrangedCards.front.length < 3" class="dun-placeholder">还需 {{3 - arrangedCards.front.length}} 张</p>
       </section>
+
+      <!-- 第3道: 理牌区 - 中墩 (占25%) -->
+      <section class="layout-row card-arrangement-dun mid-dun-area" style="height: 25%;">
+        <h4>中墩 (5张) <span v-if="arrangedCards.mid.length > 0">- {{ FrontendGameLogic.getHandType(arrangedCards.mid).name }}</span></h4>
+        <div class="dun-cards-display">
+            <CardDisplay v-for="card in arrangedCards.mid" :key="'m-'+card.id" :card="card" @click="moveCardFromDunToAvailable('mid', card)" class="clickable-card"/>
+        </div>
+        <button v-if="selectedAvailableCard && arrangedCards.mid.length < 5" @click="placeSelectedCardInDun('mid')" class="place-button">放入中墩</button>
+        <p v-else-if="arrangedCards.mid.length < 5" class="dun-placeholder">还需 {{5 - arrangedCards.mid.length}} 张</p>
+      </section>
+
+      <!-- 第4道: 理牌区 - 尾墩 (占25%) -->
+      <section class="layout-row card-arrangement-dun back-dun-area" style="height: 25%;">
+        <h4>尾墩 (5张) <span v-if="arrangedCards.back.length > 0">- {{ FrontendGameLogic.getHandType(arrangedCards.back).name }}</span></h4>
+        <div class="dun-cards-display">
+            <CardDisplay v-for="card in arrangedCards.back" :key="'b-'+card.id" :card="card" @click="moveCardFromDunToAvailable('back', card)" class="clickable-card"/>
+        </div>
+        <button v-if="selectedAvailableCard && arrangedCards.back.length < 5" @click="placeSelectedCardInDun('back')" class="place-button">放入尾墩</button>
+        <p v-else-if="arrangedCards.back.length < 5" class="dun-placeholder">还需 {{5 - arrangedCards.back.length}} 张</p>
+      </section>
+      
+      <!-- "待选牌区" - 这部分会在按钮区上方，逻辑上是理牌的一部分 -->
+      <div class="available-cards-picker-area" v-if="availableCardsForPlacement.length > 0 && !handIsSubmitted">
+          <h4>可选的牌 (点击选择一张，再点击上方墩的“放入”按钮):</h4>
+          <div class="available-cards-list">
+            <CardDisplay v-for="card in availableCardsForPlacement" :key="card.id" :card="card" :is-selected="selectedAvailableCard?.id === card.id" @select="toggleSelectAvailableCard(card)"/>
+          </div>
+      </div>
+      <div v-if="牌墩错误提示" class="error-message-main">{{ 牌墩错误提示 }}</div>
+
 
       <!-- 第5道: 按钮区 (占15%) -->
-      <section class="layout-row button-action-row">
+      <section class="layout-row button-action-row" style="height: 15%;">
         <div class="button-area-content">
           <button @click="fetchNewHand" :disabled="gameStore.isLoading">
-            {{ (gameStore.myCards && gameStore.myCards.length > 0 && !handIsSubmitted) ? '重新发牌' : '获取新手牌' }}
+            {{手牌存在且未提交 ? '重新发牌' : '获取新手牌' }}
           </button>
-          <!-- 提交按钮现在在 PlayerHandInput 内部，但也可以在这里放一个全局的，根据 PlayerHandInput 的状态决定是否可用 -->
-          <!-- <button 
-            v-if="gameStore.myCards.length > 0 && !handIsSubmitted" 
-            @click="triggerSubmitFromApp" 
-            :disabled="!canAppSubmit || gameStore.isLoading"
-            >
-            从App提交 (测试)
-          </button> -->
+          <button @click="submitArrangedHands" :disabled="!canSubmit" class="submit-final-button">
+            {{ handIsSubmitted ? '已提交' : '确认提交牌型' }}
+          </button>
+           <button @click="resetArrangement" :disabled="handIsSubmitted || gameStore.isLoading || !手牌存在">重置摆牌</button>
         </div>
       </section>
     </main>
@@ -70,40 +81,123 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useGameStore } from './stores/gameStore';
-import PlayerHandInput from './components/PlayerHandInput.vue';
-// 如果要创建 PlayerStatusSummary.vue
-// import PlayerStatusSummary from './components/PlayerStatusSummary.vue';
-
+import CardDisplay from './components/CardDisplay.vue';
+import { GameLogic as FrontendGameLogic } from './utils/frontendGameLogic';
 
 const gameStore = useGameStore();
-const handIsSubmitted = ref(false); 
+const handIsSubmitted = ref(false);
 
-// 用于从 App.vue 触发 PlayerHandInput 内部的提交逻辑 (如果需要)
-// const playerHandInputRef = ref(null); 
-// const canAppSubmit = computed(() => playerHandInputRef.value?.canSubmitHandFromParent());
-// function triggerSubmitFromApp() {
-//   playerHandInputRef.value?.submitFromParent();
-// }
+const availableCardsForPlacement = ref([]); // 原来的 unassignedCards，表示当前可供选择放入墩的牌
+const arrangedCards = ref({ front: [], mid: [], back: [] });
+const selectedAvailableCard = ref(null); // 当前从 availableCardsForPlacement 选中的牌
+const 牌墩错误提示 = ref('');
+
+const 手牌存在 = computed(() => gameStore.myCards && gameStore.myCards.length === 13);
+const 手牌存在且未提交 = computed(() => 手牌存在.value && !handIsSubmitted.value);
 
 
-async function onHandSubmitted(arrangedHands) {
-  await gameStore.submitArrangedHand(arrangedHands.front, arrangedHands.mid, arrangedHands.back);
+watch(() => gameStore.myCards, (newCards) => {
+  if (newCards && newCards.length === 13) {
+    // console.log("[App.vue] Watcher myCards: New cards received, resetting arrangement.");
+    resetArrangement();
+  } else if (!newCards || newCards.length === 0) {
+    // console.log("[App.vue] Watcher myCards: Cards cleared, resetting arrangement.");
+    resetArrangement(); // 也清空界面
+  }
+}, { deep: true });
+
+function resetArrangement() {
+  // console.log("[App.vue] resetArrangement called.");
+  availableCardsForPlacement.value = gameStore.myCards ? [...gameStore.myCards].sort((a,b) => b.value - a.value) : [];
+  arrangedCards.value = { front: [], mid: [], back: [] };
+  selectedAvailableCard.value = null;
+  handIsSubmitted.value = false;
+  牌墩错误提示.value = '';
+}
+
+function toggleSelectAvailableCard(card) {
+  if (handIsSubmitted.value) return;
+  if (selectedAvailableCard.value?.id === card.id) {
+    selectedAvailableCard.value = null;
+  } else {
+    selectedAvailableCard.value = card;
+  }
+}
+
+function placeSelectedCardInDun(dunName) {
+  if (!selectedAvailableCard.value || handIsSubmitted.value) return;
+  const dunLimit = dunName === 'front' ? 3 : 5;
+
+  if (arrangedCards.value[dunName].length < dunLimit) {
+    arrangedCards.value[dunName].push(selectedAvailableCard.value);
+    availableCardsForPlacement.value = availableCardsForPlacement.value.filter(c => c.id !== selectedAvailableCard.value.id);
+    selectedAvailableCard.value = null; // 放入后取消选择
+    validateDuns();
+  } else {
+    alert(`${dunName === 'front' ? '头' : dunName === 'mid' ? '中' : '尾'}墩已满！`);
+  }
+}
+
+function moveCardFromDunToAvailable(dunName, cardToMove) {
+    if (handIsSubmitted.value) return;
+    arrangedCards.value[dunName] = arrangedCards.value[dunName].filter(c => c.id !== cardToMove.id);
+    availableCardsForPlacement.value.push(cardToMove);
+    availableCardsForPlacement.value.sort((a,b) => b.value - a.value);
+    // 从墩移回时不自动选中，让用户重新从available区选择
+    selectedAvailableCard.value = null; 
+    validateDuns();
+}
+
+const canSubmit = computed(() => {
+    return arrangedCards.value.front.length === 3 &&
+           arrangedCards.value.mid.length === 5 &&
+           arrangedCards.value.back.length === 5 &&
+           availableCardsForPlacement.value.length === 0 && // 所有牌都已分配
+           !牌墩错误提示.value &&
+           !handIsSubmitted.value;
+});
+
+function validateDuns() {
+    牌墩错误提示.value = '';
+    if (arrangedCards.value.front.length === 0 && arrangedCards.value.mid.length === 0 && arrangedCards.value.back.length === 0 && availableCardsForPlacement.value.length === 13) {
+        return; // 初始状态或完全重置，不提示
+    }
+    if (arrangedCards.value.front.length === 3 && arrangedCards.value.mid.length === 5 && arrangedCards.value.back.length === 5) {
+        const frontType = FrontendGameLogic.getHandType(arrangedCards.value.front);
+        const midType = FrontendGameLogic.getHandType(arrangedCards.value.mid);
+        const backType = FrontendGameLogic.getHandType(arrangedCards.value.back);
+
+        if (FrontendGameLogic.compareHandTypes(frontType, midType) > 0) {
+            牌墩错误提示.value = "倒水：头墩牌型不能大于中墩！"; return;
+        }
+        if (FrontendGameLogic.compareHandTypes(midType, backType) > 0) {
+            牌墩错误提示.value = "倒水：中墩牌型不能大于尾墩！"; return;
+        }
+    } else {
+        // 可以选择在这里提示墩牌数量不足，或者让各个墩的提示自行处理
+    }
+}
+watch(arrangedCards, validateDuns, {deep: true});
+
+
+async function submitArrangedHands() {
+  if (!canSubmit.value) {
+    if(牌墩错误提示.value) alert(`提交失败: ${牌墩错误提示.value}`);
+    else alert("请确保所有牌墩都已正确摆放（头3，中5，尾5），且所有牌都已分配。");
+    return;
+  }
+  await gameStore.submitArrangedHand(arrangedCards.value.front, arrangedCards.value.mid, arrangedCards.value.back);
   if (!gameStore.error) {
     handIsSubmitted.value = true;
-    // 可以在这里添加一些提交成功后的逻辑，比如短暂显示消息
-    setTimeout(() => {
-        // 简化模式下，可以自动获取新手牌开始下一轮，或者显示一个“再来一局”的按钮
-        // fetchNewHand(); // 例如：3秒后自动获取新手牌
-    }, 3000);
+  } else {
+    alert(`提交时发生错误: ${gameStore.error}`);
   }
 }
 
 async function fetchNewHand() {
-  handIsSubmitted.value = false; // 重置提交状态
-  gameStore.clearCoreData(); // 清理旧手牌等核心数据，但不清理session_id
-  await gameStore.fetchInitialHand();
+  await gameStore.fetchInitialHand(); // store会更新myCards, 触发watcher调用resetArrangement
 }
 
 onMounted(async () => {
@@ -114,145 +208,106 @@ onMounted(async () => {
 
 <style>
 /* 全局 Reset 和基础样式 */
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f0f4f8; /* 淡雅的背景色 */
-  color: #333;
-}
-
-#thirteen-water-app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh; /* 使应用至少占据整个视口高度 */
-  max-width: 900px; /* 或根据你的设计调整 */
-  margin: 0 auto; /* 水平居中 */
-  background-color: #ffffff;
-  box-shadow: 0 0 15px rgba(0,0,0,0.1);
-}
-
-.app-header {
-  padding: 15px 20px;
-  background-color: #007bff;
-  color: white;
-  text-align: center;
-  border-bottom: 3px solid #0056b3;
-}
-.app-header h1 {
-  margin: 0;
-  font-size: 1.8em;
-}
-.header-info {
-  margin-top: 5px;
-  font-size: 0.8em;
-  opacity: 0.9;
-}
+html, body { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; color: #333; }
+#thirteen-water-app { display: flex; flex-direction: column; height: 100vh; max-width: 900px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+.app-header { padding: 10px 20px; background-color: #007bff; color: white; text-align: center; flex-shrink: 0; }
+.app-header h1 { margin: 0; font-size: 1.5em; }
+.header-info { margin-top: 3px; font-size: 0.75em; opacity: 0.9; }
 
 .game-board-layout {
-  flex-grow: 1; /* 使 main 内容区占据剩余空间 */
+  flex-grow: 1; 
   display: flex;
-  flex-direction: column; /* 垂直排列五个横幅 */
-  padding: 10px; /* 给整个牌桌一些内边距 */
-  gap: 10px; /* 横幅之间的间隔 */
+  flex-direction: column;
+  padding: 8px; 
+  gap: 8px; /* 横幅之间的间隔 */
+  overflow: hidden;
 }
 
 .layout-row {
   width: 100%;
-  box-sizing: border-box; /* 内边距和边框不增加总宽度 */
-  border: 1px solid #dde; /* 临时边框，方便看区域 */
-  padding: 8px; /* 给每个横幅一些内边距 */
-  display: flex; /* 用于内部元素对齐 */
-  justify-content: center;
-  align-items: center;
+  box-sizing: border-box; 
+  /* border: 1px solid #e0e0e0;  */ /* 可以移除或保留用于调试 */
+  padding: 5px; 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center; 
+  align-items: center; 
   background-color: #fdfdfd;
-  border-radius: 4px;
+  border-radius: 3px;
+  overflow: hidden;
 }
 
-/* 第1道: 各玩家状态横幅显示 (占10%) */
-.status-banner-row {
-  min-height: 10vh; /* 使用视口高度的百分比 */
-  /* 或者 flex-basis: 10%; 如果父容器 game-board-layout 是 flex container */
-  /* background-color: #e9f7ff; */ /* 淡蓝色背景 */
-}
-.status-banner-content {
-  width: 100%;
-  display: flex; /* 如果有多个玩家状态并排显示 */
+.status-banner-row { /* 10% */
+  flex-shrink: 0; /* 不被压缩 */
+  flex-basis: 10%; /* 使用 flex-basis 来精确控制比例 */
   justify-content: space-around;
-  align-items: center;
-  font-size: 0.9em;
+  flex-direction: row; 
 }
-.player-status-summary {
-  padding: 5px 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #fff;
-}
+.player-status-summary { padding: 3px 8px; border: 1px solid #ccc; border-radius: 3px; background-color: #fff; font-size: 0.8em; }
 
-
-/* 第2, 3, 4道: 理牌区 (合并为75%) */
-.card-arrangement-area {
-  min-height: 60vh; /* 主要操作区域，占据较多高度 */
-  /* 或者 flex-basis: 75%; */
-  display: flex; /* 确保 PlayerHandInput 或提示信息能居中等 */
-  flex-direction: column; /* 如果内部有多个元素垂直排列 */
-  justify-content: flex-start; /* 内容从顶部开始 */
-  align-items: stretch; /* PlayerHandInput 宽度充满 */
-  padding: 15px; /* 给理牌区更多内边距 */
-  overflow-y: auto; /* 如果内容过多，允许滚动 */
+.card-arrangement-dun { /* 各墩25% */
+  flex-shrink: 0;
+  flex-basis: 23%; /* 稍微减小一点，给 unassigned-cards-area 留空间，总共接近 75% */
+  align-items: center; /* 内容居中 */
+  padding-top: 5px;
+  border: 1px dashed #ccc; /* 区分墩区 */
 }
-/* PlayerHandInput 组件的样式在其内部定义，这里确保它能正确填充 */
-.card-arrangement-area > .player-hand-input {
+.card-arrangement-dun h4 { font-size: 0.9em; margin: 0 0 5px 0; text-align: center; width: 100%; }
+.dun-cards-display {
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: center; 
+    align-items: center;
     width: 100%;
-    flex-grow: 1; /* 如果需要它填满剩余空间 */
+    min-height: 65px; 
 }
-.no-cards-info, .loading-message-main, .error-message-main, .submitted-info-main {
+.dun-placeholder { font-size: 0.8em; color: #888; margin: 5px 0 0 0; }
+.clickable-card { cursor: pointer; border: 1px solid transparent; }
+.clickable-card:hover { border-color: #007bff; }
+.place-button {
+    font-size: 0.75em;
+    padding: 2px 6px;
+    margin-top: 3px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.place-button:disabled { background-color: #e9ecef; cursor: not-allowed; }
+
+
+.available-cards-picker-area { /* 这部分逻辑上属于理牌区，放在按钮区上方 */
+    flex-shrink: 0;
+    flex-basis: auto; /* 高度由内容决定，或者给一个 flex-grow:1 来填充剩余 */
+    padding: 8px; margin: 5px 0; border-radius: 4px;
+    background-color: #e7f3ff;
     text-align: center;
-    padding: 20px;
-    font-size: 1.1em;
-    color: #555;
+    border: 1px solid #b8daff;
+    min-height: 80px; /* 至少能显示一行牌 */
 }
-.error-message-main { color: red; }
-.submitted-info-main { color: green; }
-
-
-/* 第5道: 按钮区 (占15%) */
-.button-action-row {
-  min-height: 12vh; 
-  /* 或者 flex-basis: 15%; */
-  /* background-color: #f8f9fa; */ /* 浅灰色背景 */
-}
-.button-area-content {
-  display: flex;
-  gap: 15px;
-}
-.button-area-content button {
-  padding: 10px 20px;
-  font-size: 1em;
-  border-radius: 5px;
-  cursor: pointer;
-  border: none;
-  background-color: #007bff;
-  color: white;
-}
-.button-area-content button:disabled {
-  background-color: #ccc;
+.available-cards-picker-area h4 { margin: 0 0 8px 0; font-size: 0.9em; }
+.available-cards-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px;
 }
 
 
-.app-footer {
-  padding: 10px 20px;
-  text-align: center;
-  font-size: 0.85em;
-  color: #6c757d;
-  border-top: 1px solid #eee;
-  margin-top: auto; /* 将 footer 推到底部，如果内容不足以撑满屏幕 */
-}
+.error-message-main { color: red; font-weight: bold; text-align: center; padding: 5px; font-size: 0.9em; width:100%;}
 
-/* loading 和 error message 的通用样式 (如果需要) */
-.loading-message, .error-message {
-  /* ... (与上一版相同) ... */
-}
 
+.button-action-row { /* 15% */
+  flex-shrink: 0;
+  flex-basis: 15%;
+  flex-direction: row; 
+  gap: 10px;
+  align-items: center; /* 按钮垂直居中 */
+}
+.button-action-row button { font-size: 0.9em; padding: 8px 15px; }
+.submit-final-button { background-color: #28a745; color:white;}
+.submit-final-button:disabled { background-color: #ccc;}
+
+
+.app-footer { padding: 8px 20px; text-align: center; font-size: 0.8em; color: #6c757d; border-top: 1px solid #eee; flex-shrink: 0; }
 </style>
