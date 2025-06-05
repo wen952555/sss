@@ -3,31 +3,44 @@
     <header>
       <h1>十三水在线对战</h1>
       <div class="header-info">
-          <div v-if="gameStore.playerSessionId" class="session-info">
-            <span>会话ID: </span><small>{{ gameStore.playerSessionId.substring(0, 8) }}...</small>
-            <button @click="copySessionId" title="复制会话ID" class="copy-btn">复制</button>
-          </div>
-          <div v-if="gameStore.gameCode" class="game-code-header-info">
-            <span>房间: </span> 
-            <strong 
-                class="game-code-display-header" 
-                title="点击复制房间码"  <!-- 再次确认此处的引号是标准的英文双引号 -->
-                @click="copyGameCodeHeader"
-            >
-                {{ gameStore.gameCode }}
-            </strong>
-          </div>
+        <div v-if="gameStore.playerSessionId" class="session-info">
+          <span>会话ID: </span>
+          <small>{{ gameStore.playerSessionId.substring(0, 8) }}...</small>
+          <button 
+            type="button"
+            @click="copySessionId" 
+            title="复制会话ID" 
+            class="copy-btn"
+          >
+            复制
+          </button>
+        </div>
+        <div v-if="gameStore.gameCode" class="game-code-header-info">
+          <span>房间: </span> 
+          <strong 
+            class="game-code-display-header" 
+            title="点击复制房间码"
+            @click="copyGameCodeHeader"
+          >
+            {{ gameStore.gameCode }}
+          </strong>
+        </div>
       </div>
     </header>
 
     <main>
-      <GameSetup v-if="(!gameStore.isGameActive && !gameStore.isGameFinished) || gameStore.isGameWaiting"/>
+      <!-- GameSetup 显示条件: 游戏未激活(非playing/finished) 且 游戏也非等待中 (即初始状态)，或者明确是等待中 -->
+      <GameSetup 
+        v-if="(!gameStore.isGameActive && !gameStore.isGameFinished) || gameStore.isGameWaiting"
+      />
 
-      <div v-if="gameStore.isGameActive || gameStore.isGameFinished" class="game-board">
+      <!-- 游戏板 显示条件: 游戏正在进行 或 游戏已结束 -->
+      <div v-if="gameStore.isGamePlaying || gameStore.isGameFinished" class="game-board">
         <h2 v-if="gameStore.gameCode && gameStore.gameState"> 
           <span>房间: {{ gameStore.gameCode }}</span>
           <span class="game-status" v-if="gameStore.gameState">(状态: {{ localizedGameStatus }})</span>
           <button 
+            type="button"
             @click="handleLeaveGameApp" 
             v-if="gameStore.gameId" 
             class="btn-leave-game-app" 
@@ -38,10 +51,10 @@
         </h2>
         <h2 v-else-if="gameStore.isLoading && gameStore.gameId">正在加载房间...</h2>
         
-        <div v-if="gameStore.isLoading && (gameStore.isGameActive || gameStore.isGameFinished)" class="loading-overlay">
+        <div v-if="gameStore.isLoading && (gameStore.isGamePlaying || gameStore.isGameFinished)" class="loading-overlay">
             <p>加载中...</p>
         </div>
-        <div v-if="gameStore.error && (gameStore.isGameActive || gameStore.isGameFinished)" class="error-banner">
+        <div v-if="gameStore.error && (gameStore.isGamePlaying || gameStore.isGameFinished)" class="error-banner">
             错误: {{ gameStore.error }}
         </div>
         
@@ -53,7 +66,7 @@
             :game-status="gameStore.gameState?.status || 'unknown'" 
           />
         </div>
-        <p v-else-if="(gameStore.isGameActive || gameStore.isGameFinished) && !gameStore.isLoading">等待玩家信息...</p>
+        <p v-else-if="(gameStore.isGamePlaying || gameStore.isGameFinished) && !gameStore.isLoading">等待玩家信息...</p>
         
         <PlayerHandInput 
           v-if="gameStore.isGamePlaying && gameStore.myPlayerDetails && !gameStore.myPlayerDetails.is_ready && gameStore.myCards && gameStore.myCards.length > 0" 
@@ -69,7 +82,15 @@
         
         <div v-if="gameStore.isGameFinished" class="game-over-section">
           <h3>本局结束！</h3>
-          <button @click="handleNewRound" v-if="canStartNewRound" :disabled="gameStore.isLoading" class="btn-new-round">开始新一局</button>
+          <button 
+            type="button"
+            @click="handleNewRound" 
+            v-if="canStartNewRound" 
+            :disabled="gameStore.isLoading" 
+            class="btn-new-round"
+          >
+            开始新一局
+          </button>
         </div>
       </div>
     </main>
@@ -89,8 +110,8 @@ import PlayerStatus from './components/PlayerStatus.vue';
 const gameStore = useGameStore();
 
 const localizedGameStatus = computed(() => {
-  const statusMap = { waiting: '等待玩家', playing: '游戏中', finished: '已结束' };
-  return statusMap[gameStore.gameState?.status] || gameStore.gameState?.status || '未知';
+  const statusMap = { waiting: '等待玩家', playing: '游戏中', finished: '已结束', unknown: '未知' };
+  return statusMap[gameStore.gameState?.status] || gameStore.gameState?.status || '未连接';
 });
 const myPlayerIsReady = computed(() => gameStore.myPlayerDetails?.is_ready || false);
 const canStartNewRound = computed(() => gameStore.myPlayerDetails?.order === 1 && gameStore.isGameFinished);
@@ -119,13 +140,13 @@ onUnmounted(() => {
 </script>
 
 <style>
-/* 确保这里的样式没有问题，与上一版相同 */
+/* 样式与上一版完全相同 */
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #eef2f7; color: #333; line-height: 1.6; }
 #thirteen-water-app { max-width: 1000px; margin: 20px auto; padding: 20px; background-color: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.05); border-radius: 8px; }
 header { border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 20px; text-align: center; }
 header h1 { color: #007bff; margin: 0; }
-.header-info { display: flex; flex-direction: column; /* 改为纵向排列 */ justify-content: center; align-items: center; gap: 5px; /* 减小间距 */ margin-top: 5px; font-size: 0.9em; }
-.session-info, .game-code-header-info { color: #555; display: inline-block; /* 让它们在同一行内 */ margin: 0 10px; /* 左右一些间距 */ }
+.header-info { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; margin-top: 5px; font-size: 0.9em; }
+.session-info, .game-code-header-info { color: #555; display: inline-block; margin: 0 10px; }
 .copy-btn, .game-code-display-header { margin-left: 5px; padding: 2px 6px; font-size: 0.9em; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; }
 .game-code-display-header { font-weight: bold; color: #007bff; }
 .game-board { margin-top: 20px; padding: 15px; border: 1px solid #d1dce5; border-radius: 6px; background-color: #fbfdff; }
