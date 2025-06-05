@@ -4,15 +4,14 @@
       <h1>十三水在线对战</h1>
       <div class="header-info">
           <div v-if="gameStore.playerSessionId" class="session-info">
-            会话ID: <small>{{ gameStore.playerSessionId.substring(0, 8) }}...</small>
-            <!-- 确保 title 属性的值是用双引号括起来的字符串 -->
+            <span>会话ID: </span><small>{{ gameStore.playerSessionId.substring(0, 8) }}...</small>
             <button @click="copySessionId" title="复制会话ID" class="copy-btn">复制</button>
           </div>
           <div v-if="gameStore.gameCode" class="game-code-header-info">
-            房间: 
+            <span>房间: </span> 
             <strong 
                 class="game-code-display-header" 
-                title="点击复制房间码" <!-- 确保这里的引号正确 -->
+                title="点击复制房间码"  <!-- 再次确认此处的引号是标准的英文双引号 -->
                 @click="copyGameCodeHeader"
             >
                 {{ gameStore.gameCode }}
@@ -39,8 +38,12 @@
         </h2>
         <h2 v-else-if="gameStore.isLoading && gameStore.gameId">正在加载房间...</h2>
         
-        <div v-if="gameStore.isLoading && (gameStore.isGameActive || gameStore.isGameFinished)" class="loading-overlay"><p>加载中...</p></div>
-        <div v-if="gameStore.error && (gameStore.isGameActive || gameStore.isGameFinished)" class="error-banner">错误: {{ gameStore.error }}</div>
+        <div v-if="gameStore.isLoading && (gameStore.isGameActive || gameStore.isGameFinished)" class="loading-overlay">
+            <p>加载中...</p>
+        </div>
+        <div v-if="gameStore.error && (gameStore.isGameActive || gameStore.isGameFinished)" class="error-banner">
+            错误: {{ gameStore.error }}
+        </div>
         
         <div class="players-area" v-if="gameStore.players && gameStore.players.length > 0">
           <PlayerStatus 
@@ -121,13 +124,13 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; 
 #thirteen-water-app { max-width: 1000px; margin: 20px auto; padding: 20px; background-color: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.05); border-radius: 8px; }
 header { border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 20px; text-align: center; }
 header h1 { color: #007bff; margin: 0; }
-.header-info { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 5px; font-size: 0.9em; }
-.session-info, .game-code-header-info { color: #555; }
+.header-info { display: flex; flex-direction: column; /* 改为纵向排列 */ justify-content: center; align-items: center; gap: 5px; /* 减小间距 */ margin-top: 5px; font-size: 0.9em; }
+.session-info, .game-code-header-info { color: #555; display: inline-block; /* 让它们在同一行内 */ margin: 0 10px; /* 左右一些间距 */ }
 .copy-btn, .game-code-display-header { margin-left: 5px; padding: 2px 6px; font-size: 0.9em; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; }
 .game-code-display-header { font-weight: bold; color: #007bff; }
 .game-board { margin-top: 20px; padding: 15px; border: 1px solid #d1dce5; border-radius: 6px; background-color: #fbfdff; }
 .game-board h2 { color: #343a40; margin-top: 0; border-bottom: 1px dashed #ced4da; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
-.game-board h2 > span:first-of-type { /* "房间: XXX" 部分 */ flex-grow: 1; text-align: left; } /* Changed from span:first-child */
+.game-board h2 > span:first-of-type { flex-grow: 1; text-align: left; }
 .game-status { font-size: 0.8em; font-weight: normal; color: #495057; background-color: #e9ecef; padding: 3px 8px; border-radius: 10px; margin-left: 10px; white-space: nowrap; }
 .btn-leave-game-app { padding: 6px 12px; font-size: 0.85em; border: none; border-radius: 4px; cursor: pointer; background-color: #6c757d; color: white; transition: background-color 0.2s; margin-left: auto; white-space: nowrap;}
 .btn-leave-game-app:hover:not(:disabled) { background-color: #545b62; }
