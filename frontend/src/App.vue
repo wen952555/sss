@@ -8,21 +8,18 @@
     </header>
 
     <main class="game-board-layout-modular">
-      <!-- 第1道: 各玩家状态横幅显示 (占10%) -->
+      <!-- 第1道 -->
       <section class="layout-row-modular status-banner-row-modular" style="height: 10%;">
         <div class="placeholder-text">第一道：玩家状态区</div>
-        <!-- 你可以根据需要填充实际的玩家状态显示 -->
       </section>
 
-      <!-- 第2道: 理牌区 - 头道 (占25%) -->
+      <!-- 第2道 -->
       <section class="layout-row-modular card-dun-row-modular" style="height: 25%;">
         <div class="dun-label placeholder-text semi-transparent-text">头道</div>
-        <div class="dun-cards-area">
-          <!-- 这里将来会放头道的牌 -->
-        </div>
+        <div class="dun-cards-area"></div>
       </section>
 
-      <!-- 第3道: 理牌区 - 手牌 (占25%) -->
+      <!-- 第3道: 手牌区 -->
       <section ref="handDisplayContainerRef" class="layout-row-modular card-dun-row-modular hand-display-section" style="height: 25%;">
         <div class="dun-label placeholder-text semi-transparent-text">手牌</div>
         <div class="dun-cards-area stacked-hand-display-area">
@@ -36,21 +33,18 @@
         </div>
       </section>
 
-      <!-- 第4道: 理牌区 - 尾道 (占25%) -->
+      <!-- 第4道 -->
       <section class="layout-row-modular card-dun-row-modular" style="height: 25%;">
         <div class="dun-label placeholder-text semi-transparent-text">尾道</div>
-        <div class="dun-cards-area">
-          <!-- 这里将来会放尾道的牌 -->
-        </div>
+        <div class="dun-cards-area"></div>
       </section>
       
-      <!-- 第5道: 按钮区 (占15%) -->
+      <!-- 第5道 -->
       <section class="layout-row-modular button-action-row-modular" style="height: 15%;">
         <div class="button-area-content-modular">
           <button @click="handleTryPlay" :disabled="gameStore.isLoading">
             {{ gameStore.currentHand.length > 0 ? '重新试玩 (换牌)' : '试玩 (获取手牌)' }}
           </button>
-          <!-- 以后可以添加更多按钮，例如提交牌型 -->
         </div>
       </section>
     </main>
@@ -63,147 +57,83 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { useGameStore } from './stores/gameStore'; // 确保路径正确
-import CardDisplay from './components/CardDisplay.vue'; // 确保路径正确
+import { useGameStore } from './stores/gameStore';
+import CardDisplay from './components/CardDisplay.vue';
 
 const gameStore = useGameStore();
 const handDisplayContainerRef = ref(null); 
-const handDisplayContainerWidth = ref(0); 
 const handDisplayContainerHeight = ref(0);
+// 移除了 handDisplayContainerWidth 作为主要驱动因素，因为 stepX 将更固定
 
 const CARD_ASPECT_RATIO = 60 / 90; 
 const NUM_CARDS_IN_HAND = 13;
-const HAND_AREA_HORIZONTAL_PADDING = 20; 
-const HAND_AREA_VERTICAL_PADDING = 10; 
+const HAND_AREA_VERTICAL_PADDING = 16; // 上下各8px的padding
 
-
-const updateContainerDimensions = () => {
+const updateContainerHeight = () => { // 只更新高度，宽度由牌堆自然决定
   if (handDisplayContainerRef.value) {
-    handDisplayContainerWidth.value = handDisplayContainerRef.value.offsetWidth - HAND_AREA_HORIZONTAL_PADDING;
     handDisplayContainerHeight.value = handDisplayContainerRef.value.offsetHeight - HAND_AREA_VERTICAL_PADDING;
+    // console.log(`Hand display container effective H: ${handDisplayContainerHeight.value}`);
   }
 };
 
 onMounted(() => {
-  nextTick(updateContainerDimensions);
-  window.addEventListener('resize', updateContainerDimensions);
+  nextTick(updateContainerHeight);
+  window.addEventListener('resize', updateContainerHeight);
 });
-onUnmounted(() => { window.removeEventListener('resize', updateContainerDimensions); });
-watch(() => gameStore.currentHand, () => { nextTick(updateContainerDimensions); }, { deep: true });
+onUnmounted(() => { window.removeEventListener('resize', updateContainerHeight); });
+watch(() => gameStore.currentHand, () => { nextTick(updateContainerHeight); }, { deep: true });
 
 
 function getStackedCardStyle(index, totalCards) {
-  if (totalCards === 0 || handDisplayContainerWidth.value <= 0 || handDisplayContainerHeight.value <= 0) {
+  if (totalCards === 0 || handDisplayContainerHeight.value <= 0) {
     return { opacity: 0, position: 'absolute' }; 
   }
 
+  // 1. 以容器高度为基准，计算卡牌的理想高度和宽度
   let cardHeight = handDisplayContainerHeight.value;
   let cardWidth = cardHeight * CARD_ASPECT_RATIO;
 
-  const minVisiblePartFactor = 0.20; 
-  let calculatedCardWidth = handDisplayContainerWidth.value / (1 + (totalCards - 1) * minVisiblePartFactor);
-  
-  if ((calculatedCardWidth / CARD_ASPECT_RATIO) > handDisplayContainerHeight.value && handDisplayContainerHeight.value > 0) {
-      calculatedCardWidth = handDisplayContainerHeight.value * CARD_ASPECT_RATIO;
+  // 确保卡牌不会过小或过大 (可以根据需要设置阈值)
+  const minCardWidth = 30;
+  const maxCardWidth = 70; // 例如，不超过一个标准卡牌宽度
+  if (cardWidth < minCardWidth) {
+      cardWidth = minCardWidth;
+      cardHeight = cardWidth / CARD_ASPECT_RATIO;
   }
-  
-  cardWidth = calculatedCardWidth;
-  cardHeight = cardWidth / CARD_ASPECT_RATIO;
-
-  const minCardWidthThreshold = 20; // 可以适当调小一点，看效果
-  if (cardWidth < minCardWidthThreshold && totalCards > 0) {
-      const originalCardWidthForMinScale = minCardWidthThreshold / CARD_ASPECT_RATIO > handDisplayContainerHeight.value ? 
-                                          handDisplayContainerHeight.value * CARD_ASPECT_RATIO : minCardWidthThreshold;
-      cardWidth = originalCardWidthForMinScale;
+  if (cardWidth > maxCardWidth) {
+      cardWidth = maxCardWidth;
       cardHeight = cardWidth / CARD_ASPECT_RATIO;
   }
   
-  let stepX;
-  if (totalCards <= 1) {
-    stepX = cardWidth; 
-  } else {
-    stepX = (handDisplayContainerWidth.value - cardWidth) / (totalCards - 1);
-  }
-  stepX = Math.max(stepX, cardWidth * 0.10); 
-  stepX = Math.min(stepX, cardWidth * 0.5); // 限制最大间距，避免过于分散，比如最多露出50% 
+  // 2. 定义每张牌（除了最后一张）露出的固定宽度 (stepX)
+  // 你说“每张只显示左边的1厘米的宽度”，我们用牌宽的一个比例来模拟
+  // 例如，如果牌宽是60px，我们希望露出15px (大约是宽度的25%)
+  const visiblePartOfCardFactor = 0.20; // 每张牌露出自身宽度的20%
+  let stepX = cardWidth * visiblePartOfCardFactor;
 
-  // 非均匀 stepX 的逻辑 (如上一版)
-  const wideVisibleFactor = 0.50; 
-  const mediumVisibleFactor = 0.35; 
-  const narrowVisibleFactor = 0.20; // 调整最后几张牌的可见度
-
-  const numWideCards = Math.floor(totalCards * 0.4); // 例如前40%的牌
-  const numMediumCards = Math.floor(totalCards * 0.4); // 中间40%
-
-  let effectiveStepX;
-  if (index < numWideCards) {
-    effectiveStepX = cardWidth * wideVisibleFactor;
-  } else if (index < numWideCards + numMediumCards) {
-    effectiveStepX = cardWidth * mediumVisibleFactor;
-  } else {
-    effectiveStepX = cardWidth * narrowVisibleFactor;
-  }
-
-  // 重新计算总宽度并按需缩放 stepX
-  let theoreticalTotalWidth = cardWidth; // 第一张牌
-  for(let i = 1; i < totalCards; i++) {
-      let tempStepX;
-      if (i < numWideCards) tempStepX = cardWidth * wideVisibleFactor;
-      else if (i < numWideCards + numMediumCards) tempStepX = cardWidth * mediumVisibleFactor;
-      else tempStepX = cardWidth * narrowVisibleFactor;
-      theoreticalTotalWidth += tempStepX;
-  }
-
-  if (theoreticalTotalWidth > handDisplayContainerWidth.value && handDisplayContainerWidth.value > 0 && totalCards > 1) {
-      const общейШириныДляСжатия = theoreticalTotalWidth - cardWidth; // 总的需要压缩的偏移量
-      const доступнойШириныДляСжатия = handDisplayContainerWidth.value - cardWidth;
-      const compressionFactor = доступнойШириныДляСжатия / общейШириныДляСжатия;
-      
-      if (index < numWideCards) effectiveStepX *= compressionFactor;
-      else if (index < numWideCards + numMediumCards) effectiveStepX *= compressionFactor;
-      else effectiveStepX *= compressionFactor;
-      
-      effectiveStepX = Math.max(effectiveStepX, cardWidth * 0.08); // 再次确保最小可见部分
-  }
-
-
-  let currentLeftOffset = 0;
-  for (let i = 0; i < index; i++) {
-      let stepForThisCard;
-      if (i < numWideCards ) { // 注意边界条件，第一张牌后开始计算step
-          stepForThisCard = cardWidth * wideVisibleFactor;
-      } else if (i < numWideCards + numMediumCards ) {
-          stepForThisCard = cardWidth * mediumVisibleFactor;
-      } else {
-          stepForThisCard = cardWidth * narrowVisibleFactor;
-      }
-      if (theoreticalTotalWidth > handDisplayContainerWidth.value && handDisplayContainerWidth.value > 0 && totalCards > 1) {
-          const общейШириныДляСжатия = theoreticalTotalWidth - cardWidth;
-          const доступнойШириныДляСжатия = handDisplayContainerWidth.value - cardWidth;
-          const compressionFactor = доступнойШириныДляСжатия / общейШириныДляСжатия;
-          stepForThisCard *= compressionFactor;
-          stepForThisCard = Math.max(stepForThisCard, cardWidth * 0.08);
-      }
-      currentLeftOffset += stepForThisCard;
-  }
-
+  // 如果是最后一张牌，它不需要为下一张牌留出偏移，但它的left值仍然是基于前面的累加
+  // 对于除了最后一张牌之外的所有牌，它们的"贡献宽度"是stepX
+  // 最后一张牌会完整显示它的cardWidth (从它的left点开始)
+  
+  // 计算当前牌的 left offset
+  // 第一张牌 (index 0) 的 left 是 0
+  // 第二张牌 (index 1) 的 left 是 stepX
+  // 第三张牌 (index 2) 的 left 是 2 * stepX, 以此类推
+  const leftOffset = index * stepX;
 
   return {
     position: 'absolute',
-    left: `${currentLeftOffset}px`,
+    left: `${leftOffset}px`,
     top: '50%', 
-    transform: 'translateY(-50%)',
+    transform: 'translateY(-50%)', // 垂直居中
     width: `${cardWidth}px`,
     height: `${cardHeight}px`,
-    zIndex: index,
+    zIndex: index, // 后发的牌在上面
     boxShadow: '0px 1px 2px rgba(0,0,0,0.15)',
   };
 }
 
-async function handleTryPlay() {
-  await gameStore.fetchInitialHand();
-  nextTick(updateContainerDimensions); 
-}
+async function handleTryPlay() { /* ... (与上一版相同) ... */ }
 </script>
 
 <style>
@@ -215,7 +145,7 @@ html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;
 .header-info-modular { margin-top: 3px; font-size: 0.75em; opacity: 0.9; }
 
 .game-board-layout-modular { flex-grow: 1; display: flex; flex-direction: column; width: 100%; height: 100%; padding: 5px; gap: 5px; box-sizing: border-box; overflow: hidden; }
-.layout-row-modular { width: 100%; box-sizing: border-box; border: 1px dashed #d0d0d0; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f9f9f9; border-radius: 3px; position: relative; overflow: hidden; }
+.layout-row-modular { width: 100%; box-sizing: border-box; border: 1px dashed #d0d0d0; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f9f9f9; border-radius: 3px; position: relative; overflow: hidden; /* 对于手牌区，如果牌堆超出，会被这里裁剪 */ }
 
 .placeholder-text { color: #aaa; font-style: italic; font-size: 0.9em; }
 .semi-transparent-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3em; color: rgba(0, 0, 0, 0.05); font-weight: bold; z-index: 0; pointer-events: none; white-space: nowrap; }
@@ -233,16 +163,19 @@ html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;
   box-sizing: border-box;
 }
 
+/* 手牌区（第3道横幅）的特殊样式 */
 .hand-display-section .dun-cards-area {
-  justify-content: flex-start; 
-  padding-left: 10px; 
-  padding-right: 10px; 
+  justify-content: flex-start; /* 卡牌从左边开始堆叠 */
+  padding-left: 10px; /* 给第一张牌的左边留出一点边距 */
+  padding-right: 10px; /* 也给右边留点边距，以防最后一张牌贴边 */
+  /* overflow: hidden; /* 确保如果牌堆太宽，超出部分被裁剪 */
 }
 
 .stacked-card {
-  /* 确保 CardDisplay.vue 中的根元素没有设置 position:absolute */
-  /* border: 1px solid #777; */ /* 调试用 */
-  /* background-color: white; */ /* 调试用 */
+  /* CardDisplay.vue 自身的样式会定义宽高，但会被这里的动态style覆盖 */
+  border: 1px solid #aaa; /* 给牌加个边框看得清楚点 */
+  border-radius: 3px; 
+  background-color: white; 
 }
 
 .button-action-row-modular { flex-shrink: 0; flex-direction: row; gap: 10px; align-items: center; }
