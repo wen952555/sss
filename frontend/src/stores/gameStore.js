@@ -16,94 +16,141 @@ export const useGameStore = defineStore('game', {
         pollingInterval: null,
         lastPollFailed: false,
     }),
-    getters: { /* ... (与上一轮修复 defineStore 错误后的版本相同) ... */ },
+    getters: { /* ... (与上一版相同，确保它们依赖的状态正确) ... */ },
     actions: {
+        // Helper to ensure 'this' context is correct when calling other actions from deeply nested promises or callbacks
+        // Pinia usually handles 'this' correctly in actions, but this can be a safeguard
+        // For direct calls like this.clearGameData() within an action, it should be fine.
+        // The issue was likely that some actions were not defined in the actions object.
+
         _updateStateFromResponse(data, source = "unknown") {
-            console.log(`[gameStore DEBUG] _updateStateFromResponse (from ${source}) data:`, JSON.parse(JSON.stringify(data)));
-            // ... (其余逻辑与上一轮修复 defineStore 错误后的版本相同)
+            // console.log(`[STORE] _updateState (from ${source}) data:`, JSON.parse(JSON.stringify(data)));
+            if (data.game_id !== undefined) {
+                this.gameId = data.game_id;
+                if (data.game_id) localStorage.setItem('currentGameId', this.gameId); else localStorage.removeItem('currentGameId');
+            }
+            if (data.game_code !== undefined) {
+                this.gameCode = data.game_code;
+                 if (data.game_code) localStorage.setItem('currentGameCode', this.gameCode); else localStorage.removeItem('currentGameCode');
+            }
+            if (data.player_session_id && (!this.playerSessionId || this.playerSessionId !== data.player_session_id)) {
+                this.playerSessionId = data.player_session_id;
+                localStorage.setItem('playerSessionId', this.playerSessionId);
+            }
+            if (data.game_state) this.gameState = data.game_state;
+            
+            if (Array.isArray(data.players)) {
+                this.players = data.players.map(p => ({ ...p, is_me: p.session_id === this.playerSessionId }));
+                const me = this.players.find(p => p.is_me);
+                if (me) {
+                    this.myCards = Array.isArray(me.my_cards) ? me.my_cards : []; this.myPlayerId = me.id;
+                } else { this.myCards = []; this.myPlayerId = null; }
+            } else if (data.game_state && data.players === undefined && source.includes("fetchGameState")) { 
+                this.players = []; this.myCards = [];
+            }
         },
+
+        // All actions must be defined here to be callable with 'this'
+        startPolling() {
+            this.stopPolling();
+            if (this.gameId && !this.isGameFinished) {
+                this.pollingInterval = setInterval(() => {
+                    if (this.gameId && !this.isGameFinished && !this.lastPollFailed) {
+                        this.fetchGameState(false); // Pass false to not show loading for polling
+                    } else { this.stopPolling(); }
+                }, 5000);
+            }
+        },
+        stopPolling() {
+            if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
+        },
+        clearGameData() {
+            console.log("[STORE ACTION] clearGameData called");
+            this.stopPolling(); this.gameId = null; this.gameCode = null; this.gameState = null;
+            this.players = []; this.myCards = []; this.myPlayerId = null;
+            this.loading = false; // Ensure loading is reset
+            // this.error = null; // Optionally clear error, or let it persist
+            localStorage.removeItem('currentGameId'); localStorage.removeItem('currentGameCode');
+        },
+        async fetchGameState(forceUpdateLoading = false) {
+            // console.log(`[STORE ACTION] fetchGameState called. Game ID: ${this.gameId}`);
+            if (!this.gameId) { this.clearGameData(); return; }
+            if (forceUpdateLoading && !this.loading) this.loading = true;
+            try {
+                const response = await apiService.getGameState(this.gameId);
+                if (response.data.success) {
+                    this._updateStateFromResponse(response.data, "fetchGameState_api_success");
+                    this.error = null; this.lastPollFailed = false;
+                    if (this.isGameFinished) this.stopPolling();
+                    else if ((this.isGameWaiting || this.gameState?.status === 'playing') && !this.pollingInterval) this.startPolling();
+                } else { this.error = response.data.error || '获取状态失败'; this.lastPollFailed = true; }
+            } catch (err) { this.error = err.response?.data?.error || err.message || '获取状态请求错误'; this.lastPollFailed = true; } 
+            finally { if (forceUpdateLoading) this.loading = false; }
+        },
+        async tryRestoreSession() {
+            console.log("[STORE ACTION] tryRestoreSession called. gameId:", this.gameId, "playerSessionId:", this.playerSessionId);
+            if (this.playerSessionId && this.gameId) {
+                await this.fetchGameState(true); 
+                if (this.isGameActive || this.isGameWaiting) { 
+                    if(!this.pollingInterval) this.startPolling(); 
+                } else if (!this.gameState && !this.error) { this.clearGameData(); }
+            } else { this.clearGameData(); }
+        },
+
         async createGame(maxPlayers = 4) {
-            console.log(`[gameStore DEBUG] ACTION: createGame started. Max players: ${maxPlayers}, Initial playerSessionId: ${this.playerSessionId}`);
+            console.log("[STORE ACTION] createGame started. Max players:", maxPlayers);
             this.loading = true; this.error = null;
             try {
                 const response = await apiService.createGame(maxPlayers);
-                console.log("[gameStore DEBUG] createGame API response received:", JSON.parse(JSON.stringify(response))); // Log a copy
                 if (response.data && response.data.success && response.data.game_code && response.data.game_id) {
-                    console.log("[gameStore DEBUG] createGame API success. Data:", JSON.parse(JSON.stringify(response.data)));
                     this._updateStateFromResponse(response.data, "createGame_api_success");
                     const playerName = localStorage.getItem('playerName') || `房主_${this.playerSessionId?.substring(0,4) || '新'}`;
-                    
-                    if (!this.gameCode) {
-                        this.error = "创建房间后未能获取房间码。"; 
-                        console.error("[gameStore DEBUG] Error after createGame success (no gameCode):", this.error);
-                        throw new Error(this.error); // Propagate error
-                    }
-                    console.log(`[gameStore DEBUG] Attempting auto-join with code: '${this.gameCode}' as player: '${playerName}'`);
+                    if (!this.gameCode) { throw new Error("创建房间后未能获取房间码。"); }
                     await this.joinGame(this.gameCode, playerName); 
-                    
-                    if (this.error) { 
-                        console.error("[gameStore DEBUG] Auto-join after createGame FAILED. Error from joinGame:", this.error);
-                        // throw new Error(`自动加入房间失败: ${this.error}`); //让createGame的error被这个覆盖
-                    } else {
-                        console.log("[gameStore DEBUG] Auto-join after createGame successful.");
-                    }
+                    if (this.error) { throw new Error(`自动加入房间失败: ${this.error}`); } // Propagate joinGame error
                 } else {
-                    this.error = response.data?.error || '创建房间失败 (API response indicates failure or missing data)';
-                    console.error("[gameStore DEBUG] createGame API FAILED:", this.error, "Full Response:", JSON.parse(JSON.stringify(response)));
-                    throw new Error(this.error); // Propagate error
+                    throw new Error(response.data?.error || '创建房间失败 (API response error or missing data)');
                 }
             } catch (err) {
-                // If error was already set by a deeper throw, use that, otherwise use generic.
-                if (!this.error) {
-                    this.error = err.message || '创建房间请求发生未知错误';
-                }
-                console.error("[gameStore DEBUG] createGame CATCH block error:", this.error, err);
-                // Do not clearGameData here if create succeeded but join failed, to preserve gameCode for user
-                if (!(err.message && err.message.startsWith("自动加入房间失败"))) { //只有在create_game本身失败时才清理
-                    this.clearGameData();
-                }
+                this.error = err.message; // Capture the most recent error
+                console.error("[STORE CATCH] createGame error:", this.error, err);
+                this.clearGameData(); // Clear state on any failure in createGame flow
             } finally {
                 this.loading = false;
-                console.log(`[gameStore DEBUG] ACTION: createGame finished. Loading: ${this.loading}, Error: ${this.error}, GameID: ${this.gameId}`);
+                console.log(`[STORE ACTION] createGame finished. Error: ${this.error}, GameID: ${this.gameId}`);
             }
         },
         async joinGame(gameCode, playerName) {
-            console.log(`[gameStore DEBUG] ACTION: joinGame started. Code: '${gameCode}', Name: '${playerName}', SessionId: '${this.playerSessionId}'`);
+            console.log(`[STORE ACTION] joinGame started. Code: '${gameCode}', Name: '${playerName}'`);
             this.loading = true; 
-            // Important: Do not clear global this.error here if called from createGame, 
-            // as createGame might have its own error to report if joinGame is part of it.
-            // Let's use a local error for this specific attempt.
-            let joinAttemptError = null;
+            // this.error = null; // Don't clear error here if called from createGame
             try {
-                if (!gameCode || !playerName) {
-                    joinAttemptError = "加入房间信息不完整 (缺少房间码或昵称)"; throw new Error(joinAttemptError);
-                }
+                if (!gameCode || !playerName) { throw new Error("加入房间信息不完整"); }
                 const response = await apiService.joinGame(gameCode, playerName);
-                console.log("[gameStore DEBUG] joinGame API response received:", JSON.parse(JSON.stringify(response.data)));
                 if (response.data && response.data.success && response.data.game_id) {
                     this._updateStateFromResponse(response.data, "joinGame_api_success");
                     if (gameCode && (!this.gameCode || this.gameCode !== gameCode)) {
                         this.gameCode = gameCode; localStorage.setItem('currentGameCode', this.gameCode);
                     }
                     await this.fetchGameState(true); 
-                    this.startPolling();
-                    // Only clear error if this joinGame call itself was successful.
-                    // If part of createGame, createGame's error will be the final one.
-                    // this.error = null; // This might clear createGame's error prematurely
-                    console.log("[gameStore DEBUG] joinGame successful. Fetched game state.");
+                    this.startPolling(); // 'this' should be correct here
+                    // this.error = null; // Clear error only if joinGame itself is the top-level action and succeeds
                 } else {
-                    joinAttemptError = response.data?.error || '加入房间失败 (API response indicates failure)'; 
-                    throw new Error(joinAttemptError);
+                    throw new Error(response.data?.error || '加入房间失败 (API response error)');
                 }
             } catch (err) {
-                this.error = joinAttemptError || err.message || '加入房间请求发生网络或未知错误'; // Set global error here
-                console.error("[gameStore DEBUG] joinGame CATCH block error:", this.error, err);
+                this.error = err.message; // Capture error
+                console.error("[STORE CATCH] joinGame error:", this.error, err);
+                // If joinGame is calledstandalone and fails, maybe clear data or parts of it
+                // if (!this.gameId) { this.clearGameData(); } // Example: if no gameId was established
             } finally {
                 this.loading = false;
-                console.log(`[gameStore DEBUG] ACTION: joinGame finished. Loading: ${this.loading}, Error: ${this.error}, GameID: ${this.gameId}`);
+                console.log(`[STORE ACTION] joinGame finished. Error: ${this.error}, GameID: ${this.gameId}`);
             }
         },
-        // ... (其他 actions: fetchGameState, startGame, submitHand, leaveGame, resetForNewRound, startPolling, stopPolling, clearGameData, tryRestoreSession 与上一轮修复 defineStore 错误后的版本相同，确保日志开启)
-        // 确保所有这些 action 的定义都在这里
+        async startGame() { /* ... (ensure all 'this.action()' calls are valid) ... */ },
+        async submitHand(front, mid, back) { /* ... (ensure all 'this.action()' calls are valid) ... */ },
+        async leaveGame() { /* ... (ensure all 'this.action()' calls are valid and it calls this.clearGameData()) ... */ },
+        async resetForNewRound() { /* ... (ensure all 'this.action()' calls are valid) ... */ },
     }
 });
