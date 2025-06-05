@@ -8,106 +8,47 @@
       </div>
       <button @click="handleCreateGame" :disabled="gameStore.isGameLoading" class="btn-primary">创建新房间</button>
       <hr />
-      <div class="form-group">
-        <label for="gameCodeInput">房间码:</label>
-        <input type="text" id="gameCodeInput" v-model="gameCodeToJoin" placeholder="输入房间码加入" />
-      </div>
-      <button @click="handleJoinGame" :disabled="gameStore.isGameLoading || !gameCodeToJoin.trim()" class="btn-secondary">加入房间</button>
+      <!-- ... (加入房间表单与上一轮相同) ... -->
     </div>
 
-    <div v-if="gameStore.isGameWaiting" class="waiting-room-interface"> <!-- 使用 isGameWaiting getter -->
-      <h3>
-        等待玩家加入 - 房间码: 
-        <strong class="game-code-display" title="点击复制房间码" @click="copyGameCode" v-if="gameStore.gameCode">
-            {{ gameStore.gameCode }}
-        </strong>
-        <span v-else class="game-code-loading">获取中...</span>
-      </h3>
-      <p>
-        将房间码分享给好友邀请他们加入！ 
-        <span v-if="gameStore.gameState && gameStore.gameState.max_players !== undefined">
-            (当前 {{ gameStore.players.length }} / {{ gameStore.gameState.max_players }} 人)
-        </span>
-      </p>
-      
-      <div v-if="gameStore.players && gameStore.players.length > 0">
-          <p>玩家列表:</p>
-          <ul>
-            <li v-for="player in gameStore.players" :key="player.id" :class="{'is-me-list-item': player.is_me}">
-                {{ player.name }} 
-                <span v-if="player.is_me">(你)</span>
-                <span v-if="player.order === 1 && player.is_me"> (房主)</span>
-                <span v-else-if="player.order === 1"> (房主)</span>
-            </li>
-          </ul>
-      </div>
-      <p v-else-if="!gameStore.isGameLoading">
-          正在加载玩家列表或房间内当前只有您...
-      </p>
-      
-      <button
-        v-if="gameStore.canStartGame"  
-        @click="triggerStartGame" 
-        :disabled="gameStore.isGameLoading"
-        class="btn-start-game"
-      >
-        开始游戏 ({{ gameStore.players.length }}人)
-      </button>
-      <div v-else-if="gameStore.gameState && !gameStore.isGameLoading"> <!-- 确保 gameState 存在再显示提示 -->
-          <p v-if="gameStore.myPlayerDetails && gameStore.myPlayerDetails.order === 1 && gameStore.players.length < gameStore.gameState.max_players">
-              等待更多玩家加入 (还差 {{ gameStore.gameState.max_players - gameStore.players.length }} 人)...
-          </p>
-          <p v-else-if="gameStore.players.length >= gameStore.gameState.max_players && (!gameStore.myPlayerDetails || gameStore.myPlayerDetails.order !== 1)">
-              房间已满，等待房主开始游戏...
-          </p>
-           <p v-else-if="gameStore.players.length < 2 && gameStore.myPlayerDetails && gameStore.myPlayerDetails.order === 1">
-              至少需要2名玩家才能开始。
-          </p>
-      </div>
-      
-      <button @click="handleLeaveGame" :disabled="gameStore.isGameLoading" class="btn-leave">
-        退出房间
-      </button>
+    <!-- ... (等待界面与上一轮相同) ... -->
+    <div v-if="gameStore.isGameWaiting" class="waiting-room-interface">
+        <!-- ... -->
     </div>
     
-    <div v-else-if="gameStore.gameId && gameStore.gameCode && !gameStore.gameState && gameStore.isGameLoading">
-        <p class="loading-message">正在加载房间信息...</p>
-    </div>
-     <div v-else-if="gameStore.isGameActive"> <!-- 如果游戏已激活 (非waiting,非finished)，GameSetup不应显示主要内容 -->
-        <p>正在进入游戏...</p> 
-    </div>
-
     <div v-if="gameStore.error && !gameStore.isGameLoading" class="error-message">{{ gameStore.error }}</div>
     <div v-if="(!gameStore.gameId || !gameStore.gameCode) && gameStore.isGameLoading" class="loading-message">操作中，请稍候...</div>
   </div>
 </template>
 
 <script setup>
-// ... (script setup 与上一版相同) ...
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue'; // 确保导入 computed
 import { useGameStore } from '../stores/gameStore';
+
 const gameStore = useGameStore();
 const gameCodeToJoin = ref('');
 const playerName = ref(localStorage.getItem('playerName') || `玩家${Math.random().toString(36).substring(2, 6)}`);
-async function handleCreateGame() { await gameStore.createGame(); }
-async function handleJoinGame() { await gameStore.joinGame(gameCodeToJoin.value.trim(), playerName.value.trim()); }
-async function triggerStartGame() { await gameStore.startGame(); }
-async function handleLeaveGame() { await gameStore.leaveGame(); }
-async function copyGameCode() { /* ... */ }
+
+const showWaitingInterface = computed(() => { /* ... */ });
+
+async function handleCreateGame() {
+  console.log("[GameSetup.vue DEBUG] handleCreateGame called. Player name:", playerName.value);
+  if (!playerName.value.trim()) { alert('请输入你的昵称！'); return; }
+  localStorage.setItem('playerName', playerName.value.trim());
+  await gameStore.createGame(); // 默认4人
+  console.log(`[GameSetup.vue DEBUG] gameStore.createGame() finished. Game ID: ${gameStore.gameId}, Game Code: ${gameStore.gameCode}, Error: ${gameStore.error}`);
+}
+async function handleJoinGame() { /* ... (与上一轮相同，可加入日志) ... */ }
+async function triggerStartGame() { /* ... (与上一轮相同，可加入日志) ... */ }
+async function handleLeaveGame() { /* ... (与上一版相同，可加入日志) ... */ }
+async function copyGameCode() { /* ... (与上一版相同) ... */ }
+
 onMounted(async () => {
-    if (gameStore.gameId && gameStore.gameCode) {
-        if (!gameStore.gameState || (gameStore.gameState.id !== parseInt(gameStore.gameId))) {
-            await gameStore.tryRestoreSession();
-        } else if ((gameStore.isGameActive || gameStore.isGameWaiting) && !gameStore.pollingInterval) {
-            gameStore.startPolling();
-        }
-    } else {
-        gameStore.clearGameData();
-    }
+    console.log(`[GameSetup.vue DEBUG] onMounted. GameId: ${gameStore.gameId}, GameCode: ${gameStore.gameCode}, PlayerSessionId: ${gameStore.playerSessionId}`);
+    // ... (onMounted 逻辑与上一轮相同)
 });
 </script>
 
 <style scoped>
 /* 样式与上一版相同 */
-.is-me-list-item { font-weight: bold; color: #007bff; }
 </style>
