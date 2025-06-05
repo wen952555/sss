@@ -1,147 +1,78 @@
 <template>
-  <div id="thirteen-water-app" class="game-container">
-    <header class="app-header">
-      <h1>十三水在线对战</h1>
-      <!-- 头部可以保留，或者也简化 -->
-      <div class="header-info">
-        <!-- 简化，暂时移除会话ID和房间号显示 -->
-        <p>牌桌模式</p>
-      </div>
-    </header>
+  <div id="thirteen-water-app-barebones" class="game-container-barebones">
+    <main class="game-board-layout-barebones">
+      <!-- 第1道横幅 (10%) -->
+      <section class="layout-row-barebones" style="height: 10%;"></section>
 
-    <main class="game-board-layout">
-      <!-- 第1道: 各玩家状态横幅显示 (占10%) -->
-      <section class="layout-row status-banner-row" style="height: 10%;">
-        <div class="placeholder-content">
-          <p>第一道横幅：玩家状态区 (10%)</p>
-        </div>
-      </section>
+      <!-- 第2道横幅 (25%) -->
+      <section class="layout-row-barebones" style="height: 25%;"></section>
 
-      <!-- 第2道: 理牌区 - 头墩 (占25%) -->
-      <section class="layout-row card-arrangement-dun front-dun-area" style="height: 25%;">
-        <div class="placeholder-content">
-          <p>第二道横幅：头墩区 (25%)</p>
-        </div>
-      </section>
+      <!-- 第3道横幅 (25%) -->
+      <section class="layout-row-barebones" style="height: 25%;"></section>
 
-      <!-- 第3道: 理牌区 - 中墩 (占25%) -->
-      <section class="layout-row card-arrangement-dun mid-dun-area" style="height: 25%;">
-        <div class="placeholder-content">
-          <p>第三道横幅：中墩区 (25%)</p>
-        </div>
-      </section>
-
-      <!-- 第4道: 理牌区 - 尾墩 (占25%) -->
-      <section class="layout-row card-arrangement-dun back-dun-area" style="height: 25%;">
-        <div class="placeholder-content">
-          <p>第四道横幅：尾墩区 (25%)</p>
-        </div>
-      </section>
+      <!-- 第4道横幅 (25%) -->
+      <section class="layout-row-barebones" style="height: 25%;"></section>
       
-      <!-- 第5道: 按钮区 (占15%) -->
-      <section class="layout-row button-action-row" style="height: 15%;">
-        <div class="placeholder-content">
-          <p>第五道横幅：按钮区 (15%)</p>
-        </div>
-      </section>
+      <!-- 第5道横幅 (15%) -->
+      <section class="layout-row-barebones" style="height: 15%;"></section>
     </main>
-
-    <footer class="app-footer">
-      <p>简易十三水游戏</p>
-    </footer>
   </div>
 </template>
 
 <script setup>
-// Script setup is kept minimal for this barebones layout
-// import { ref, onMounted } from 'vue';
-// import { useGameStore } from './stores/gameStore'; // Temporarily unused
-
-// const gameStore = useGameStore(); // Temporarily unused
-
-// onMounted(() => {
-//   console.log("Barebones App.vue mounted.");
-//   // No automatic actions like fetching hands in this version
-// });
+// Script setup is completely empty as per request for a barebones layout
 </script>
 
 <style>
-/* 全局 Reset 和基础样式 */
+/* 全局 Reset - 确保没有默认边距和内边距影响布局 */
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f0f4f8; /* 淡雅的背景色 */
-  color: #333;
-}
-
-#thirteen-water-app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh; /* 强制占满整个视口 */
-  max-width: 900px; /* 或根据你的设计调整 */
-  margin: 0 auto; /* 水平居中 */
-  background-color: #ffffff;
-  box-shadow: 0 0 15px rgba(0,0,0,0.1);
-}
-
-.app-header {
-  padding: 15px 20px;
-  background-color: #007bff;
-  color: white;
-  text-align: center;
-  flex-shrink: 0; /* 防止头部被压缩 */
-}
-.app-header h1 {
-  margin: 0;
-  font-size: 1.8em;
-}
-.header-info {
-  margin-top: 5px;
-  font-size: 0.9em;
-  opacity: 0.9;
-}
-
-.game-board-layout {
-  flex-grow: 1; /* 使 main 内容区占据剩余空间 */
-  display: flex;
-  flex-direction: column; /* 垂直排列五个横幅 */
-  padding: 10px; /* 给整个牌桌一些内边距 */
-  gap: 10px; /* 横幅之间的间隔 */
-  overflow: hidden; /* 防止内部滚动条影响整体布局 */
-}
-
-.layout-row {
   width: 100%;
-  box-sizing: border-box; /* 内边距和边框不增加总宽度 */
-  border: 1px dashed #ccc; /* 临时边框，方便看区域划分 */
-  padding: 8px; /* 给每个横幅一些内边距 */
-  display: flex; 
-  justify-content: center; /* 水平居中占位符文本 */
-  align-items: center; /* 垂直居中占位符文本 */
-  background-color: #fdfdfd;
-  border-radius: 4px;
-  overflow: hidden; 
-}
-.placeholder-content {
-  text-align: center;
-  color: #888;
-  font-style: italic;
+  overflow: hidden; /* 防止意外的滚动条 */
+  background-color: #f0f4f8; /* 可以设置一个背景色，或者移除 */
 }
 
-/* 高度分配给每个横幅 */
-.status-banner-row { flex-shrink: 0; /* 不被压缩 */ } /* height is set inline */
-.card-arrangement-dun { flex-shrink: 0; } /* height is set inline */
-.button-action-row { flex-shrink: 0; } /* height is set inline */
-
-
-.app-footer {
-  padding: 10px 20px;
-  text-align: center;
-  font-size: 0.85em;
-  color: #6c757d;
-  border-top: 1px solid #eee;
-  flex-shrink: 0; /* 防止被压缩 */
+#thirteen-water-app-barebones {
+  display: flex; /* 只为了让 main 能够撑满 */
+  flex-direction: column;
+  height: 100vh; 
+  width: 100vw;
+  box-sizing: border-box;
+  /* 移除 max-width 和 margin: auto 以便全屏显示骨架 */
+  /* background-color: #ffffff; */ /* 可以移除背景色，让body的背景色透出来 */
+  /* box-shadow: 0 0 15px rgba(0,0,0,0.1); */ /* 移除阴影 */
 }
+
+.game-board-layout-barebones {
+  flex-grow: 1; 
+  display: flex;
+  flex-direction: column; 
+  width: 100%;
+  height: 100%; /* 确保它能撑满父容器的高度 */
+  /* padding: 10px; */ /* 移除内边距 */
+  /* gap: 10px; */ /* 移除间隔 */
+  box-sizing: border-box;
+}
+
+.layout-row-barebones {
+  width: 100%;
+  box-sizing: border-box; 
+  border: 1px solid #e0e0e0; /* 保留一个细边框以区分区域，如果完全不要，可以移除 */
+  /* padding: 0; */ /* 移除内边距 */
+  /* background-color: #fdfdfd; */ /* 移除背景色 */
+  /* border-radius: 0; */ /* 移除圆角 */
+  /* overflow: hidden; */ /* 移除，除非特定区域需要 */
+  /* display: flex; justify-content: center; align-items: center; */ /* 移除，因为内部没有内容需要对齐 */
+}
+
+/* 可以为每个横幅设置不同的背景色进行调试，如果需要 */
+/*
+.layout-row-barebones:nth-child(1) { background-color: rgba(255,0,0,0.1); }
+.layout-row-barebones:nth-child(2) { background-color: rgba(0,255,0,0.1); }
+.layout-row-barebones:nth-child(3) { background-color: rgba(0,0,255,0.1); }
+.layout-row-barebones:nth-child(4) { background-color: rgba(255,255,0,0.1); }
+.layout-row-barebones:nth-child(5) { background-color: rgba(255,0,255,0.1); }
+*/
 </style>
