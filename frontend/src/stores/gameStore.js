@@ -4,199 +4,86 @@ import apiService from '../services/apiService';
 
 export const useGameStore = defineStore('game', {
     state: () => ({
-        gameId: localStorage.getItem('currentGameId') || null,
-        gameCode: localStorage.getItem('currentGameCode') || null,
-        gameState: null,
-        players: [],
-        myCards: [],
-        myPlayerId: null,
-        playerSessionId: localStorage.getItem('playerSessionId') || null,
+        myCards: [],     // 核心：当前玩家的手牌
+        playerSessionId: localStorage.getItem('playerSessionId') || null, // 仍然需要会话ID
         error: null,
         loading: false,
-        pollingInterval: null,
-        lastPollFailed: false,
+        // 移除了 gameId, gameCode, gameState, players, pollingInterval, lastPollFailed
     }),
     getters: {
-        isGameLoading: (state) => state.loading,
-        isGameActive: (state) => !!state.gameId && !!state.gameState && state.gameState.status !== 'waiting' && state.gameState.status !== 'finished',
-        isGameWaiting: (state) => !!state.gameId && !!state.gameState && state.gameState.status === 'waiting',
-        isGameFinished: (state) => !!state.gameState && state.gameState.status === 'finished',
-        myPlayerDetails: (state) => {
-            if (!state.playerSessionId || !Array.isArray(state.players) || state.players.length === 0) return null;
-            return state.players.find(p => p.session_id === state.playerSessionId);
-        },
-        canStartGame(state) {
-            const me = this.myPlayerDetails;
-            if (!me) return false;
-            if (!state.gameState || state.gameState.status !== 'waiting' || typeof state.gameState.max_players === 'undefined') return false;
-            const isHost = me.order === 1;
-            const isFull = state.players.length === state.gameState.max_players;
-            return isHost && isFull;
-        },
-        isMyTurnToSubmit: (state) => {
-            if (!this.isGameActive || state.gameState?.status !== 'playing' || !this.myPlayerDetails) return false;
-            return !this.myPlayerDetails.is_ready;
-        },
-        allPlayersReady: (state) => {
-            if (!Array.isArray(state.players) || state.players.length === 0 || state.gameState?.status !== 'playing') return false;
-            return state.players.every(p => p.is_ready);
-        },
+        // 可以保留一些基础的 getter，如果需要
+        isLoading: (state) => state.loading,
+        hasError: (state) => !!state.error,
     },
     actions: {
-        // 确保所有方法都在这个 actions 对象内部正确定义
-        _updateStateFromResponse(data, source = "unknown") {
-            // console.log(`[gameStore] _updateState (from ${source}):`, JSON.parse(JSON.stringify(data)));
-            if (data.game_id !== undefined) {
-                this.gameId = data.game_id;
-                if (data.game_id) localStorage.setItem('currentGameId', this.gameId); else localStorage.removeItem('currentGameId');
-            }
-            if (data.game_code !== undefined) {
-                this.gameCode = data.game_code;
-                if (data.game_code) localStorage.setItem('currentGameCode', this.gameCode); else localStorage.removeItem('currentGameCode');
-            }
-            if (data.player_session_id && (!this.playerSessionId || this.playerSessionId !== data.player_session_id)) {
-                this.playerSessionId = data.player_session_id;
-                localStorage.setItem('playerSessionId', this.playerSessionId);
-            }
-            if (data.game_state) this.gameState = data.game_state;
-            if (Array.isArray(data.players)) {
-                this.players = data.players.map(p => ({ ...p, is_me: p.session_id === this.playerSessionId }));
-                const me = this.players.find(p => p.is_me);
-                if (me) {
-                    this.myCards = Array.isArray(me.my_cards) ? me.my_cards : [];
-                    this.myPlayerId = me.id;
-                } else { this.myCards = []; this.myPlayerId = null; }
-            } else if (data.game_state && data.players === undefined && source.includes("fetchGameState")) {
-                this.players = []; this.myCards = [];
+        // 更新 playerSessionId (如果后端返回了新的)
+        _updateSessionId(sessionId) {
+            if (sessionId && this.playerSessionId !== sessionId) {
+                this.playerSessionId = sessionId;
+                localStorage.setItem('playerSessionId', sessionId);
+                // console.log("[gameStore Simplified] Updated playerSessionId:", this.playerSessionId);
             }
         },
 
-        async createGame(maxPlayers = 4) {
-            this.loading = true; this.error = null;
+        // 获取初始手牌的 action
+        async fetchInitialHand() {
+            // console.log("[gameStore Simplified] ACTION: fetchInitialHand started.");
+            this.loading = true;
+            this.error = null;
             try {
-                const response = await apiService.createGame(maxPlayers);
-                if (response.data.success && response.data.game_code && response.data.game_id) {
-                    this._updateStateFromResponse(response.data, "createGame_api_success");
-                    const playerName = localStorage.getItem('playerName') || `房主_${this.playerSessionId?.substring(0,4) || '新'}`;
-                    if (!this.gameCode) { this.error = "创建房间后未能获取房间码。"; throw new Error(this.error); }
-                    await this.joinGame(this.gameCode, playerName);
-                    if (this.error) { throw new Error(`自动加入房间失败: ${this.error}`); }
+                const response = await apiService.getInitialDeal();
+                // console.log("[gameStore Simplified] fetchInitialHand API response:", response.data);
+                if (response.data.success && Array.isArray(response.data.my_cards)) {
+                    this.myCards = response.data.my_cards;
+                    this._updateSessionId(response.data.player_session_id); // 更新会话ID
+                    // console.log("[gameStore Simplified] fetchInitialHand success. My cards count:", this.myCards.length);
                 } else {
-                    this.error = response.data.error || '创建房间 API 失败'; throw new Error(this.error);
+                    this.error = response.data.error || '获取初始手牌失败 (API no success)';
+                    this.myCards = [];
+                    // console.error("[gameStore Simplified] fetchInitialHand API no success:", this.error);
                 }
             } catch (err) {
-                this.error = err.message || '创建房间请求未知错误';
-                this.clearGameData(); // 确保 clearGameData 被正确调用
-            } finally { this.loading = false; }
+                this.error = err.response?.data?.error || err.message || '获取初始手牌请求错误';
+                this.myCards = [];
+                // console.error("[gameStore Simplified] fetchInitialHand CATCH error:", this.error, err);
+            } finally {
+                this.loading = false;
+                // console.log("[gameStore Simplified] ACTION: fetchInitialHand finished. Loading:", this.loading, "Error:", this.error);
+            }
         },
 
-        async joinGame(gameCode, playerName) {
-            this.loading = true; let joinAttemptError = null;
+        // 简化的提交牌型 action
+        async submitArrangedHand(front, mid, back) {
+            // console.log("[gameStore Simplified] ACTION: submitArrangedHand started.");
+            this.loading = true;
+            this.error = null;
             try {
-                if (!gameCode || !playerName) { joinAttemptError = "缺少房间码或昵称"; throw new Error(joinAttemptError); }
-                const response = await apiService.joinGame(gameCode, playerName);
-                if (response.data.success && response.data.game_id) {
-                    this._updateStateFromResponse(response.data, "joinGame_api_success");
-                    if (gameCode && (!this.gameCode || this.gameCode !== gameCode)) {
-                        this.gameCode = gameCode; localStorage.setItem('currentGameCode', this.gameCode);
-                    }
-                    await this.fetchGameState(true);
-                    this.startPolling(); // 确保 startPolling 被正确调用
-                    this.error = null;
-                } else {
-                    joinAttemptError = response.data.error || '加入房间 API 失败'; throw new Error(joinAttemptError);
-                }
-            } catch (err) {
-                this.error = joinAttemptError || err.message || '加入房间请求未知错误';
-            } finally { this.loading = false; }
-        },
-
-        async fetchGameState(forceUpdateLoading = false) {
-            if (!this.gameId) { this.clearGameData(); return; }
-            if (forceUpdateLoading && !this.loading) this.loading = true;
-            try {
-                const response = await apiService.getGameState(this.gameId);
+                // 将原始手牌传给后端做校验（可选，但更安全）
+                const response = await apiService.submitPlayerHandSimple(front, mid, back, this.myCards);
+                // console.log("[gameStore Simplified] submitArrangedHand API response:", response.data);
                 if (response.data.success) {
-                    this._updateStateFromResponse(response.data, "fetchGameState_api_response");
-                    this.error = null; this.lastPollFailed = false;
-                    if (this.isGameFinished) { this.stopPolling(); }
-                    else if ((this.isGameWaiting || this.gameState?.status === 'playing') && !this.pollingInterval) { this.startPolling(); }
-                } else { this.error = response.data.error || '获取状态失败'; this.lastPollFailed = true; }
-            } catch (err) { this.error = err.response?.data?.error || err.message || '获取状态请求错误'; this.lastPollFailed = true; }
-            finally { if (forceUpdateLoading) this.loading = false; }
-        },
-
-        async startGame() {
-            if (!this.gameId) { this.error = "无游戏ID。"; return; }
-            if (!this.canStartGame) { this.error = "不满足开始条件。"; return; }
-            this.loading = true; this.error = null;
-            try {
-                const response = await apiService.startGame(this.gameId);
-                if (response.data.success) { await this.fetchGameState(true); }
-                else { this.error = response.data.error || '开始游戏失败'; }
-            } catch (err) { this.error = err.response?.data?.error || err.message || '开始游戏请求错误'; }
-            finally { this.loading = false; }
-        },
-        
-        async submitHand(front, mid, back) { /* ... (保持与上一版相同) ... */ },
-        
-        async leaveGame() {
-            if (!this.gameId) { this.clearGameData(); return; }
-            this.loading = true; this.error = null;
-            try {
-                const response = await apiService.leaveGame(this.gameId);
-                this.clearGameData(); 
-                if (!response.data.success) { this.error = response.data.error || '离开房间时发生错误'; }
-            } catch (err) { this.error = err.response?.data?.error || err.message || '离开房间请求错误'; this.clearGameData(); } 
-            finally { this.loading = false; }
-        },
-
-        async resetForNewRound() { /* ... (保持与上一版相同) ... */ },
-
-        // 这些方法必须在 actions 对象内部定义
-        startPolling() {
-            this.stopPolling();
-            if (this.gameId && !this.isGameFinished) {
-                this.pollingInterval = setInterval(() => {
-                    if (this.gameId && !this.isGameFinished && !this.lastPollFailed) {
-                        this.fetchGameState(); // 'this' 指向 store 实例
-                    } else { this.stopPolling(); }
-                }, 5000);
-            }
-        },
-
-        stopPolling() {
-            if (this.pollingInterval) {
-                clearInterval(this.pollingInterval);
-                this.pollingInterval = null;
-            }
-        },
-
-        clearGameData() {
-            // console.log("[gameStore] ACTION: clearGameData called.");
-            this.stopPolling();
-            this.gameId = null; this.gameCode = null; this.gameState = null;
-            this.players = []; this.myCards = []; this.myPlayerId = null;
-            this.loading = false;
-            localStorage.removeItem('currentGameId');
-            localStorage.removeItem('currentGameCode');
-            // error 通常不在这里清除，以便用户能看到之前的错误信息
-        },
-
-        async tryRestoreSession() {
-            // console.log("[gameStore] ACTION: tryRestoreSession. gameId:", this.gameId, "playerSessionId:", this.playerSessionId);
-            if (this.playerSessionId && this.gameId) {
-                await this.fetchGameState(true);
-                if (this.isGameActive || this.isGameWaiting) {
-                    if (!this.pollingInterval) this.startPolling();
-                } else if (!this.gameState && this.error) {
-                    // 获取状态失败，保留错误
-                } else if (!this.gameState && !this.error) {
-                    this.clearGameData(); // 房间可能不存在了
+                    alert("牌型已提交 (简化模式)！"); // 简单提示
+                    this._updateSessionId(response.data.player_session_id);
+                    // 在简化模式下，提交后可能不需要做太多状态更新，除非你想显示已提交的牌
+                } else {
+                    this.error = response.data.error || '提交牌型失败 (API no success)';
+                    alert(`提交失败: ${this.error}`);
                 }
-            } else {
-                this.clearGameData(); // 没有会话信息可恢复
+            } catch (err) {
+                this.error = err.response?.data?.error || err.message || '提交牌型请求错误';
+                alert(`提交请求错误: ${this.error}`);
+            } finally {
+                this.loading = false;
             }
+        },
+
+        // 清理数据的 action (简化版)
+        clearCoreData() {
+            // console.log("[gameStore Simplified] ACTION: clearCoreData called.");
+            this.myCards = [];
+            this.error = null;
+            this.loading = false;
+            // playerSessionId 和 localStorage 中的 playerSessionId 通常应该保留，除非用户想完全重置
         }
     }
 });
