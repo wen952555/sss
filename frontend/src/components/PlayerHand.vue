@@ -1,92 +1,82 @@
 <template>
-  <div class="player-hand-organizer-draggable">
-    <div class="piles-layout-draggable">
+  <div class="player-hand-organizer-streamlined"> <!-- 使用之前的类名以保持样式 -->
+    <div class="piles-layout-draggable"> <!-- 类名保留，样式可能还适用 -->
       <!-- 头墩 -->
       <div class="pile-wrapper">
         <p>
-          头墩 ({{ arrangedHandState.front.length }}/{{ pileLimits.front }})
+          头墩 ({{ gameStore.arrangedHand.front.length }}/{{ pileLimits.front }})
           <span v-if="isDunComplete('front')" class="dun-complete-badge">✓</span>
         </p>
-        <draggable
-          v-model="arrangedHandState.front"
-          :group="dragGroupOptions"
-          item-key="id"
-          class="pile front-pile draggable-area"
+        <div
+          class="pile front-pile draggable-area" <!-- draggable-area 类名保留，视觉上像可交互 -->
           :class="{ 'pile-complete': isDunComplete('front') }"
-          :sort="true"
-          @end="onDragEndUpdateStore('front', $event)"
-          :move="checkMove"
-          :disabled="!gameStore.canSubmitHand || gameStore.isLoading"
-          :component-data="{ name: 'front-pile-draggable' }"
+          @click="handleClickTargetPile('front')"
         >
-          <template #item="{ element: card }">
-            <Card :card="card" :is-face-up="true" />
-          </template>
-          <template #footer>
-             <div v-if="arrangedHandState.front.length < pileLimits.front && !dragInProgress" class="empty-pile-slot-text">
-                拖拽牌到此处 ({{pileLimits.front - arrangedHandState.front.length}}张空位)
-             </div>
-          </template>
-        </draggable>
+          <Card
+            v-for="(card, index) in gameStore.arrangedHand.front"
+            :key="`front-${card.id}`"
+            :card="card"
+            :is-face-up="true"
+            :selected="isSelected(card, 'front')"
+            @click.stop="handleClickCardInArrangedPile('front', card, index)"
+          />
+          <div v-if="gameStore.arrangedHand.front.length < pileLimits.front && !selectedCardForDisplay" class="empty-pile-slot-text">
+             点击手牌后点此放置 ({{pileLimits.front - gameStore.arrangedHand.front.length}}张空位)
+          </div>
+        </div>
       </div>
 
-      <!-- 手牌区 / 中墩区 -->
+      <!-- 手牌区 / 中墩区 (动态变化) -->
       <div class="pile-wrapper">
         <p>
-          {{ middleDunLabel }} ({{ myHandState.length }}{{ isMiddleDunActive ? ('/'+pileLimits.middle) : '' }}张)
+          {{ middleDunLabel }} ({{ gameStore.myHand.length }}{{ isMiddleDunActive ? ('/'+pileLimits.middle) : '' }}张)
           <span v-if="isMiddleDunActive && isDunComplete('middle')" class="dun-complete-badge">✓</span>
+          <span v-if="selectedCardForDisplay" class="selected-card-prompt">
+             - 选: <Card :card="selectedCardForDisplay.card" :is-face-up="true" class="inline-card-tiny"/>
+          </span>
         </p>
-        <draggable
-          v-model="myHandState"
-          :group="dragGroupOptions"
-          item-key="id"
+        <div
           class="pile main-hand-area draggable-area"
           :class="{ 'middle-dun-active': isMiddleDunActive, 'pile-complete': isMiddleDunActive && isDunComplete('middle')}"
-          :sort="true"
-          @start="dragInProgress = true"
-          @end="onDragEndUpdateStore('myHand', $event)"
-          :move="checkMove"
-          :disabled="!gameStore.canSubmitHand || gameStore.isLoading"
-          :component-data="{ name: 'myhand-pile-draggable' }"
+          @click="handleClickTargetPile('myHand')"
         >
-          <template #item="{ element: card }">
-            <Card :card="card" :is-face-up="true" />
-          </template>
-           <template #footer>
-             <div v-if="myHandState.length === 0 && !dragInProgress" class="empty-pile-slot-text">
-                手牌区
-             </div>
-          </template>
-        </draggable>
+          <Card
+            v-for="(card, index) in gameStore.myHand"
+            :key="`myhand-${card.id}`"
+            :card="card"
+            :is-face-up="true"
+            :selected="isSelected(card, 'myHand')"
+            @click.stop="handleClickCardInMyHand(card, index)"
+          />
+           <div v-if="gameStore.myHand.length === 0 && !selectedCardForDisplay" class="empty-pile-slot-text">
+              手牌区 (点击墩牌可移回)
+           </div>
+        </div>
       </div>
 
       <!-- 尾墩 -->
       <div class="pile-wrapper">
         <p>
-          尾墩 ({{ arrangedHandState.back.length }}/{{ pileLimits.back }})
+          尾墩 ({{ gameStore.arrangedHand.back.length }}/{{ pileLimits.back }})
           <span v-if="isDunComplete('back')" class="dun-complete-badge">✓</span>
         </p>
-        <draggable
-          v-model="arrangedHandState.back"
-          :group="dragGroupOptions"
-          item-key="id"
+        <div
           class="pile back-pile draggable-area"
           :class="{ 'pile-complete': isDunComplete('back') }"
-          :sort="true"
-          @end="onDragEndUpdateStore('back', $event)"
-          :move="checkMove"
-          :disabled="!gameStore.canSubmitHand || gameStore.isLoading"
-          :component-data="{ name: 'back-pile-draggable' }"
+          @click="handleClickTargetPile('back')"
         >
-          <template #item="{ element: card }">
-            <Card :card="card" :is-face-up="true" />
-          </template>
-           <template #footer>
-             <div v-if="arrangedHandState.back.length < pileLimits.back && !dragInProgress" class="empty-pile-slot-text">
-                拖拽牌到此处 ({{pileLimits.back - arrangedHandState.back.length}}张空位)
-             </div>
-          </template>
-        </draggable>
+          <Card
+            v-for="(card, index) in gameStore.arrangedHand.back"
+            :key="`back-${card.id}`"
+            :card="card"
+            :is-face-up="true"
+            :selected="isSelected(card, 'back')"
+            @click.stop="handleClickCardInArrangedPile('back', card, index)"
+          />
+           <div v-if="gameStore.arrangedHand.back.length < pileLimits.back && !selectedCardForDisplay" class="empty-pile-slot-text">
+              点击手牌后点此放置 ({{pileLimits.back - gameStore.arrangedHand.back.length}}张空位)
+           </div>
+        </div>
       </div>
     </div>
 
@@ -103,56 +93,28 @@
     </div>
     <p v-if="gameStore.isLoading" class="feedback-message info">处理中...</p>
     <p v-if="clientErrorFeedback" class="feedback-message error">{{ clientErrorFeedback }}</p>
+     <!-- API 错误由 GameBoard.vue 显示，这里只显示本组件的操作反馈 -->
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, reactive } from 'vue'; // Import reactive
+import { ref, computed } from 'vue'; // watch, reactive 可能不再直接需要，因为v-model没了
 import { useGameStore } from '../store/game';
 import Card from './Card.vue';
-import draggable from 'vuedraggablenext';
+// import draggable from 'vuedraggablenext'; // 确保这行被删除或注释
 
 const gameStore = useGameStore();
+const selectedCardForDisplay = ref(null); // 用于点击交互的选中牌状态 { card, fromPile, fromIndex }
 const clientErrorFeedback = ref(null);
-const dragInProgress = ref(false); // Track drag state for UI hints
 
 const pileLimits = { front: 3, middle: 5, back: 5 };
 const totalCards = 13;
 
-// Local reactive state for draggable v-model, synced with store
-// This is important because vuedraggable directly mutates the array it's bound to.
-// To keep Pinia's state management clean, we use a local copy for v-model
-// and then explicitly update the store when drag ends or on other changes.
-const myHandState = ref([]);
-const arrangedHandState = reactive({
-  front: [],
-  back: [],
-});
-
-// Watch store changes and update local state
-watch(() => gameStore.myHand, (newHand) => {
-  myHandState.value = [...newHand]; // Create a new array copy
-}, { immediate: true, deep: true });
-
-watch(() => gameStore.arrangedHand.front, (newFront) => {
-  arrangedHandState.front = [...newFront];
-}, { immediate: true, deep: true });
-
-watch(() => gameStore.arrangedHand.back, (newBack) => {
-  arrangedHandState.back = [...newBack];
-}, { immediate: true, deep: true });
-
-
-const dragGroupOptions = computed(() => ({
-  name: 'cards',
-  pull: true, // Allow pulling items from this list
-  put: true   // Allow putting items into this list
-}));
-
+// --- Computed Properties ---
 const isMiddleDunActive = computed(() => {
-  return arrangedHandState.front.length === pileLimits.front &&
-         arrangedHandState.back.length === pileLimits.back &&
-         myHandState.value.length === (totalCards - pileLimits.front - pileLimits.back);
+  return gameStore.arrangedHand.front.length === pileLimits.front &&
+         gameStore.arrangedHand.back.length === pileLimits.back &&
+         gameStore.myHand.length === (totalCards - pileLimits.front - pileLimits.back); // Should be 5
 });
 
 const middleDunLabel = computed(() => {
@@ -160,20 +122,28 @@ const middleDunLabel = computed(() => {
 });
 
 const canAutoArrangeInternal = computed(() => {
-    return myHandState.value.length === totalCards &&
-           arrangedHandState.front.length === 0 &&
-           arrangedHandState.back.length === 0 &&
+    return gameStore.myHand.length === totalCards &&
+           gameStore.arrangedHand.front.length === 0 &&
+           gameStore.arrangedHand.back.length === 0 &&
            gameStore.canSubmitHand;
 });
 
 const isDunComplete = (pileName) => {
-    if (pileName === 'front') return arrangedHandState.front.length === pileLimits.front;
-    if (pileName === 'back') return arrangedHandState.back.length === pileLimits.back;
-    if (pileName === 'middle' && isMiddleDunActive.value) return myHandState.value.length === pileLimits.middle;
+    if (pileName === 'front') return gameStore.arrangedHand.front.length === pileLimits.front;
+    if (pileName === 'back') return gameStore.arrangedHand.back.length === pileLimits.back;
+    if (pileName === 'middle' && isMiddleDunActive.value) return gameStore.myHand.length === pileLimits.middle;
     return false;
 };
 
-function setClientFeedback(message, duration = 3000, isError = false) {
+const canSubmitEffectivelyInternal = computed(() => {
+  return gameStore.canSubmitHand &&
+         gameStore.arrangedHand.front.length === pileLimits.front &&
+         gameStore.arrangedHand.back.length === pileLimits.back &&
+         gameStore.myHand.length === pileLimits.middle;
+});
+
+// --- Client Feedback ---
+function setClientErrorFeedback(message, duration = 3000) {
     clientErrorFeedback.value = message;
     if (duration > 0 && message) {
         setTimeout(() => { clientErrorFeedback.value = null; }, duration);
@@ -182,153 +152,187 @@ function setClientFeedback(message, duration = 3000, isError = false) {
     }
 }
 
-function onDragEndUpdateStore(sourcePileName, event) {
-  dragInProgress.value = false;
-  // VueDraggableNext has already updated the local reactive arrays (myHandState, arrangedHandState.front/back)
-  // Now, we need to explicitly update the Pinia store to reflect these changes.
-  // This ensures mutations go through store actions if we add more logic there.
-  // For now, a direct update to store state from component is acceptable if arrays are simple.
-  // However, for better practice, one might create a store action e.g., `updatePilesAfterDrag`.
-
-  // Direct store update based on local state (which vuedraggable mutated)
-  gameStore.myHand = [...myHandState.value];
-  gameStore.arrangedHand.front = [...arrangedHandState.front];
-  gameStore.arrangedHand.back = [...arrangedHandState.back];
-
-  // console.log(`Drag ended. Source: ${sourcePileName}, From DOM: ${event.from.classList}, To DOM: ${event.to.classList}`);
-  setClientFeedback(null);
+// --- Click Interaction Logic (Restored and Adapted) ---
+function isSelected(card, pileName) {
+    return selectedCardForDisplay.value &&
+           selectedCardForDisplay.value.card.id === card.id &&
+           selectedCardForDisplay.value.fromPile === pileName;
 }
 
-function checkMove(evt) {
-  dragInProgress.value = true; // Set drag in progress
-  const targetPileElement = evt.to;
-  let targetPileName = '';
-  let targetLimit = Infinity;
-  let targetArrayLength = 0;
-
-  if (targetPileElement.classList.contains('front-pile')) {
-    targetPileName = 'front';
-    targetLimit = pileLimits.front;
-    targetArrayLength = arrangedHandState.front.length;
-  } else if (targetPileElement.classList.contains('back-pile')) {
-    targetPileName = 'back';
-    targetLimit = pileLimits.back;
-    targetArrayLength = arrangedHandState.back.length;
-  } else if (targetPileElement.classList.contains('main-hand-area')) {
-    targetPileName = 'myHand'; // The myHandState array
-    targetLimit = totalCards; // myHand can hold up to 13 cards in total
-    targetArrayLength = myHandState.value.length;
+function handleClickCardInMyHand(card, index) {
+  if (isSelected(card, 'myHand')) {
+    selectedCardForDisplay.value = null; // 取消选择
+  } else {
+    selectedCardForDisplay.value = { card, fromPile: 'myHand', fromIndex: index };
   }
-
-  if (targetPileName) {
-    // If dragging from a different list into this target, check target limit
-    if (evt.from !== evt.to && targetArrayLength >= targetLimit) {
-      setClientFeedback(`墩位 ${targetPileName === 'myHand' ? middleDunLabel.value : targetPileName} 已满！`, 2000);
-      dragInProgress.value = false; // Reset on invalid move attempt
-      return false; // Prevent move
-    }
-  }
-  return true; // Allow move
 }
 
-const canSubmitEffectivelyInternal = computed(() => {
-  return gameStore.canSubmitHand &&
-         arrangedHandState.front.length === pileLimits.front &&
-         arrangedHandState.back.length === pileLimits.back &&
-         myHandState.value.length === pileLimits.middle;
-});
-
-async function submitHandWrapper() {
-    if (!canSubmitEffectivelyInternal.value) {
-        setClientFeedback("牌型未按 头3-中5-尾5 摆满或不符合提交条件。");
+function handleClickCardInArrangedPile(pileName, card, index) {
+  if (selectedCardForDisplay.value) {
+    // 如果当前有选中的牌 (只能是来自 'myHand')
+    if (selectedCardForDisplay.value.fromPile === 'myHand') {
+        setClientErrorFeedback("已选中手牌，请点击目标墩的空白区域来放置。", 2000);
+        // 不取消选择，让用户可以继续点击目标墩
         return;
     }
-    setClientFeedback(null);
+    // 如果错误地选中了其他墩的牌（理论上不应发生，因为选中逻辑主要在myHand）
+    // 或者重复点击了已选中的墩牌，则取消选择
+    if (isSelected(card, pileName) || selectedCardForDisplay.value.fromPile !== 'myHand') {
+        selectedCardForDisplay.value = null;
+        return;
+    }
+  } else {
+    // 如果没有牌被选中，则将这张墩牌移回“手牌区”
+    const success = gameStore.moveCard(card, pileName, 'myHand', index);
+    if (!success) setClientErrorFeedback(`无法将牌从 ${pileName} 移回手牌区。`);
+  }
+}
+
+function handleClickTargetPile(targetPileName) {
+  if (!selectedCardForDisplay.value) { // 如果没有选中的牌，点击空白区域无效
+      // 例外：如果点击的是已摆放墩的空白，且该墩有牌，可以考虑将最后一张移回手牌（可选交互）
+      // if (targetPileName !== 'myHand' && gameStore.arrangedHand[targetPileName].length > 0) {
+      //   const pile = gameStore.arrangedHand[targetPileName];
+      //   gameStore.moveCard(pile[pile.length - 1], targetPileName, 'myHand', pile.length - 1);
+      // }
+      return;
+  }
+
+  const { card, fromPile, fromIndex } = selectedCardForDisplay.value;
+
+  // 如果点击的是选中牌当前所在的区域的空白处，则取消选择
+  if (fromPile === targetPileName) {
+    selectedCardForDisplay.value = null;
+    return;
+  }
+
+  // 只能从 'myHand' 移动到 'front' 或 'back'
+  if (fromPile !== 'myHand' && (targetPileName === 'front' || targetPileName === 'back')) {
+      setClientErrorFeedback("只能从手牌区向头/尾墩放牌。", 2000);
+      return;
+  }
+  // 只能从 'front' 或 'back' 移动到 'myHand' (这个由 handleClickCardInArrangedPile 处理)
+
+  let targetLimit = Infinity; // myHand (手牌区) 理论上最多13张
+  if (targetPileName === 'front') targetLimit = pileLimits.front;
+  else if (targetPileName === 'back') targetLimit = pileLimits.back;
+
+  let currentTargetLength = 0;
+  if (targetPileName === 'myHand') currentTargetLength = gameStore.myHand.length;
+  else currentTargetLength = gameStore.arrangedHand[targetPileName]?.length || 0;
+
+
+  if (currentTargetLength < targetLimit) {
+    // 确保是从 myHand 移到墩，或者从墩移到 myHand
+    if ((fromPile === 'myHand' && (targetPileName === 'front' || targetPileName === 'back')) ||
+        ((fromPile === 'front' || fromPile === 'back') && targetPileName === 'myHand') ) {
+        
+        const success = gameStore.moveCard(card, fromPile, targetPileName, fromIndex);
+        if (success) {
+          selectedCardForDisplay.value = null; // 成功移动后取消选择
+        } else {
+          setClientErrorFeedback(`无法将牌移动到 ${targetPileName}。`);
+        }
+    } else {
+        setClientErrorFeedback("无效的牌张移动路径。", 2000);
+    }
+  } else {
+    setClientErrorFeedback(`墩位 ${targetPileName === 'myHand' ? middleDunLabel.value : targetPileName} 已满！`);
+  }
+}
+
+// --- Button Actions ---
+async function submitHandWrapper() {
+    if (!canSubmitEffectivelyInternal.value) {
+        setClientErrorFeedback("牌型未按 头3-中5-尾5 摆满或不符合提交条件。");
+        return;
+    }
+    setClientErrorFeedback(null);
     const handToSubmitLogic = {
-        front: arrangedHandState.front.map(c => c.id),
-        middle: myHandState.value.map(c => c.id),
-        back: arrangedHandState.back.map(c => c.id),
+        front: gameStore.arrangedHand.front.map(c => c.id),
+        middle: gameStore.myHand.map(c => c.id), // myHand 作为中墩
+        back: gameStore.arrangedHand.back.map(c => c.id),
     };
     await gameStore.submitArrangedHandInternal(handToSubmitLogic);
 }
 
 function autoArrangeForSubmission() {
     if (!canAutoArrangeInternal.value) {
-        setClientFeedback("请确保所有13张牌都在手牌区才能智能整理。");
+        setClientErrorFeedback("请确保所有13张牌都在手牌区才能智能整理。");
         return;
     }
-    // Ensure all cards are in myHandState before sorting for auto-arrange
-    const allCardsForAuto = [...myHandState.value, ...arrangedHandState.front, ...arrangedHandState.back];
-    const uniqueAllCards = Array.from(new Set(allCardsForAuto.map(c => c.id))).map(id => allCardsForAuto.find(c => c.id === id));
+    gameStore.clearArrangedPilesForAuto(); // 牌会回到 myHand
 
-    if (uniqueAllCards.length !== totalCards) {
-        setClientFeedback("自动整理前牌数异常，请刷新。", 3000);
+    if (gameStore.myHand.length !== totalCards) {
+        setClientErrorFeedback("智能整理前手牌数量不正确，请刷新或重试。");
         return;
     }
-    
-    myHandState.value = [...uniqueAllCards].sort((a, b) => b.rank - a.rank); // All cards to myHand, sorted desc
-    arrangedHandState.front = [];
-    arrangedHandState.back = [];
+    // 智能整理逻辑现在依赖于 store 的 moveCard
+    const sortedHandForOps = [...gameStore.myHand].sort((a, b) => b.rank - a.rank);
 
-    //尾墩
+    // 先将排序后的牌重新按顺序放入 store 的 myHand (如果 clearArrangedPilesForAuto 顺序不对)
+    gameStore.myHand.length = 0;
+    sortedHandForOps.forEach(c => gameStore.myHand.push(c));
+
+    // 尾墩：最大的5张牌
     for (let i = 0; i < pileLimits.back; i++) {
-        if (myHandState.value.length > 0) arrangedHandState.back.push(myHandState.value.shift());
+        if (gameStore.myHand.length > 0) {
+             // 总是从myHand的第一个元素开始移动（因为它是最大的未分配牌）
+            gameStore.moveCard(gameStore.myHand[0], 'myHand', 'back', 0);
+        }
     }
-    //头墩 (最小的)
-    const remainingForFront = [...myHandState.value].sort((a,b)=> a.rank - b.rank);
-    myHandState.value = []; // Clear myHand before re-populating middle
-
+    // 头墩：最小的3张牌
+    const remainingInMyHandForFront = [...gameStore.myHand].sort((a, b) => a.rank - b.rank);
+    //  (先不直接修改 myHand，从中挑选)
+    
     for (let i = 0; i < pileLimits.front; i++) {
-        if (remainingForFront.length > 0) arrangedHandState.front.push(remainingForFront.shift());
+        if (remainingInMyHandForFront.length > 0) {
+            const cardToMoveToFront = remainingInMyHandForFront[i]; // 依次取最小的
+            const idxInMyHand = gameStore.myHand.findIndex(c => c.id === cardToMoveToFront.id);
+            if (idxInMyHand !== -1) {
+                gameStore.moveCard(gameStore.myHand[idxInMyHand], 'myHand', 'front', idxInMyHand);
+            }
+        }
     }
-    // 剩下的作为中墩 (放入 myHandState)
-    myHandState.value = [...remainingForFront];
-
-
-    // Sync back to store after local manipulation
-    gameStore.myHand = [...myHandState.value];
-    gameStore.arrangedHand.front = [...arrangedHandState.front];
-    gameStore.arrangedHand.back = [...arrangedHandState.back];
-    setClientFeedback("已尝试智能整理，请检查并调整。", 5000);
+    selectedCardForDisplay.value = null;
+    setClientErrorFeedback("已尝试智能整理，请检查并调整。", 5000);
 }
 
 async function handleAiArrange() {
     if (!canAutoArrangeInternal.value) {
-        setClientFeedback("请确保所有13张牌都在手牌区才能使用 AI 分牌。");
+        setClientErrorFeedback("请确保所有13张牌都在手牌区才能使用 AI 分牌。");
         return;
     }
-    setClientFeedback(null);
-    // Ensure all cards are in store's myHand before calling AI
+    setClientErrorFeedback(null);
     gameStore.clearArrangedPilesForAuto();
      if (gameStore.myHand.length !== totalCards) {
-        setClientFeedback("AI分牌前手牌数量不正确，请刷新或重试。", 3000);
+        setClientErrorFeedback("AI分牌前手牌数量不正确，请刷新或重试。");
         return;
     }
 
-    const success = await gameStore.aiArrangeHand(); // Store action will update store's myHand, front, back
+    const success = await gameStore.aiArrangeHand();
     if (success) {
-        // Watchers will update local myHandState and arrangedHandState from store
-        setClientFeedback("AI 已尝试分牌，请检查并调整。", 5000);
+        setClientErrorFeedback("AI 已尝试分牌，请检查并调整。", 5000);
+        selectedCardForDisplay.value = null;
     } else {
-        setClientFeedback(gameStore.error || "AI 分牌失败，请稍后再试或手动摆牌。", 5000);
+        setClientErrorFeedback(gameStore.error || "AI 分牌失败，请稍后再试或手动摆牌。", 5000);
     }
 }
 </script>
 
 <style scoped>
-/* ... (样式与上一版本 PlayerHand.vue 相同或类似, 确保类名匹配) ... */
-.player-hand-organizer-draggable {
-  padding: 15px; background-color: #e9f5fe; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.05);
-}
-.piles-layout-draggable { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+/* ... (样式与上一版本 PlayerHand.vue 相同) ... */
+.player-hand-organizer-streamlined { padding: 15px; background-color: #e6f0f7; border-radius: 8px; }
+.piles-layout-draggable { display: flex; flex-direction: column; align-items: center; gap: 15px; }
 .pile-wrapper { width: 100%; max-width: 620px; }
 .pile-wrapper p { text-align: center; margin: 0 0 8px 0; font-weight: 600; color: #2c5282; font-size: 1.05em; display: flex; justify-content: center; align-items: center; }
-.draggable-area {
+.draggable-area { /* 保留这个类名，但不再是draggable组件 */
   display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
   padding: 10px; border: 2px dashed #add8e6; border-radius: 8px;
   background-color: #f0faff; min-height: 110px; transition: border-color 0.3s, background-color 0.3s;
+  cursor: default; /* 改回默认手势，因为现在是点击交互 */
 }
-.draggable-area:hover { border-color: #6495ed; }
+.draggable-area:hover { border-color: #6495ed; } /* 悬停时仍高亮可交互区域 */
 .pile.pile-complete { border-color: #3cb371 !important; background-color: #f3fff3;}
 .main-hand-area.middle-dun-active { border-style: solid; border-color: #4682b4; }
 .dun-complete-badge { color: #4CAF50; font-size: 1.2em; margin-left: 8px; }
@@ -349,5 +353,8 @@ async function handleAiArrange() {
 .feedback-message { text-align: center; margin-top: 15px; font-weight: 500; min-height: 1.2em; }
 .feedback-message.error { color: #d9534f; }
 .feedback-message.info { color: #007bff; }
-/* Card.vue 的 .card-draggable 和 SortableJS 的类在 Card.vue 中定义 */
+.card.selected { /* Card.vue 中定义的 selected 样式会应用 */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5), 0 4px 10px rgba(0,0,0,0.1);
+  transform: scale(1.05) translateY(-4px);
+}
 </style>
