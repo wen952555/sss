@@ -1,26 +1,14 @@
 <template>
-  <div class="player-hand-organizer">
-    <h4>
-      我的手牌
+  <div class="player-hand-organizer-compact">
+    <!-- <h4>
+      摆牌区
       <span v-if="selectedCard" class="selected-card-indicator">
-        (已选: <Card :card="selectedCard" :is-face-up="true" class="inline-card"/> - 点击目标墩放置，或再次点击手牌取消)
+        (已选: <Card :card="selectedCard" :is-face-up="true" class="inline-card"/> - 点击目标墩放置)
       </span>
-    </h4>
-    <div class="my-hand-area hand-row droppable-area" @click="handleClickMyHandArea">
-      <Card
-        v-for="(card, index) in gameStore.myHand"
-        :key="`myhand-${card.id}`"
-        :card="card"
-        :is-face-up="true"
-        :selected="selectedCard && selectedCard.id === card.id"
-        @click.stop="handleClickCardInMyHand(card, index)"
-      />
-      <div v-if="gameStore.myHand.length === 0 && !selectedCard" class="empty-pile-text">手牌区已空</div>
-      <div v-if="gameStore.myHand.length === 0 && selectedCard" class="empty-pile-text">点击此处放回已选牌</div>
-    </div>
+    </h4> -->
 
-    <h4>摆牌区 (点击牌可移回手牌区)</h4>
-    <div class="arranged-piles">
+    <div class="arranged-piles-compact">
+      <!-- 头墩 -->
       <div class="pile front-pile droppable-area" @click="handleClickPile('front')">
         <p>头墩 (3张) - {{ gameStore.arrangedHand.front.length }}/3</p>
         <div class="hand-row">
@@ -29,22 +17,34 @@
             :key="`front-${card.id}`"
             :card="card"
             :is-face-up="true"
+            :selected="selectedCard && selectedCard.id === card.id && selectedCardOrigin?.pileName === 'front'"
             @click.stop="handleClickCardInPile('front', card, index)"
           />
         </div>
       </div>
-      <div class="pile middle-pile droppable-area" @click="handleClickPile('middle')">
-        <p>中墩 (5张) - {{ gameStore.arrangedHand.middle.length }}/5</p>
-        <div class="hand-row">
+
+      <!-- 新的手牌区 (原中墩位置) -->
+      <div class="pile hand-zone-pile droppable-area" @click="handleClickPile('myHand')">
+        <p>
+            手牌区 ({{ gameStore.myHand.length }}张)
+            <span v-if="selectedCard" class="selected-card-indicator-inline">
+                - 已选: <Card :card="selectedCard" :is-face-up="true" class="inline-card-small"/>
+            </span>
+        </p>
+        <div class="hand-row main-hand-display">
           <Card
-            v-for="(card, index) in gameStore.arrangedHand.middle"
-            :key="`middle-${card.id}`"
+            v-for="(card, index) in gameStore.myHand"
+            :key="`myhand-${card.id}`"
             :card="card"
             :is-face-up="true"
-            @click.stop="handleClickCardInPile('middle', card, index)"
+            :selected="selectedCard && selectedCard.id === card.id && selectedCardOrigin?.pileName === 'myHand'"
+            @click.stop="handleClickCardInMyHand(card, index)"
           />
+          <div v-if="gameStore.myHand.length === 0 && !selectedCard" class="empty-pile-text">从墩可移回此处</div>
         </div>
       </div>
+
+      <!-- 尾墩 -->
       <div class="pile back-pile droppable-area" @click="handleClickPile('back')">
         <p>尾墩 (5张) - {{ gameStore.arrangedHand.back.length }}/5</p>
         <div class="hand-row">
@@ -53,311 +53,320 @@
             :key="`back-${card.id}`"
             :card="card"
             :is-face-up="true"
+            :selected="selectedCard && selectedCard.id === card.id && selectedCardOrigin?.pileName === 'back'"
             @click.stop="handleClickCardInPile('back', card, index)"
           />
         </div>
       </div>
     </div>
+
     <div class="actions-container">
-        <button @click="autoArrangeSimple" :disabled="gameStore.myHand.length !== 13 || !gameStore.canSubmitHand" class="action-button">
-            简单自动摆牌 (测试)
+        <button @click="autoArrangeSimple" :disabled="initialHandCount !== 13 || !gameStore.canSubmitHand" class="action-button">
+            简单自动摆牌
         </button>
         <button @click="submitHandWrapper" :disabled="!canSubmitEffectively" class="submit-button">
         提交牌型
         </button>
     </div>
-    <p v-if="gameStore.error" class="error-message">{{ gameStore.error }}</p>
-    <p v-if="clientError" class="error-message">{{ clientError }}</p>
+    <p v-if="gameStore.error || clientError" class="error-message">{{ gameStore.error || clientError }}</p>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useGameStore } from '../store/game';
 import Card from './Card.vue';
 
 const gameStore = useGameStore();
 const selectedCard = ref(null);
-const selectedCardOrigin = ref(null); // { pileName: 'myHand' | 'front' | 'middle' | 'back', index: number }
+const selectedCardOrigin = ref(null); // { pileName: 'myHand' | 'front' | 'middle' | 'back', index: number, cardId: string }
 const clientError = ref(null);
+const initialHandCount = ref(0); // 用于自动摆牌按钮的状态
 
-const pileLimits = { front: 3, middle: 5, back: 5, myHand: 13 };
+const pileLimits = { front: 3, middle: 5, back: 5 }; // myHand (新的手牌区) 没有上限，直到13张
+
+// 监视 gameState.myHand 的变化，以更新 initialHandCount (主要用于发牌后)
+watch(() => gameStore.myHand, (newHand) => {
+    if (newHand && newHand.length === 13 && gameStore.arrangedHand.front.length === 0 && gameStore.arrangedHand.middle.length === 0 && gameStore.arrangedHand.back.length === 0) {
+        initialHandCount.value = 13;
+    } else if (newHand && newHand.length === 0 && gameStore.arrangedHand.front.length > 0) {
+        // 如果手牌区空了，但墩里有牌，说明已经开始摆了
+        initialHandCount.value = 0; // 或者保持为13，如果自动摆牌允许从墩开始
+    }
+}, { immediate: true, deep: true });
+
 
 function setClientError(message) {
     clientError.value = message;
     setTimeout(() => { clientError.value = null; }, 3000);
 }
 
-// 点击手牌区的某张牌
+// 点击新的“手牌区”中的牌
 function handleClickCardInMyHand(card, index) {
-  if (selectedCard.value && selectedCard.value.id === card.id) {
-    // 如果再次点击已选中的牌，则取消选择
+  if (selectedCard.value && selectedCard.value.id === card.id && selectedCardOrigin.value?.pileName === 'myHand') {
     selectedCard.value = null;
     selectedCardOrigin.value = null;
   } else {
-    // 选择这张牌
     selectedCard.value = card;
-    selectedCardOrigin.value = { pileName: 'myHand', index };
+    selectedCardOrigin.value = { pileName: 'myHand', index, cardId: card.id };
   }
 }
 
-// 点击手牌区的空白区域 (用于放回已选中的牌)
-function handleClickMyHandArea() {
-    if (selectedCard.value && selectedCardOrigin.value && selectedCardOrigin.value.pileName !== 'myHand') {
-        // 如果有选中的牌，且不是来自手牌区，则将其移回手牌区
-        gameStore.moveCard(
-            selectedCard.value,
-            selectedCardOrigin.value.pileName,
-            'myHand',
-            selectedCardOrigin.value.index
-        );
-        selectedCard.value = null;
-        selectedCardOrigin.value = null;
-    } else if (selectedCard.value && selectedCardOrigin.value && selectedCardOrigin.value.pileName === 'myHand') {
-        // 如果选中的牌来自手牌区，点击手牌区空白相当于取消选择
-        selectedCard.value = null;
-        selectedCardOrigin.value = null;
-    }
-}
-
-// 点击某个墩里的牌 (将其移回手牌区)
+// 点击某个墩里的牌 (头墩/尾墩)
 function handleClickCardInPile(pileName, card, index) {
-  if (selectedCard.value) {
-    // 如果当前有选中的牌，则尝试将选中的牌放入此墩 (如果此墩不是选中牌的来源)
+  if (selectedCard.value) { // 如果有已选中的牌
+    // 尝试将选中的牌放入此墩 (如果此墩不是选中牌的来源)
     if (selectedCardOrigin.value && selectedCardOrigin.value.pileName !== pileName) {
-        if (gameStore.arrangedHand[pileName].length < pileLimits[pileName]) {
-            gameStore.moveCard(
-                selectedCard.value,
-                selectedCardOrigin.value.pileName,
-                pileName,
-                selectedCardOrigin.value.index
-            );
+      if (gameStore.arrangedHand[pileName].length < pileLimits[pileName]) {
+        const success = gameStore.moveCard(
+          selectedCard.value,
+          selectedCardOrigin.value.pileName,
+          pileName,
+          selectedCardOrigin.value.index
+        );
+        if (success) {
             selectedCard.value = null;
             selectedCardOrigin.value = null;
         } else {
-            setClientError(`墩位 ${pileName} 已满！`);
+            setClientError(`无法将牌放入 ${pileName}`);
         }
-    } else {
-         // 如果选中的牌就是这个墩的，或者没选中牌，那么就尝试把这张墩里的牌移回手牌
+      } else {
+        setClientError(`墩位 ${pileName} 已满！`);
+      }
+    } else if (selectedCardOrigin.value && selectedCardOrigin.value.pileName === pileName && selectedCard.value.id === card.id) {
+        // 重复点击同一个墩里已选中的牌，取消选择
+        selectedCard.value = null;
+        selectedCardOrigin.value = null;
+    } else if (selectedCardOrigin.value && selectedCardOrigin.value.pileName === pileName && selectedCard.value.id !== card.id) {
+        // 点击同一个墩里另一张未选中的牌，切换选择（如果需要这个行为）
+        // 或者，将这张牌移回手牌区（当前选择）
         gameStore.moveCard(card, pileName, 'myHand', index);
-        if (selectedCard.value && selectedCard.value.id === card.id) { // 如果移走的是刚选中的牌
-            selectedCard.value = null;
-            selectedCardOrigin.value = null;
-        }
     }
-  } else {
-    // 如果没有选中的牌，则将点击的这张墩牌移回手牌区
+
+  } else { // 如果没有选中的牌
+    // 将点击的这张墩牌移回“手牌区”(myHand)
     gameStore.moveCard(card, pileName, 'myHand', index);
   }
 }
 
-// 点击某个墩的空白区域 (用于放置选中的牌)
+// 点击墩的空白区域 (头/尾/新的手牌区)
 function handleClickPile(targetPileName) {
   if (selectedCard.value && selectedCardOrigin.value) {
-    // 确保不是从同一个墩移到同一个墩 (虽然 moveCard 应该能处理，但这里可以提前避免)
-    if (selectedCardOrigin.value.pileName === targetPileName) {
-        if (selectedCardOrigin.value.pileName !== 'myHand') { // 如果是从墩选的，再点同个墩空白，取消选择
-            selectedCard.value = null;
-            selectedCardOrigin.value = null;
-        }
+    const sourcePileName = selectedCardOrigin.value.pileName;
+
+    if (sourcePileName === targetPileName) { // 点击了选中牌所在墩的空白区域
+        selectedCard.value = null; // 取消选择
+        selectedCardOrigin.value = null;
         return;
     }
 
-    if (gameStore.arrangedHand[targetPileName].length < pileLimits[targetPileName]) {
+    if (targetPileName === 'myHand') { // 目标是新的手牌区
       gameStore.moveCard(
         selectedCard.value,
-        selectedCardOrigin.value.pileName,
-        targetPileName,
+        sourcePileName,
+        'myHand',
         selectedCardOrigin.value.index
       );
       selectedCard.value = null;
       selectedCardOrigin.value = null;
-    } else {
-      setClientError(`墩位 ${targetPileName} 已满！`);
+    } else { // 目标是头墩或尾墩
+      if (gameStore.arrangedHand[targetPileName].length < pileLimits[targetPileName]) {
+        const success = gameStore.moveCard(
+          selectedCard.value,
+          sourcePileName,
+          targetPileName,
+          selectedCardOrigin.value.index
+        );
+        if (success) {
+            selectedCard.value = null;
+            selectedCardOrigin.value = null;
+        } else {
+             setClientError(`无法将牌放入 ${targetPileName}`);
+        }
+      } else {
+        setClientError(`墩位 ${targetPileName} 已满！`);
+      }
     }
   }
-  // 如果没有选中牌，点击墩的空白区域不执行任何操作
+  // 如果没有选中牌，点击墩的空白区域不执行任何操作 (除非是手牌区空白，那由handleClickCardInMyHand处理)
 }
 
 
 const canSubmitEffectively = computed(() => {
-  return gameStore.canSubmitHand && // store getter 检查游戏状态和是否已提交
+  return gameStore.canSubmitHand &&
          gameStore.arrangedHand.front.length === pileLimits.front &&
-         gameStore.arrangedHand.middle.length === pileLimits.middle &&
+         // 中墩现在是手牌区，不参与这个判断
          gameStore.arrangedHand.back.length === pileLimits.back &&
-         gameStore.myHand.length === 0;
+         gameStore.myHand.length === (13 - pileLimits.front - pileLimits.back); // 手牌区剩余牌数应为 13 - 3 - 5 = 5
 });
 
 async function submitHandWrapper() {
-    if (!canSubmitEffectively.value) {
-        setClientError("牌型未摆满或不符合提交条件。");
+    // 提交时，需要将 myHand (新的手牌区)的内容视为中墩
+    if (gameStore.myHand.length !== 5) {
+        setClientError("手牌区（中墩）必须有5张牌才能提交。");
         return;
     }
-    // 清除之前的客户端错误
+    if (gameStore.arrangedHand.front.length !== 3 || gameStore.arrangedHand.back.length !== 5) {
+        setClientError("头墩或尾墩牌数不正确。");
+        return;
+    }
+    if (!gameStore.canSubmitHand) {
+        setClientError("当前不能提交牌型。");
+        return;
+    }
+
     clientError.value = null;
-    // store 中的 submitArrangedHand 已经包含了API调用和错误处理
-    await gameStore.submitArrangedHand();
+    // 构建提交数据时，将 myHand 作为 middle
+    const handToSubmitLogic = {
+        front: gameStore.arrangedHand.front.map(c => c.id),
+        middle: gameStore.myHand.map(c => c.id), // myHand 现在是中墩
+        back: gameStore.arrangedHand.back.map(c => c.id),
+    };
+
+    // 调用 store 中的 action，但传递正确的墩牌数据
+    gameStore.isLoading = true;
+    gameStore.error = null;
+    try {
+        const response = await api.submitHand(gameStore.gameId, gameStore.playerId, handToSubmitLogic);
+        if (response.success) {
+            await gameStore.fetchGameState();
+        } else {
+            gameStore.error = response.error || '提交牌型失败';
+        }
+    } catch (err) {
+        gameStore.error = err.message || '提交牌型时发生网络错误';
+    } finally {
+        gameStore.isLoading = false;
+    }
 }
 
-// 简单的自动摆牌逻辑 (非常基础，仅用于快速测试)
 function autoArrangeSimple() {
-    if (gameStore.myHand.length !== 13) {
-        setClientError("手牌必须有13张才能自动摆牌。");
+    if (initialHandCount.value !== 13) {
+        setClientError("请等待发牌完毕 (13张手牌)。");
         return;
     }
-    // 清空墩位
-    ['front', 'middle', 'back'].forEach(pileName => {
+    // 确保所有牌都在myHand (新的手牌区)
+    ['front', 'back'].forEach(pileName => {
         while(gameStore.arrangedHand[pileName].length > 0) {
             gameStore.moveCard(gameStore.arrangedHand[pileName][0], pileName, 'myHand', 0);
         }
     });
+    // 如果中墩之前有牌 (理论上不应该，因为中墩现在是 myHand)，也移回
+    // while(gameStore.arrangedHand.middle.length > 0) {
+    //    gameStore.moveCard(gameStore.arrangedHand.middle[0], 'middle', 'myHand', 0);
+    // }
 
-    // 简单的排序：按点数排序 (实际十三水自动理牌复杂得多)
-    const sortedHand = [...gameStore.myHand].sort((a, b) => a.rank - b.rank);
 
-    // 摆放：前3张放头墩，中5张放中墩，后5张放尾墩
-    // 注意：这里是从myHand直接操作，需要确保moveCard能正确处理
-    // 更好的做法是先从sortedHand构建墩，然后一次性更新store，或者多次调用moveCard
+    const sortedHandForAuto = [...gameStore.myHand].sort((a, b) => a.rank - b.rank);
     
-    // 先把牌移到临时数组，避免在迭代时修改myHand导致问题
-    const tempHand = [...gameStore.myHand];
-    gameStore.myHand.length = 0; // 清空store中的myHand
+    // 清空 store 中的 myHand，因为 moveCard 会从中取牌
+    gameStore.myHand.length = 0;
+    sortedHandForAuto.forEach(card => gameStore.myHand.push(card)); // 重新填充，确保顺序
 
-    // 将排序后的牌放回头墩
-    sortedHand.forEach(card => gameStore.myHand.push(card));
+    // 摆放
+    for (let i = 0; i < 3; i++) { // 头墩
+        if (gameStore.myHand.length > 0) gameStore.moveCard(gameStore.myHand[0], 'myHand', 'front', 0);
+    }
+    // 中墩的5张牌会留在myHand区域
+    // 尾墩的5张牌 (取myHand中剩余牌的后5张)
+    // 此时 myHand 应该有 13-3 = 10 张牌
+    const cardsForBack = gameStore.myHand.slice(gameStore.myHand.length - 5);
+    for (const card of cardsForBack.reverse()) { // 从尾部开始取，放到尾墩
+        const idx = gameStore.myHand.findIndex(c => c.id === card.id);
+        if (idx !== -1) gameStore.moveCard(gameStore.myHand[idx], 'myHand', 'back', idx);
+    }
 
-
-    for (let i = 0; i < 3; i++) {
-        if (gameStore.myHand.length > 0) {
-            gameStore.moveCard(gameStore.myHand[0], 'myHand', 'front', 0);
-        }
-    }
-    for (let i = 0; i < 5; i++) {
-         if (gameStore.myHand.length > 0) {
-            gameStore.moveCard(gameStore.myHand[0], 'myHand', 'middle', 0);
-        }
-    }
-    for (let i = 0; i < 5; i++) {
-         if (gameStore.myHand.length > 0) {
-            gameStore.moveCard(gameStore.myHand[0], 'myHand', 'back', 0);
-        }
-    }
     selectedCard.value = null;
     selectedCardOrigin.value = null;
+    initialHandCount.value = 0; // 摆牌后重置
 }
 
 </script>
 
 <style scoped>
-.player-hand-organizer {
-  padding: 15px;
-  border: 1px solid #eee;
-  margin-bottom: 20px;
-  background-color: #f9f9f9;
-  border-radius: 5px;
+.player-hand-organizer-compact {
+  padding: 10px;
+  background-color: #f0f8ff; /* 淡蓝色背景 */
+  border-radius: 8px;
 }
-.player-hand-organizer h4 {
-    margin-top: 10px;
-    margin-bottom: 8px;
-}
-.selected-card-indicator {
-  font-size: 0.9em;
+.selected-card-indicator-inline {
+  font-size: 0.85em;
   color: #007bff;
-  margin-left: 10px;
   font-weight: normal;
 }
-.inline-card { /* 用于selected-card-indicator中的牌 */
-    transform: scale(0.6);
-    margin: -10px -15px; /* 调整以适应缩小后的尺寸 */
+.inline-card-small {
+    transform: scale(0.5);
+    margin: -15px -20px;
     vertical-align: middle;
 }
 
-.my-hand-area, .hand-row {
+.arranged-piles-compact {
+  display: flex;
+  flex-direction: column; /* 头墩、手牌区、尾墩垂直排列 */
+  gap: 12px;
+  margin-bottom: 15px;
+  align-items: center; /* 居中显示各个墩 */
+}
+.pile {
+  border: 1px solid #b0c4de; /* 淡钢蓝色边框 */
+  padding: 8px;
+  background-color: #fff;
+  border-radius: 6px;
+  width: 90%; /* 墩位宽度 */
+  max-width: 550px; /* 最大宽度，防止在大屏幕上过宽 */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.pile p {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #4682b4; /* 钢蓝色文字 */
+  font-size: 0.95em;
+  text-align: center;
+}
+.hand-row {
   display: flex;
   flex-wrap: wrap;
-  min-height: 105px; /* 适应卡牌高度 */
-  padding: 5px;
-  margin-bottom: 10px;
-  border-radius: 4px;
+  min-height: 90px; /* 适应卡牌高度 */
+  justify-content: center; /* 卡牌居中 */
+  padding: 5px 0;
 }
-.droppable-area {
-  border: 2px dashed #ccc;
-  transition: border-color 0.3s;
+.main-hand-display { /* 新的手牌区特别样式 */
+    min-height: 100px; /* 可以放更多牌 */
+    border: 2px dashed #77aaff; /* 更明显的边框 */
+    background-color: #f8fcff;
 }
+.main-hand-display .card, .pile .card {
+    margin: 2px; /* 统一卡牌间距 */
+}
+
 .droppable-area:hover {
-  border-color: #007bff;
+  border-color: #4682b4;
+  background-color: #f0f8ff;
 }
 .empty-pile-text {
     width: 100%;
     text-align: center;
     color: #aaa;
     font-style: italic;
-    padding: 20px 0;
-}
-.arranged-piles {
-  display: flex;
-  flex-direction: column; /* 改为垂直排列墩位 */
-  gap: 10px; /* 墩位之间的间隔 */
-  margin-bottom: 15px;
-}
-.pile {
-  border: 1px solid #ddd;
-  padding: 10px;
-  min-width: 280px; /* 适应5张牌+文字 */
-  width: fit-content; /* 宽度自适应内容 */
-  max-width: 100%;
-  background-color: #fff;
-  border-radius: 5px;
-}
-.pile p {
-  margin-top: 0;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #555;
+    padding: 15px 0;
 }
 .actions-container {
     margin-top: 15px;
     display: flex;
-    gap: 10px;
+    justify-content: center;
+    gap: 15px;
 }
 .action-button, .submit-button {
-  padding: 10px 15px;
-  font-size: 1em;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.action-button {
-  background-color: #17a2b8; /* 青色 */
-}
-.action-button:hover:not(:disabled) {
-  background-color: #138496;
-}
-.submit-button {
-  background-color: #28a745; /* 绿色 */
-}
-.submit-button:hover:not(:disabled) {
-  background-color: #218838;
-}
-.action-button:disabled, .submit-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+  padding: 10px 20px; /* 按钮稍大一些 */
 }
 .error-message {
-  color: red;
-  margin-top: 10px;
-  font-weight: bold;
+  text-align: center;
 }
-.card.selected { /* Card.vue 中的 selected 样式会被应用 */
-  outline: 3px solid #007bff;
-  outline-offset: 1px;
-  box-shadow: 0 0 12px rgba(0, 123, 255, 0.7);
-}
-
-/* 使墩内的牌水平排列 */
-.pile .hand-row {
-    justify-content: flex-start; /* 从左开始排列 */
+.card.selected {
+  outline: 3px solid #ff4500; /* 橙红色选择框 */
+  outline-offset: 0px;
+  transform: translateY(-3px); /* 轻微上浮 */
+  box-shadow: 0 4px 8px rgba(255, 69, 0, 0.4);
 }
 </style>
