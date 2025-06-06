@@ -7,14 +7,14 @@ export const useGameStore = defineStore('game', {
     gameId: localStorage.getItem('thirteen_gameId') || null,
     playerId: localStorage.getItem('thirteen_playerId') || null,
     playerName: localStorage.getItem('thirteen_playerName') || '玩家',
-    gameState: null, // 存储从后端获取的完整游戏状态
-    myHand: [], // 当前玩家整理中的手牌 (前端状态)
-    arrangedHand: { // 玩家整理好的三墩牌
+    gameState: null,
+    myHand: [], // 存储当前玩家手上的牌对象数组
+    arrangedHand: { // 存储当前玩家已摆放的牌对象数组
       front: [],
       middle: [],
       back: []
     },
-    error: null,
+    error: null, // 来自API的错误
     isLoading: false,
     pollingIntervalId: null,
   }),
@@ -32,10 +32,13 @@ export const useGameStore = defineStore('game', {
     gameStatus: (state) => state.gameState?.status || 'loading',
     canDeal: (state) => {
         if (!state.gameState || !state.isHost) return false;
-        return state.gameState.status === 'waiting_for_players' && state.gameState.players.length === state.gameState.num_players;
+        return state.gameState.status === 'waiting_for_players' &&
+               state.gameState.players.length === state.gameState.num_players &&
+               state.gameState.players.every(p => p.connected); // 所有人都连接才能发牌
     },
-    canSubmitHand: (state) => {
+    canSubmitHand: (state) => { // 这个getter仅检查游戏状态和玩家是否已提交
         if (!state.gameState || !state.currentPlayerData) return false;
+        // 只有在摆牌阶段且当前玩家未提交过手牌时才能提交
         return state.gameState.status === 'arranging' && !state.currentPlayerData.submitted_hand;
     }
   },
@@ -56,7 +59,10 @@ export const useGameStore = defineStore('game', {
           this.playerId = response.player_id;
           localStorage.setItem('thirteen_gameId', this.gameId);
           localStorage.setItem('thirteen_playerId', this.playerId);
-          await this.fetchGameState(); // 获取初始状态
+          // 创建后，清空本地手牌数据，等待 fetchGameState
+          this.myHand = [];
+          this.arrangedHand = { front: [], middle: [], back: [] };
+          await this.fetchGameState();
           router.push(`/game/${this.gameId}`);
           this.startPolling();
         } else {
@@ -79,6 +85,8 @@ export const useGameStore = defineStore('game', {
           this.playerId = response.player_id;
           localStorage.setItem('thirteen_gameId', this.gameId);
           localStorage.setItem('thirteen_playerId', this.playerId);
+          this.myHand = [];
+          this.arrangedHand = { front: [], middle: [], back: [] };
           await this.fetchGameState();
           router.push(`/game/${this.gameId}`);
           this.startPolling();
@@ -94,26 +102,40 @@ export const useGameStore = defineStore('game', {
 
     async fetchGameState() {
       if (!this.gameId) return;
-      // this.isLoading = true; // 轮询时不要频繁设置loading，会闪烁
-      // this.error = null;
+      // this.isLoading = true; // 轮询时避免频繁loading
       try {
         const data = await api.getGameState(this.gameId);
+        const oldStatus = this.gameState?.status;
         this.gameState = data;
-        // 更新自己的手牌 (如果后端有发)
+        
         const me = data.players.find(p => p.id === this.playerId);
-        if (me && me.hand && this.gameStatus === 'arranging' && !me.submitted_hand) {
-             // 只有在摆牌阶段且未提交时，才从后端同步原始手牌到 myHand
-             // 避免覆盖用户正在整理的牌
-            if(this.myHand.length === 0 && me.hand.length === 13){
-                 this.myHand = [...me.hand]; // 初始加载
+        if (me) {
+            // 如果游戏状态是 'arranging' 且玩家未提交，并且本地手牌为空 (通常是刚发牌或刚加入)
+            // 则用后端的手牌数据填充本地 myHand
+            if (data.status === 'arranging' && !me.submitted_hand && this.myHand.length === 0 && me.hand && me.hand.length === 13) {
+                // 确保后端返回的 hand 里的牌不是 'back.png'
+                const validCards = me.hand.filter(card => card.id !== 'back' && card.suit !== 'unknown');
+                if (validCards.length === 13) {
+                    this.myHand = [...validCards];
+                    // 如果刚发牌，清空已摆放的墩
+                    this.arrangedHand = { front: [], middle: [], back: [] };
+                }
+            }
+            // 如果游戏结束，或者从 arranging 变到其他状态，而之前手上有牌，则清空
+            else if (oldStatus === 'arranging' && data.status !== 'arranging' && (this.myHand.length > 0 || Object.values(this.arrangedHand).some(p => p.length > 0))) {
+                 if(!me.submitted_hand){ // 如果是因为自己没提交而结束，保留牌面让用户查看
+                    // this.myHand = [];
+                    // this.arrangedHand = { front: [], middle: [], back: [] };
+                 }
             }
         }
+        this.error = null; // 清除之前的API错误
       } catch (err) {
         this.error = err.message || '获取游戏状态失败';
-        // if (err.message.includes("游戏不存在") || err.status === 404) {
-        //   this.clearGameData();
-        //   router.push('/');
-        // }
+        if (err.message.includes("游戏不存在") || (err.response && err.response.status === 404)) {
+          this.clearGameData();
+          router.push('/');
+        }
       } finally {
         // this.isLoading = false;
       }
@@ -126,10 +148,9 @@ export const useGameStore = defineStore('game', {
         try {
             const response = await api.dealCards(this.gameId);
             if (response.success) {
-                // 清空本地手牌，等待 fetchGameState 更新
-                this.myHand = [];
-                this.arrangedHand = { front: [], middle: [], back: [] };
-                await this.fetchGameState(); // 立刻获取新状态
+                this.myHand = []; // 清空本地手牌
+                this.arrangedHand = { front: [], middle: [], back: [] }; // 清空墩位
+                await this.fetchGameState(); // 立刻获取新状态，后端会发牌
             } else {
                 this.error = response.error || '发牌失败';
             }
@@ -141,18 +162,21 @@ export const useGameStore = defineStore('game', {
     },
 
     async submitArrangedHand() {
-        if (!this.gameId || !this.playerId || !this.canSubmitHand) return;
-        // 验证牌墩数量
-        if (this.arrangedHand.front.length !== 3 ||
-            this.arrangedHand.middle.length !== 5 ||
-            this.arrangedHand.back.length !== 5) {
-            this.error = "牌墩数量不正确 (前3, 中5, 后5)";
+        if (!this.gameId || !this.playerId || !this.canSubmitHand) {
+            this.error = "不满足提交条件或现在不能提交。";
             return;
         }
+        if (this.arrangedHand.front.length !== 3 ||
+            this.arrangedHand.middle.length !== 5 ||
+            this.arrangedHand.back.length !== 5 ||
+            this.myHand.length !== 0) {
+            this.error = "牌墩数量不正确或手牌区还有牌，请按前3、中5、后5摆放完毕。";
+            return;
+        }
+
         this.isLoading = true;
         this.error = null;
         try {
-            // 从 arrangedHand 中提取 card_id
             const handToSubmit = {
                 front: this.arrangedHand.front.map(c => c.id),
                 middle: this.arrangedHand.middle.map(c => c.id),
@@ -160,7 +184,8 @@ export const useGameStore = defineStore('game', {
             };
             const response = await api.submitHand(this.gameId, this.playerId, handToSubmit);
             if (response.success) {
-                await this.fetchGameState(); // 提交后立刻获取新状态
+                // 提交成功后，手牌和墩位由 fetchGameState 更新，或者可以不清空以便玩家查看自己提交的牌
+                await this.fetchGameState();
             } else {
                 this.error = response.error || '提交牌型失败';
             }
@@ -171,55 +196,58 @@ export const useGameStore = defineStore('game', {
         }
     },
 
-    // 用于前端拖拽或点击移动牌的逻辑
-    // card: 卡牌对象 {id, suit, rank}, targetPile: 'myHand', 'front', 'middle', 'back'
-    moveCard(card, fromPileName, toPileName, fromIndex = -1) {
-        // 1. 从原牌堆移除
+    moveCard(cardToMove, fromPileName, toPileName, cardIndexInFromPile) {
         let sourcePile;
         if (fromPileName === 'myHand') sourcePile = this.myHand;
         else if (this.arrangedHand[fromPileName]) sourcePile = this.arrangedHand[fromPileName];
-        else return; // 无效来源
+        else return;
 
-        const cardToRemove = (fromIndex !== -1) ? sourcePile.splice(fromIndex, 1)[0] : sourcePile.find((c,i) => {
-            if(c.id === card.id) {
-                sourcePile.splice(i,1);
-                return true;
-            }
-            return false;
-        });
-
-        if (!cardToRemove) return; // 没找到牌
-
-        // 2. 添加到目标牌堆
         let targetPile;
         if (toPileName === 'myHand') targetPile = this.myHand;
         else if (this.arrangedHand[toPileName]) targetPile = this.arrangedHand[toPileName];
-        else return; // 无效目标
+        else return;
 
-        // 检查目标牌墩是否已满
         const pileLimits = { front: 3, middle: 5, back: 5, myHand: 13 };
-        if (targetPile.length >= pileLimits[toPileName]) {
-            // 目标牌堆已满，将牌放回原处 (或myHand)
-            sourcePile.splice(fromIndex !== -1 ? fromIndex : 0, 0, cardToRemove); // 尝试放回原位
-            this.error = `目标墩 (${toPileName}) 已满！`;
-            setTimeout(() => this.error = null, 3000);
-            return;
+
+        // 检查目标牌墩是否已满 (如果目标不是 myHand)
+        if (toPileName !== 'myHand' && targetPile.length >= pileLimits[toPileName]) {
+            // this.error = `目标墩 (${toPileName}) 已满！`; // PlayerHand.vue 会处理这个错误提示
+            // setTimeout(() => this.error = null, 2000);
+            return false; // 表示移动失败
         }
-        targetPile.push(cardToRemove);
+
+        // 从原牌堆移除
+        const foundCard = sourcePile.splice(cardIndexInFromPile, 1)[0];
+        if (!foundCard || foundCard.id !== cardToMove.id) {
+            // 如果没找到或者ID不匹配（理论上不应发生，因为index是准确的），尝试按ID找
+            const fallbackIndex = sourcePile.findIndex(c => c.id === cardToMove.id);
+            if (fallbackIndex !== -1) {
+                sourcePile.splice(fallbackIndex, 1);
+            } else {
+                 // 牌未找到，放回原位（如果可能）或记录错误
+                // console.error("moveCard: Card not found in source pile or ID mismatch");
+                if(foundCard) sourcePile.splice(cardIndexInFromPile, 0, foundCard); // 尝试放回
+                return false;
+            }
+        }
+        
+        // 添加到目标牌堆 (通常是末尾)
+        targetPile.push(cardToMove);
+        this.error = null; // 清除之前的错误
+        return true; // 表示移动成功
     },
 
-    // 轮询
     startPolling() {
-      this.stopPolling(); //确保只有一个轮询
+      this.stopPolling();
       if (this.gameId) {
-        this.fetchGameState(); // 立即获取一次
+        this.fetchGameState();
         this.pollingIntervalId = setInterval(() => {
-          if (this.gameId && router.currentRoute.value.path.startsWith('/game/')) { //只在游戏页面轮询
+          if (this.gameId && router.currentRoute.value.name === 'GameRoom') {
              this.fetchGameState();
           } else {
-            this.stopPolling(); // 不在游戏页则停止
+            this.stopPolling();
           }
-        }, 3000); // 每3秒轮询一次
+        }, 2500); // 轮询间隔改为2.5秒
       }
     },
     stopPolling() {
@@ -229,7 +257,6 @@ export const useGameStore = defineStore('game', {
       }
     },
 
-    // 清理游戏数据 (例如退出游戏或游戏结束)
     clearGameData() {
       this.stopPolling();
       this.gameId = null;
@@ -237,12 +264,15 @@ export const useGameStore = defineStore('game', {
       this.gameState = null;
       this.myHand = [];
       this.arrangedHand = { front: [], middle: [], back: [] };
+      this.error = null;
       localStorage.removeItem('thirteen_gameId');
       localStorage.removeItem('thirteen_playerId');
+      // playerName 保留，方便下次使用
     },
 
     async leaveGame() {
-        // 可选：通知后端玩家离开 (如果后端需要处理断线/离开逻辑)
+        // 可选: 通知后端玩家离开，如果后端需要做相应处理
+        // await api.leaveGame(this.gameId, this.playerId); // 假设有这个API
         this.clearGameData();
         router.push('/');
     }
