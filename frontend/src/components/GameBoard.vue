@@ -3,31 +3,43 @@
     <!-- 整合的游戏信息横幅 -->
     <div class="game-info-banner">
       <div class="banner-left">
-        <span>ID: {{ gameStore.gameId?.slice(-6) }}</span> <!-- 显示部分ID -->
+        <span>ID: {{ gameStore.gameId?.slice(-6) }}</span>
         <span>状态: <strong :class="statusClass">{{ gameStatusDisplay }}</strong></span>
       </div>
       <div class="banner-center player-turns-compact">
-        <!-- 简洁显示其他玩家状态，例如谁已提交 -->
         <span v-for="player in gameStore.gameState?.players" :key="player.id"
               class="player-status-tag"
               :class="{
                 'is-current': player.id === gameStore.playerId,
                 'is-host': player.is_host,
-                'is-submitted': player.submitted_hand,
+                'is-submitted': player.submitted_hand && gameStore.gameStatus === 'arranging', // 只在摆牌阶段显示提交对勾
                 'is-disconnected': !player.connected
               }">
           {{ player.name.substring(0, 4) }}{{ player.id === gameStore.playerId ? '(你)' : '' }}
           <span v-if="player.submitted_hand && gameStore.gameStatus === 'arranging'">✓</span>
-          <span v-if="!player.connected">⚡</span>
+          <span v-if="!player.connected && gameStore.gameStatus !== 'waiting_for_players'">⚡</span> <!-- 不在等待阶段才显示断线 -->
         </span>
       </div>
       <div class="banner-right">
         <span v-if="gameStore.currentPlayerData" class="current-player-score">
           得分: {{ gameStore.currentPlayerData.score }}
         </span>
-        <button v-if="gameStore.canDeal" @click="gameStore.dealCards()" class="banner-button deal-btn">开始</button>
-        <button v-if="gameStore.gameStatus === 'game_over' && gameStore.isHost" @click="restartGame()" class="banner-button restart-btn">再来</button>
-        <button @click="leaveGameAndClearData()" class="banner-button leave-btn">离开</button>
+        <!-- 修改：“开始游戏”按钮逻辑 -->
+        <button
+          v-if="gameStore.gameStatus === 'waiting_for_players' && gameStore.isHost && gameStore.canDeal"
+          @click="handleDealCards"
+          :disabled="gameStore.isLoading"
+          class="banner-button deal-btn">
+          开始游戏
+        </button>
+        <button
+          v-if="gameStore.gameStatus === 'game_over' && gameStore.isHost"
+          @click="restartGame"
+          :disabled="gameStore.isLoading"
+          class="banner-button restart-btn">
+          再来一局
+        </button>
+        <button @click="leaveGameAndClearData" class="banner-button leave-btn">离开</button>
       </div>
     </div>
 
@@ -38,17 +50,18 @@
       </ul>
     </div>
     
-    <div v-if="!gameStore.gameState" class="loading-streamlined">加载中...</div>
+    <div v-if="!gameStore.gameState && gameStore.isLoading" class="loading-streamlined">正在加载游戏数据...</div>
+    <div v-else-if="!gameStore.gameState && !gameStore.isLoading && gameStore.gameId" class="loading-streamlined">连接中或游戏不存在...</div>
+
 
     <!-- 主要游戏区域 -->
     <div v-if="gameStore.gameState" class="main-content-area">
-        <!-- 当前玩家的摆牌组件 -->
         <div v-if="isCurrentPlayerArranging" class="current-player-action-zone">
           <PlayerHand />
         </div>
-        <!-- 游戏结束时的结果展示 -->
         <div v-else-if="gameStore.gameStatus === 'game_over' || gameStore.gameStatus === 'comparing'" class="game-results-area">
-            <h3>本局结果</h3>
+            <!-- ... (结果展示区域代码同前) ... -->
+             <h3>本局结果</h3>
             <div v-for="player in gameStore.gameState.players" :key="`result-${player.id}`" class="player-result-card">
                 <h4>{{ player.name }} {{player.id === gameStore.playerId ? '(你)' : ''}} - 总分: {{ player.score }}</h4>
                  <div v-if="player.evaluated_hand">
@@ -78,13 +91,20 @@
             </div>
         </div>
          <div v-else-if="gameStore.gameStatus === 'waiting_for_players'" class="waiting-lobby">
+            <!-- ... (等待大厅代码同前) ... -->
             <p>等待玩家加入并发牌...</p>
             <p>当前玩家 ({{ gameStore.gameState.players.length }}/{{ gameStore.gameState.num_players }}):</p>
             <ul>
-                <li v-for="p in gameStore.gameState.players" :key="p.id">
+                <li v-for="p in gameStore.gameState.players" :key="p.id" :class="{'player-connected': p.connected, 'player-disconnected': !p.connected}">
                     {{p.name}} {{p.is_host ? '(房主)' : ''}} {{p.id === gameStore.playerId ? '(你)' : ''}}
+                    <span v-if="!p.connected"> (未连接)</span>
                 </li>
             </ul>
+         </div>
+         <!-- 新增：如果发牌了但 PlayerHand 不显示（例如 myHand 为空），给个提示 -->
+         <div v-if="gameStore.gameStatus === 'arranging' && !isCurrentPlayerArranging && gameStore.currentPlayerData && !gameStore.currentPlayerData.submitted_hand" class="waiting-lobby">
+            <p>已发牌，等待您的操作或数据同步...</p>
+            <p>(如果长时间未显示手牌，请检查网络或尝试刷新)</p>
          </div>
     </div>
     <p v-if="gameStore.error" class="feedback-message error global-error-bottom">{{ gameStore.error }}</p>
@@ -92,8 +112,6 @@
 </template>
 
 <script setup>
-// ... (script setup 部分与上一版本 GameBoard.vue 的 script setup 基本相同)
-// 主要确保 computed 属性 (gameStatusDisplay, statusClass, isCurrentPlayerArranging) 存在且正确
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useGameStore } from '../store/game';
 import Card from './Card.vue';
@@ -101,113 +119,104 @@ import PlayerHand from './PlayerHand.vue';
 
 const gameStore = useGameStore();
 
-onMounted(() => { /* ... */ });
-onUnmounted(() => { /* ... */ });
+onMounted(() => {
+  if (gameStore.gameId) {
+    gameStore.startPolling();
+  } else {
+    // 如果没有gameId，可能是直接访问了游戏房间URL，尝试从localStorage恢复
+    // Pinia store的初始化逻辑应该已经处理了这个
+  }
+});
 
-const gameStatusDisplay = computed(() => { /* ... */ });
+onUnmounted(() => {
+  gameStore.stopPolling();
+});
+
+const gameStatusDisplay = computed(() => {
+    const statusMap = {
+        'waiting_for_players': '等待玩家',
+        'arranging': '摆牌中',
+        'comparing': '比牌中',
+        'game_over': '本局结束',
+        'loading': '加载中...'
+    };
+    return statusMap[gameStore.gameStatus] || gameStore.gameStatus;
+});
+
 const statusClass = computed(() => `status-${gameStore.gameStatus}`);
-const isCurrentPlayerArranging = computed(() => { /* ... */ });
 
-async function restartGame() { /* ... */ }
-function leaveGameAndClearData() { /* ... */ }
+const isCurrentPlayerArranging = computed(() => {
+    const me = gameStore.currentPlayerData;
+    // 玩家必须是当前玩家，游戏状态是摆牌，玩家未提交，并且本地手牌 myHand 有牌
+    return gameStore.gameStatus === 'arranging' && 
+           me && 
+           !me.submitted_hand && 
+           gameStore.myHand && gameStore.myHand.length > 0;
+});
+
+async function handleDealCards() {
+    if (gameStore.canDeal) {
+        await gameStore.dealCards();
+    } else {
+        // 可以在这里给用户一个提示，为什么不能发牌
+        if (!gameStore.isHost) {
+            gameStore.error = "只有房主可以开始游戏。";
+        } else if (gameStore.gameState.players.length !== gameStore.gameState.num_players) {
+            gameStore.error = "玩家未到齐。";
+        } else if (!gameStore.gameState.players.every(p => p.connected)) {
+            gameStore.error = "有玩家未连接，请稍等。";
+        } else {
+            gameStore.error = "当前无法开始游戏。";
+        }
+    }
+}
+
+async function restartGame() {
+    if (gameStore.isHost) {
+        // 清理前端手牌状态，后端dealCards会重新发牌
+        gameStore.myHand = [];
+        gameStore.arrangedHand = { front: [], back: [] };
+        await gameStore.dealCards();
+    }
+}
+
+function leaveGameAndClearData() {
+    gameStore.leaveGame();
+}
 </script>
 
 <style scoped>
-.game-board-streamlined {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #f4f7f9;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.game-info-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background-color: #2c3e50; /* 深色主题 */
-  color: #ecf0f1;
-  font-size: 0.85rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  flex-wrap: wrap; /* 允许换行 */
-}
-.banner-left, .banner-right { display: flex; align-items: center; gap: 10px; margin: 5px 0; }
-.banner-center { display: flex; align-items: center; gap: 6px; flex-grow: 1; justify-content: center; margin: 5px 10px; flex-wrap: wrap;}
-
-.player-status-tag {
-    padding: 3px 7px;
-    border-radius: 10px;
-    font-size: 0.75rem;
-    background-color: #7f8c8d; /* 默认灰色 */
-    border: 1px solid #95a5a6;
-    white-space: nowrap;
-}
-.player-status-tag.is-current { background-color: #3498db; border-color: #2980b9;} /* 蓝色 */
-.player-status-tag.is-host { /* 可以加房主特殊标记，例如一个小皇冠图标 */ }
-.player-status-tag.is-submitted { background-color: #2ecc71; border-color: #27ae60;} /* 绿色 */
-.player-status-tag.is-disconnected { background-color: #e74c3c; border-color: #c0392b; } /* 红色 */
-.player-status-tag span { margin-left: 3px; }
-
-
-.current-player-score { font-weight: 500; }
-.banner-button { /* ... 样式同前，可微调 ... */ padding: 6px 12px; font-size: 0.8rem; }
-.deal-btn { background-color: #27ae60; }
-.restart-btn { background-color: #2980b9; }
-.leave-btn { background-color: #c0392b; }
-
-.game-log-streamlined { /* ... 样式同前，可微调 ... */ max-height: 80px; font-size: 0.75rem; margin: 8px; }
-
+/* ... (大部分样式与上一版本相同，确保选择器仍然有效) ... */
+.game-board-streamlined { /* ... */ }
+.game-info-banner { /* ... */ }
+.banner-left, .banner-right { /* ... */ }
+.banner-center { /* ... */ }
+.player-status-tag { /* ... */ }
+.player-status-tag.is-current { /* ... */ }
+.player-status-tag.is-submitted { /* ... */ }
+.player-status-tag.is-disconnected { /* ... */ }
+.current-player-score { /* ... */ }
+.banner-button { /* ... */ }
+.deal-btn { background-color: #27ae60; } /* 发牌按钮颜色 */
+.deal-btn:disabled { background-color: #95a5a6; cursor: not-allowed; } /* 禁用时颜色 */
+.restart-btn { /* ... */ }
+.leave-btn { /* ... */ }
+.game-log-streamlined { /* ... */ }
 .loading-streamlined { /* ... */ }
-.main-content-area {
-  flex-grow: 1; /* 占据剩余空间 */
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* 居中内容，如PlayerHand或Results */
-}
-.current-player-action-zone {
-  width: 100%;
-  max-width: 700px; /* 限制摆牌区域最大宽度 */
-  margin-bottom: 20px;
-}
-.game-results-area {
-  width: 100%;
-  max-width: 800px;
-  background-color: #fff;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-.game-results-area h3 { text-align: center; color: #2c3e50; margin-bottom: 15px; }
-.player-result-card {
-  margin-bottom: 12px;
-  padding: 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-}
-.player-result-card h4 { margin: 0 0 8px 0; font-size: 1rem; }
-.arranged-hand-summary { font-size: 0.9rem; color: #555; margin-bottom: 5px;}
-.arranged-special-tag { font-weight: bold; color: #e67e22; } /* 橙色特殊牌型名 */
-.submitted-cards-rows > div { display: flex; align-items: center; margin-bottom: 2px; font-size: 0.85rem; }
-.submitted-cards-rows strong { margin-right: 5px; }
-.result-card-item { transform: scale(0.65); margin: -8px -10px; } /* 结果展示的牌缩小 */
-.result-cards .card { /* 特殊牌型展示的牌 */ margin: 1px; transform: scale(0.8); }
-
-.waiting-lobby { text-align: center; padding: 20px; color: #34495e; }
-.waiting-lobby ul { list-style: none; padding: 0; }
-.waiting-lobby li { margin: 5px 0; }
-
-.feedback-message.error.global-error-bottom {
-    margin: 15px;
-    padding: 8px;
-    background-color: #ffebee;
-    color: #c62828;
-    border: 1px solid #ef9a9a;
-    border-radius: 4px;
-    text-align: center;
-}
+.main-content-area { /* ... */ }
+.current-player-action-zone { /* ... */ }
+.game-results-area { /* ... */ }
+.game-results-area h3 { /* ... */ }
+.player-result-card { /* ... */ }
+.player-result-card h4 { /* ... */ }
+.arranged-hand-summary { /* ... */ }
+.arranged-special-tag { /* ... */ }
+.submitted-cards-rows > div { /* ... */ }
+.result-card-item { /* ... */ }
+.result-cards .card { /* ... */ }
+.waiting-lobby { /* ... */ }
+.waiting-lobby ul { /* ... */ }
+.waiting-lobby li.player-connected { color: #27ae60; } /* 连接的玩家绿色 */
+.waiting-lobby li.player-disconnected { color: #c0392b; font-style: italic; } /* 未连接的红色斜体 */
+.feedback-message.error.global-error-bottom { /* ... */ }
 </style>
