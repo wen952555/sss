@@ -1,0 +1,36 @@
+{
+  "name": "thirteen-waters-ui", // 你可以改成你的项目名
+  "private": true,
+  "version": "0.1.0", // 初始版本
+  "type": "module", // 使用 ES Module
+  "scripts": {
+    "dev": "vite", // 启动开发服务器
+    "build": "vue-tsc && vite build", // 类型检查并构建生产版本
+    "preview": "vite preview", // 本地预览生产版本
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx --fix --ignore-path .gitignore", // ESLint 代码检查和修复
+    "format": "prettier --write src/" // Prettier 代码格式化
+  },
+  "dependencies": {
+    "axios": "^1.7.2", // HTTP客户端，用于API请求
+    "pinia": "^2.1.7", // Vue状态管理库
+    "vue": "^3.4.29", // Vue 框架
+    "vue-router": "^4.3.3" // Vue 路由
+  },
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.10.3", // ESLint 补丁
+    "@tsconfig/node20": "^20.1.4", // TypeScript Node.js 配置
+    "@types/node": "^20.14.2", // Node.js 类型定义
+    "@vitejs/plugin-vue": "^5.0.5", // Vite Vue 插件
+    "@vue/eslint-config-prettier": "^9.0.0", // ESLint Prettier 配置
+    "@vue/eslint-config-typescript": "^13.0.0", // ESLint TypeScript 配置
+    "@vue/tsconfig": "^0.5.1", // Vue TypeScript 配置
+    "eslint": "^8.57.0", // JavaScript 和 TypeScript Linter
+    "eslint-plugin-vue": "^9.26.0", // ESLint Vue 插件
+    "npm-run-all": "^4.1.5", // (可选) 用于并行或串行运行多个npm脚本
+    "prettier": "^3.3.2", // 代码格式化工具
+    "sass": "^1.77.5", // (可选) 如果你使用 SCSS/Sass
+    "typescript": "~5.4.5", // TypeScript 语言
+    "vite": "^5.2.13", // 前端构建工具
+    "vue-tsc": "^2.0.21" // Vue TypeScript 类型检查工具
+  }
+}
