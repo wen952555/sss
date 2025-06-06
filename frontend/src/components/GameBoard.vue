@@ -38,7 +38,7 @@
           class="banner-button restart-btn">
           再来一局
         </button>
-        <button @click="leaveGameAndClearData" class="banner-button leave-btn">离开</button>
+        <button @click="leaveGameAndClearData" :disabled="gameStore.isLoading" class="banner-button leave-btn">离开</button>
       </div>
     </div>
 
@@ -49,7 +49,8 @@
     </div>
     
     <div v-if="!gameStore.gameState && gameStore.isLoading" class="loading-streamlined">正在加载游戏数据...</div>
-    <div v-else-if="!gameStore.gameState && !gameStore.isLoading && gameStore.gameId" class="loading-streamlined">连接中或游戏不存在...</div>
+    <div v-else-if="!gameStore.gameState && !gameStore.isLoading && gameStore.gameId" class="loading-streamlined">连接中或游戏可能已结束/不存在...</div>
+
 
     <div v-if="gameStore.gameState" class="main-content-area">
         <div v-if="isCurrentPlayerArranging" class="current-player-action-zone">
@@ -57,47 +58,54 @@
         </div>
         <div v-else-if="gameStore.gameStatus === 'game_over' || gameStore.gameStatus === 'comparing'" class="game-results-area">
             <h3>本局结果</h3>
-            <div v-for="player in gameStore.gameState.players" :key="`result-${player.id}`" class="player-result-card">
-                <h4>{{ player.name }} {{player.id === gameStore.playerId ? '(你)' : ''}} - 总分: {{ player.score }}</h4>
-                 <div v-if="player.evaluated_hand">
-                    <div v-if="player.evaluated_hand.is_special_overall && player.evaluated_hand.special_details">
-                        <strong>特殊牌型: {{ player.evaluated_hand.special_details.name }}</strong>
+            <div v-for="player_result in gameStore.gameState.players" :key="`result-${player_result.id}`" class="player-result-card">
+                <h4>
+                  {{ player_result.name }} 
+                  <span v-if="player_result.id === gameStore.playerId">(你)</span>
+                  <span v-if="player_result.is_host" class="host-result-tag">(房主)</span>
+                  - 总分: {{ player_result.score }}
+                  <span v-if="!player_result.connected" class="disconnected-result-tag">(已断线)</span>
+                </h4>
+                 <div v-if="player_result.evaluated_hand">
+                    <div v-if="player_result.evaluated_hand.is_special_overall && player_result.evaluated_hand.special_details">
+                        <strong>特殊牌型: {{ player_result.evaluated_hand.special_details.name }}</strong>
                         <div class="hand-row result-cards">
-                            <Card v-for="card_obj in player.evaluated_hand.special_details.cards_for_display" :key="card_obj.id" :card="card_obj" />
+                            <Card v-for="card_obj_res in player_result.evaluated_hand.special_details.cards_for_display" :key="`sp-${card_obj_res.id}`" :card="card_obj_res" />
                         </div>
                     </div>
-                    <div v-else-if="player.submitted_hand">
+                    <div v-else-if="player_result.submitted_hand">
                         <p class="arranged-hand-summary">
-                            <span v-if="player.evaluated_hand.extras && player.evaluated_hand.extras.arranged_special_name" class="arranged-special-tag">
-                            ({{ player.evaluated_hand.extras.arranged_special_name }})
+                            <span v-if="player_result.evaluated_hand.extras && player_result.evaluated_hand.extras.arranged_special_name" class="arranged-special-tag">
+                            ({{ player_result.evaluated_hand.extras.arranged_special_name }})
                             </span>
-                            头: {{player.evaluated_hand.front?.name || '?'}} | 
-                            中: {{player.evaluated_hand.middle?.name || '?'}} | 
-                            尾: {{player.evaluated_hand.back?.name || '?'}}
+                            头: {{player_result.evaluated_hand.front?.name || '?'}} | 
+                            中: {{player_result.evaluated_hand.middle?.name || '?'}} | 
+                            尾: {{player_result.evaluated_hand.back?.name || '?'}}
                         </p>
                         <div class="submitted-cards-rows">
-                            <div><strong>头:</strong> <Card v-for="cid in player.submitted_hand.front" :key="`f-${cid}`" :card="{id:cid}" class="result-card-item"/></div>
-                            <div><strong>中:</strong> <Card v-for="cid in player.submitted_hand.middle" :key="`m-${cid}`" :card="{id:cid}" class="result-card-item"/></div>
-                            <div><strong>尾:</strong> <Card v-for="cid in player.submitted_hand.back" :key="`b-${cid}`" :card="{id:cid}" class="result-card-item"/></div>
+                            <div><strong>头:</strong> <Card v-for="cid_f in player_result.submitted_hand.front" :key="`res-f-${player_result.id}-${cid_f}`" :card="{id:cid_f}" class="result-card-item"/></div>
+                            <div><strong>中:</strong> <Card v-for="cid_m in player_result.submitted_hand.middle" :key="`res-m-${player_result.id}-${cid_m}`" :card="{id:cid_m}" class="result-card-item"/></div>
+                            <div><strong>尾:</strong> <Card v-for="cid_b in player_result.submitted_hand.back" :key="`res-b-${player_result.id}-${cid_b}`" :card="{id:cid_b}" class="result-card-item"/></div>
                         </div>
                     </div>
                 </div>
-                <p v-else-if="gameStore.gameStatus === 'comparing' && !player.submitted_hand && player.connected">等待 {{player.name}} 提交...</p>
+                <p v-else-if="gameStore.gameStatus === 'comparing' && !player_result.submitted_hand && player_result.connected" class="waiting-submit-result">等待 {{player_result.name}} 提交...</p>
+                <p v-else-if="gameStore.gameStatus !== 'waiting_for_players' && !player_result.submitted_hand && !player_result.connected" class="not-participated-result">{{player_result.name}} 未参与或已断线未提交。</p>
             </div>
         </div>
          <div v-else-if="gameStore.gameStatus === 'waiting_for_players'" class="waiting-lobby">
             <p>等待玩家加入并发牌...</p>
             <p>当前玩家 ({{ gameStore.gameState.players.length }}/{{ gameStore.gameState.num_players }}):</p>
             <ul>
-                <li v-for="p_wait in gameStore.gameState.players" :key="p_wait.id" :class="{'player-connected': p_wait.connected, 'player-disconnected': !p_wait.connected}">
-                    {{p_wait.name}} {{p_wait.is_host ? '(房主)' : ''}} {{p_wait.id === gameStore.playerId ? '(你)' : ''}}
-                    <span v-if="!p_wait.connected"> (未连接)</span>
+                <li v-for="p_wait_lobby in gameStore.gameState.players" :key="p_wait_lobby.id" :class="{'player-connected': p_wait_lobby.connected, 'player-disconnected': !p_wait_lobby.connected}">
+                    {{p_wait_lobby.name}} {{p_wait_lobby.is_host ? '(房主)' : ''}} {{p_wait_lobby.id === gameStore.playerId ? '(你)' : ''}}
+                    <span v-if="!p_wait_lobby.connected"> (未连接)</span>
                 </li>
             </ul>
          </div>
-         <div v-if="gameStore.gameStatus === 'arranging' && !isCurrentPlayerArranging && gameStore.currentPlayerData && !gameStore.currentPlayerData.submitted_hand" class="waiting-lobby">
-            <p>已发牌，等待您的操作或数据同步...</p>
-            <p>(如果长时间未显示手牌，请检查网络或尝试刷新)</p>
+         <div v-if="gameStore.gameStatus === 'arranging' && !isCurrentPlayerArranging && gameStore.currentPlayerData && !gameStore.currentPlayerData.submitted_hand" class="arranging-wait-prompt">
+            <p v-if="gameStore.myHand && gameStore.myHand.length === 0">等待同步手牌...</p>
+            <p v-else>请开始摆牌，或等待其他玩家。</p>
          </div>
     </div>
     <p v-if="gameStore.error" class="feedback-message error global-error-bottom">{{ gameStore.error }}</p>
@@ -116,11 +124,24 @@ onMounted(() => {
   if (gameStore.gameId) {
     gameStore.startPolling();
   }
+  // 可以在这里或 App.vue 中添加 visibilitychange 事件监听器来控制轮询
+  // document.addEventListener('visibilitychange', handleVisibilityChange);
 });
 
 onUnmounted(() => {
   gameStore.stopPolling();
+  // document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
+
+// function handleVisibilityChange() {
+//   if (document.hidden) {
+//     gameStore.stopPolling();
+//   } else {
+//     if (gameStore.gameId && router.currentRoute.value.name === 'GameRoom') { // 确保在游戏房间页才恢复
+//       gameStore.startPolling();
+//     }
+//   }
+// }
 
 const gameStatusDisplay = computed(() => {
     const statusMap = {
@@ -144,23 +165,20 @@ const isCurrentPlayerArranging = computed(() => {
 });
 
 async function handleDealCards() {
-    if (gameStore.canDeal) {
-        await gameStore.dealCards();
-    } else {
-        let errorMsg = "当前无法开始游戏。";
-        if (!gameStore.isHost) {
-            errorMsg = "只有房主可以开始游戏。";
-        } else if (gameStore.gameState?.players.length !== gameStore.gameState?.num_players) {
-            errorMsg = "玩家未到齐。";
-        } else if (gameStore.gameState?.players && !gameStore.gameState.players.every(p => p.connected)) {
-            errorMsg = "有玩家未连接，请稍等。";
-        }
-        gameStore.error = errorMsg; // 使用 store 的 error
+    if (gameStore.isLoading) return; // 防止重复点击
+    const dealSuccess = await gameStore.dealCards(); // dealCards action 现在返回 boolean
+    if (!dealSuccess && !gameStore.error) { // 如果canDeal为false, dealCards会设置error
+         // 避免覆盖 dealCards 中更具体的错误
+        if (!gameStore.isHost) { gameStore.error = "只有房主可以开始游戏。"; }
+        else if (gameStore.gameState?.players.length !== gameStore.gameState?.num_players) { gameStore.error = "玩家未到齐。"; }
+        else if (gameStore.gameState?.players && !gameStore.gameState.players.every(p => p.connected)) { gameStore.error = "有玩家未连接，请稍等。"; }
+        else { gameStore.error = "当前无法开始游戏（未知原因）。"; }
         setTimeout(() => gameStore.error = null, 3000);
     }
 }
 
 async function restartGame() {
+    if (gameStore.isLoading) return;
     if (gameStore.isHost) {
         gameStore.myHand = [];
         gameStore.arrangedHand = { front: [], back: [] };
@@ -169,14 +187,15 @@ async function restartGame() {
 }
 
 function leaveGameAndClearData() {
+    if (gameStore.isLoading) return;
     gameStore.leaveGame();
 }
 </script>
 
 <style scoped>
 .game-board-streamlined {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #f4f7f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f0f4f8; /* 更淡雅的背景 */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -185,86 +204,114 @@ function leaveGameAndClearData() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background-color: #2c3e50;
-  color: #ecf0f1;
-  font-size: 0.85rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  padding: 10px 15px; /* 增加内边距 */
+  background-color: #34495e; /* 深蓝灰色 */
+  color: #f2f2f2; /* 浅色文字 */
+  font-size: 0.9rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   position: sticky;
   top: 0;
   z-index: 1000;
+  flex-wrap: wrap; /* 允许换行 */
+  gap: 10px; /* 各部分之间的间隔 */
+}
+.banner-left, .banner-right, .banner-center { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; /* 内部元素间隔 */
+}
+.banner-center { 
+  flex-grow: 1; 
+  justify-content: center; 
   flex-wrap: wrap;
 }
-.banner-left, .banner-right { display: flex; align-items: center; gap: 10px; margin: 5px 0; }
-.banner-center { display: flex; align-items: center; gap: 6px; flex-grow: 1; justify-content: center; margin: 5px 10px; flex-wrap: wrap;}
 .player-status-tag {
-    padding: 3px 7px;
-    border-radius: 10px;
-    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 12px; /* 更圆的胶囊 */
+    font-size: 0.8rem;
     background-color: #7f8c8d;
-    border: 1px solid #95a5a6;
+    border: 1px solid transparent;
     white-space: nowrap;
+    transition: background-color 0.2s;
 }
-.player-status-tag.is-current { background-color: #3498db; border-color: #2980b9;}
-.player-status-tag.is-submitted { background-color: #2ecc71; border-color: #27ae60;}
-.player-status-tag.is-disconnected { background-color: #e74c3c; border-color: #c0392b; }
-.player-status-tag span { margin-left: 3px; }
-.current-player-score { font-weight: 500; }
-.banner-button { padding: 6px 12px; font-size: 0.8rem; border:none; border-radius:4px; color:white; cursor:pointer; }
-.deal-btn { background-color: #27ae60; }
+.player-status-tag.is-current { background-color: #2980b9; border-color: #3498db;}
+.player-status-tag.is-host::before { content: "👑"; margin-right: 3px; font-size: 0.7rem; }
+.player-status-tag.is-submitted { background-color: #27ae60; }
+.player-status-tag.is-disconnected { background-color: #c0392b; text-decoration: line-through; }
+.player-status-tag span { margin-left: 4px; }
+
+.current-player-score { font-weight: 600; font-size: 0.95rem; }
+.banner-button { 
+  padding: 7px 14px; font-size: 0.85rem; border:none; border-radius:5px; 
+  color:white; cursor:pointer; transition: background-color 0.2s, transform 0.1s;
+}
+.banner-button:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.banner-button:active:not(:disabled) { transform: translateY(0px); }
+.deal-btn { background-color: #2ecc71; }
 .deal-btn:disabled { background-color: #95a5a6; cursor: not-allowed; }
-.restart-btn { background-color: #2980b9; }
-.leave-btn { background-color: #c0392b; }
-.banner-button:hover:not(:disabled) { opacity: 0.85; }
-.game-log-streamlined { max-height: 80px; font-size: 0.75rem; margin: 8px; background-color: #fff; border: 1px solid #ddd; border-radius: 4px; overflow-y: auto; padding: 5px 8px;}
+.restart-btn { background-color: #3498db; }
+.leave-btn { background-color: #e74c3c; }
+
+.game-log-streamlined { 
+  max-height: 70px; font-size: 0.8rem; margin: 10px; 
+  background-color: #ffffff; border: 1px solid #dfe6ec; border-radius: 5px; 
+  overflow-y: auto; padding: 8px 10px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
 .game-log-streamlined ul { list-style-type: none; padding: 0; margin: 0; }
-.game-log-streamlined li { margin-bottom: 2px; color: #444; }
-.loading-streamlined { text-align: center; padding: 30px; font-size: 1.1em; color: #2c3e50;}
+.game-log-streamlined li { margin-bottom: 3px; color: #566573; }
+
+.loading-streamlined { text-align: center; padding: 40px; font-size: 1.2rem; color: #34495e;}
 .main-content-area {
   flex-grow: 1;
-  padding: 15px;
+  padding: 10px 15px; /* 调整内边距 */
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 .current-player-action-zone {
   width: 100%;
-  max-width: 700px;
-  margin-bottom: 20px;
+  max-width: 650px; /* 摆牌区域宽度 */
+  margin-bottom: 25px;
 }
 .game-results-area {
   width: 100%;
-  max-width: 800px;
-  background-color: #fff;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  max-width: 750px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
-.game-results-area h3 { text-align: center; color: #2c3e50; margin-bottom: 15px; }
+.game-results-area h3 { text-align: center; color: #34495e; margin-bottom: 20px; font-size: 1.5rem;}
 .player-result-card {
-  margin-bottom: 12px;
-  padding: 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  margin-bottom: 15px;
+  padding: 12px;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  background-color: #fdfdfd;
 }
-.player-result-card h4 { margin: 0 0 8px 0; font-size: 1rem; }
-.arranged-hand-summary { font-size: 0.9rem; color: #555; margin-bottom: 5px;}
-.arranged-special-tag { font-weight: bold; color: #e67e22; }
-.submitted-cards-rows > div { display: flex; align-items: center; margin-bottom: 2px; font-size: 0.85rem; }
-.submitted-cards-rows strong { margin-right: 5px; width:25px; display:inline-block; }
-.result-card-item { transform: scale(0.65); margin: -8px -10px; }
-.result-cards .card { margin: 1px; transform: scale(0.8); }
-.waiting-lobby { text-align: center; padding: 20px; color: #34495e; }
-.waiting-lobby ul { list-style: none; padding: 0; }
-.waiting-lobby li { margin: 5px 0; }
-.waiting-lobby li.player-connected { color: #27ae60; }
+.player-result-card h4 { margin: 0 0 10px 0; font-size: 1.1rem; color: #2c3e50;}
+.host-result-tag, .disconnected-result-tag { font-size: 0.8rem; color: #7f8c8d; margin-left: 5px; }
+.disconnected-result-tag { color: #e74c3c; }
+.arranged-hand-summary { font-size: 0.95rem; color: #555; margin-bottom: 8px;}
+.arranged-special-tag { font-weight: bold; color: #d35400; } /* 深橙色 */
+.submitted-cards-rows > div { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.9rem; }
+.submitted-cards-rows strong { margin-right: 8px; width:30px; display:inline-block; color: #34495e; }
+.result-card-item { transform: scale(0.7); margin: -7px -9px; }
+.result-cards .card { margin: 2px; transform: scale(0.85); }
+
+.waiting-lobby { text-align: center; padding: 25px; color: #34495e; font-size: 1rem; }
+.waiting-lobby ul { list-style: none; padding: 0; margin-top: 10px; }
+.waiting-lobby li { margin: 6px 0; font-size: 0.95rem; }
+.waiting-lobby li.player-connected { color: #27ae60; font-weight: 500; }
 .waiting-lobby li.player-disconnected { color: #c0392b; font-style: italic; }
+.arranging-wait-prompt { text-align: center; padding: 20px; color: #5499c7; font-size: 1rem;}
+
 .feedback-message.error.global-error-bottom {
-    margin: 15px; padding: 8px; background-color: #ffebee; color: #c62828;
-    border: 1px solid #ef9a9a; border-radius: 4px; text-align: center;
+    margin: 10px 15px; padding: 10px; background-color: #fdedec; color: #942721;
+    border: 1px solid #f9c6c3; border-radius: 6px; text-align: center;
 }
-.status-waiting_for_players { background-color: #f1c40f; color: #333 !important; }
-.status-arranging { background-color: #3498db; }
-.status-comparing { background-color: #e67e22; }
-.status-game_over { background-color: #2ecc71; }
+.status-waiting_for_players { background-color: #f39c12; color: #fff !important; } /* 橙色 */
+.status-arranging { background-color: #3498db; } /* 蓝色 */
+.status-comparing { background-color: #e67e22; } /* 胡萝卜色 */
+.status-game_over { background-color: #2ecc71; } /* 翡翠绿 */
 </style>
