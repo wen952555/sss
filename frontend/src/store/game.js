@@ -1,5 +1,7 @@
 // frontend/src/store/game.js
-// ... (import 和大部分 state, getters, actions 同前) ...
+import { defineStore } from 'pinia';
+import api from '../services/api';
+import router from '../router';
 
 export const useGameStore = defineStore('game', {
   state: () => ({
@@ -17,42 +19,232 @@ export const useGameStore = defineStore('game', {
     pollingIntervalId: null,
   }),
 
-  getters: { /* ... 同前 ... */ },
+  getters: {
+    isGameActive: (state) => !!state.gameId && !!state.gameState,
+    currentPlayerData: (state) => {
+      if (!state.gameState || !state.gameState.players || !state.playerId) return null;
+      return state.gameState.players.find(p => p.id === state.playerId);
+    },
+    isHost: (state) => {
+      const player = state.currentPlayerData;
+      return player ? player.is_host : false;
+    },
+    gameStatus: (state) => state.gameState?.status || 'loading',
+    canDeal: (state) => {
+        if (!state.gameState || !state.isHost) return false;
+        return state.gameState.status === 'waiting_for_players' &&
+               state.gameState.players.length === state.gameState.num_players &&
+               state.gameState.players.every(p => p.connected);
+    },
+    canSubmitHand: (state) => {
+        if (!state.gameState || !state.currentPlayerData) return false;
+        return state.gameState.status === 'arranging' && !state.currentPlayerData.submitted_hand;
+    }
+  },
 
   actions: {
-    // ... (setPlayerName, createGame, joinGame, fetchGameState, dealCards, submitArrangedHandInternal, moveCard, clearArrangedPilesForAuto - 同前) ...
-    setPlayerName(name) { /* ... */ },
-    async createGame(numPlayers) { /* ... */ },
-    async joinGame(gameId) { /* ... */ },
-    async fetchGameState() { /* ... */ },
-    async dealCards() { /* ... */ },
-    async submitArrangedHandInternal(handToSubmit) { /* ... */ },
-    moveCard(cardToMove, fromPileName, toPileName, cardIndexInFromPile) { /* ... */ },
-    clearArrangedPilesForAuto() { /* ... */ },
+    setPlayerName(name) {
+      this.playerName = name;
+      localStorage.setItem('thirteen_playerName', name);
+    },
 
-    // 新增 AI 分牌 action
+    async createGame(numPlayers) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const response = await api.createGame(this.playerName, numPlayers);
+        if (response.success) {
+          this.gameId = response.game_id;
+          this.playerId = response.player_id;
+          localStorage.setItem('thirteen_gameId', this.gameId);
+          localStorage.setItem('thirteen_playerId', this.playerId);
+          this.myHand = [];
+          this.arrangedHand = { front: [], back: [] };
+          await this.fetchGameState();
+          router.push(`/game/${this.gameId}`);
+          this.startPolling();
+        } else {
+          this.error = response.error || '创建游戏失败';
+        }
+      } catch (err) {
+        this.error = err.message || '创建游戏时发生网络错误';
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async joinGame(gameId) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const response = await api.joinGame(gameId, this.playerName);
+        if (response.success) {
+          this.gameId = response.game_id;
+          this.playerId = response.player_id;
+          localStorage.setItem('thirteen_gameId', this.gameId);
+          localStorage.setItem('thirteen_playerId', this.playerId);
+          this.myHand = [];
+          this.arrangedHand = { front: [], back: [] };
+          await this.fetchGameState();
+          router.push(`/game/${this.gameId}`);
+          this.startPolling();
+        } else {
+          this.error = response.error || '加入游戏失败';
+        }
+      } catch (err) {
+        this.error = err.message || '加入游戏时发生网络错误';
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async fetchGameState() {
+      if (!this.gameId) return;
+      try {
+        const data = await api.getGameState(this.gameId);
+        this.gameState = data;
+        
+        const me = data.players.find(p => p.id === this.playerId);
+        if (me) {
+            if (data.status === 'arranging' && !me.submitted_hand) {
+                const backendHandIsValid = me.hand && me.hand.length === 13 && me.hand.every(c => c.id !== 'back');
+                const localHandIds = this.myHand.map(c => c.id).sort().join(',');
+                const backendHandIds = backendHandIsValid ? me.hand.map(c => c.id).sort().join(',') : '';
+
+                if (backendHandIsValid && (this.myHand.length === 0 || localHandIds !== backendHandIds)) {
+                    this.myHand = [...me.hand];
+                    this.arrangedHand.front = [];
+                    this.arrangedHand.back = [];
+                }
+            }
+        }
+        this.error = null;
+      } catch (err) {
+        this.error = err.message || '获取游戏状态失败';
+        if (err.message.includes("游戏不存在") || (err.response && err.response.status === 404)) {
+          this.clearGameData();
+          router.push('/');
+        }
+      }
+    },
+
+    async dealCards() {
+        if (!this.gameId || !this.isHost) return;
+        this.isLoading = true;
+        this.error = null;
+        try {
+            const response = await api.dealCards(this.gameId);
+            if (response.success) {
+                this.myHand = []; 
+                this.arrangedHand = { front: [], back: [] };
+                await this.fetchGameState(); 
+            } else {
+                this.error = response.error || '发牌失败';
+            }
+        } catch (err) {
+            this.error = err.message || '发牌时发生网络错误';
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
+    async submitArrangedHandInternal(handToSubmit) {
+        if (!this.gameId || !this.playerId || !this.canSubmitHand) {
+            this.error = "不满足提交条件或现在不能提交。";
+            return false;
+        }
+        this.isLoading = true;
+        this.error = null;
+        try {
+            const response = await api.submitHand(this.gameId, this.playerId, handToSubmit);
+            if (response.success) {
+                await this.fetchGameState();
+                return true;
+            } else {
+                this.error = response.error || '提交牌型失败';
+                return false;
+            }
+        } catch (err) {
+            this.error = err.message || '提交牌型时发生网络错误';
+            return false;
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
+    moveCard(cardToMove, fromPileName, toPileName, cardIndexInFromPile) {
+        let sourcePile;
+        if (fromPileName === 'myHand') sourcePile = this.myHand;
+        else if (this.arrangedHand[fromPileName]) sourcePile = this.arrangedHand[fromPileName];
+        else { return false; }
+
+        let targetPile;
+        if (toPileName === 'myHand') targetPile = this.myHand;
+        else if (this.arrangedHand[toPileName]) targetPile = this.arrangedHand[toPileName];
+        else { return false; }
+
+        const pileLimitsInternal = { front: 3, back: 5, myHand: 13 };
+
+        if (toPileName !== 'myHand' && targetPile.length >= pileLimitsInternal[toPileName]) {
+            return false;
+        }
+        if (toPileName === 'myHand' && targetPile.length >= pileLimitsInternal.myHand && sourcePile !== targetPile) {
+            return false;
+        }
+
+        const removedCard = sourcePile.splice(cardIndexInFromPile, 1)[0];
+        if (!removedCard || removedCard.id !== cardToMove.id) {
+            const fallbackIndex = sourcePile.findIndex(c => c.id === cardToMove.id);
+            if (fallbackIndex !== -1) { sourcePile.splice(fallbackIndex, 1); }
+            else { if (removedCard) sourcePile.splice(cardIndexInFromPile, 0, removedCard); return false; }
+        }
+        
+        targetPile.push(cardToMove);
+        this.error = null;
+        return true;
+    },
+
+    clearArrangedPilesForAuto() {
+        const pilesToClear = ['front', 'back'];
+        pilesToClear.forEach(pileName => {
+            if (this.arrangedHand[pileName]) {
+                while (this.arrangedHand[pileName].length > 0) {
+                    const card = this.arrangedHand[pileName].pop();
+                    if (this.myHand.length < 13) { this.myHand.push(card); }
+                    else { break; }
+                }
+            }
+        });
+        const uniqueCardIds = new Set();
+        this.myHand = this.myHand.filter(card => {
+            if (uniqueCardIds.has(card.id)) return false;
+            uniqueCardIds.add(card.id);
+            return true;
+        });
+        if (this.myHand.length > 13) { this.myHand = this.myHand.slice(0, 13); }
+    },
+
     async aiArrangeHand() {
         if (!this.gameId || !this.playerId || this.myHand.length !== 13) {
             this.error = "手牌不完整，无法进行 AI 分牌。";
             return false;
         }
-        // 确保所有牌都在 myHand 中
         this.clearArrangedPilesForAuto();
-        if (this.myHand.length !== 13) { // 双重检查
+        if (this.myHand.length !== 13) {
             this.error = "清理墩位后手牌数量不正确，请重试。";
             return false;
         }
 
         this.isLoading = true;
         this.error = null;
+        const originalMyHandBeforeAi = [...this.myHand]; // 保存调用AI前的状态
+
         try {
             const currentHandIds = this.myHand.map(card => card.id);
-            // 调用后端 AI 分牌 API
             const aiResult = await api.getAiArrangedHand(this.gameId, this.playerId, currentHandIds);
 
             if (aiResult.success && aiResult.arranged_hand) {
                 const { front, middle, back } = aiResult.arranged_hand;
-                // 验证后端返回的牌是否合法
                 if (front.length !== 3 || middle.length !== 5 || back.length !== 5) {
                     throw new Error("AI 返回的牌墩数量不正确。");
                 }
@@ -60,68 +252,77 @@ export const useGameStore = defineStore('game', {
                 if (new Set(allAiCards).size !== 13) {
                     throw new Error("AI 返回的牌张总数或有重复。");
                 }
-                // 确保返回的牌是玩家原有的牌
                 const originalHandSet = new Set(currentHandIds);
                 if (!allAiCards.every(cardId => originalHandSet.has(cardId))) {
                     throw new Error("AI 返回的牌张与玩家原手牌不符。");
                 }
-
-                // 更新本地牌墩 (需要将 card_id 转换为 card 对象)
-                // 这是一个简化处理，理想情况下后端应该返回完整的卡牌对象，或者前端有一个映射
-                // 假设 api.js 或后端返回的 aiResult.arranged_hand 中的牌已经是 card_id
                 
-                // 先清空本地手牌和墩
-                this.myHand = [];
-                this.arrangedHand.front = [];
-                this.arrangedHand.back = [];
+                // 用ID从原始手牌（调用AI前）中查找完整的卡牌对象
+                const getCardObjById = (id) => originalMyHandBeforeAi.find(c => c.id === id);
 
-                // 从 currentHandIds (包含完整对象) 中找到对应的卡牌对象
-                const findCardObj = (id) => currentHandIds.map(cardId => this.myHand.find(obj => obj.id === cardId) || this.gameState.players.find(p=>p.id === this.playerId).hand.find(obj => obj.id === cardId) ).find(obj => obj && obj.id === id);
-                // 上面的 findCardObj 逻辑需要改进，因为 currentHandIds 是 ID 列表，而 this.myHand 是对象列表
-                // 正确的方式是，AI 分牌后，后端直接返回三墩的卡牌对象数组，或者前端在接收到卡牌ID后，从原始手牌中重新构建对象数组。
-                
-                // 简单粗暴：AI分牌后，我们期望后端验证其合法性，前端直接应用
-                // 假设后端返回的是 card_id 列表
-                // 我们需要从原始的 this.myHand (在调用AI之前) 获取完整的卡牌对象
-                const originalMyHandBeforeAi = [...this.myHand]; // 在调用 api 之前 this.myHand 应该是完整的13张对象
+                this.arrangedHand.front = front.map(getCardObjById).filter(Boolean);
+                this.arrangedHand.back = back.map(getCardObjById).filter(Boolean);
+                this.myHand = middle.map(getCardObjById).filter(Boolean);
 
-                this.arrangedHand.front = front.map(id => originalMyHandBeforeAi.find(c => c.id === id)).filter(Boolean);
-                this.arrangedHand.back = back.map(id => originalMyHandBeforeAi.find(c => c.id === id)).filter(Boolean);
-                this.myHand = middle.map(id => originalMyHandBeforeAi.find(c => c.id === id)).filter(Boolean); // 中墩牌放入 myHand
-
-                // 再次校验数量，以防 find 失败
                 if (this.arrangedHand.front.length !== 3 || this.myHand.length !== 5 || this.arrangedHand.back.length !== 5) {
                     console.error("AI分牌后，前端应用牌墩数量不匹配", this.arrangedHand.front, this.myHand, this.arrangedHand.back);
-                    // 还原手牌到调用AI之前的状态，避免界面混乱
-                    this.myHand = originalMyHandBeforeAi;
+                    this.myHand = originalMyHandBeforeAi; // 还原
                     this.arrangedHand.front = [];
                     this.arrangedHand.back = [];
                     throw new Error("AI分牌结果在前端应用时出错。");
                 }
-
                 return true;
             } else {
                 this.error = aiResult.error || "AI 分牌未能成功返回结果。";
+                this.myHand = originalMyHandBeforeAi; // AI失败，还原手牌
                 return false;
             }
         } catch (err) {
             this.error = err.message || "AI 分牌时发生网络或逻辑错误。";
-            // 如果出错，尝试恢复手牌到 AI 调用前的状态
-            if (this.myHand.length !== 13 && this.arrangedHand.front.length === 0 && this.arrangedHand.back.length === 0) {
-                 // 假设在调用 AI 前，所有牌都在 this.myHand
-                 // 这个恢复逻辑可能不完美，取决于错误发生的阶段
-                 // gameStore.fetchGameState(); // 或者直接重新获取状态
-            }
+            this.myHand = originalMyHandBeforeAi; // 出错，还原手牌
+            this.arrangedHand.front = []; // 清空可能被部分修改的墩
+            this.arrangedHand.back = [];
             return false;
         } finally {
             this.isLoading = false;
         }
     },
 
-    // ... (startPolling, stopPolling, clearGameData, leaveGame - 同前) ...
-    startPolling() { /* ... */ },
-    stopPolling() { /* ... */ },
-    clearGameData() { /* ... */ },
-    async leaveGame() { /* ... */ }
+    startPolling() {
+      this.stopPolling();
+      if (this.gameId) {
+        this.fetchGameState();
+        this.pollingIntervalId = setInterval(() => {
+          if (this.gameId && router.currentRoute.value.name === 'GameRoom') {
+             this.fetchGameState();
+          } else {
+            this.stopPolling();
+          }
+        }, 2500);
+      }
+    },
+    stopPolling() {
+      if (this.pollingIntervalId) {
+        clearInterval(this.pollingIntervalId);
+        this.pollingIntervalId = null;
+      }
+    },
+
+    clearGameData() {
+      this.stopPolling();
+      this.gameId = null;
+      this.playerId = null;
+      this.gameState = null;
+      this.myHand = [];
+      this.arrangedHand = { front: [], back: [] };
+      this.error = null;
+      localStorage.removeItem('thirteen_gameId');
+      localStorage.removeItem('thirteen_playerId');
+    },
+
+    async leaveGame() {
+        this.clearGameData();
+        router.push('/');
+    }
   }
 });
