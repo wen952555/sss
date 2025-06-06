@@ -14,7 +14,6 @@
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
-     نابغه 数据库 "vuedraggablenext": "2.0.1" // 确保这一行被删除或注释掉
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.8.0",
