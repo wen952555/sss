@@ -1,4 +1,4 @@
-<template
+<template>
   <div class="player-hand-organizer-streamlined">
     <div class="piles-layout">
       <!-- 头墩 -->
@@ -33,7 +33,7 @@
           {{ middleDunLabel }} ({{ gameStore.myHand.length }}{{ isMiddleDunActive ? ('/'+pileLimits.middle) : '' }}张)
           <span v-if="isMiddleDunActive && isDunComplete('middle')" class="dun-complete-badge">✓</span>
           <span v-if="selectedCard" class="selected-card-prompt">
-             - 选: <Card :card="selectedCard" :is-face-up="true" class="inline-card-tiny"/>
+             - 选: <Card :card="selectedCard.card" :is-face-up="true" class="inline-card-tiny"/> <!-- 修正: selectedCard.card -->
           </span>
         </p>
         <div class="hand-row pile-content">
@@ -70,7 +70,7 @@
           />
         </div>
       </div>
-    </div>
+    </div> <!-- .piles-layout 的结束标签 -->
 
     <div class="controls-area">
         <button @click="autoArrangeForSubmission" :disabled="!canAutoArrange" class="control-button auto-arrange-btn">
@@ -79,9 +79,9 @@
         <button @click="submitHandWrapper" :disabled="!canSubmitEffectively" class="control-button submit-btn">
             提交牌型
         </button>
-    </div>
+    </div> <!-- .controls-area 的结束标签 -->
     <p v-if="gameStore.error || clientError" class="feedback-message error">{{ gameStore.error || clientError }}</p>
-  </div>
+  </div> <!-- .player-hand-organizer-streamlined 的结束标签 -->
 </template>
 
 <script setup>
@@ -96,11 +96,10 @@ const clientError = ref(null);
 const pileLimits = { front: 3, middle: 5, back: 5 };
 const totalCards = 13;
 
-// 动态计算中间区域的标签
 const isMiddleDunActive = computed(() => {
   return gameStore.arrangedHand.front.length === pileLimits.front &&
          gameStore.arrangedHand.back.length === pileLimits.back &&
-         gameStore.myHand.length === (totalCards - pileLimits.front - pileLimits.back); // 也就是5张
+         gameStore.myHand.length === (totalCards - pileLimits.front - pileLimits.back);
 });
 
 const middleDunLabel = computed(() => {
@@ -108,11 +107,10 @@ const middleDunLabel = computed(() => {
 });
 
 const canAutoArrange = computed(() => {
-    // 只有当所有牌都在手牌区时才允许自动整理
     return gameStore.myHand.length === totalCards &&
            gameStore.arrangedHand.front.length === 0 &&
            gameStore.arrangedHand.back.length === 0 &&
-           gameStore.canSubmitHand; // 游戏状态允许
+           gameStore.canSubmitHand;
 });
 
 const isDunComplete = (pileName) => {
@@ -121,7 +119,6 @@ const isDunComplete = (pileName) => {
     if (pileName === 'middle' && isMiddleDunActive.value) return gameStore.myHand.length === pileLimits.middle;
     return false;
 };
-
 
 function setClientError(message, duration = 3000) {
     clientError.value = message;
@@ -134,58 +131,49 @@ function isSelected(card, pileName) {
     return selectedCard.value && selectedCard.value.card.id === card.id && selectedCard.value.fromPile === pileName;
 }
 
-// 点击“手牌区”（原中墩）的牌
 function handleClickCardInMyHand(card, index) {
-  if (isSelected(card, 'myHand')) { // 重复点击已选中的牌则取消
+  if (isSelected(card, 'myHand')) {
     selectedCard.value = null;
-  } else { // 选择这张牌
+  } else {
     selectedCard.value = { card, fromPile: 'myHand', fromIndex: index };
   }
 }
 
-// 点击“头墩”或“尾墩”的牌
 function handleClickCardInArrangedPile(pileName, card, index) {
-  if (selectedCard.value) { // 如果有牌被选中
-    // 场景1: 选中的牌不是这个墩的，尝试放入这个墩（如果规则允许互换或从手牌区放入）
-    // 当前简化逻辑：不允许墩与墩直接互换，只能通过手牌区中转
+  if (selectedCard.value) {
     if (selectedCard.value.fromPile === 'myHand') {
-        setClientError("请先将选中的牌放回手牌区，再操作此墩的牌。"); // 或者直接取消选择
-        selectedCard.value = null; // 取消选择，让用户重新操作
+        setClientError("请先将选中的牌放回手牌区，再操作此墩的牌。");
+        selectedCard.value = null;
         return;
     }
-    // 场景2: 选中的牌就是这个墩的 (重复点击)，则取消选择
     if (isSelected(card, pileName)) {
         selectedCard.value = null;
         return;
     }
-    // 场景3: 选中的牌是另一个墩的牌，不允许直接移动，提示通过手牌区
     if (selectedCard.value.fromPile !== 'myHand' && selectedCard.value.fromPile !== pileName) {
         setClientError("墩之间的牌请通过手牌区移动。");
         selectedCard.value = null;
         return;
     }
-
-  } else { // 如果没有牌被选中，则将这张墩牌移回“手牌区”
+  } else {
     const success = gameStore.moveCard(card, pileName, 'myHand', index);
     if (!success) setClientError(`无法将牌从 ${pileName} 移回手牌区。`);
   }
 }
 
-// 点击目标墩的空白区域（头墩、尾墩、手牌区）
 function handleClickTargetPile(targetPileName) {
-  if (!selectedCard.value) return; // 没有选中的牌，点击空白无效
+  if (!selectedCard.value) return;
 
   const { card, fromPile, fromIndex } = selectedCard.value;
 
-  if (fromPile === targetPileName) { // 点击了选中牌所在区域的空白，取消选择
+  if (fromPile === targetPileName) {
     selectedCard.value = null;
     return;
   }
 
-  let targetLimit = Infinity; // 手牌区没有上限
+  let targetLimit = Infinity;
   if (targetPileName === 'front') targetLimit = pileLimits.front;
   else if (targetPileName === 'back') targetLimit = pileLimits.back;
-  // 如果目标是 'myHand' (手牌区)，则没有数量限制（直到13张）
 
   let currentTargetLength = 0;
   if (targetPileName === 'myHand') currentTargetLength = gameStore.myHand.length;
@@ -194,7 +182,7 @@ function handleClickTargetPile(targetPileName) {
   if (currentTargetLength < targetLimit) {
     const success = gameStore.moveCard(card, fromPile, targetPileName, fromIndex);
     if (success) {
-      selectedCard.value = null; // 成功移动后取消选择
+      selectedCard.value = null;
     } else {
       setClientError(`无法将牌移动到 ${targetPileName}。`);
     }
@@ -204,10 +192,10 @@ function handleClickTargetPile(targetPileName) {
 }
 
 const canSubmitEffectively = computed(() => {
-  return gameStore.canSubmitHand && // 游戏状态允许
+  return gameStore.canSubmitHand &&
          gameStore.arrangedHand.front.length === pileLimits.front &&
          gameStore.arrangedHand.back.length === pileLimits.back &&
-         gameStore.myHand.length === pileLimits.middle; // 手牌区（即中墩）必须是5张
+         gameStore.myHand.length === pileLimits.middle;
 });
 
 async function submitHandWrapper() {
@@ -216,70 +204,56 @@ async function submitHandWrapper() {
         return;
     }
     clientError.value = null;
-    // 构建提交数据时，将 myHand 作为 middle
     const handToSubmitLogic = {
         front: gameStore.arrangedHand.front.map(c => c.id),
         middle: gameStore.myHand.map(c => c.id),
         back: gameStore.arrangedHand.back.map(c => c.id),
     };
-    // 调用 store 中的 action
-    await gameStore.submitArrangedHandInternal(handToSubmitLogic); // 使用新的内部提交方法
+    await gameStore.submitArrangedHandInternal(handToSubmitLogic);
 }
 
-// 智能整理，目标是形成 头3 中5 尾5
 function autoArrangeForSubmission() {
     if (!canAutoArrange.value) {
         setClientError("请确保所有13张牌都在手牌区才能智能整理。");
         return;
     }
-    // 假设所有牌都在 myHand
-    const sortedHand = [...gameStore.myHand].sort((a, b) => b.rank - a.rank); // 按点数降序
+    gameStore.clearArrangedPilesForAuto();
 
-    // 清空墩位 (牌会回到 myHand，但因为我们已经有了 sortedHand，所以可以直接操作)
-    gameStore.clearArrangedPilesForAuto(); // 需要在store中添加这个action
+    const sortedHand = [...gameStore.myHand].sort((a, b) => b.rank - a.rank);
 
-    // 重新填充 myHand 以便 moveCard 能正确操作
     gameStore.myHand.length = 0;
     sortedHand.forEach(c => gameStore.myHand.push(c));
 
-    // 尾墩：最大的5张牌
     for (let i = 0; i < pileLimits.back; i++) {
         if (gameStore.myHand.length > 0) gameStore.moveCard(gameStore.myHand[0], 'myHand', 'back', 0);
     }
-    // 中墩：接下来中等的5张牌 (会留在 myHand)
-    // 头墩：最小的3张牌
-    // 此时myHand应该有 13-5 = 8张牌，取最小的3张
     const cardsForFront = [...gameStore.myHand].sort((a,b) => a.rank - b.rank).slice(0, pileLimits.front);
-
     for (const card of cardsForFront) {
         const idxInMyHand = gameStore.myHand.findIndex(c => c.id === card.id);
         if (idxInMyHand !== -1) {
             gameStore.moveCard(gameStore.myHand[idxInMyHand], 'myHand', 'front', idxInMyHand);
         }
     }
-    // 此时 myHand 应该剩下 8-3 = 5 张牌作为中墩
-
     selectedCard.value = null;
     setClientError("已尝试智能整理，请检查并调整。", 5000);
 }
-
 </script>
 
 <style scoped>
 .player-hand-organizer-streamlined {
   padding: 15px;
-  background-color: #e6f0f7; /* 更柔和的背景 */
+  background-color: #e6f0f7;
   border-radius: 8px;
 }
 .piles-layout {
   display: flex;
-  flex-direction: column; /* 墩位垂直排列 */
-  align-items: center; /* 墩位居中 */
-  gap: 15px; /* 墩位之间的间隙 */
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
 }
 .pile {
   width: 95%;
-  max-width: 600px; /* 限制最大宽度 */
+  max-width: 600px;
   padding: 10px;
   border: 1px solid #c5d9e8;
   border-radius: 8px;
@@ -288,8 +262,8 @@ function autoArrangeForSubmission() {
   transition: all 0.2s ease-in-out;
 }
 .pile.pile-complete {
-    border-color: #4CAF50; /* 绿色边框表示完成 */
-    background-color: #f0fff0; /* 淡绿色背景 */
+    border-color: #4CAF50;
+    background-color: #f0fff0;
 }
 .pile p {
   text-align: center;
@@ -320,18 +294,18 @@ function autoArrangeForSubmission() {
 .hand-row.pile-content {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center; /* 牌张居中 */
-  min-height: 85px; /* 根据卡牌大小调整 */
+  justify-content: center;
+  min-height: 85px;
 }
 .hand-row.pile-content .card {
   margin: 3px;
 }
-.main-hand-area { /* 中间的“手牌区”/“中墩” */
+.main-hand-area {
   border-style: dashed;
   border-width: 2px;
   background-color: #f8fbfd;
 }
-.main-hand-area.middle-dun-active { /* 当它作为中墩时 */
+.main-hand-area.middle-dun-active {
   border-style: solid;
   border-color: #5c9dde;
 }
@@ -355,7 +329,7 @@ function autoArrangeForSubmission() {
 .control-button {
   padding: 10px 20px;
   font-size: 1em;
-  border-radius: 20px; /* 圆角按钮 */
+  border-radius: 20px;
   border: none;
   cursor: pointer;
   transition: all 0.3s;
@@ -363,12 +337,12 @@ function autoArrangeForSubmission() {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 .auto-arrange-btn {
-  background-color: #ffc107; /* 黄色 */
+  background-color: #ffc107;
   color: #333;
 }
 .auto-arrange-btn:hover:not(:disabled) { background-color: #e0a800; }
 .submit-btn {
-  background-color: #28a745; /* 绿色 */
+  background-color: #28a745;
   color: white;
 }
 .submit-btn:hover:not(:disabled) { background-color: #218838; }
@@ -380,7 +354,7 @@ function autoArrangeForSubmission() {
 }
 .feedback-message.error {
   text-align: center;
-  color: #d9534f; /* 红色错误 */
+  color: #d9534f;
   margin-top: 15px;
   font-weight: 500;
 }
