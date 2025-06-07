@@ -1,52 +1,63 @@
+html, body, #root { /* 让根元素也占据全高 */
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* 统一盒模型 */
+}
+
 body {
   font-family: Arial, sans-serif;
-  background-color: #2c593b; /* Green table color */
+  background-color: #2c593b; 
   color: white;
-  margin: 0;
-  padding: 10px;
-  display: flex;
-  justify-content: center;
+  display: flex; /* 用于垂直居中和对齐 game-board */
+  flex-direction: column; /* 确保内容从上到下 */
+  align-items: center; /* 水平居中 game-board */
+  padding: 10px; /* 给body一些内边距 */
+  overflow-y: auto; /* 如果内容超出，允许body滚动 */
 }
 
 .app-container {
-  width: 95%;
-  max-width: 1200px; /* 可以适当加宽以容纳横幅 */
+  width: 100%; /* 占据父元素 (body) 的全部宽度 */
+  max-width: 1200px; /* 限制最大宽度，保持美观 */
+  display: flex; /* 使用flex来控制内部game-board的伸缩 */
+  flex-direction: column;
+  height: 100%; /* 尝试让app-container也占据可用高度 */
+  box-sizing: border-box;
 }
 
 .game-board {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-/* 移除 player-hand-area 相关样式 */
-
-.arranged-hands-area {
-  margin-bottom: 20px;
-  padding: 10px;
-  border: 2px dashed #ccc;
+  width: 100%; /* 占据 app-container 的全部宽度 */
+  flex-grow: 1; /* 让 game-board 占据剩余的垂直空间 */
+  overflow-y: auto; /* 如果 game-board 内部内容超高，允许其内部滚动 */
+  padding: 15px; /* 给牌桌一些内边距 */
+  background-color: rgba(0,0,0,0.05); /* 轻微的牌桌背景色，与按钮区区分 */
   border-radius: 8px;
-  width: 100%;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   box-sizing: border-box;
+  position: relative; /* 为了 controls 的定位 (如果选择绝对定位方式) */
 }
 
-/* 新增 banners-layout 样式，用于横幅堆叠 */
 .arranged-hands-area.banners-layout {
   display: flex;
-  flex-direction: column; /* 三个横幅垂直堆叠 */
-  gap: 15px; /* 横幅之间的间距 */
+  flex-direction: column; 
+  gap: 15px; 
+  width: 100%; /* 占据 game-board 的全部宽度 */
+  margin-bottom: 20px; /* 与按钮区域的间距 */
+  flex-shrink: 0; /* 防止在 flex 布局中被过度压缩高度 */
 }
 
-/* 修改 hand-column 为 hand-banner (或者让 hand-column 适配横幅) */
-.hand-banner { /* 用于横幅布局的牌墩 */
+.hand-banner { 
   width: 100%;
   padding: 10px;
-  border: 1px solid #777;
+  border: 1px solid #4a755a; /* 调整边框颜色 */
   border-radius: 5px;
-  background-color: rgba(0,0,0,0.1);
-  min-height: 120px; /* 横幅的最小高度，根据卡牌大小调整 */
+  background-color: rgba(0,0,0,0.15); /* 牌墩背景色深一点 */
+  min-height: 120px; 
   display: flex;
-  flex-direction: column; /* 标题和牌区垂直排列 */
+  flex-direction: column; 
   box-sizing: border-box;
 }
 
@@ -54,50 +65,48 @@ body {
     margin-top: 0;
     margin-bottom: 10px;
     width: 100%;
-    text-align: left; /* 标题靠左 */
-    background-color: rgba(255,255,255,0.1);
-    padding: 5px 10px; /* 调整内边距 */
+    text-align: left; 
+    background-color: rgba(255,255,255,0.08);
+    color: #e0e0e0; /* 标题颜色亮一点 */
+    padding: 8px 12px; 
     border-radius: 3px;
     box-sizing: border-box;
+    font-size: 1em; /* 调整标题大小 */
 }
 
 .droppable-area {
   display: flex;
-  flex-wrap: wrap; /* 允许卡片换行 */
-  justify-content: flex-start; /* 卡片靠左开始排列 */
-  align-items: flex-start; /* 卡片顶部对齐 */
+  flex-wrap: wrap; 
+  justify-content: flex-start; 
+  align-items: flex-start; 
   gap: 8px;
-  padding: 5px;
-  min-height: 80px; 
-  background-color: rgba(0,0,0,0.2);
+  padding: 8px; /* 调整内边距 */
+  min-height: 90px; /* 调整最小高度 */
+  background-color: rgba(0,0,0,0.1); /* 可拖拽区域背景色调整 */
   border-radius: 4px;
   transition: background-color 0.2s ease;
   width: 100%; 
   box-sizing: border-box;
+  flex-grow: 1; /* 让可拖拽区域填满 hand-banner 的剩余空间 */
 }
 
 .droppable-area.is-dragging-over {
-  background-color: rgba(0,0,0,0.4);
+  background-color: rgba(0,0,0,0.3);
 }
-
-/* 针对横幅布局的 droppable 区域可以设置固定高度以便滚动 (如果牌很多) */
-.droppable-area.banner-droppable {
-  /* flex-grow: 1; */ /* 允许其填充剩余空间 */
-  /* overflow-x: auto; */ /* 如果希望横向滚动而不是换行，可以打开这个，但通常十三水牌不多 */
-  /* overflow-y: hidden; */
-}
-
 
 .card {
-  width: 70px; 
-  height: 100px; /* 给一个固定高度，或者用 aspect-ratio */
-  /* height: auto; */ /* 如果图片本身有固定宽高比，这个也可以 */
-  border: 1px solid #aaa;
+  width: 65px; /* 可以根据屏幕宽度动态调整，或使用vw/百分比 */
+  height: 90px; 
+  border: 1px solid #777; /* 卡片边框颜色调整 */
   border-radius: 5px;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+  box-shadow: 1px 1px 4px rgba(0,0,0,0.25);
   background-color: white;
   user-select: none; 
-  flex-shrink: 0; /* 防止卡片在 flex 容器中被压缩 */
+  flex-shrink: 0; 
+  cursor: grab; /* 拖拽手势 */
+}
+.card:active {
+    cursor: grabbing;
 }
 
 .card img {
@@ -105,73 +114,160 @@ body {
   height: 100%;
   display: block;
   border-radius: 4px; 
-  object-fit: contain; /* 确保图片完整显示在卡片内 */
+  object-fit: contain; 
 }
 
 .card-placeholder {
-  width: 70px;
-  height: 100px; 
-  border: 2px dashed #555;
+  width: 65px;
+  height: 90px; 
+  border: 2px dashed #5a8a6a; /* 占位符边框颜色调整 */
   border-radius: 5px;
-  background-color: rgba(255,255,255,0.05);
+  background-color: rgba(255,255,255,0.03);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #888;
-  font-size: 0.8em;
+  color: #9dbba7; /* 占位符文字颜色调整 */
+  font-size: 0.75em;
   padding: 5px;
   box-sizing: border-box;
   text-align: center;
 }
 
 .controls {
-  margin-top: 20px;
+  /* 方案一：作为 game-board 的一部分，在底部自然排列 */
+  width: 100%;
+  padding: 15px 0; /* 上下边距 */
   text-align: center;
+  background-color: rgba(0,0,0,0.1); /* 给按钮区域一个轻微的背景区分 */
+  border-top: 1px solid #4a755a; /* 与牌桌区域的分割线 */
+  margin-top: auto; /* 将按钮推到底部 (如果game-board是flex容器且高度足够) */
+  flex-shrink: 0; /* 防止被压缩 */
+  border-bottom-left-radius: 8px; /* 配合 game-board 的圆角 */
+  border-bottom-right-radius: 8px;
+
+  /* 方案二：固定在屏幕底部 (如果需要全局固定)
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #254532; 
+  padding: 15px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+  z-index: 100; 
+  */
 }
 
 .controls button {
-  padding: 10px 20px;
+  padding: 12px 25px; /* 增大按钮尺寸 */
   font-size: 1em;
   margin: 0 10px;
   cursor: pointer;
-  background-color: #f0ad4e;
+  background-color: #e67e22; /* 按钮颜色调整为橙色系 */
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.controls button:hover:not(:disabled) {
+    background-color: #d35400;
 }
 
 .controls button:disabled {
-    background-color: #aaa;
+    background-color: #7f8c8d; /* 禁用按钮颜色调整 */
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .message-area {
-  margin-top: 15px;
-  padding: 10px;
+  margin: 15px auto; /* 消息区域上下居中 */
+  padding: 12px; /* 调整内边距 */
   border-radius: 5px;
   text-align: center;
-  width: 100%;
-  max-width: 600px; /* 给消息区域一个最大宽度 */
+  width: 90%; /* 消息区域宽度 */
+  max-width: 500px; 
   box-sizing: border-box;
+  font-size: 0.95em;
 }
 .message-area.success {
-  background-color: #5cb85c;
+  background-color: #27ae60; /* 成功消息颜色调整 */
   color: white;
 }
 .message-area.error {
-  background-color: #d9534f;
+  background-color: #c0392b; /* 错误消息颜色调整 */
   color: white;
 }
 .hand-eval-text {
     font-size: 0.9em;
-    margin-top: 8px; /* 调整与牌区的间距 */
-    color: #eee;
+    margin-top: 8px; 
+    color: #f0f0f0; /* 牌型文本颜色调整 */
     min-height: 20px; 
-    text-align: left; /* 牌型名称靠左 */
+    text-align: left; 
     padding-left: 10px;
 }
 .loading-indicator {
     margin-top: 15px;
     padding: 10px;
-    color: #f0ad4e;
+    color: #e67e22; /* 加载提示颜色调整 */
+    font-weight: bold;
+}
+
+/* 响应式调整：小屏幕下的卡片大小和间距 */
+@media (max-width: 768px) {
+  .card {
+    width: 55px;
+    height: 78px;
+  }
+  .card-placeholder {
+    width: 55px;
+    height: 78px;
+  }
+  .droppable-area {
+    gap: 6px;
+    padding: 6px;
+    min-height: 82px;
+  }
+  .hand-banner h4 {
+    font-size: 0.9em;
+    padding: 6px 10px;
+  }
+  .controls button {
+    padding: 10px 18px;
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 5px;
+  }
+  .game-board {
+    padding: 10px;
+  }
+  .card {
+    width: 48px;
+    height: 68px; /* 进一步缩小卡片 */
+  }
+  .card-placeholder {
+    width: 48px;
+    height: 68px;
+  }
+  .droppable-area {
+    gap: 4px;
+    padding: 4px;
+    min-height: 72px;
+  }
+  .hand-banner h4 {
+    font-size: 0.85em;
+    padding: 5px 8px;
+  }
+  .controls button {
+    padding: 8px 15px;
+    font-size: 0.85em;
+    margin: 0 5px;
+  }
+  .message-area {
+    font-size: 0.9em;
+  }
 }
