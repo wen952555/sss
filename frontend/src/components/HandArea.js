@@ -5,12 +5,13 @@ import Card from './Card';
 
 const HandArea = ({ droppableId, cards, title, type, evaluationText, cardLimit, isBanner = false }) => {
     const areaClass = isBanner ? 'hand-banner' : 'hand-column';
-    // 当作为横幅时，如果牌墩为空且没有拖拽经过，可能不需要 "放在这里" 的提示，或者提示可以更小
-    const placeholderText = isBanner ? (cards.length === 0 ? `拖拽牌到${title}` : '') : '放在这里';
+    // 调整占位提示，因为现在可以放任意数量的牌 (直到提交)
+    const placeholderText = `拖拽牌到${title}`;
 
     return (
         <div className={`${areaClass} ${type}-hand`}>
-            <h4>{title} ({cards.length}/{cardLimit}张)</h4>
+            {/* cardLimit 仍然用于显示目标牌数 */}
+            <h4>{title} ({cards.length}/{cardLimit}张)</h4> 
             <Droppable droppableId={droppableId} direction="horizontal">
                 {(provided, snapshot) => (
                     <div
@@ -22,7 +23,8 @@ const HandArea = ({ droppableId, cards, title, type, evaluationText, cardLimit, 
                             <Card key={card.id} card={card} index={index} />
                         ))}
                         {provided.placeholder}
-                        {cards.length === 0 && !snapshot.isDraggingOver && placeholderText && (
+                        {/* 只有当墩为空且没有拖拽物经过时，才显示占位符 */}
+                        {cards.length === 0 && !snapshot.isDraggingOver && (
                             <div className="card-placeholder">{placeholderText}</div>
                         )}
                     </div>
