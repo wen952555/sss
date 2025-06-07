@@ -4,9 +4,9 @@ import { DragDropContext } from 'react-beautiful-dnd';
 import HandArea from './HandArea';
 import { fetchInitialCards, evaluateArrangement } from '../utils/api';
 
-// 中文化牌墩标题
+// 调整初始状态，移除 playerPool
+// 初始时可以将所有牌都放在一个墩里，例如前墩，让用户去分配
 const initialHandsState = {
-    playerPool: { id: 'playerPool', title: '我的手牌', cards: [] },
     frontHand: { id: 'frontHand', title: '前墩', cards: [], limit: 3, evalText: '' },
     middleHand: { id: 'middleHand', title: '中墩', cards: [], limit: 5, evalText: '' },
     backHand: { id: 'backHand', title: '后墩', cards: [], limit: 5, evalText: '' },
@@ -15,7 +15,7 @@ const initialHandsState = {
 const GameBoard = () => {
     const [hands, setHands] = useState(initialHandsState);
     const [isLoading, setIsLoading] = useState(false);
-    const [message, setMessage] = useState({ text: '', type: '' }); // type: 'success' or 'error'
+    const [message, setMessage] = useState({ text: '', type: '' });
 
     const dealNewCards = useCallback(async () => {
         setIsLoading(true);
@@ -23,21 +23,16 @@ const GameBoard = () => {
         try {
             const data = await fetchInitialCards();
             if (data && data.cards) {
+                // 发牌后，所有牌先放入前墩 (或其他任一墩)
                 setHands({
-                    playerPool: { ...initialHandsState.playerPool, cards: data.cards },
-                    frontHand: { ...initialHandsState.frontHand, cards: [], evalText: '' },
+                    frontHand: { ...initialHandsState.frontHand, cards: data.cards, evalText: '' },
                     middleHand: { ...initialHandsState.middleHand, cards: [], evalText: '' },
                     backHand: { ...initialHandsState.backHand, cards: [], evalText: '' },
                 });
             } else {
-                // 如果后端返回的数据不符合预期，或者根本没有 cards 字段
                 console.error("从服务器获取的牌数据格式无效:", data);
                 setMessage({ text: '无法从服务器获取牌局数据，请稍后再试。', type: 'error' });
-                // 可以选择设置一个空的手牌或保留旧手牌
-                setHands(prev => ({
-                    ...prev,
-                    playerPool: { ...initialHandsState.playerPool, cards: [] }, // 清空手牌
-                }));
+                setHands(initialHandsState); // 重置为空状态
             }
         } catch (error) {
             console.error("获取牌局失败:", error);
@@ -64,11 +59,15 @@ const GameBoard = () => {
         setHands(prevHands => {
             const newHands = JSON.parse(JSON.stringify(prevHands)); 
             const sourceCards = Array.from(newHands[sourceHandId].cards);
-            const destCards = Array.from(newHands[destHandId].cards);
+            const destCards = newHands[destHandId].cards ? Array.from(newHands[destHandId].cards) : []; // 确保 destCards 是数组
+            
             const [movedCard] = sourceCards.splice(source.index, 1);
 
+            // 检查目标牌墩的牌数限制
             if (newHands[destHandId].limit && destCards.length >= newHands[destHandId].limit) {
                 setMessage({ text: `${newHands[destHandId].title} 最多只能放 ${newHands[destHandId].limit} 张牌。`, type: 'error' });
+                // 保持原状或将牌放回原处 (当前逻辑是保持原状，不移动)
+                // 如果要放回，需要更复杂的逻辑来处理 sourceCards
                 return prevHands; 
             }
 
@@ -78,19 +77,26 @@ const GameBoard = () => {
             newHands[destHandId].cards = destCards;
             
             setMessage({ text: '', type: '' });
-            // 可以在这里选择是否立即评估牌型 (客户端评估)
             return newHands;
         });
     };
 
     const handleSubmitArrangement = async () => {
         setMessage({ text: '', type: '' });
+        const totalCardsInDuns = hands.frontHand.cards.length + hands.middleHand.cards.length + hands.backHand.cards.length;
+        
+        if (totalCardsInDuns !== 13) {
+             setMessage({ text: `总牌数应为13张，当前共 ${totalCardsInDuns} 张，请确保所有牌都已分配到墩中。`, type: 'error' });
+             return;
+        }
+
         if (hands.frontHand.cards.length !== 3 || 
             hands.middleHand.cards.length !== 5 || 
             hands.backHand.cards.length !== 5) {
             setMessage({ text: '请将三墩牌摆完整：前墩 (3张), 中墩 (5张), 后墩 (5张)。', type: 'error' });
             return;
         }
+
 
         setIsLoading(true);
         try {
@@ -132,18 +138,13 @@ const GameBoard = () => {
             <div className="game-board">
                 <h1>十三水游戏</h1>
                 
-                <div className="player-hand-area">
-                    <h3>{hands.playerPool.title} ({hands.playerPool.cards.length} 张)</h3>
-                    <HandArea droppableId="playerPool" cards={hands.playerPool.cards} type="pool" />
-                </div>
+                {/* 移除了 player-hand-area */}
 
-                <div className="arranged-hands-area">
-                    <h3>已摆好的牌墩</h3>
-                    <div className="arranged-hands">
-                        <HandArea droppableId="frontHand" cards={hands.frontHand.cards} title={initialHandsState.frontHand.title} type="front" cardLimit={3} evaluationText={hands.frontHand.evalText} />
-                        <HandArea droppableId="middleHand" cards={hands.middleHand.cards} title={initialHandsState.middleHand.title} type="middle" cardLimit={5} evaluationText={hands.middleHand.evalText} />
-                        <HandArea droppableId="backHand" cards={hands.backHand.cards} title={initialHandsState.backHand.title} type="back" cardLimit={5} evaluationText={hands.backHand.evalText} />
-                    </div>
+                <div className="arranged-hands-area banners-layout"> {/* 添加 banners-layout 类 */}
+                    {/* <h3>请将13张牌分配到三墩</h3> */} {/* 可以添加一个总的提示 */}
+                    <HandArea droppableId="frontHand" cards={hands.frontHand.cards} title={initialHandsState.frontHand.title} type="front" cardLimit={3} evaluationText={hands.frontHand.evalText} isBanner={true} />
+                    <HandArea droppableId="middleHand" cards={hands.middleHand.cards} title={initialHandsState.middleHand.title} type="middle" cardLimit={5} evaluationText={hands.middleHand.evalText} isBanner={true} />
+                    <HandArea droppableId="backHand" cards={hands.backHand.cards} title={initialHandsState.backHand.title} type="back" cardLimit={5} evaluationText={hands.backHand.evalText} isBanner={true} />
                 </div>
 
                 <div className="controls">
