@@ -1,20 +1,37 @@
 <!DOCTYPE html>
-<html lang="zh-CN"> <!-- 修改语言为中文 -->
+<html lang="zh-CN"> <!-- 语言设置为简体中文 -->
   <head>
     <meta charset="utf-8" />
+    <!-- 图标 -->
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <!-- PWA 和移动设备图标 -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- 主题颜色，会影响浏览器 UI (如地址栏颜色) 和 PWA 的外观 -->
     <meta name="theme-color" content="#2c593b" /> <!-- 与 manifest.json 中的 theme_color 一致 -->
+
+    <!-- 网站描述，用于搜索引擎优化 (SEO) -->
     <meta
       name="description"
-      content="十三水在线扑克游戏" <!-- 修改描述 -->
+      content="一款有趣的在线十三水扑克牌游戏，快来挑战吧！"
     />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>十三水游戏</title> <!-- 修改标题 -->
+
+    <!-- 网站标题，显示在浏览器标签页上 -->
+    <title>十三水在线游戏</title>
   </head>
   <body>
-    <noscript>您需要启用 JavaScript才能运行此应用。</noscript> <!-- 修改提示 -->
+    <!-- 当浏览器不支持或禁用了 JavaScript 时显示的提示信息 -->
+    <noscript>您需要启用 JavaScript 才能运行此应用程序。</noscript>
+
+    <!-- React 应用的根 DOM 节点，所有 React 组件都会渲染到这里 -->
     <div id="root"></div>
+
+    <!--
+      Create React App 会在构建过程中自动将打包好的 JavaScript 文件注入到这里。
+      你不需要手动添加 <script> 标签来引入你的 React 代码。
+    -->
   </body>
 </html>
