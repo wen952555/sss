@@ -1,6 +1,7 @@
 /* ... (html, body, #root, .app-container, .game-board, .game-board h1, 
-         .arranged-hands-area.banners-layout, .hand-banner, .hand-banner h4 
-         这些部分的样式与上一次“全局自适应”版本基本一致，确保它们能正确分配空间) ... */
+         .arranged-hands-area.banners-layout, .hand-banner, .hand-banner h4,
+         .droppable-area, .droppable-area.is-dragging-over
+         这些部分的样式与上一个版本基本一致，但注意卡片尺寸相关的值) ... */
 html, body, #root {
   height: 100vh; width: 100vw; margin: 0; padding: 0; box-sizing: border-box;
   overflow: hidden; display: flex; justify-content: center; align-items: center;
@@ -38,12 +39,10 @@ html, body, #root {
     background-color: rgba(255,255,255,0.08); color: #e0e0e0;
     border-radius: 3px; box-sizing: border-box; flex-shrink: 0;
 }
-
 .droppable-area {
   display: flex;
-  /* align-items: center;  卡片高度不一时，可能不需要垂直居中，让它们顶部对齐 */
-  align-items: flex-start; /* 改为顶部对齐 */
-  padding: clamp(3px, 0.5vh, 8px); 
+  align-items: flex-start; 
+  padding: clamp(3px, 0.5vh, 8px); /* CSS padding */
   flex-grow: 1; 
   background-color: rgba(0,0,0,0.1);
   border-radius: 4px;
@@ -52,57 +51,45 @@ html, body, #root {
   overflow: hidden; 
   position: relative; 
 }
+.droppable-area.is-dragging-over { background-color: rgba(0,0,0,0.3); }
 
-.droppable-area.is-dragging-over {
-  background-color: rgba(0,0,0,0.3);
-}
 
 .card {
-  width: 60px; /* JS中的CARD_BASE_WIDTH应与此匹配 */
-  height: calc(60px * 1.4); 
+  /* --- 修改点：减小基础宽度和右边距，与JS中的常量对应 --- */
+  width: 58px; 
+  height: calc(58px * 1.4); 
+  margin-right: 2px; 
+  /* 其他样式保持 */
   border: 1px solid #777;
   border-radius: 5px;
   box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
   background-color: white;
   user-select: none;
-  flex-shrink: 0; /* 非常重要，防止flexbox压缩卡片，让JS完全控制位置 */
-  /* 移除 CSS margin-left，由 JS 的 dynamicStyle 控制 */
-  /* margin-left: 0;  */
-  margin-right: 4px; /* 用于平铺时的右侧间距，JS 计算的 marginLeft 会是负值或0 */
+  flex-shrink: 0; 
   cursor: grab;
-  transition: transform 0.15s ease-out; /* 只保留 transform 过渡 */
+  transition: transform 0.15s ease-out; 
   position: relative;
   z-index: 1;
 }
 .card:last-child {
     margin-right: 0; 
 }
-
 .card.is-dragging {
     box-shadow: 0 0 15px rgba(0,0,0,0.5);
-    /* transform: scale(1.05);  dnd 库会处理拖拽时的 transform */
-    z-index: 1000 !important; /* 确保拖拽的卡片在最顶层 */
+    z-index: 1000 !important; 
 }
-
-.card:active {
-    cursor: grabbing;
-    /* transform: scale(1.05); dnd 库会处理 */
-    /* z-index: 10; */ /* is-dragging 类会处理层级 */
-}
-
+.card:active { cursor: grabbing; }
 .card img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border-radius: 4px;
-  object-fit: contain;
+  width: 100%; height: 100%; display: block;
+  border-radius: 4px; object-fit: contain;
 }
 
 .card-placeholder {
-  width: 60px; 
-  height: calc(60px * 1.4); 
+  width: 58px; 
+  height: calc(58px * 1.4); 
+  margin-right: 2px;
+  /* 其他样式保持 */
   font-size: clamp(0.6em, 1.5vw, 0.7em);
-  margin-right: 4px; 
   border: 2px dashed #5a8a6a;
   border-radius: 5px;
   background-color: rgba(255,255,255,0.03);
@@ -116,7 +103,7 @@ html, body, #root {
   flex-shrink: 0;
 }
 
-/* ... (Controls, MessageArea, HandEvalText, LoadingIndicator 样式与上一个版本类似) ... */
+/* ... (Controls, MessageArea, HandEvalText, LoadingIndicator 样式保持或根据新的整体尺寸感微调) ... */
 .controls {
   width: 100%; padding: clamp(8px, 1.5vh, 15px) 0; text-align: center;
   background-color: rgba(0,0,0,0.1); border-top: 1px solid #4a755a;
