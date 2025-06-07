@@ -1,83 +1,76 @@
 html, body, #root {
-  height: 100vh; /* 使用视口高度单位 */
-  width: 100vw;  /* 使用视口宽度单位 */
+  height: 100vh; 
+  width: 100vw;  
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  overflow: hidden; /* 全局禁止滚动条 */
-  display: flex; /* 让 body 也参与 flex 布局 */
+  overflow: hidden; 
+  display: flex; 
   justify-content: center;
   align-items: center;
-  background-color: #2c593b; /* 背景色移到 body */
+  background-color: #2c593b; 
 }
 
-/* App Container - 控制整体布局的最大尺寸和居中 */
 .app-container {
-  width: 95%; /* 相对于 body 的百分比宽度 */
-  height: 95%; /* 相对于 body 的百分比高度 */
-  max-width: 1200px; /* 最大宽度限制 */
-  max-height: 900px; /* 最大高度限制 (可选，避免在超大屏幕上过度拉伸) */
+  width: 95%; 
+  height: 95%; 
+  max-width: 1200px; 
+  max-height: 900px; 
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   overflow: hidden;
-  background-color: rgba(0,0,0,0.05); /* 将原 game-board 背景移到这里 */
+  background-color: rgba(0,0,0,0.05); 
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  padding: 15px; /* 内边距 */
+  padding: 15px; 
 }
 
-/* Game Board - 现在主要负责内部元素的垂直排列和空间分配 */
 .game-board {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%; /* 占据 app-container 的全部宽度 */
-  height: 100%; /* 占据 app-container 的全部高度 */
-  flex-grow: 1; /* 如果 app-container 还有剩余空间，game-board 会填充 */
+  width: 100%; 
+  height: 100%; 
+  flex-grow: 1; 
   box-sizing: border-box;
   overflow: hidden;
-  /* 移除背景色和边框，这些移到了 app-container */
 }
 
-.game-board h1 { /* 游戏标题 */
-    font-size: clamp(1.5em, 4vw, 2.2em); /* 响应式字体大小 */
-    margin-bottom: clamp(10px, 2vh, 20px); /* 响应式边距 */
+.game-board h1 { 
+    font-size: clamp(1.5em, 4vw, 2.2em); 
+    margin-bottom: clamp(10px, 2vh, 20px); 
     color: #f0f0f0;
-    flex-shrink: 0; /* 防止被压缩 */
+    flex-shrink: 0; 
 }
 
-/* Arranged Hands Area - 牌墩容器，将分配垂直空间给牌墩 */
 .arranged-hands-area.banners-layout {
   display: flex;
   flex-direction: column;
-  gap: clamp(8px, 1.5vh, 15px); /* 响应式间距 */
+  gap: clamp(8px, 1.5vh, 15px); 
   width: 100%;
-  flex-grow: 1; /* --- 修改点：让此区域填充剩余的垂直空间 --- */
+  flex-grow: 1; 
   overflow: hidden;
-  justify-content: space-around; /* --- 修改点：均匀分配垂直空间给三个墩 --- */
+  justify-content: space-around; 
 }
 
-/* Hand Banner - 每个牌墩，现在应该能自适应高度和宽度 */
 .hand-banner {
-  width: 100%; /* 宽度自适应父容器 */
-  /* min-height: 110px; <-- 移除固定的最小高度，让其根据 flex 分配的高度自适应 */
-  flex-basis: 0; /* --- 修改点：允许 flex-grow 生效 --- */
-  flex-grow: 1;  /* --- 修改点：让每个牌墩平均分配 .arranged-hands-area 的高度 --- */
-  padding: clamp(5px, 1vh, 10px); /* 响应式内边距 */
+  width: 100%; 
+  flex-basis: 0; 
+  flex-grow: 1;  
+  padding: clamp(5px, 1vh, 10px); 
   border: 1px solid #4a755a;
   border-radius: 5px;
   background-color: rgba(0,0,0,0.15);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  overflow: hidden; /* 内部内容溢出时截断（因为不允许滚动） */
+  overflow: hidden; 
 }
 
 .hand-banner h4 {
-    font-size: clamp(0.8em, 2vw, 1em); /* 响应式字体 */
+    font-size: clamp(0.8em, 2vw, 1em); 
     padding: clamp(4px, 0.8vh, 8px) clamp(8px, 1.5vw, 12px);
-    /* 其他样式保持 */
     margin-top: 0;
     margin-bottom: clamp(5px, 1vh, 8px);
     background-color: rgba(255,255,255,0.08);
@@ -87,18 +80,21 @@ html, body, #root {
     flex-shrink: 0;
 }
 
-/* Droppable Area - 牌区，宽度自适应，高度由父元素 hand-banner 决定 */
 .droppable-area {
   display: flex;
-  align-items: center; /* --- 修改点：垂直居中卡片 (如果高度有富余) --- */
-  /* justify-content: center; */ /* 如果希望卡片在牌区内居中显示 */
-  padding: clamp(3px, 0.5vh, 5px);
-  flex-grow: 1; /* 占据 hand-banner 的剩余垂直空间 */
+  /* --- 修改点：允许换行，这是平铺的基础 --- */
+  flex-wrap: wrap; 
+  /* --- 移除 overflow-x: auto 和 nowrap --- */
+  /* overflow-x: hidden; 如果确实不想要任何形式的溢出指示 */
+  align-items: center; /* 卡片垂直居中 */
+  justify-content: flex-start; /* 卡片从左开始排列 */
+  padding: clamp(3px, 0.5vh, 8px); /* 稍微增加 padding 给卡片呼吸空间 */
+  flex-grow: 1; 
   background-color: rgba(0,0,0,0.1);
   border-radius: 4px;
-  width: 100%; /* 宽度自适应 */
+  width: 100%; 
   box-sizing: border-box;
-  overflow: hidden; /* 内部卡片溢出时截断（因为不允许滚动，依赖堆叠） */
+  overflow: hidden; /* 仍然隐藏超出容器的溢出 */
   position: relative;
 }
 
@@ -106,35 +102,64 @@ html, body, #root {
   background-color: rgba(0,0,0,0.3);
 }
 
-/* Card - 卡片大小可以基于视口单位或父元素百分比，或用 clamp 实现响应式 */
 .card {
-  /* 使用 clamp 来设置响应式宽度和高度，同时保持比例 */
-  width: clamp(40px, 10vw, 65px); /* 最小40px, 基于视口宽度的10%, 最大65px */
-  height: calc(clamp(40px, 10vw, 65px) * 1.4); /* 假设宽高比为 1:1.4 */
-  /* 其他样式保持 */
+  width: clamp(45px, 8vw, 60px); /* 调整卡片宽度范围 */
+  height: calc(clamp(45px, 8vw, 60px) * 1.4); 
   border: 1px solid #777;
   border-radius: 5px;
   box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
   background-color: white;
   user-select: none;
-  flex-shrink: 0;
+  /* flex-shrink: 1;  默认就是1，允许收缩 */
+  margin: clamp(2px, 0.5vh, 4px); /* --- 修改点：给卡片之间一些间距，用于平铺 --- */
   cursor: grab;
-  transition: transform 0.1s ease-out, margin-left 0.1s ease-out;
+  transition: transform 0.1s ease-out; /* 移除 margin-left 过渡 */
   position: relative;
   z-index: 1;
 }
 
-/* Card Stacking - 卡片堆叠，负边距需要动态调整或基于卡片宽度百分比 */
-.droppable-area .card + .card {
-  /* margin-left: -45px;  <-- 这个固定值不再理想 */
-  margin-left: calc(clamp(40px, 10vw, 65px) * -0.75); /* 例如，重叠75%的卡片宽度 */
+/* --- 移除之前的固定负边距堆叠 --- */
+/* .droppable-area .card + .card {
+  margin-left: calc(clamp(40px, 10vw, 65px) * -0.75);
+} */
+
+/* 尝试一种基于 :nth-child 和 transform 的堆叠方式 (实验性) 
+   这仍然是纯CSS的近似，效果可能不完美，且难以精确控制重叠量
+   如果卡片数量非常多，这种方式的性能和视觉效果也可能下降
+*/
+/*
+.droppable-area .card:not(:first-child) {
+   margin-left: -30%; // 或者一个更小的负百分比，基于卡片自身的宽度
 }
-/* ... (其他卡片状态样式保持) ... */
+.droppable-area .card:hover {
+    transform: translateY(-5px) scale(1.05); // 鼠标悬浮时稍微上移并放大
+    z-index: 10;
+}
+*/
+/* 对于您图片中的那种堆叠，更可能是通过 JS 计算每个卡片的位置来实现的，
+   或者是非常特定的 CSS Grid 布局技巧（但与 flex 拖拽结合可能复杂）
+*/
+
+
+.card:active {
+    cursor: grabbing;
+    transform: scale(1.05); 
+    z-index: 10; 
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 4px;
+  object-fit: contain;
+}
 
 .card-placeholder {
-  min-width: clamp(40px, 10vw, 65px);
-  height: calc(clamp(40px, 10vw, 65px) * 1.4);
-  font-size: clamp(0.6em, 1.5vw, 0.75em);
+  min-width: clamp(45px, 8vw, 60px);
+  height: calc(clamp(45px, 8vw, 60px) * 1.4);
+  font-size: clamp(0.6em, 1.5vw, 0.7em);
+  margin: clamp(2px, 0.5vh, 4px);
   /* 其他样式保持 */
   border: 2px dashed #5a8a6a;
   border-radius: 5px;
@@ -147,19 +172,17 @@ html, body, #root {
   box-sizing: border-box;
   text-align: center;
   flex-shrink: 0;
-  margin-right: auto;
 }
 
 
-/* Controls - 按钮区域 */
+/* ... (Controls, MessageArea, HandEvalText, LoadingIndicator 样式保持或微调) ... */
 .controls {
   width: 100%;
   padding: clamp(8px, 1.5vh, 15px) 0;
   text-align: center;
   background-color: rgba(0,0,0,0.1);
   border-top: 1px solid #4a755a;
-  /* margin-top: auto; <-- 移除，让其自然排列在 flex 布局底部 */
-  flex-shrink: 0; /* 重要，防止按钮区域被压缩 */
+  flex-shrink: 0; 
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }
@@ -167,7 +190,6 @@ html, body, #root {
 .controls button {
   padding: clamp(8px, 1.5vh, 12px) clamp(15px, 3vw, 25px);
   font-size: clamp(0.8em, 2vw, 1em);
-  /* 其他样式保持 */
   margin: 0 clamp(5px, 1vw, 10px);
   cursor: pointer;
   background-color: #e67e22;
@@ -177,13 +199,13 @@ html, body, #root {
   font-weight: bold;
   transition: background-color 0.2s ease;
 }
-/* ... (其他按钮状态，消息区域，牌型文本，加载指示器样式类似地使用 clamp 或百分比进行调整) ... */
+.controls button:hover:not(:disabled) { background-color: #d35400; }
+.controls button:disabled { background-color: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
 .message-area {
   margin: clamp(8px, 1.5vh, 15px) auto;
   padding: clamp(8px, 1.5vh, 12px);
   font-size: clamp(0.85em, 2vw, 0.95em);
-  /* ... */
   width: 90%; max-width: 500px; box-sizing: border-box; border-radius: 5px; text-align: center;
 }
 .message-area.success { background-color: #27ae60; color: white; }
@@ -192,16 +214,11 @@ html, body, #root {
 .hand-eval-text {
     font-size: clamp(0.8em, 1.8vw, 0.9em);
     margin-top: clamp(4px, 0.8vh, 8px);
-    /* ... */
     color: #f0f0f0; min-height: 18px; text-align: left; padding-left: 10px; flex-shrink: 0;
 }
 .loading-indicator {
     margin-top: clamp(8px, 1.5vh, 15px);
     padding: clamp(6px, 1vh, 10px);
     font-size: clamp(0.85em, 2vw, 0.9em);
-    /* ... */
     color: #e67e22; font-weight: bold;
 }
-
-/* 移除之前的 @media 查询，因为 clamp 和视口单位已经处理了大部分响应式需求 */
-/* 如果还需要更细致的断点调整，可以保留或重新添加，但优先尝试通过弹性单位和 clamp 实现 */
