@@ -1,0 +1,153 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #2c593b; /* Green table color */
+  color: white;
+  margin: 0;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.app-container {
+  width: 95%;
+  max-width: 1000px;
+}
+
+.game-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.player-hand-area,
+.arranged-hands-area {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  min-height: 100px; /* Adjust as needed */
+  width: 100%;
+}
+
+.player-hand-area h3, .arranged-hands-area h3 {
+    margin-top: 0;
+    text-align: center;
+}
+
+.arranged-hands {
+  display: flex;
+  justify-content: space-around; /* Or space-between */
+  width: 100%;
+}
+
+.hand-column { /* For front, middle, back */
+  flex-basis: 30%; /* Distribute space */
+  padding: 10px;
+  border: 1px solid #777;
+  border-radius: 5px;
+  background-color: rgba(0,0,0,0.1);
+  min-height: 150px;
+  display: flex; /* For card alignment */
+  flex-direction: column; /* Stack title and cards */
+  align-items: center;
+}
+
+.hand-column h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    width: 100%;
+    text-align: center;
+    background-color: rgba(255,255,255,0.1);
+    padding: 5px 0;
+    border-radius: 3px;
+}
+
+.droppable-area {
+  display: flex;
+  flex-wrap: wrap; /* Allow cards to wrap if many */
+  justify-content: center; /* Center cards in the area */
+  gap: 8px;
+  padding: 5px;
+  min-height: 80px; /* Minimum height for droppable area */
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  width: 100%; /* Take full width of hand-column */
+}
+
+.droppable-area.is-dragging-over {
+  background-color: rgba(0,0,0,0.4);
+}
+
+
+.card {
+  width: 70px; /* Adjust card size as needed */
+  height: auto;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+  background-color: white;
+  user-select: none; /* Prevent text selection during drag */
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 4px; /* Match card border-radius */
+}
+
+.card-placeholder {
+  width: 70px;
+  height: 100px; /* Match card height */
+  border: 2px dashed #555;
+  border-radius: 5px;
+  background-color: rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 0.8em;
+}
+
+.controls {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.controls button {
+  padding: 10px 20px;
+  font-size: 1em;
+  margin: 0 10px;
+  cursor: pointer;
+  background-color: #f0ad4e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+}
+
+.controls button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+}
+
+.message-area {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+}
+.message-area.success {
+  background-color: #5cb85c;
+  color: white;
+}
+.message-area.error {
+  background-color: #d9534f;
+  color: white;
+}
+.hand-eval-text {
+    font-size: 0.9em;
+    margin-top: 5px;
+    color: #eee;
+    min-height: 20px; /* Reserve space */
+}
