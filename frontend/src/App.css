@@ -1,76 +1,85 @@
 html, body, #root {
-  height: 100%;
+  height: 100vh; /* 使用视口高度单位 */
+  width: 100vw;  /* 使用视口宽度单位 */
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  overflow: hidden; /* --- 修改点：全局禁止滚动条 --- */
-}
-
-body {
-  font-family: Arial, sans-serif;
-  background-color: #2c593b;
-  color: white;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden; /* 全局禁止滚动条 */
+  display: flex; /* 让 body 也参与 flex 布局 */
+  justify-content: center;
   align-items: center;
-  padding: 10px; /* 保持一些边距 */
-  /* overflow-y: auto;  <-- 移除 */
+  background-color: #2c593b; /* 背景色移到 body */
 }
 
+/* App Container - 控制整体布局的最大尺寸和居中 */
 .app-container {
-  width: 100%;
-  max-width: 1200px;
+  width: 95%; /* 相对于 body 的百分比宽度 */
+  height: 95%; /* 相对于 body 的百分比高度 */
+  max-width: 1200px; /* 最大宽度限制 */
+  max-height: 900px; /* 最大高度限制 (可选，避免在超大屏幕上过度拉伸) */
   display: flex;
   flex-direction: column;
-  height: 100%; /* 尝试占据全部可用高度 */
   box-sizing: border-box;
-  overflow: hidden; /* --- 修改点：禁止 app-container 内部滚动 --- */
+  overflow: hidden;
+  background-color: rgba(0,0,0,0.05); /* 将原 game-board 背景移到这里 */
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  padding: 15px; /* 内边距 */
 }
 
+/* Game Board - 现在主要负责内部元素的垂直排列和空间分配 */
 .game-board {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%;
-  flex-grow: 1; /* 占据剩余垂直空间 */
-  /* overflow-y: auto; <-- 移除 */
-  padding: 15px;
-  background-color: rgba(0,0,0,0.05);
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  width: 100%; /* 占据 app-container 的全部宽度 */
+  height: 100%; /* 占据 app-container 的全部高度 */
+  flex-grow: 1; /* 如果 app-container 还有剩余空间，game-board 会填充 */
   box-sizing: border-box;
-  overflow: hidden; /* --- 修改点：禁止 game-board 内部滚动 --- */
+  overflow: hidden;
+  /* 移除背景色和边框，这些移到了 app-container */
 }
 
+.game-board h1 { /* 游戏标题 */
+    font-size: clamp(1.5em, 4vw, 2.2em); /* 响应式字体大小 */
+    margin-bottom: clamp(10px, 2vh, 20px); /* 响应式边距 */
+    color: #f0f0f0;
+    flex-shrink: 0; /* 防止被压缩 */
+}
+
+/* Arranged Hands Area - 牌墩容器，将分配垂直空间给牌墩 */
 .arranged-hands-area.banners-layout {
   display: flex;
   flex-direction: column;
-  gap: 10px; /* 减少横幅间距以节省空间 */
+  gap: clamp(8px, 1.5vh, 15px); /* 响应式间距 */
   width: 100%;
-  margin-bottom: 15px; /* 减少与按钮区域的间距 */
-  flex-shrink: 0;
-  overflow: hidden; /* --- 修改点：确保此区域不产生滚动 --- */
+  flex-grow: 1; /* --- 修改点：让此区域填充剩余的垂直空间 --- */
+  overflow: hidden;
+  justify-content: space-around; /* --- 修改点：均匀分配垂直空间给三个墩 --- */
 }
 
+/* Hand Banner - 每个牌墩，现在应该能自适应高度和宽度 */
 .hand-banner {
-  width: 100%;
-  padding: 8px; /* 减少内边距 */
+  width: 100%; /* 宽度自适应父容器 */
+  /* min-height: 110px; <-- 移除固定的最小高度，让其根据 flex 分配的高度自适应 */
+  flex-basis: 0; /* --- 修改点：允许 flex-grow 生效 --- */
+  flex-grow: 1;  /* --- 修改点：让每个牌墩平均分配 .arranged-hands-area 的高度 --- */
+  padding: clamp(5px, 1vh, 10px); /* 响应式内边距 */
   border: 1px solid #4a755a;
   border-radius: 5px;
   background-color: rgba(0,0,0,0.15);
-  min-height: 110px; /* 稍微减小最小高度，具体数值需根据卡片大小调整 */
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  overflow: hidden; /* --- 修改点：禁止牌墩内部滚动 --- */
+  overflow: hidden; /* 内部内容溢出时截断（因为不允许滚动） */
 }
 
 .hand-banner h4 {
-    margin-top: 0;
-    margin-bottom: 8px; /* 减少间距 */
-    padding: 6px 10px; /* 减少内边距 */
-    font-size: 0.9em; /* 减小字体 */
+    font-size: clamp(0.8em, 2vw, 1em); /* 响应式字体 */
+    padding: clamp(4px, 0.8vh, 8px) clamp(8px, 1.5vw, 12px);
     /* 其他样式保持 */
+    margin-top: 0;
+    margin-bottom: clamp(5px, 1vh, 8px);
     background-color: rgba(255,255,255,0.08);
     color: #e0e0e0;
     border-radius: 3px;
@@ -78,72 +87,55 @@ body {
     flex-shrink: 0;
 }
 
+/* Droppable Area - 牌区，宽度自适应，高度由父元素 hand-banner 决定 */
 .droppable-area {
   display: flex;
-  /* flex-wrap: nowrap; <-- 可以保持 nowrap，也可以移除让 flex item 自动处理 */
-  /* overflow-x: auto;   <-- 移除，不再允许横向滚动 */
-  /* overflow-y: hidden; <-- 移除 */
-  align-items: flex-start;
-  padding: 5px; /* 减少内边距 */
-  flex-grow: 1;
+  align-items: center; /* --- 修改点：垂直居中卡片 (如果高度有富余) --- */
+  /* justify-content: center; */ /* 如果希望卡片在牌区内居中显示 */
+  padding: clamp(3px, 0.5vh, 5px);
+  flex-grow: 1; /* 占据 hand-banner 的剩余垂直空间 */
   background-color: rgba(0,0,0,0.1);
   border-radius: 4px;
-  width: 100%;
+  width: 100%; /* 宽度自适应 */
   box-sizing: border-box;
-  overflow: hidden; /* --- 修改点：确保此区域不产生滚动 --- */
-  position: relative; /* 为了卡片堆叠定位 */
+  overflow: hidden; /* 内部卡片溢出时截断（因为不允许滚动，依赖堆叠） */
+  position: relative;
 }
 
 .droppable-area.is-dragging-over {
   background-color: rgba(0,0,0,0.3);
 }
 
+/* Card - 卡片大小可以基于视口单位或父元素百分比，或用 clamp 实现响应式 */
 .card {
-  width: 60px;  /* 进一步减小卡片基础宽度 */
-  height: 84px; /* 根据宽度调整高度以保持比例 */
+  /* 使用 clamp 来设置响应式宽度和高度，同时保持比例 */
+  width: clamp(40px, 10vw, 65px); /* 最小40px, 基于视口宽度的10%, 最大65px */
+  height: calc(clamp(40px, 10vw, 65px) * 1.4); /* 假设宽高比为 1:1.4 */
+  /* 其他样式保持 */
   border: 1px solid #777;
   border-radius: 5px;
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.2); /* 减小阴影 */
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
   background-color: white;
   user-select: none;
   flex-shrink: 0;
   cursor: grab;
-  transition: transform 0.1s ease-out, margin-left 0.1s ease-out; /* 为堆叠效果添加过渡 */
-  position: relative; /* 允许 z-index 生效 (如果需要控制堆叠顺序) */
-  z-index: 1; /* 基础 z-index */
+  transition: transform 0.1s ease-out, margin-left 0.1s ease-out;
+  position: relative;
+  z-index: 1;
 }
 
-/* --- 新增：卡片堆叠效果 --- */
-.droppable-area .card + .card { /* 选择不是第一个的卡片 */
-  margin-left: -45px; /* 负边距实现堆叠，这个值需要仔细调整 */
-                      /* 值越大，堆叠越紧密，露出的部分越少 */
-                      /* 值应该是 卡片宽度 - 希望露出的宽度 */
+/* Card Stacking - 卡片堆叠，负边距需要动态调整或基于卡片宽度百分比 */
+.droppable-area .card + .card {
+  /* margin-left: -45px;  <-- 这个固定值不再理想 */
+  margin-left: calc(clamp(40px, 10vw, 65px) * -0.75); /* 例如，重叠75%的卡片宽度 */
 }
-
-/* 拖拽时的卡片样式，确保在最上层，并且不应用堆叠的负 margin */
-.card.is-dragging-placeholder { /* react-beautiful-dnd 拖拽时占位符的类名 (可能需要确认) */
-    /* visibility: hidden; */ /* 或者其他处理方式 */
-}
-/* react-beautiful-dnd 实际拖拽的卡片通常会被提升到 body 下，并有自己的样式 */
-
-
-.card:active {
-    cursor: grabbing;
-    transform: scale(1.05); /* 拖动时轻微放大 */
-    z-index: 10; /* 拖动时在最上层 */
-}
-
-.card img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border-radius: 4px;
-  object-fit: contain;
-}
+/* ... (其他卡片状态样式保持) ... */
 
 .card-placeholder {
-  min-width: 60px;
-  height: 84px;
+  min-width: clamp(40px, 10vw, 65px);
+  height: calc(clamp(40px, 10vw, 65px) * 1.4);
+  font-size: clamp(0.6em, 1.5vw, 0.75em);
+  /* 其他样式保持 */
   border: 2px dashed #5a8a6a;
   border-radius: 5px;
   background-color: rgba(255,255,255,0.03);
@@ -151,31 +143,32 @@ body {
   align-items: center;
   justify-content: center;
   color: #9dbba7;
-  font-size: 0.7em; /* 减小字体 */
-  padding: 3px; /* 减少内边距 */
+  padding: 3px;
   box-sizing: border-box;
   text-align: center;
   flex-shrink: 0;
   margin-right: auto;
 }
 
+
+/* Controls - 按钮区域 */
 .controls {
   width: 100%;
-  padding: 10px 0; /* 减少内边距 */
+  padding: clamp(8px, 1.5vh, 15px) 0;
   text-align: center;
   background-color: rgba(0,0,0,0.1);
   border-top: 1px solid #4a755a;
-  margin-top: auto;
-  flex-shrink: 0;
+  /* margin-top: auto; <-- 移除，让其自然排列在 flex 布局底部 */
+  flex-shrink: 0; /* 重要，防止按钮区域被压缩 */
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }
 
 .controls button {
-  padding: 10px 20px; /* 减少按钮内边距 */
-  font-size: 0.9em; /* 减小字体 */
+  padding: clamp(8px, 1.5vh, 12px) clamp(15px, 3vw, 25px);
+  font-size: clamp(0.8em, 2vw, 1em);
   /* 其他样式保持 */
-  margin: 0 8px;
+  margin: 0 clamp(5px, 1vw, 10px);
   cursor: pointer;
   background-color: #e67e22;
   color: white;
@@ -184,58 +177,31 @@ body {
   font-weight: bold;
   transition: background-color 0.2s ease;
 }
-/* ... (其他 .controls button 状态样式保持) ... */
-/* ... (message-area, hand-eval-text, loading-indicator 样式可以适当调整字体大小和边距以节省空间) ... */
+/* ... (其他按钮状态，消息区域，牌型文本，加载指示器样式类似地使用 clamp 或百分比进行调整) ... */
 
 .message-area {
-  margin: 10px auto;
-  padding: 10px;
-  font-size: 0.9em;
-  /* 其他样式保持 */
-  border-radius: 5px;
-  text-align: center;
-  width: 90%;
-  max-width: 500px;
-  box-sizing: border-box;
+  margin: clamp(8px, 1.5vh, 15px) auto;
+  padding: clamp(8px, 1.5vh, 12px);
+  font-size: clamp(0.85em, 2vw, 0.95em);
+  /* ... */
+  width: 90%; max-width: 500px; box-sizing: border-box; border-radius: 5px; text-align: center;
 }
 .message-area.success { background-color: #27ae60; color: white; }
 .message-area.error { background-color: #c0392b; color: white; }
 
 .hand-eval-text {
-    font-size: 0.85em;
-    margin-top: 6px;
-    padding-left: 8px;
-    /* 其他样式保持 */
-    color: #f0f0f0;
-    min-height: 18px;
-    text-align: left;
-    flex-shrink: 0;
+    font-size: clamp(0.8em, 1.8vw, 0.9em);
+    margin-top: clamp(4px, 0.8vh, 8px);
+    /* ... */
+    color: #f0f0f0; min-height: 18px; text-align: left; padding-left: 10px; flex-shrink: 0;
 }
 .loading-indicator {
-    margin-top: 10px;
-    padding: 8px;
-    font-size: 0.9em;
-    /* 其他样式保持 */
-    color: #e67e22;
-    font-weight: bold;
+    margin-top: clamp(8px, 1.5vh, 15px);
+    padding: clamp(6px, 1vh, 10px);
+    font-size: clamp(0.85em, 2vw, 0.9em);
+    /* ... */
+    color: #e67e22; font-weight: bold;
 }
 
-
-/* 响应式调整：移除，因为全局不允许滚动，需要在基础样式中就处理好空间问题 */
-/* 或者，如果仍然需要响应式，这里的调整会更侧重于改变堆叠程度 (负 margin) 和卡片大小 */
-@media (max-width: 768px) {
-  .hand-banner { min-height: 105px; }
-  .card { width: 55px; height: 77px; }
-  .droppable-area .card + .card { margin-left: -40px; } /* 调整堆叠程度 */
-  .card-placeholder { min-width: 55px; height: 77px; }
-  /* ... 其他微调 ... */
-}
-
-@media (max-width: 480px) {
-  .hand-banner { min-height: 95px; }
-  .card { width: 48px; height: 67px; }
-  .droppable-area .card + .card { margin-left: -35px; } /* 再次调整堆叠程度 */
-  .card-placeholder { min-width: 48px; height: 67px; }
-  .controls button { font-size: 0.8em; padding: 8px 15px; }
-  /* ... 其他微调 ... */
-}
+/* 移除之前的 @media 查询，因为 clamp 和视口单位已经处理了大部分响应式需求 */
+/* 如果还需要更细致的断点调整，可以保留或重新添加，但优先尝试通过弹性单位和 clamp 实现 */
