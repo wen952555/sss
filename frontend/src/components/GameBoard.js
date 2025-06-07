@@ -3,9 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext } from 'react-beautiful-dnd';
 import HandArea from './HandArea';
 import { fetchInitialCards, evaluateArrangement } from '../utils/api';
-import { simpleAiArrangeCards } from '../utils/thirteenAi'; // 引入AI分牌函数
+import { simpleAiArrangeCards, evaluateHandSimple as evaluateHandSimpleFrontend } from '../utils/thirteenAi'; // 引入前端评估函数并重命名以区分
 
-// ... (initialHandsState 保持不变)
 const initialHandsState = {
     frontHand: { id: 'frontHand', title: '前墩', cards: [], limit: 3, evalText: '' }, 
     middleHand: { id: 'middleHand', title: '中墩', cards: [], limit: 5, evalText: '' },
@@ -13,21 +12,21 @@ const initialHandsState = {
 };
 
 const GameBoard = () => {
-    // ... (useState, dealNewCards, useEffect, onDragEnd, handleSubmitArrangement 保持不变)
     const [hands, setHands] = useState(initialHandsState);
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
-    const [allPlayerCards, setAllPlayerCards] = useState([]); // 新增：存储当前玩家的13张手牌
+    const [allPlayerCards, setAllPlayerCards] = useState([]); 
 
     const dealNewCards = useCallback(async () => {
+        // ... (保持不变)
         setIsLoading(true);
         setMessage({ text: '', type: '' });
-        setAllPlayerCards([]); // 清空之前的牌
+        setAllPlayerCards([]); 
         try {
             const data = await fetchInitialCards();
             if (data && data.cards) {
-                setAllPlayerCards(data.cards); // 存储原始13张牌
-                setHands({ // 默认放中墩
+                setAllPlayerCards(data.cards); 
+                setHands({ 
                     frontHand: { ...initialHandsState.frontHand, cards: [], evalText: '' },
                     middleHand: { ...initialHandsState.middleHand, cards: data.cards, evalText: '' },
                     backHand: { ...initialHandsState.backHand, cards: [], evalText: '' },
@@ -50,12 +49,12 @@ const GameBoard = () => {
     }, [dealNewCards]);
 
     const onDragEnd = (result) => {
-        // ... (保持不变)
         const { source, destination } = result;
         if (!destination) return;
         const sourceHandId = source.droppableId;
         const destHandId = destination.droppableId;
         if (sourceHandId === destHandId && source.index === destination.index) return;
+        
         setHands(prevHands => {
             const newHands = JSON.parse(JSON.stringify(prevHands)); 
             const sourceCards = Array.from(newHands[sourceHandId].cards);
@@ -64,16 +63,27 @@ const GameBoard = () => {
             destCards.splice(destination.index, 0, movedCard);
             newHands[sourceHandId].cards = sourceCards;
             newHands[destHandId].cards = destCards;
+            
             setMessage({ text: '', type: '' }); 
-            newHands.frontHand.evalText = '';
-            newHands.middleHand.evalText = '';
-            newHands.backHand.evalText = '';
+
+            // --- 修改点：拖拽结束后，尝试更新每个墩的牌型预览 ---
+            Object.keys(newHands).forEach(handKey => {
+                const hand = newHands[handKey];
+                if (hand.limit) { // 只处理有牌数限制的墩 (前、中、后)
+                    if (hand.cards.length === hand.limit) {
+                        const evalResult = evaluateHandSimpleFrontend(hand.cards);
+                        hand.evalText = evalResult.name || '未知'; // 使用前端评估的牌型名称
+                    } else {
+                        hand.evalText = ''; // 牌数不足，清除预览
+                    }
+                }
+            });
             return newHands;
         });
     };
 
     const handleSubmitArrangement = async () => {
-        // ... (保持不变)
+        // ... (保持不变，这个函数使用后端评估)
         setMessage({ text: '', type: '' }); 
         const { frontHand, middleHand, backHand } = hands;
         const totalCardsInDuns = frontHand.cards.length + middleHand.cards.length + backHand.cards.length;
@@ -105,6 +115,7 @@ const GameBoard = () => {
             );
             if (result.success) {
                 setMessage({ text: result.validation.message, type: result.validation.isValid ? 'success' : 'error' });
+                // 最终牌型以后端为准
                 setHands(prev => ({
                     ...prev,
                     frontHand: {...prev.frontHand, evalText: result.evaluations.front.type_name },
@@ -122,21 +133,30 @@ const GameBoard = () => {
         }
     };
 
-    // 新增：AI分牌按钮点击事件
     const handleAiArrange = () => {
+        // ... (AI分牌逻辑，在调用后也可以触发一次前端牌型预览)
         if (allPlayerCards.length !== 13) {
             setMessage({ text: '请先发牌，获得13张手牌后再使用AI分牌。', type: 'error' });
             return;
         }
         setMessage({ text: 'AI正在尝试分牌...', type: '' });
-        const arrangement = simpleAiArrangeCards(allPlayerCards); // 使用原始13张牌进行AI计算
+        const arrangement = simpleAiArrangeCards(allPlayerCards); 
         if (arrangement) {
-            setHands({
+            const newHandsSetup = {
                 frontHand: { ...initialHandsState.frontHand, cards: arrangement.frontHand, evalText: '' },
                 middleHand: { ...initialHandsState.middleHand, cards: arrangement.middleHand, evalText: '' },
                 backHand: { ...initialHandsState.backHand, cards: arrangement.backHand, evalText: '' },
+            };
+            // AI 分牌后，也进行一次前端牌型预览
+            Object.keys(newHandsSetup).forEach(handKey => {
+                const hand = newHandsSetup[handKey];
+                if (hand.limit && hand.cards.length === hand.limit) {
+                    const evalResult = evaluateHandSimpleFrontend(hand.cards);
+                    hand.evalText = evalResult.name || '未知';
+                }
             });
-            setMessage({ text: 'AI分牌完成！请检查并确认牌型。', type: 'success' });
+            setHands(newHandsSetup);
+            setMessage({ text: 'AI分牌完成！请检查。', type: 'success' });
         } else {
             setMessage({ text: 'AI分牌失败，请手动摆牌或重试。', type: 'error' });
         }
@@ -148,6 +168,7 @@ const GameBoard = () => {
                 <h1>十三水游戏</h1>
                 
                 <div className="arranged-hands-area banners-layout">
+                    {/* 注意这里 hands.frontHand 等会从 state 中取到最新的 evalText */}
                     <HandArea droppableId="frontHand" cards={hands.frontHand.cards} title={initialHandsState.frontHand.title} type="front" cardLimit={initialHandsState.frontHand.limit} evaluationText={hands.frontHand.evalText} isBanner={true} />
                     <HandArea droppableId="middleHand" cards={hands.middleHand.cards} title={initialHandsState.middleHand.title} type="middle" cardLimit={initialHandsState.middleHand.limit} evaluationText={hands.middleHand.evalText} isBanner={true} />
                     <HandArea droppableId="backHand" cards={hands.backHand.cards} title={initialHandsState.backHand.title} type="back" cardLimit={initialHandsState.backHand.limit} evaluationText={hands.backHand.evalText} isBanner={true} />
@@ -157,7 +178,6 @@ const GameBoard = () => {
                     <button onClick={dealNewCards} disabled={isLoading}>
                         {isLoading ? '正在发牌...' : '重新发牌'}
                     </button>
-                    {/* 新增AI分牌按钮 */}
                     <button onClick={handleAiArrange} disabled={isLoading || allPlayerCards.length !== 13}>
                         AI分牌
                     </button>
