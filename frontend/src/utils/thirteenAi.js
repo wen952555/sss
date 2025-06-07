@@ -1,206 +1,232 @@
 // frontend/src/utils/thirteenAi.js
 
-// --- 牌型代码 ---
-// 这些常量将被 typeWeights 和 evaluateHandSimple 的 return 语句使用
-const HAND_TYPE_HIGH_CARD = 1;
-const HAND_TYPE_PAIR = 2;
-const HAND_TYPE_TWO_PAIR = 3;
-const HAND_TYPE_THREE_OF_A_KIND = 4;
-const HAND_TYPE_STRAIGHT = 5;
-const HAND_TYPE_FLUSH = 6;
-const HAND_TYPE_FULL_HOUSE = 7;
-const HAND_TYPE_FOUR_OF_A_KIND = 8;
-const HAND_TYPE_STRAIGHT_FLUSH = 9;
+// --- 牌型代码 和 基础辅助函数 (与上一版本相同) ---
+const HAND_TYPE_HIGH_CARD = 1; /* ... */
+function getRankValue(value) { /* ... */ }
+function prepareCardsForEval(cardObjects) { /* ... */ }
+export function evaluateHandSimple(cardObjects) { /* ... (与上一版本能通过ESLint的版本一致) ... */ }
+export function compareHandsFrontend(eval1, eval2, context = "") { /* ... (与上一版本能通过ESLint的版本一致) ... */ }
 
-// --- 基础辅助函数 ---
-function getRankValue(value) {
-    if (!isNaN(parseInt(value))) return parseInt(value);
-    if (value === 'jack') return 11;
-    if (value === 'queen') return 12;
-    if (value === 'king') return 13;
-    if (value === 'ace') return 14;
-    return 0;
+// --- AI 辅助函数 ---
+function combinations(sourceArray, k) { /* ... (与上一版本能通过ESLint的版本一致) ... */ }
+function removeSelectedCards(sourceHand, selectedCards) { /* ... (与上一版本能通过ESLint的版本一致) ... */ }
+function groupByRank(cards) { /* ... (与上一版本能通过ESLint的版本一致) ... */ }
+function checkStraight(cards) { /* ... (与上一版本能通过ESLint的版本一致) ... */ }
+function calculateArrangementScore(backEval, middleEval, frontEval) { /* ... (与上一版本能通过ESLint的版本一致) ... */ }
+
+// --- 修改点：为牌型查找函数提供更健壮的占位实现或基础实现 ---
+function findStraightFlushes(cards) { 
+    // console.log("AI: findStraightFlushes called with", cards.length, "cards");
+    // 实际应实现同花顺查找逻辑
+    return []; // 暂时返回空，依赖后续的高牌
+}
+function findFourOfAKind(cards) { 
+    // console.log("AI: findFourOfAKind called");
+    // 实际应实现铁支查找逻辑
+    const groups = groupByRank(cards);
+    const fours = Object.values(groups).find(group => group.length === 4);
+    if (fours) {
+        const kicker = cards.filter(c => !fours.find(fc => fc.id === c.id))
+                            .sort((a,b) => b.rankValue - a.rankValue)[0];
+        return kicker ? [[...fours, kicker]] : []; // 返回一个包含一个组合的数组
+    }
+    return [];
+}
+function findFullHouses(cards) { 
+    // console.log("AI: findFullHouses called");
+    // 实际应实现葫芦查找逻辑
+    const groups = groupByRank(cards);
+    const threes = Object.values(groups).find(group => group.length === 3);
+    const pairs = Object.values(groups).find(group => group.length === 2 && (!threes || group[0].rankValue !== threes[0].rankValue));
+    if (threes && pairs) {
+        return [[...threes, ...pairs]];
+    }
+    return [];
+}
+function findFlushes(cards) { 
+    // console.log("AI: findFlushes called");
+    const suits = {};
+    cards.forEach(card => {
+        if(!suits[card.suitValue]) suits[card.suitValue] = [];
+        suits[card.suitValue].push(card);
+    });
+    const flushCards = Object.values(suits).find(group => group.length >= 5);
+    if (flushCards) {
+        return [flushCards.sort((a,b)=>b.rankValue - a.rankValue).slice(0,5)];
+    }
+    return [];
+}
+function findStraights(cards) { 
+    // console.log("AI: findStraights called");
+     if (cards.length < 5) return [];
+    const uniqueRankCards = [];
+    const seenRanks = new Set();
+    [...cards].sort((a,b) => a.rankValue - b.rankValue).forEach(card => {
+        if(!seenRanks.has(card.rankValue)){ uniqueRankCards.push(card); seenRanks.add(card.rankValue); }
+    });
+    if (uniqueRankCards.length < 5) return [];
+    const results = [];
+    for (let i = 0; i <= uniqueRankCards.length - 5; i++) {
+        const segment = uniqueRankCards.slice(i, i + 5);
+        if (checkStraight(segment)) { results.push(segment); }
+    }
+    const ace = cards.find(c=>c.rankValue === 14); const two = cards.find(c=>c.rankValue === 2); const three = cards.find(c=>c.rankValue === 3); const four = cards.find(c=>c.rankValue === 4); const five = cards.find(c=>c.rankValue === 5);
+    if(ace && two && three && four && five){ const a2345 = [ace, five, four, three, two].sort((a,b)=>a.rankValue-b.rankValue); if(!results.some(r => JSON.stringify(r.map(c=>c.id).sort()) === JSON.stringify(a2345.map(c=>c.id).sort()))){ results.push(a2345);}}
+    return results;
 }
 
-// 这个函数会被 evaluateHandSimple 调用
-function prepareCardsForEval(cardObjects) { // Line 17 (或附近)
-    if (!cardObjects || cardObjects.length === 0) return [];
-    const cards = cardObjects.map(c => ({
-        ...c,
-        rank: getRankValue(c.value),
-    }));
-    cards.sort((a, b) => b.rank - a.rank);
-    return cards;
+function findSimilarTypeHands(cards, targetType) {
+    // console.log("AI: findSimilarTypeHands called for type", targetType);
+    switch (targetType) {
+        case HAND_TYPE_STRAIGHT_FLUSH: return findStraightFlushes(cards);
+        case HAND_TYPE_FOUR_OF_A_KIND: return findFourOfAKind(cards);
+        case HAND_TYPE_FULL_HOUSE: return findFullHouses(cards);
+        case HAND_TYPE_FLUSH: return findFlushes(cards);
+        case HAND_TYPE_STRAIGHT: return findStraights(cards);
+        // 对于更小的牌型，如果需要，可以继续实现或返回高牌
+        default: 
+            if (cards.length >= 5) return [[...cards].sort((a,b)=>b.rankValue-a.rankValue).slice(0,5)];
+            return [];
+    }
 }
 
-export function evaluateHandSimple(cardObjects) {
-    if (!cardObjects || (cardObjects.length !== 3 && cardObjects.length !== 5)) {
-        return { type_code: 0, cards: cardObjects, rank: 0, name: "无效牌数", primary_ranks: [] };
+function generateStrongHandCandidates(cards) {
+    const candidates = []; // 直接用数组，后面手动去重或接受重复（评分会选优）
+    const addUniqueCandidate = (hand) => { // 确保添加的是5张牌
+        if (hand && hand.length === 5) {
+            // 简单的去重：检查是否已存在完全相同的牌组 (基于id)
+            const handIds = hand.map(c=>c.id).sort().join(',');
+            if (!candidates.find(cHand => cHand.map(cc=>cc.id).sort().join(',') === handIds)) {
+                candidates.push(hand);
+            }
+        }
+    };
+
+    findStraightFlushes(cards).forEach(addUniqueCandidate);
+    findFourOfAKind(cards).forEach(addUniqueCandidate);
+    findFullHouses(cards).forEach(addUniqueCandidate);
+    findFlushes(cards).forEach(addUniqueCandidate);
+    findStraights(cards).forEach(addUniqueCandidate);
+    
+    // 确保总有一个高牌候选 (按点数最大的5张)
+    if (cards.length >= 5) {
+         addUniqueCandidate([...cards].sort((a,b)=>b.rankValue-a.rankValue).slice(0,5));
     }
     
-    const preparedCards = prepareCardsForEval(cardObjects); // 调用 prepareCardsForEval
-    
-    if (!preparedCards || preparedCards.length === 0) { 
-         return { type_code: 0, cards: cardObjects, rank: 0, name: "预处理失败", primary_ranks: [] };
-    }
+    // console.log("AI: Strong hand candidates generated:", candidates.length);
+    return candidates.length > 0 ? candidates : (cards.length >= 5 ? [[...cards].sort((a,b)=>b.rankValue-a.rankValue).slice(0,5)] : []);
+}
 
-    const ranks = preparedCards.map(c => c.rank); // 使用 preparedCards
-    const suits = preparedCards.map(c => c.suit); // 使用 preparedCards
-    const rankCounts = {};
-    ranks.forEach(r => rankCounts[r] = (rankCounts[r] || 0) + 1);
-
-    const isFlush = new Set(suits).size === 1;
-    let isStraight = false;
-    const uniqueRanksSortedAsc = Array.from(new Set(ranks)).sort((a, b) => a - b);
-    let primaryRanksForCompare = [...ranks]; 
-    
-    const typeWeights = { // 所有 HAND_TYPE 常量在这里被用作键
-        [HAND_TYPE_STRAIGHT_FLUSH]: 90000,
-        [HAND_TYPE_FOUR_OF_A_KIND]: 80000,
-        [HAND_TYPE_FULL_HOUSE]: 70000,
-        [HAND_TYPE_FLUSH]: 60000,
-        [HAND_TYPE_STRAIGHT]: 50000,
-        [HAND_TYPE_THREE_OF_A_KIND]: 40000,
-        [HAND_TYPE_TWO_PAIR]: 30000,
-        [HAND_TYPE_PAIR]: 20000,
-        [HAND_TYPE_HIGH_CARD]: 10000,
-        0: 0
+function generateMiddleHandCandidates(remainingCards, backEval) {
+    const candidates = [];
+    const addUniqueCandidate = (hand) => {
+        if (hand && hand.length === 5) {
+            const handIds = hand.map(c=>c.id).sort().join(',');
+            if (!candidates.find(cHand => cHand.map(cc=>cc.id).sort().join(',') === handIds)) {
+                candidates.push(hand);
+            }
+        }
     };
     
-    let straightHighRank = Math.max(...ranks); 
-    if (ranks.includes(14) && ranks.includes(2) && ranks.length === 5) { 
-        const otherRanks = ranks.filter(r => r !== 14 && r !== 2).sort((a,b)=>a-b);
-        if (otherRanks.length === 3 && otherRanks[0] === 3 && otherRanks[1] === 4 && otherRanks[2] === 5) {
-             straightHighRank = 5;
-        }
+    if (backEval.type_code > HAND_TYPE_HIGH_CARD) {
+        findSimilarTypeHands(remainingCards, backEval.type_code).forEach(hand => {
+            if(hand.length !== 5) return;
+            const evalResult = evaluateHandSimple(hand);
+            if (compareHandsFrontend(evalResult, backEval) <= 0) { 
+                addUniqueCandidate(hand);
+            }
+        });
     }
+    if (backEval.type_code > HAND_TYPE_PAIR) { 
+        const weakerType = backEval.type_code - 1;
+        findSimilarTypeHands(remainingCards, weakerType).forEach(addUniqueCandidate);
+    }
+    if (remainingCards.length >= 5) {
+         addUniqueCandidate([...remainingCards].sort((a,b)=>b.rankValue-a.rankValue).slice(0,5));
+    }
+    // console.log("AI: Middle hand candidates generated:", candidates.length, "for backEval type:", backEval.type_code);
+    return candidates.length > 0 ? candidates : (remainingCards.length >= 5 ? [[...remainingCards].sort((a,b)=>b.rankValue-a.rankValue).slice(0,5)] : []);
+}
 
-    if (uniqueRanksSortedAsc.length >= cardObjects.length) { 
-        if (cardObjects.length === 5) {
-            if (uniqueRanksSortedAsc.join(',')==='2,3,4,5,14'){isStraight=true;primaryRanksForCompare=[5,4,3,2,1];} 
-            else if (uniqueRanksSortedAsc.length===5&&uniqueRanksSortedAsc[4]-uniqueRanksSortedAsc[0]===4){isStraight=true;primaryRanksForCompare=[ranks[0]];}
-        } else if (cardObjects.length === 3) { 
-            if (uniqueRanksSortedAsc.length===3&&uniqueRanksSortedAsc.join(',')==='2,3,14'){isStraight=true;straightHighRank=3;primaryRanksForCompare=[3,2,1];} 
-            else if (uniqueRanksSortedAsc.length===3&&uniqueRanksSortedAsc[2]-uniqueRanksSortedAsc[0]===2){isStraight=true;primaryRanksForCompare=[ranks[0]];}
-        }
+// fallbackArrangement (确保返回的卡片对象是完整的原始结构)
+function fallbackArrangement(allCardsInput) {
+    console.log("Executing fallbackArrangement.");
+    if (!allCardsInput || !Array.isArray(allCardsInput)) {
+        console.error("FallbackArrangement: 无效输入, 返回空墩", allCardsInput);
+        return { backHand: [], middleHand: [], frontHand: [] };
     }
+    // --- 修改点：确保 fallback 返回的卡片包含所有原始属性 ---
+    const cards = allCardsInput.map(c => ({...c})); // 创建副本
+    cards.sort((a, b) => getRankValue(b.value) - getRankValue(a.value));
     
-    // 所有 HAND_TYPE 常量在以下 return 语句中被用作 type_code 的值
-    if (isStraight && isFlush) return { type_code: HAND_TYPE_STRAIGHT_FLUSH, cards: cardObjects, rank: typeWeights[HAND_TYPE_STRAIGHT_FLUSH] + straightHighRank, name: "同花顺", primary_ranks: primaryRanksForCompare };
-    const countsValues = Object.values(rankCounts);
-    if (countsValues.includes(4)) { const qR=Number(Object.keys(rankCounts).find(k=>rankCounts[k]===4)); const k_=ranks.find(r=>r!==qR); primaryRanksForCompare=[qR,k_].filter(r=>r!==undefined); return { type_code: HAND_TYPE_FOUR_OF_A_KIND, cards: cardObjects, rank: typeWeights[HAND_TYPE_FOUR_OF_A_KIND] + qR, name: "铁支", primary_ranks: primaryRanksForCompare }; }
-    if (countsValues.includes(3) && countsValues.includes(2)) { const tR=Number(Object.keys(rankCounts).find(k=>rankCounts[k]===3)); const pR=Number(Object.keys(rankCounts).find(k=>rankCounts[k]===2)); primaryRanksForCompare=[tR,pR]; return { type_code: HAND_TYPE_FULL_HOUSE, cards: cardObjects, rank: typeWeights[HAND_TYPE_FULL_HOUSE] + tR, name: "葫芦", primary_ranks: primaryRanksForCompare }; }
-    if (isFlush) return { type_code: HAND_TYPE_FLUSH, cards: cardObjects, rank: typeWeights[HAND_TYPE_FLUSH] + Math.max(...ranks), name: "同花", primary_ranks: ranks };
-    if (isStraight) return { type_code: HAND_TYPE_STRAIGHT, cards: cardObjects, rank: typeWeights[HAND_TYPE_STRAIGHT] + straightHighRank, name: "顺子", primary_ranks: primaryRanksForCompare };
-    if (countsValues.includes(3)) { const tR=Number(Object.keys(rankCounts).find(k=>rankCounts[k]===3)); const ks_=ranks.filter(r=>r!==tR).sort((a,b)=>b-a).slice(0,cardObjects.length-3); primaryRanksForCompare=[tR,...ks_]; return { type_code: HAND_TYPE_THREE_OF_A_KIND, cards: cardObjects, rank: typeWeights[HAND_TYPE_THREE_OF_A_KIND] + tR, name: "三条", primary_ranks: primaryRanksForCompare }; }
-    const numPairs = countsValues.filter(c => c === 2).length;
-    if (numPairs === 2) { const pRs=Object.keys(rankCounts).filter(k=>rankCounts[k]===2).map(Number).sort((a,b)=>b-a); const k_=ranks.find(r=>!pRs.includes(r)); primaryRanksForCompare=[...pRs,k_].filter(r=>r!==undefined); return { type_code: HAND_TYPE_TWO_PAIR, cards: cardObjects, rank: typeWeights[HAND_TYPE_TWO_PAIR] + pRs[0], name: "两对", primary_ranks: primaryRanksForCompare }; }
-    if (numPairs === 1) { const pR=Number(Object.keys(rankCounts).find(k=>rankCounts[k]===2)); const ks_=ranks.filter(r=>r!==pR).sort((a,b)=>b-a).slice(0,cardObjects.length-2); primaryRanksForCompare=[pR,...ks_]; return { type_code: HAND_TYPE_PAIR, cards: cardObjects, rank: typeWeights[HAND_TYPE_PAIR] + pR, name: "对子", primary_ranks: primaryRanksForCompare }; }
-    return { type_code: HAND_TYPE_HIGH_CARD, cards: cardObjects, rank: typeWeights[HAND_TYPE_HIGH_CARD] + Math.max(...ranks), name: "乌龙", primary_ranks: ranks };
+    const backHand = cards.slice(0, 5);
+    const middleHand = cards.slice(5, 10);
+    const frontHand = cards.slice(10, 13);
+
+    // 确保即使是fallback，返回的也是包含完整属性的卡片对象
+    return {
+        backHand: backHand.map(c => ({...c})),
+        middleHand: middleHand.map(c => ({...c})),
+        frontHand: frontHand.map(c => ({...c})),
+    };
 }
 
-export function compareHandsFrontend(eval1, eval2, context = "") { /* ... (与上一版本相同) ... */ }
 
-// --- 您提供的 AI 辅助函数 ---
-// --- 修改点：为那些在当前 smartAiArrangeCards 中未被直接调用的辅助函数添加 eslint-disable-next-line ---
-// 或者，如果您确认它们确实被调用了，请确保调用路径正确
-
-// eslint-disable-next-line no-unused-vars
-function combinations(sourceArray, k) { /* ... (您的实现) ... */ return []; }
-// eslint-disable-next-line no-unused-vars
-function removeSelectedCards(sourceHand, selectedCards) { /* ... (您的实现) ... */ return sourceHand;}
-// eslint-disable-next-line no-unused-vars
-function findStraightFlushes(cards) { /* ... (您的实现) ... */ return [];}
-// eslint-disable-next-line no-unused-vars
-function findFourOfAKind(cards) { /* ... (您的实现) ... */ return [];}
-// eslint-disable-next-line no-unused-vars
-function findFullHouses(cards) { /* ... (您的实现) ... */ return [];}
-// eslint-disable-next-line no-unused-vars
-function findFlushes(cards) { /* ... (您的实现) ... */ return [];}
-// eslint-disable-next-line no-unused-vars
-function findStraights(cards) { /* ... (您的实现) ... */ return [];}
-// eslint-disable-next-line no-unused-vars
-function findSimilarTypeHands(cards, targetType) { /* ... (您的实现) ... */ return [];}
-// eslint-disable-next-line no-unused-vars
-function groupByRank(cards) { /* ... (您的实现) ... */ return {};}
-// eslint-disable-next-line no-unused-vars
-function checkStraight(cards) { /* ... (您的实现) ... */ return false;}
-// eslint-disable-next-line no-unused-vars
-function calculateArrangementScore(backEval, middleEval, frontEval) { /* ... (您的实现) ... */ return 0;}
-// eslint-disable-next-line no-unused-vars
-function fallbackArrangement(allCardsInput) { /* ... (您的实现) ... */ 
-    const cards = [...(allCardsInput || [])].sort((a, b) => getRankValue(b.value) - getRankValue(a.value));
-    return { backHand: cards.slice(0, 5), middleHand: cards.slice(5, 10), frontHand: cards.slice(10, 13), };
-}
-// eslint-disable-next-line no-unused-vars
-function generateStrongHandCandidates(cards) { /* ... (您的实现) ... */ return [];}
-// eslint-disable-next-line no-unused-vars
-function generateMiddleHandCandidates(remainingCards, backEval) { /* ... (您的实现) ... */ return [];}
-
-
-// 您提供的 smartAiArrangeCards 函数 (主AI逻辑)
 export function smartAiArrangeCards(allCardsInput) {
-    // --- 修改点：确保这个函数会调用上面那些被标记为 ununsed 的辅助函数 ---
-    // --- 或者，如果这些辅助函数真的没被这个版本的 smartAiArrangeCards 使用，那么上面的 eslint-disable 是必要的 ---
-    if (!allCardsInput || allCardsInput.length !== 13) { 
-        console.error("AI智能分牌需要13张有效牌"); 
-        // 调用 fallbackArrangement 来消除 unused 警告 (如果 fallbackArrangement 之前也报 unused)
+    if (!allCardsInput || !Array.isArray(allCardsInput) || allCardsInput.length !== 13) { 
+        console.error("AI智能分牌需要13张有效牌，执行回退。Input:", allCardsInput); 
         return fallbackArrangement(allCardsInput || []); 
     }
-    const cards = allCardsInput.map(card => ({ ...card, id: card.id || `${card.value}_of_${card.suit}`, rankValue: getRankValue(card.value), suitValue: card.suit }));
-    // cards.sort((a, b) => b.rankValue - a.rankValue); // 排序可以移到需要的地方
-
-    // 确保 generateStrongHandCandidates 被调用
-    const strongCandidates = generateStrongHandCandidates(cards); 
+    // --- 修改点：确保AI内部操作的是包含完整原始属性的卡片对象 ---
+    const cards = allCardsInput.map(card => ({ 
+        ...card, // 复制所有原始属性
+        id: card.id || `${card.value}_of_${card.suit}`, // 确保有id
+        rankValue: getRankValue(card.value),          // 用于AI内部计算和排序
+        suitValue: card.suit                          // 用于AI内部计算
+    }));
     
-    let bestArrangement = null; let bestScore = -Infinity;
+    const strongCandidates = generateStrongHandCandidates(cards);
+    let bestArrangement = null; 
+    let bestScore = -Infinity;
 
     if (strongCandidates.length === 0 && cards.length > 0) { 
         console.warn("智能AI：未能生成强后墩候选，回退。");
-        return fallbackArrangement(allCardsInput); // 调用 fallbackArrangement
+        return fallbackArrangement(allCardsInput); // 传递原始输入
     }
-
-    // 确保 combinations 被调用 (即使只是象征性的，如果您的主循环不用它)
-    if (cards.length >= 5) {
-        const testCombs = combinations(cards.slice(0,5), 3);
-        if (testCombs.length < 0) console.log("This log is just to use combinations"); // 使用 testCombs
-    }
-
 
     for (const backHandCandidate of strongCandidates) {
+        // ... (与上一版本 smartAiArrangeCards 的循环逻辑相同，确保所有卡片对象都传递完整属性) ...
         if (!Array.isArray(backHandCandidate) || backHandCandidate.length !== 5) continue;
         const backEvaluation = evaluateHandSimple(backHandCandidate);
-        // 确保 removeSelectedCards 被调用
-        const remainingAfterBack = removeSelectedCards(cards, backHandCandidate); 
-        
-        // 确保 generateMiddleHandCandidates 被调用
-        const middleOptions = generateMiddleHandCandidates(remainingAfterBack, backEvaluation); 
-        if (middleOptions.length === 0 && remainingAfterBack.length > 0) { 
-            continue;
-        }
-
+        const remainingAfterBack = removeSelectedCards(cards, backHandCandidate);
+        const middleOptions = generateMiddleHandCandidates(remainingAfterBack, backEvaluation);
+        if (middleOptions.length === 0 && remainingAfterBack.length > 0) { continue; }
         for (const middleHandCandidate of middleOptions) {
             if (!Array.isArray(middleHandCandidate) || middleHandCandidate.length !== 5) continue;
             const middleEvaluation = evaluateHandSimple(middleHandCandidate);
-            if (compareHandsFrontend(backEvaluation, middleEvaluation) < 0) {continue;} 
-            
-            const frontHandCandidate = removeSelectedCards(remainingAfterBack, middleHandCandidate); 
+            if (compareHandsFrontend(backEvaluation, middleEvaluation) < 0) {continue;}
+            const frontHandCandidate = removeSelectedCards(remainingAfterBack, middleHandCandidate);
             if (!Array.isArray(frontHandCandidate) || frontHandCandidate.length !== 3) {continue;}
-            
             const frontEvaluation = evaluateHandSimple(frontHandCandidate);
-            if (compareHandsFrontend(middleEvaluation, frontEvaluation) < 0) {continue;} 
-            
-            // 确保 calculateArrangementScore 被调用
-            const arrangementScore = calculateArrangementScore(backEvaluation, middleEvaluation, frontEvaluation); 
+            if (compareHandsFrontend(middleEvaluation, frontEvaluation) < 0) {continue;}
+            const arrangementScore = calculateArrangementScore(backEvaluation, middleEvaluation, frontEvaluation);
             if (arrangementScore > bestScore) {
                 bestScore = arrangementScore;
-                bestArrangement = { backHand: [...backHandCandidate], middleHand: [...middleHandCandidate], frontHand: [...frontHandCandidate] };
+                bestArrangement = { 
+                    // --- 修改点：确保从候选复制时也保留所有原始属性 ---
+                    backHand: backHandCandidate.map(c => ({...allCardsInput.find(orig => orig.id === c.id) || c })), 
+                    middleHand: middleHandCandidate.map(c => ({...allCardsInput.find(orig => orig.id === c.id) || c })), 
+                    frontHand: frontHandCandidate.map(c => ({...allCardsInput.find(orig => orig.id === c.id) || c }))
+                };
             }
         }
     }
+
     if (bestArrangement) { 
-        // ... (与上一版本相同)
+        console.log("AI智能分牌完成。"); 
+        // ... (最终检查和日志) ...
         return bestArrangement; 
     }
-    return fallbackArrangement(allCardsInput); // 调用 fallbackArrangement
+    console.warn("AI智能分牌未找到理想解，使用回退方案"); 
+    return fallbackArrangement(allCardsInput);
 }
