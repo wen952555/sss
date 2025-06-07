@@ -10,7 +10,7 @@ body {
 
 .app-container {
   width: 95%;
-  max-width: 1000px;
+  max-width: 1200px; /* 可以适当加宽以容纳横幅 */
 }
 
 .game-board {
@@ -19,87 +19,98 @@ body {
   align-items: center;
 }
 
-.player-hand-area,
+/* 移除 player-hand-area 相关样式 */
+
 .arranged-hands-area {
   margin-bottom: 20px;
   padding: 10px;
   border: 2px dashed #ccc;
   border-radius: 8px;
-  min-height: 100px; /* Adjust as needed */
   width: 100%;
+  box-sizing: border-box;
 }
 
-.player-hand-area h3, .arranged-hands-area h3 {
-    margin-top: 0;
-    text-align: center;
-}
-
-.arranged-hands {
+/* 新增 banners-layout 样式，用于横幅堆叠 */
+.arranged-hands-area.banners-layout {
   display: flex;
-  justify-content: space-around; /* Or space-between */
-  width: 100%;
+  flex-direction: column; /* 三个横幅垂直堆叠 */
+  gap: 15px; /* 横幅之间的间距 */
 }
 
-.hand-column { /* For front, middle, back */
-  flex-basis: 30%; /* Distribute space */
+/* 修改 hand-column 为 hand-banner (或者让 hand-column 适配横幅) */
+.hand-banner { /* 用于横幅布局的牌墩 */
+  width: 100%;
   padding: 10px;
   border: 1px solid #777;
   border-radius: 5px;
   background-color: rgba(0,0,0,0.1);
-  min-height: 150px;
-  display: flex; /* For card alignment */
-  flex-direction: column; /* Stack title and cards */
-  align-items: center;
+  min-height: 120px; /* 横幅的最小高度，根据卡牌大小调整 */
+  display: flex;
+  flex-direction: column; /* 标题和牌区垂直排列 */
+  box-sizing: border-box;
 }
 
-.hand-column h4 {
+.hand-banner h4 {
     margin-top: 0;
     margin-bottom: 10px;
     width: 100%;
-    text-align: center;
+    text-align: left; /* 标题靠左 */
     background-color: rgba(255,255,255,0.1);
-    padding: 5px 0;
+    padding: 5px 10px; /* 调整内边距 */
     border-radius: 3px;
+    box-sizing: border-box;
 }
 
 .droppable-area {
   display: flex;
-  flex-wrap: wrap; /* Allow cards to wrap if many */
-  justify-content: center; /* Center cards in the area */
+  flex-wrap: wrap; /* 允许卡片换行 */
+  justify-content: flex-start; /* 卡片靠左开始排列 */
+  align-items: flex-start; /* 卡片顶部对齐 */
   gap: 8px;
   padding: 5px;
-  min-height: 80px; /* Minimum height for droppable area */
+  min-height: 80px; 
   background-color: rgba(0,0,0,0.2);
   border-radius: 4px;
   transition: background-color 0.2s ease;
-  width: 100%; /* Take full width of hand-column */
+  width: 100%; 
+  box-sizing: border-box;
 }
 
 .droppable-area.is-dragging-over {
   background-color: rgba(0,0,0,0.4);
 }
 
+/* 针对横幅布局的 droppable 区域可以设置固定高度以便滚动 (如果牌很多) */
+.droppable-area.banner-droppable {
+  /* flex-grow: 1; */ /* 允许其填充剩余空间 */
+  /* overflow-x: auto; */ /* 如果希望横向滚动而不是换行，可以打开这个，但通常十三水牌不多 */
+  /* overflow-y: hidden; */
+}
+
 
 .card {
-  width: 70px; /* Adjust card size as needed */
-  height: auto;
+  width: 70px; 
+  height: 100px; /* 给一个固定高度，或者用 aspect-ratio */
+  /* height: auto; */ /* 如果图片本身有固定宽高比，这个也可以 */
   border: 1px solid #aaa;
   border-radius: 5px;
   box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
   background-color: white;
-  user-select: none; /* Prevent text selection during drag */
+  user-select: none; 
+  flex-shrink: 0; /* 防止卡片在 flex 容器中被压缩 */
 }
 
 .card img {
   width: 100%;
   height: 100%;
   display: block;
-  border-radius: 4px; /* Match card border-radius */
+  border-radius: 4px; 
+  object-fit: contain; /* 确保图片完整显示在卡片内 */
 }
 
 .card-placeholder {
   width: 70px;
-  height: 100px; /* Match card height */
+  height: 100px; 
   border: 2px dashed #555;
   border-radius: 5px;
   background-color: rgba(255,255,255,0.05);
@@ -108,6 +119,9 @@ body {
   justify-content: center;
   color: #888;
   font-size: 0.8em;
+  padding: 5px;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .controls {
@@ -136,6 +150,9 @@ body {
   padding: 10px;
   border-radius: 5px;
   text-align: center;
+  width: 100%;
+  max-width: 600px; /* 给消息区域一个最大宽度 */
+  box-sizing: border-box;
 }
 .message-area.success {
   background-color: #5cb85c;
@@ -147,7 +164,14 @@ body {
 }
 .hand-eval-text {
     font-size: 0.9em;
-    margin-top: 5px;
+    margin-top: 8px; /* 调整与牌区的间距 */
     color: #eee;
-    min-height: 20px; /* Reserve space */
+    min-height: 20px; 
+    text-align: left; /* 牌型名称靠左 */
+    padding-left: 10px;
+}
+.loading-indicator {
+    margin-top: 15px;
+    padding: 10px;
+    color: #f0ad4e;
 }
