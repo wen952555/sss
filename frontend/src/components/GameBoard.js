@@ -1,14 +1,15 @@
-// src/components/GameBoard.js
+// frontend/src/components/GameBoard.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext } from 'react-beautiful-dnd';
 import HandArea from './HandArea';
 import { fetchInitialCards, evaluateArrangement } from '../utils/api';
 
+// 中文化牌墩标题
 const initialHandsState = {
-    playerPool: { id: 'playerPool', title: 'Your Hand', cards: [] },
-    frontHand: { id: 'frontHand', title: 'Front Hand', cards: [], limit: 3, evalText: '' },
-    middleHand: { id: 'middleHand', title: 'Middle Hand', cards: [], limit: 5, evalText: '' },
-    backHand: { id: 'backHand', title: 'Back Hand', cards: [], limit: 5, evalText: '' },
+    playerPool: { id: 'playerPool', title: '我的手牌', cards: [] },
+    frontHand: { id: 'frontHand', title: '前墩', cards: [], limit: 3, evalText: '' },
+    middleHand: { id: 'middleHand', title: '中墩', cards: [], limit: 5, evalText: '' },
+    backHand: { id: 'backHand', title: '后墩', cards: [], limit: 5, evalText: '' },
 };
 
 const GameBoard = () => {
@@ -21,15 +22,26 @@ const GameBoard = () => {
         setMessage({ text: '', type: '' });
         try {
             const data = await fetchInitialCards();
-            setHands({
-                playerPool: { ...initialHandsState.playerPool, cards: data.cards || [] },
-                frontHand: { ...initialHandsState.frontHand, cards: [], evalText: '' },
-                middleHand: { ...initialHandsState.middleHand, cards: [], evalText: '' },
-                backHand: { ...initialHandsState.backHand, cards: [], evalText: '' },
-            });
+            if (data && data.cards) {
+                setHands({
+                    playerPool: { ...initialHandsState.playerPool, cards: data.cards },
+                    frontHand: { ...initialHandsState.frontHand, cards: [], evalText: '' },
+                    middleHand: { ...initialHandsState.middleHand, cards: [], evalText: '' },
+                    backHand: { ...initialHandsState.backHand, cards: [], evalText: '' },
+                });
+            } else {
+                // 如果后端返回的数据不符合预期，或者根本没有 cards 字段
+                console.error("从服务器获取的牌数据格式无效:", data);
+                setMessage({ text: '无法从服务器获取牌局数据，请稍后再试。', type: 'error' });
+                // 可以选择设置一个空的手牌或保留旧手牌
+                setHands(prev => ({
+                    ...prev,
+                    playerPool: { ...initialHandsState.playerPool, cards: [] }, // 清空手牌
+                }));
+            }
         } catch (error) {
-            console.error("Failed to fetch cards:", error);
-            setMessage({ text: `Error fetching cards: ${error.message}`, type: 'error' });
+            console.error("获取牌局失败:", error);
+            setMessage({ text: `获取牌局失败: ${error.message}`, type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -42,25 +54,22 @@ const GameBoard = () => {
     const onDragEnd = (result) => {
         const { source, destination } = result;
 
-        // Dropped outside a valid droppable
         if (!destination) return;
 
         const sourceHandId = source.droppableId;
         const destHandId = destination.droppableId;
 
-        // If dropped in the same place, do nothing (or handle reordering within the same list if desired)
         if (sourceHandId === destHandId && source.index === destination.index) return;
         
         setHands(prevHands => {
-            const newHands = JSON.parse(JSON.stringify(prevHands)); // Deep copy
+            const newHands = JSON.parse(JSON.stringify(prevHands)); 
             const sourceCards = Array.from(newHands[sourceHandId].cards);
             const destCards = Array.from(newHands[destHandId].cards);
             const [movedCard] = sourceCards.splice(source.index, 1);
 
-            // Check card limit for destination
             if (newHands[destHandId].limit && destCards.length >= newHands[destHandId].limit) {
-                setMessage({ text: `${newHands[destHandId].title} can only hold ${newHands[destHandId].limit} cards.`, type: 'error' });
-                return prevHands; // Revert to previous state
+                setMessage({ text: `${newHands[destHandId].title} 最多只能放 ${newHands[destHandId].limit} 张牌。`, type: 'error' });
+                return prevHands; 
             }
 
             destCards.splice(destination.index, 0, movedCard);
@@ -68,8 +77,8 @@ const GameBoard = () => {
             newHands[sourceHandId].cards = sourceCards;
             newHands[destHandId].cards = destCards;
             
-            // Clear message on successful drag
             setMessage({ text: '', type: '' });
+            // 可以在这里选择是否立即评估牌型 (客户端评估)
             return newHands;
         });
     };
@@ -79,15 +88,14 @@ const GameBoard = () => {
         if (hands.frontHand.cards.length !== 3 || 
             hands.middleHand.cards.length !== 5 || 
             hands.backHand.cards.length !== 5) {
-            setMessage({ text: 'Please complete all hands: Front (3), Middle (5), Back (5).', type: 'error' });
+            setMessage({ text: '请将三墩牌摆完整：前墩 (3张), 中墩 (5张), 后墩 (5张)。', type: 'error' });
             return;
         }
 
         setIsLoading(true);
         try {
-            // Pass only necessary card data (id, suit, value, rankValue) to backend
             const prepareHandForApi = (cardArray) => cardArray.map(c => ({
-                id: c.id, suit: c.suit, value: c.value, rankValue: c.rankValue, imageName: c.imageName // imageName for potential re-rendering
+                id: c.id, suit: c.suit, value: c.value, rankValue: c.rankValue, imageName: c.imageName 
             }));
 
             const result = await evaluateArrangement(
@@ -98,7 +106,6 @@ const GameBoard = () => {
 
             if (result.success) {
                 setMessage({ text: result.validation.message, type: result.validation.isValid ? 'success' : 'error' });
-                // Update hand evaluation text
                 setHands(prev => ({
                     ...prev,
                     frontHand: {...prev.frontHand, evalText: result.evaluations.front.type_name },
@@ -106,11 +113,11 @@ const GameBoard = () => {
                     backHand: {...prev.backHand, evalText: result.evaluations.back.type_name },
                 }));
             } else {
-                setMessage({ text: result.message || 'Evaluation failed.', type: 'error' });
+                setMessage({ text: result.message || '牌型评估失败，请检查后端服务。', type: 'error' });
             }
         } catch (error) {
-            console.error("Error evaluating hands:", error);
-            setMessage({ text: `Error: ${error.message}`, type: 'error' });
+            console.error("评估牌型出错:", error);
+            setMessage({ text: `评估出错: ${error.message}`, type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -123,28 +130,28 @@ const GameBoard = () => {
     return (
         <DragDropContext onDragEnd={onDragEnd}>
             <div className="game-board">
-                <h1>Thirteen Card Game</h1>
+                <h1>十三水游戏</h1>
                 
                 <div className="player-hand-area">
-                    <h3>{hands.playerPool.title} ({hands.playerPool.cards.length})</h3>
+                    <h3>{hands.playerPool.title} ({hands.playerPool.cards.length} 张)</h3>
                     <HandArea droppableId="playerPool" cards={hands.playerPool.cards} type="pool" />
                 </div>
 
                 <div className="arranged-hands-area">
-                    <h3>Arranged Hands</h3>
+                    <h3>已摆好的牌墩</h3>
                     <div className="arranged-hands">
-                        <HandArea droppableId="frontHand" cards={hands.frontHand.cards} title="Front" type="front" cardLimit={3} evaluationText={hands.frontHand.evalText} />
-                        <HandArea droppableId="middleHand" cards={hands.middleHand.cards} title="Middle" type="middle" cardLimit={5} evaluationText={hands.middleHand.evalText} />
-                        <HandArea droppableId="backHand" cards={hands.backHand.cards} title="Back" type="back" cardLimit={5} evaluationText={hands.backHand.evalText} />
+                        <HandArea droppableId="frontHand" cards={hands.frontHand.cards} title={initialHandsState.frontHand.title} type="front" cardLimit={3} evaluationText={hands.frontHand.evalText} />
+                        <HandArea droppableId="middleHand" cards={hands.middleHand.cards} title={initialHandsState.middleHand.title} type="middle" cardLimit={5} evaluationText={hands.middleHand.evalText} />
+                        <HandArea droppableId="backHand" cards={hands.backHand.cards} title={initialHandsState.backHand.title} type="back" cardLimit={5} evaluationText={hands.backHand.evalText} />
                     </div>
                 </div>
 
                 <div className="controls">
                     <button onClick={dealNewCards} disabled={isLoading}>
-                        {isLoading ? 'Dealing...' : 'Deal New Hand'}
+                        {isLoading ? '正在发牌...' : '重新发牌'}
                     </button>
                     <button onClick={handleSubmitArrangement} disabled={isLoading || !canSubmit}>
-                        {isLoading ? 'Checking...' : 'Check Arrangement'}
+                        {isLoading ? '正在检查...' : '确定牌型'}
                     </button>
                 </div>
 
@@ -153,6 +160,7 @@ const GameBoard = () => {
                         {message.text}
                     </div>
                 )}
+                {isLoading && !message.text && <div className="loading-indicator">加载中...</div>}
             </div>
         </DragDropContext>
     );
