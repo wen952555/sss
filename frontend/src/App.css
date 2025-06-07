@@ -1,101 +1,56 @@
+/* ... (html, body, #root, .app-container, .game-board, .game-board h1, 
+         .arranged-hands-area.banners-layout, .hand-banner, .hand-banner h4 
+         这些部分的样式与上一次“全局自适应”版本基本一致，确保它们能正确分配空间) ... */
 html, body, #root {
-  height: 100vh; 
-  width: 100vw;  
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  overflow: hidden; 
-  display: flex; 
-  justify-content: center;
-  align-items: center;
+  height: 100vh; width: 100vw; margin: 0; padding: 0; box-sizing: border-box;
+  overflow: hidden; display: flex; justify-content: center; align-items: center;
   background-color: #2c593b; 
 }
-
 .app-container {
-  width: 95%; 
-  height: 95%; 
-  max-width: 1200px; 
-  max-height: 900px; 
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  overflow: hidden;
-  background-color: rgba(0,0,0,0.05); 
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  padding: 15px; 
+  width: 95%; height: 95%; max-width: 1200px; max-height: 900px; 
+  display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden;
+  background-color: rgba(0,0,0,0.05); border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 15px;
 }
-
 .game-board {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%; 
-  height: 100%; 
-  flex-grow: 1; 
-  box-sizing: border-box;
-  overflow: hidden;
+  display: flex; flex-direction: column; align-items: center;
+  width: 100%; height: 100%; flex-grow: 1; box-sizing: border-box; overflow: hidden;
 }
-
 .game-board h1 { 
     font-size: clamp(1.5em, 4vw, 2.2em); 
     margin-bottom: clamp(10px, 2vh, 20px); 
-    color: #f0f0f0;
-    flex-shrink: 0; 
+    color: #f0f0f0; flex-shrink: 0; 
 }
-
 .arranged-hands-area.banners-layout {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(8px, 1.5vh, 15px); 
-  width: 100%;
-  flex-grow: 1; 
-  overflow: hidden;
-  justify-content: space-around; 
+  display: flex; flex-direction: column; gap: clamp(8px, 1.5vh, 15px); 
+  width: 100%; flex-grow: 1; overflow: hidden; justify-content: space-around; 
 }
-
 .hand-banner {
-  width: 100%; 
-  flex-basis: 0; 
-  flex-grow: 1;  
-  padding: clamp(5px, 1vh, 10px); 
-  border: 1px solid #4a755a;
-  border-radius: 5px;
-  background-color: rgba(0,0,0,0.15);
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  overflow: hidden; 
+  width: 100%; flex-basis: 0; flex-grow: 1;  
+  padding: clamp(5px, 1vh, 10px); border: 1px solid #4a755a;
+  border-radius: 5px; background-color: rgba(0,0,0,0.15);
+  display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; 
 }
-
 .hand-banner h4 {
     font-size: clamp(0.8em, 2vw, 1em); 
     padding: clamp(4px, 0.8vh, 8px) clamp(8px, 1.5vw, 12px);
-    margin-top: 0;
-    margin-bottom: clamp(5px, 1vh, 8px);
-    background-color: rgba(255,255,255,0.08);
-    color: #e0e0e0;
-    border-radius: 3px;
-    box-sizing: border-box;
-    flex-shrink: 0;
+    margin-top: 0; margin-bottom: clamp(5px, 1vh, 8px);
+    background-color: rgba(255,255,255,0.08); color: #e0e0e0;
+    border-radius: 3px; box-sizing: border-box; flex-shrink: 0;
 }
 
 .droppable-area {
   display: flex;
-  /* --- 修改点：允许换行，这是平铺的基础 --- */
-  flex-wrap: wrap; 
-  /* --- 移除 overflow-x: auto 和 nowrap --- */
-  /* overflow-x: hidden; 如果确实不想要任何形式的溢出指示 */
-  align-items: center; /* 卡片垂直居中 */
-  justify-content: flex-start; /* 卡片从左开始排列 */
-  padding: clamp(3px, 0.5vh, 8px); /* 稍微增加 padding 给卡片呼吸空间 */
+  /* align-items: center;  卡片高度不一时，可能不需要垂直居中，让它们顶部对齐 */
+  align-items: flex-start; /* 改为顶部对齐 */
+  padding: clamp(3px, 0.5vh, 8px); 
   flex-grow: 1; 
   background-color: rgba(0,0,0,0.1);
   border-radius: 4px;
   width: 100%; 
   box-sizing: border-box;
-  overflow: hidden; /* 仍然隐藏超出容器的溢出 */
-  position: relative;
+  overflow: hidden; 
+  position: relative; 
 }
 
 .droppable-area.is-dragging-over {
@@ -103,48 +58,36 @@ html, body, #root {
 }
 
 .card {
-  width: clamp(45px, 8vw, 60px); /* 调整卡片宽度范围 */
-  height: calc(clamp(45px, 8vw, 60px) * 1.4); 
+  width: 60px; /* JS中的CARD_BASE_WIDTH应与此匹配 */
+  height: calc(60px * 1.4); 
   border: 1px solid #777;
   border-radius: 5px;
   box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
   background-color: white;
   user-select: none;
-  /* flex-shrink: 1;  默认就是1，允许收缩 */
-  margin: clamp(2px, 0.5vh, 4px); /* --- 修改点：给卡片之间一些间距，用于平铺 --- */
+  flex-shrink: 0; /* 非常重要，防止flexbox压缩卡片，让JS完全控制位置 */
+  /* 移除 CSS margin-left，由 JS 的 dynamicStyle 控制 */
+  /* margin-left: 0;  */
+  margin-right: 4px; /* 用于平铺时的右侧间距，JS 计算的 marginLeft 会是负值或0 */
   cursor: grab;
-  transition: transform 0.1s ease-out; /* 移除 margin-left 过渡 */
+  transition: transform 0.15s ease-out; /* 只保留 transform 过渡 */
   position: relative;
   z-index: 1;
 }
-
-/* --- 移除之前的固定负边距堆叠 --- */
-/* .droppable-area .card + .card {
-  margin-left: calc(clamp(40px, 10vw, 65px) * -0.75);
-} */
-
-/* 尝试一种基于 :nth-child 和 transform 的堆叠方式 (实验性) 
-   这仍然是纯CSS的近似，效果可能不完美，且难以精确控制重叠量
-   如果卡片数量非常多，这种方式的性能和视觉效果也可能下降
-*/
-/*
-.droppable-area .card:not(:first-child) {
-   margin-left: -30%; // 或者一个更小的负百分比，基于卡片自身的宽度
+.card:last-child {
+    margin-right: 0; 
 }
-.droppable-area .card:hover {
-    transform: translateY(-5px) scale(1.05); // 鼠标悬浮时稍微上移并放大
-    z-index: 10;
-}
-*/
-/* 对于您图片中的那种堆叠，更可能是通过 JS 计算每个卡片的位置来实现的，
-   或者是非常特定的 CSS Grid 布局技巧（但与 flex 拖拽结合可能复杂）
-*/
 
+.card.is-dragging {
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    /* transform: scale(1.05);  dnd 库会处理拖拽时的 transform */
+    z-index: 1000 !important; /* 确保拖拽的卡片在最顶层 */
+}
 
 .card:active {
     cursor: grabbing;
-    transform: scale(1.05); 
-    z-index: 10; 
+    /* transform: scale(1.05); dnd 库会处理 */
+    /* z-index: 10; */ /* is-dragging 类会处理层级 */
 }
 
 .card img {
@@ -156,11 +99,10 @@ html, body, #root {
 }
 
 .card-placeholder {
-  min-width: clamp(45px, 8vw, 60px);
-  height: calc(clamp(45px, 8vw, 60px) * 1.4);
+  width: 60px; 
+  height: calc(60px * 1.4); 
   font-size: clamp(0.6em, 1.5vw, 0.7em);
-  margin: clamp(2px, 0.5vh, 4px);
-  /* 其他样式保持 */
+  margin-right: 4px; 
   border: 2px dashed #5a8a6a;
   border-radius: 5px;
   background-color: rgba(255,255,255,0.03);
@@ -174,51 +116,34 @@ html, body, #root {
   flex-shrink: 0;
 }
 
-
-/* ... (Controls, MessageArea, HandEvalText, LoadingIndicator 样式保持或微调) ... */
+/* ... (Controls, MessageArea, HandEvalText, LoadingIndicator 样式与上一个版本类似) ... */
 .controls {
-  width: 100%;
-  padding: clamp(8px, 1.5vh, 15px) 0;
-  text-align: center;
-  background-color: rgba(0,0,0,0.1);
-  border-top: 1px solid #4a755a;
-  flex-shrink: 0; 
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
+  width: 100%; padding: clamp(8px, 1.5vh, 15px) 0; text-align: center;
+  background-color: rgba(0,0,0,0.1); border-top: 1px solid #4a755a;
+  flex-shrink: 0; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
 }
-
 .controls button {
   padding: clamp(8px, 1.5vh, 12px) clamp(15px, 3vw, 25px);
-  font-size: clamp(0.8em, 2vw, 1em);
-  margin: 0 clamp(5px, 1vw, 10px);
-  cursor: pointer;
-  background-color: #e67e22;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
+  font-size: clamp(0.8em, 2vw, 1em); margin: 0 clamp(5px, 1vw, 10px);
+  cursor: pointer; background-color: #e67e22; color: white; border: none;
+  border-radius: 5px; font-weight: bold; transition: background-color 0.2s ease;
 }
 .controls button:hover:not(:disabled) { background-color: #d35400; }
 .controls button:disabled { background-color: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
 .message-area {
-  margin: clamp(8px, 1.5vh, 15px) auto;
-  padding: clamp(8px, 1.5vh, 12px);
-  font-size: clamp(0.85em, 2vw, 0.95em);
-  width: 90%; max-width: 500px; box-sizing: border-box; border-radius: 5px; text-align: center;
+  margin: clamp(8px, 1.5vh, 15px) auto; padding: clamp(8px, 1.5vh, 12px);
+  font-size: clamp(0.85em, 2vw, 0.95em); width: 90%; max-width: 500px;
+  box-sizing: border-box; border-radius: 5px; text-align: center;
 }
 .message-area.success { background-color: #27ae60; color: white; }
 .message-area.error { background-color: #c0392b; color: white; }
 
 .hand-eval-text {
-    font-size: clamp(0.8em, 1.8vw, 0.9em);
-    margin-top: clamp(4px, 0.8vh, 8px);
+    font-size: clamp(0.8em, 1.8vw, 0.9em); margin-top: clamp(4px, 0.8vh, 8px);
     color: #f0f0f0; min-height: 18px; text-align: left; padding-left: 10px; flex-shrink: 0;
 }
 .loading-indicator {
-    margin-top: clamp(8px, 1.5vh, 15px);
-    padding: clamp(6px, 1vh, 10px);
-    font-size: clamp(0.85em, 2vw, 0.9em);
-    color: #e67e22; font-weight: bold;
+    margin-top: clamp(8px, 1.5vh, 15px); padding: clamp(6px, 1vh, 10px);
+    font-size: clamp(0.85em, 2vw, 0.9em); color: #e67e22; font-weight: bold;
 }
