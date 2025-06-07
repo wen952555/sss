@@ -1,5 +1,6 @@
 // frontend/src/components/HandArea.js
-import React, { useState, useEffect, useRef, useCallback } from 'react'; // useCallback可能不再需要
+// --- 修改点：从 React 导入中移除 useState, useEffect, useCallback ---
+import React, { useRef } from 'react'; // 只保留 useRef，因为它仍被 droppableRef 使用
 import { Droppable } from 'react-beautiful-dnd';
 import Card from './Card';
 
@@ -9,29 +10,15 @@ import Card from './Card';
 
 const HandArea = ({ droppableId, cards, title, type, evaluationText, cardLimit, isBanner = false }) => {
     const droppableRef = useRef(null); 
-    // const [cardStyles, setCardStyles] = useState([]); // 暂时禁用
+    // const [cardStyles, setCardStyles] = useState([]); // 已被注释
 
-    // --- 修改点：暂时禁用 calculateLayout ---
-    /*
+    /* // calculateLayout 及其 useEffect 已被注释
     const calculateLayout = useCallback(() => {
-        // ... (之前的计算逻辑) ...
+        // ... 
     }, [cards]);
 
     useEffect(() => {
-        let observer;
-        if (droppableRef.current) {
-            const timer = setTimeout(calculateLayout, 50); 
-            observer = new ResizeObserver(() => {
-                calculateLayout();
-            });
-            observer.observe(droppableRef.current);
-            return () => {
-                clearTimeout(timer);
-                if (observer && droppableRef.current) {
-                    observer.unobserve(droppableRef.current);
-                }
-            };
-        }
+        // ...
     }, [calculateLayout, cards.length]); 
     */
 
@@ -46,7 +33,7 @@ const HandArea = ({ droppableId, cards, title, type, evaluationText, cardLimit, 
                     <div
                         ref={(el) => {
                             provided.innerRef(el); 
-                            droppableRef.current = el; // ref 仍然保留，以备将来使用
+                            droppableRef.current = el; 
                         }}
                         {...provided.droppableProps}
                         className={`droppable-area ${snapshot.isDraggingOver ? 'is-dragging-over' : ''} ${isBanner ? 'banner-droppable' : ''}`}
@@ -56,7 +43,7 @@ const HandArea = ({ droppableId, cards, title, type, evaluationText, cardLimit, 
                                 key={card.id}
                                 card={card}
                                 index={index}
-                                // dynamicStyle={cardStyles[index] || { marginLeft: '0px' }} // 暂时不传递动态样式
+                                // dynamicStyle={cardStyles[index] || { marginLeft: '0px' }} // 已被注释
                             />
                         ))}
                         {provided.placeholder}
