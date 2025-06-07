@@ -1,0 +1,29 @@
+{
+  "short_name": "十三水",
+  "name": "十三水扑克游戏",
+  "description": "一款有趣的十三水扑克牌游戏，快来挑战吧！",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",  // 确保你有这个文件在 public/ 目录下
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",  // 确保你有这个文件在 public/ 目录下
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "landscape", // 十三水游戏通常横屏体验更好
+  "theme_color": "#2c593b",   // 你的应用主色调 (例如牌桌的绿色)
+  "background_color": "#ffffff", // 应用启动时的背景色
+  "scope": "/",
+  "lang": "zh-CN"
+}
