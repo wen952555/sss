@@ -1,4 +1,6 @@
 // frontend/src/utils/thirteenAi.js
+// (这个文件内容与您上一次修复 ESLint 错误后，构建日志中不再报 thirteenAi.js 错误的那个版本一致即可)
+// 我这里重新粘贴一次确保完整性，请仔细核对
 
 // --- 牌型代码 ---
 // eslint-disable-next-line no-unused-vars
@@ -31,7 +33,7 @@ function getRankValue(value) {
 }
 
 // 这个函数会被 evaluateHandSimple 调用
-function prepareCardsForEval(cardObjects) { // <--- 定义处
+function prepareCardsForEval(cardObjects) {
     if (!cardObjects || cardObjects.length === 0) return [];
     const cards = cardObjects.map(c => ({
         ...c,
@@ -45,12 +47,8 @@ export function evaluateHandSimple(cardObjects) {
     if (!cardObjects || (cardObjects.length !== 3 && cardObjects.length !== 5)) {
         return { type_code: 0, cards: cardObjects, rank: 0, name: "无效牌数", primary_ranks: [] };
     }
-    
-    // --- 确保调用 prepareCardsForEval ---
-    const preparedCards = prepareCardsForEval(cardObjects); // <--- 调用处
-    // 如果 preparedCards 未被使用，ESLint 会报 preparedCards 未使用，而不是 prepareCardsForEval
-    
-    if (!preparedCards || preparedCards.length === 0) { // 添加对 preparedCards 的检查
+    const preparedCards = prepareCardsForEval(cardObjects); 
+    if (!preparedCards || preparedCards.length === 0) { 
          return { type_code: 0, cards: cardObjects, rank: 0, name: "预处理失败", primary_ranks: [] };
     }
 
@@ -101,8 +99,6 @@ export function evaluateHandSimple(cardObjects) {
         }
     }
     
-    // (后续的牌型判断逻辑与上一版本一致)
-    // ... (此处省略了所有牌型判断的 return 语句，请确保它们都在)
     if (isStraight && isFlush) return { type_code: HAND_TYPE_STRAIGHT_FLUSH, cards: cardObjects, rank: typeWeights[HAND_TYPE_STRAIGHT_FLUSH] + straightHighRank, name: "同花顺", primary_ranks: primaryRanksForCompare };
     const countsValues = Object.values(rankCounts);
     if (countsValues.includes(4)) { const quadRank = Number(Object.keys(rankCounts).find(key => rankCounts[key] === 4)); const kicker = ranks.find(r => r !== quadRank); primaryRanksForCompare = [quadRank, kicker].filter(r => r !== undefined); return { type_code: HAND_TYPE_FOUR_OF_A_KIND, cards: cardObjects, rank: typeWeights[HAND_TYPE_FOUR_OF_A_KIND] + quadRank, name: "铁支", primary_ranks: primaryRanksForCompare }; }
@@ -130,7 +126,6 @@ export function compareHandsFrontend(eval1, eval2) {
 }
 
 export function simpleAiArrangeCards(allCardsInput) {
-    // ... (与上一版本相同)
     if (allCardsInput.length !== 13) {
         console.error("AI分牌需要13张牌");
         return null;
