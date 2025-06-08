@@ -2,8 +2,8 @@
 import axios from 'axios';
 
 // 后端API的基础URL
-// 对于Cloudflare Pages部署，如果前端和后端域名不同，需要配置CORS
-const API_BASE_URL = 'https://9526.ip-ddns.com/api/v1'; // 您的后端域名
+// ***** 修改这里，添加 /backend 路段 *****
+const API_BASE_URL = 'https://9526.ip-ddns.com/backend/api/v1'; // 您的后端域名和正确路径
 
 // 创建一个Axios实例，可以配置默认值
 const apiClient = axios.create({
@@ -11,31 +11,43 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // 允许跨域请求携带凭证 (例如 Session Cookie)
-  // 这需要后端配置 Access-Control-Allow-Credentials: true
-  // 以及 Access-Control-Allow-Origin 为您的前端域名
-  withCredentials: true,
+  withCredentials: true, // 允许跨域请求携带凭证 (Session Cookie)
 });
 
 // --- 辅助函数处理响应 ---
 const handleResponse = (response) => {
-  // console.log('API Response:', response);
-  return response.data; // 通常我们只需要data部分
+  return response.data;
 };
 
 const handleError = (error) => {
-  console.error('API Error:', error.response || error.message || error);
-  if (error.response && error.response.data && error.response.data.message) {
+  console.error('API Error Details:', error); // 打印更详细的错误信息
+  if (error.response) {
+    // 请求已发出，服务器用状态码响应 (非2xx)
+    console.error('Response Data:', error.response.data);
+    console.error('Response Status:', error.response.status);
+    console.error('Response Headers:', error.response.headers);
     // 如果后端返回了特定的错误信息
-    throw new Error(error.response.data.message);
-  } else if (error.message) {
-    throw new Error(error.message);
+    if (error.response.data && error.response.data.message) {
+      throw new Error(error.response.data.message);
+    } else {
+      // 使用HTTP状态文本作为错误消息
+      throw new Error(error.response.statusText || `请求失败，状态码：${error.response.status}`);
+    }
+  } else if (error.request) {
+    // 请求已发出，但没有收到响应 (例如网络问题，或CORS预检失败后实际请求未发出)
+    console.error('Request Data:', error.request);
+    // 对于 "No 'Access-Control-Allow-Origin' header" 这类错误，error.message通常是 "Network Error"
+    // 并且 error.response 会是 undefined
+    throw new Error(error.message || '网络错误，无法连接到服务器。请检查CORS策略或网络连接。');
   } else {
-    throw new Error('发生未知网络错误');
+    // 设置请求时发生了一些事情，触发了错误
+    console.error('Error Message:', error.message);
+    throw new Error(error.message || '发生未知请求错误');
   }
 };
 
 // --- Auth Service ---
+// URL现在是相对于 API_BASE_URL (即 /backend/api/v1) 的
 export const authService = {
   register: (phone, password) =>
     apiClient.post(`/auth.php?action=register`, { phone, password }).then(handleResponse).catch(handleError),
@@ -43,7 +55,7 @@ export const authService = {
     apiClient.post(`/auth.php?action=login`, { phone, password }).then(handleResponse).catch(handleError),
   logout: () =>
     apiClient.post(`/auth.php?action=logout`).then(handleResponse).catch(handleError),
-  getProfile: () => // 获取当前登录用户信息
+  getProfile: () =>
     apiClient.get(`/auth.php?action=profile`).then(handleResponse).catch(handleError),
 };
 
@@ -58,19 +70,19 @@ export const userService = {
 
 // --- Game Service ---
 export const gameService = {
-  createGame: (maxPlayers = 1) => // 简化为单人游戏，所以不传maxPlayers
+  createGame: (maxPlayers = 1) =>
     apiClient.post(`/game.php?action=create_game`, {}).then(handleResponse).catch(handleError),
-  joinGame: (gameId) => // 如果需要加入特定游戏
+  joinGame: (gameId) =>
     apiClient.post(`/game.php?action=join_game`, { game_id: gameId }).then(handleResponse).catch(handleError),
-  dealCards: (gameId) => // gameId 可选，后端会用session中的
+  dealCards: (gameId) =>
     apiClient.post(`/game.php?action=deal_cards`, { game_id: gameId }).then(handleResponse).catch(handleError),
-  getGameState: (gameId) => // gameId 可选
+  getGameState: (gameId) =>
     apiClient.get(`/game.php?action=get_game_state`, { params: { game_id: gameId } }).then(handleResponse).catch(handleError),
-  requestAIArrangement: (gameId) => // gameId 可选，AI理牌的是当前用户的手牌
+  requestAIArrangement: (gameId) =>
     apiClient.post(`/game.php?action=request_ai_arrangement`, { game_id: gameId }).then(handleResponse).catch(handleError),
-  submitArrangement: (arrangement, gameId) => // arrangement: { front: [], middle: [], back: [] }
+  submitArrangement: (arrangement, gameId) =>
     apiClient.post(`/game.php?action=submit_arrangement`, { ...arrangement, game_id: gameId })
       .then(handleResponse).catch(handleError),
 };
 
-export default apiClient; // 也可以导出默认实例供其他地方直接使用
+export default apiClient;
