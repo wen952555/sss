@@ -1,0 +1,73 @@
+.lobby-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.create-room-section {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.create-room-section input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.create-room-section button {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.create-room-section button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #f44336;
+  margin-bottom: 20px;
+}
+
+.room-list {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.room-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.room-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.room-info {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.room-list button {
+  padding: 5px 10px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.room-list button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
