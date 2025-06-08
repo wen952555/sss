@@ -1,172 +1,203 @@
 // frontend/src/pages/GamePage.js
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom'; // 引入Link，如果用户未登录时使用
 import { gameService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Card from '../components/Card';
-import { sortHandCards } from '../utils/cardUtils'; // 引入排序工具
-import './GamePage.css'; // 创建对应的CSS文件
+import { sortHandCards } from '../utils/cardUtils';
+import './GamePage.css';
 
 const GamePage = () => {
-  const { user } = useAuth(); // 获取当前用户信息
+  const { user } = useAuth();
 
-  const [gameState, setGameState] = useState(null); // 后端返回的完整游戏状态
-  const [myPlayerId, setMyPlayerId] = useState(null); // 当前登录用户的玩家ID
+  const [gameState, setGameState] = useState(null);
+  const [myPlayerId, setMyPlayerId] = useState(null);
 
-  const [hand, setHand] = useState([]); // 玩家未整理的13张手牌
-  const [frontDuan, setFrontDuan] = useState([]); // 头墩 (3张)
-  const [middleDuan, setMiddleDuan] = useState([]); // 中墩 (5张)
-  const [backDuan, setBackDuan] = useState([]);   // 尾墩 (5张)
+  const [hand, setHand] = useState([]);
+  const [frontDuan, setFrontDuan] = useState([]);
+  const [middleDuan, setMiddleDuan] = useState([]);
+  const [backDuan, setBackDuan] = useState([]);
 
-  const [selectedCard, setSelectedCard] = useState(null); // 当前选中的牌（用于手动理牌）
+  const [selectedCard, setSelectedCard] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [gameId, setGameId] = useState(null); // 当前游戏的ID
+  const [gameId, setGameId] = useState(null);
 
-  // 更新本地牌墩和手牌状态
-  const updateLocalCardState = (newHand, newFront, newMiddle, newBack) => {
-    setHand(sortHandCards(newHand)); // 未摆放的手牌总是排序
-    setFrontDuan(newFront);
-    setMiddleDuan(newMiddle);
-    setBackDuan(newBack);
-  };
+  const updateLocalCardState = useCallback((newHand, newFront, newMiddle, newBack) => {
+      setHand(sortHandCards(newHand));
+      setFrontDuan(newFront);
+      setMiddleDuan(newMiddle);
+      setBackDuan(newBack);
+  }, []); // setX 函数是稳定的，通常不需要作为依赖
 
-  // 从后端游戏状态更新前端显示
   const updateUIFromGameState = useCallback((state) => {
-    if (state && state.game_state) {
-      const gs = state.game_state;
-      setGameState(gs);
-      setGameId(gs.game_id);
-      setMyPlayerId(gs.current_user_id);
+      if (state && state.game_state) {
+          const gs = state.game_state;
+          setGameState(gs); // 更新整个游戏状态对象
+          setGameId(gs.game_id);
+          setMyPlayerId(gs.current_user_id);
 
-      const currentPlayer = gs.players?.find(p => p.id === gs.current_user_id);
-      if (currentPlayer) {
-        if (currentPlayer.arranged_hand) { // 如果后端有已摆好的牌
-          updateLocalCardState(
-            currentPlayer.hand.filter(c => // 找出还在手里的牌
-              !currentPlayer.arranged_hand.front.includes(c) &&
-              !currentPlayer.arranged_hand.middle.includes(c) &&
-              !currentPlayer.arranged_hand.back.includes(c)
-            ),
-            currentPlayer.arranged_hand.front,
-            currentPlayer.arranged_hand.middle,
-            currentPlayer.arranged_hand.back
-          );
-        } else if (currentPlayer.hand && currentPlayer.hand.length > 0) { // 只有原始手牌
-          // 初始发牌，所有牌都在手牌区
-          updateLocalCardState(currentPlayer.hand, [], [], []);
-        }
+          const currentPlayer = gs.players?.find(p => p.id === gs.current_user_id);
+          if (currentPlayer) {
+              if (currentPlayer.arranged_hand) {
+                  // 计算仍在手牌区的牌
+                  const handCards = (currentPlayer.hand || []).filter(c =>
+                      !(currentPlayer.arranged_hand.front || []).includes(c) &&
+                      !(currentPlayer.arranged_hand.middle || []).includes(c) &&
+                      !(currentPlayer.arranged_hand.back || []).includes(c)
+                  );
+                  updateLocalCardState(
+                      handCards,
+                      currentPlayer.arranged_hand.front || [],
+                      currentPlayer.arranged_hand.middle || [],
+                      currentPlayer.arranged_hand.back || []
+                  );
+              } else if (currentPlayer.hand && currentPlayer.hand.length > 0) {
+                  updateLocalCardState(currentPlayer.hand, [], [], []);
+              } else {
+                  // 如果玩家没有手牌也没有摆好的牌 (例如刚加入游戏，或游戏重置)
+                  updateLocalCardState([], [], [], []);
+              }
+          } else {
+             // 当前玩家不在游戏状态的玩家列表中 (可能刚创建游戏，或状态同步问题)
+             updateLocalCardState([], [], [], []);
+             // console.warn("Current user not found in game state players list.");
+          }
+          setMessage(state.message || ''); // API 可能返回操作消息
+      } else {
+          // console.warn("Invalid state or game_state received in updateUIFromGameState:", state);
       }
-      setMessage(state.message || '');
-    }
-  }, []);
-
+  }, [updateLocalCardState]); // 依赖 updateLocalCardState (它本身也是useCallback包裹的)
 
   // 初始化游戏或获取游戏状态
   useEffect(() => {
     const initGame = async () => {
       setIsLoading(true);
       setError('');
+      setMessage('');
       try {
-        // 尝试获取现有游戏状态，如果玩家已在游戏中
-        const currentState = await gameService.getGameState();
-        if (currentState.status === 'success' && currentState.game_state && currentState.game_state.status !== 'finished') {
+        // 总是尝试获取当前游戏状态
+        const currentState = await gameService.getGameState(); // 假设 gameId 为 null 时后端能处理
+
+        if (currentState.status === 'success' &&
+            currentState.game_state &&
+            currentState.game_state.game_id && // 确保有 game_id
+            currentState.game_state.players?.find(p => p.id === currentState.game_state.current_user_id) &&
+            (currentState.game_state.status === 'arranging' || currentState.game_state.status === 'waiting' || currentState.game_state.status === 'dealing')
+        ) {
            updateUIFromGameState(currentState);
         } else {
-          // 如果没有活动游戏或游戏已结束，创建一个新游戏
+          // 如果没有有效的进行中游戏，则创建新游戏
           const createResponse = await gameService.createGame();
-          if (createResponse.status === 'success') {
-            setGameId(createResponse.game_id); // 保存gameId
-            // 创建游戏后通常会自动加入并返回状态，可以直接用
-            // 如果不是，则需要调用 joinGame，然后 dealCards
-            // 简化：创建后就发牌
+          if (createResponse.status === 'success' && createResponse.game_id) {
+            // 创建成功后，后端可能已将玩家加入并返回状态，或者需要手动发牌
+            // 为了简单，我们假设createGame后需要dealCards
             const dealResponse = await gameService.dealCards(createResponse.game_id);
             updateUIFromGameState(dealResponse);
           } else {
-            setError(createResponse.message || '创建游戏失败');
+            setError(createResponse.message || '创建新游戏失败');
           }
         }
       } catch (err) {
-        setError(err.message || '初始化游戏失败');
+        setError(err.message || '初始化游戏时发生错误');
       } finally {
         setIsLoading(false);
       }
     };
-    if (user) { // 确保用户已登录
+
+    if (user) { // 确保用户已登录才初始化游戏
       initGame();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, updateUIFromGameState]); // 当user变化时（登录后）执行
+  }, [user, updateUIFromGameState]); // 依赖 user 和 updateUIFromGameState
 
-
-  // 手动理牌：处理卡牌点击
   const handleCardClick = (card, sourceDuanName) => {
     setError('');
     if (gameState?.status !== 'arranging') {
       setError('当前不是理牌阶段。');
       return;
     }
+    // 如果玩家已经提交了牌型，则不允许再操作
+    const currentPlayerState = gameState?.players?.find(p => p.id === myPlayerId);
+    if (currentPlayerState?.is_ready) {
+        setError('您已提交牌型，无法更改。');
+        return;
+    }
 
-    if (selectedCard) { // 如果已有一张牌被选中，则当前点击的是目标墩
-      if (sourceDuanName === 'hand') { // 不能把牌放到手牌区
-        setSelectedCard(null); // 取消选择
+
+    if (selectedCard) {
+      if (sourceDuanName === 'hand') {
+        // 如果选中的牌来自某个墩，现在点击手牌区，意味着将牌移回手牌区
+        if (selectedCard.from !== 'hand') {
+            let tempHand = [...hand, selectedCard.card];
+            let tempFront = [...frontDuan];
+            let tempMiddle = [...middleDuan];
+            let tempBack = [...backDuan];
+
+            if (selectedCard.from === 'front') tempFront = tempFront.filter(c => c !== selectedCard.card);
+            else if (selectedCard.from === 'middle') tempMiddle = tempMiddle.filter(c => c !== selectedCard.card);
+            else if (selectedCard.from === 'back') tempBack = tempBack.filter(c => c !== selectedCard.card);
+            
+            updateLocalCardState(tempHand, tempFront, tempMiddle, tempBack);
+        }
+        setSelectedCard(null);
         return;
       }
+
       // 移动牌
       let tempHand = [...hand];
       let tempFront = [...frontDuan];
       let tempMiddle = [...middleDuan];
       let tempBack = [...backDuan];
 
-      // 1. 从原位置移除selectedCard
       if (selectedCard.from === 'hand') tempHand = tempHand.filter(c => c !== selectedCard.card);
       else if (selectedCard.from === 'front') tempFront = tempFront.filter(c => c !== selectedCard.card);
       else if (selectedCard.from === 'middle') tempMiddle = tempMiddle.filter(c => c !== selectedCard.card);
       else if (selectedCard.from === 'back') tempBack = tempBack.filter(c => c !== selectedCard.card);
 
-      // 2. 添加到目标墩 (sourceDuanName 是目标墩的名称)
-      if (sourceDuanName === 'front' && tempFront.length < 3) tempFront.push(selectedCard.card);
-      else if (sourceDuanName === 'middle' && tempMiddle.length < 5) tempMiddle.push(selectedCard.card);
-      else if (sourceDuanName === 'back' && tempBack.length < 5) tempBack.push(selectedCard.card);
-      else { // 目标墩已满或无效，牌放回手牌
-        tempHand.push(selectedCard.card);
-        setError(`目标墩 '${sourceDuanName}' 已满或无效操作。`);
+      let cardPlaced = false;
+      if (sourceDuanName === 'front' && tempFront.length < 3) { tempFront.push(selectedCard.card); cardPlaced = true; }
+      else if (sourceDuanName === 'middle' && tempMiddle.length < 5) { tempMiddle.push(selectedCard.card); cardPlaced = true; }
+      else if (sourceDuanName === 'back' && tempBack.length < 5) { tempBack.push(selectedCard.card); cardPlaced = true; }
+      
+      if (!cardPlaced) { // 目标墩已满或无效，牌放回手牌
+        tempHand.push(selectedCard.card); // 确保牌不会丢失
+        setError(`目标墩 '${sourceDuanName}' 已满。`);
       }
       updateLocalCardState(tempHand, tempFront, tempMiddle, tempBack);
-      setSelectedCard(null); // 清空选择
+      setSelectedCard(null);
 
     } else { // 没有牌被选中，则当前点击的是要选中的牌
-      if (sourceDuanName === 'front' && !frontDuan.includes(card)) return; // 点击了空的墩位
+      // 检查点击的牌是否真的在那个墩里 (避免点击占位符)
+      if (sourceDuanName === 'hand' && !hand.includes(card)) return;
+      if (sourceDuanName === 'front' && !frontDuan.includes(card)) return;
       if (sourceDuanName === 'middle' && !middleDuan.includes(card)) return;
       if (sourceDuanName === 'back' && !backDuan.includes(card)) return;
-
+      
       setSelectedCard({ card: card, from: sourceDuanName });
     }
   };
 
-  // 点击墩区域（如果该墩没有牌，且有选中的牌，则将牌放入）
   const handleDuanClick = (duanName) => {
     if (selectedCard) {
-        handleCardClick(selectedCard.card, duanName); // 调用handleCardClick，第二个参数是目标墩
+      handleCardClick(selectedCard.card, duanName);
     }
   };
 
   const handleAutoArrange = async () => {
-    if (gameState?.status !== 'arranging') {
-      setError('当前不是理牌阶段。');
-      return;
-    }
+    if (gameState?.status !== 'arranging') { /* ... */ return; }
+    const currentPlayerState = gameState?.players?.find(p => p.id === myPlayerId);
+    if (currentPlayerState?.is_ready) { setError('您已提交牌型，AI无法覆盖。'); return;}
+
     setIsLoading(true);
     setError('');
     setMessage('');
     try {
-      // AI理牌API现在不需要传cards参数，后端会从session获取当前用户手牌
       const response = await gameService.requestAIArrangement(gameId);
       if (response.status === 'success' && response.arranged_hand) {
         const { front, middle, back } = response.arranged_hand;
-        // AI返回的是完整的三墩，手牌区应为空
-        updateLocalCardState([], front, middle, back);
-        setMessage(response.message || 'AI理牌完成。');
+        updateLocalCardState([], front, middle, back); // AI摆好后，手牌区应为空
+        setMessage(response.message || 'AI理牌完成。请检查并提交。');
       } else {
         setError(response.message || 'AI理牌失败。');
       }
@@ -178,10 +209,10 @@ const GamePage = () => {
   };
 
   const handleSubmitArrangement = async () => {
-    if (gameState?.status !== 'arranging') {
-        setError('当前不是理牌阶段。');
-        return;
-    }
+    if (gameState?.status !== 'arranging') { /* ... */ return; }
+    const currentPlayerState = gameState?.players?.find(p => p.id === myPlayerId);
+    if (currentPlayerState?.is_ready) { setError('您已提交牌型。'); return;}
+
     if (frontDuan.length !== 3 || middleDuan.length !== 5 || backDuan.length !== 5) {
       setError('牌墩未摆满 (3-5-5)，无法提交。');
       return;
@@ -193,9 +224,9 @@ const GamePage = () => {
       const arrangement = { front: frontDuan, middle: middleDuan, back: backDuan };
       const response = await gameService.submitArrangement(arrangement, gameId);
       if (response.status === 'success') {
-        updateUIFromGameState(response); // 后端会返回更新后的游戏状态
+        updateUIFromGameState(response);
         setMessage(response.message || '牌型提交成功！');
-        setSelectedCard(null); // 提交后清空选择
+        setSelectedCard(null);
       } else {
         setError(response.message || '提交失败。');
       }
@@ -206,13 +237,27 @@ const GamePage = () => {
     }
   };
 
+  const handleDealNewCards = async () => {
+    setIsLoading(true);
+    setError('');
+    setMessage('');
+    setSelectedCard(null); // 清空选择
+    try {
+        const response = await gameService.dealCards(gameId);
+        updateUIFromGameState(response);
+        setMessage(response.message || "已重新发牌。");
+    } catch (err) {
+        setError(err.message || "重新发牌失败。");
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   const renderDuan = (duanName, cardsInDuan, limit) => {
     const displayCards = [...cardsInDuan];
-    // 用占位符填满空位，方便点击
     while (displayCards.length < limit) {
-        displayCards.push(null); // null代表占位符
+        displayCards.push(null);
     }
-
     return (
       <div className={`duan ${duanName}-duan`} onClick={() => handleDuanClick(duanName)}>
         <h3>{duanName.charAt(0).toUpperCase() + duanName.slice(1)} ({cardsInDuan.length}/{limit})</h3>
@@ -220,47 +265,47 @@ const GamePage = () => {
           {displayCards.map((card, index) => (
             card ? (
               <Card
-                key={card} // 用card string作为key
+                key={`${duanName}-${card}-${index}`} // 更稳定的key
                 card={card}
                 onClick={(clickedCard) => handleCardClick(clickedCard, duanName)}
                 isSelected={selectedCard && selectedCard.card === card && selectedCard.from === duanName}
               />
             ) : (
-              <div key={`placeholder-${duanName}-${index}`} className="card-placeholder">空位</div>
+              <div key={`placeholder-${duanName}-${index}`} className="card-placeholder"></div>
             )
           ))}
         </div>
       </div>
     );
   };
+  
+  const myCurrentPlayerState = gameState?.players?.find(p => p.id === myPlayerId);
 
-  if (isLoading && !gameState) { // 初始加载
+  if (isLoading && !gameState) {
     return <div className="loading-fullscreen">正在初始化游戏...</div>;
   }
 
   if (!user) {
-      return <p>请先 <Link to="/login">登录</Link> 来开始游戏。</p>;
+    return <p>请先 <Link to="/login">登录</Link> 来开始游戏。</p>;
   }
-  // 显示其他玩家信息 (简化版)
+
   const renderOtherPlayers = () => {
     if (!gameState || !gameState.players) return null;
     return gameState.players
-      .filter(p => p.id !== myPlayerId) // 排除当前用户
+      .filter(p => p.id !== myPlayerId)
       .map(player => (
         <div key={player.id} className="other-player-info">
-          <p>玩家: {player.id} {player.is_ready ? "(已准备)" : "(未准备)"}</p>
-          {/* 在比牌阶段可以显示他们的牌 */}
+          <p>玩家ID: {player.id} {player.is_ready ? <span style={{color: 'green'}}>(已准备)</span> : <span style={{color: 'orange'}}>(未准备)</span>}</p>
           {(gameState.status === 'comparing' || gameState.status === 'finished') && player.arranged_hand && (
             <div className="other-player-arranged-hand">
-              <small>头: {player.arranged_hand.front.join(', ')}</small><br/>
-              <small>中: {player.arranged_hand.middle.join(', ')}</small><br/>
-              <small>尾: {player.arranged_hand.back.join(', ')}</small>
+              <small>头: {(player.arranged_hand.front || []).join(', ')}</small><br/>
+              <small>中: {(player.arranged_hand.middle || []).join(', ')}</small><br/>
+              <small>尾: {(player.arranged_hand.back || []).join(', ')}</small>
             </div>
           )}
         </div>
       ));
   };
-
 
   return (
     <div className="game-page">
@@ -271,19 +316,21 @@ const GamePage = () => {
       <div className="game-info">
         <p>游戏ID: {gameId || 'N/A'}</p>
         <p>状态: {gameState?.status || '未知'}</p>
-        {myPlayerId && gameState?.players?.find(p=>p.id === myPlayerId)?.is_ready && <p style={{color: 'green'}}>您已提交牌型！</p>}
+        {myCurrentPlayerState?.is_ready && <p style={{color: 'green', fontWeight: 'bold'}}>您已提交牌型！等待其他玩家...</p>}
       </div>
 
       <div className="other-players-area">
+        <h4>其他玩家:</h4>
         {renderOtherPlayers()}
       </div>
 
+
       <div className="player-area">
-        <h4>你的手牌 (点击选择牌，再点击目标墩放置)</h4>
-        <div className="hand-area cards-container">
+        <h4>你的手牌 (未摆放: {hand.length}张)</h4>
+        <div className="hand-area cards-container" onClick={() => handleDuanClick('hand')}>
           {hand.map(card => (
             <Card
-              key={card}
+              key={`hand-${card}`}
               card={card}
               onClick={(clickedCard) => handleCardClick(clickedCard, 'hand')}
               isSelected={selectedCard && selectedCard.card === card && selectedCard.from === 'hand'}
@@ -292,7 +339,7 @@ const GamePage = () => {
           {hand.length === 0 && <p>所有牌已摆放。</p>}
         </div>
 
-        {selectedCard && <p className="selected-card-info">当前选中: {selectedCard.card} (来自: {selectedCard.from})</p>}
+        {selectedCard && <p className="selected-card-info">当前选中: {selectedCard.card} (来自: {selectedCard.from}) - 请点击目标墩或手牌区</p>}
 
         <div className="arranged-duans">
           {renderDuan('front', frontDuan, 3)}
@@ -302,20 +349,25 @@ const GamePage = () => {
       </div>
 
       <div className="actions-area">
-        <button onClick={handleAutoArrange} disabled={isLoading || gameState?.status !== 'arranging' || gameState?.players?.find(p=>p.id === myPlayerId)?.is_ready}>
+        <button 
+            onClick={handleAutoArrange} 
+            disabled={isLoading || gameState?.status !== 'arranging' || !!myCurrentPlayerState?.is_ready || hand.length === 0}
+            title={hand.length === 0 && gameState?.status === 'arranging' ? "请先通过“重新发牌”获取手牌" : ""}
+        >
           {isLoading ? '处理中...' : 'AI自动理牌'}
         </button>
-        <button onClick={handleSubmitArrangement} disabled={isLoading || gameState?.status !== 'arranging' || gameState?.players?.find(p=>p.id === myPlayerId)?.is_ready}>
+        <button 
+            onClick={handleSubmitArrangement} 
+            disabled={isLoading || gameState?.status !== 'arranging' || !!myCurrentPlayerState?.is_ready}
+        >
           {isLoading ? '提交中...' : '提交手动牌型'}
         </button>
-        {/* 重新发牌按钮 (调试用) */}
-        <button onClick={() => gameService.dealCards(gameId).then(updateUIFromGameState).catch(err => setError(err.message))} disabled={isLoading}>
-          重新发牌
+        <button onClick={handleDealNewCards} disabled={isLoading}>
+          {isLoading ? '发牌中...' : '重新发牌/开始新局'}
         </button>
       </div>
-       {/* 游戏日志 */}
-       <div className="game-log-area">
-            <h4>游戏日志:</h4>
+      <div className="game-log-area">
+            <h4>游戏日志 (最近10条):</h4>
             <ul className="game-log-list">
                 {gameState?.game_log?.map((log, index) => <li key={index}>{log}</li>).reverse()}
             </ul>
