@@ -1,7 +1,7 @@
 // frontend/src/pages/RegisterPage.js
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // register 方法在AuthContext中
+import { useAuth } from '../contexts/AuthContext';
 
 const RegisterPage = () => {
   const [phone, setPhone] = useState('');
@@ -10,7 +10,7 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth(); // 从AuthContext获取
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -30,7 +30,6 @@ const RegisterPage = () => {
           navigate('/login');
         }, 2000);
       } else {
-        // response.message 应该由 api.js 的 handleError 抛出为 err.message
         setError(response.message || '注册失败，请重试。');
       }
     } catch (err) {
@@ -45,37 +44,43 @@ const RegisterPage = () => {
       <h2>用户注册</h2>
       <form onSubmit={handleSubmit} className="auth-form">
         <div>
-          <label htmlFor="phone">手机号:</label>
+          <label htmlFor="register-phone">手机号:</label> {/* Changed id */}
           <input
             type="tel"
-            id="phone"
+            id="register-phone" // Changed id
+            name="phone" // Added name attribute
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
             placeholder="请输入手机号 (无需验证)"
+            autoComplete="username tel" // Added autocomplete
           />
         </div>
         <div>
-          <label htmlFor="password">密码:</label>
+          <label htmlFor="register-password">密码:</label> {/* Changed id */}
           <input
             type="password"
-            id="password"
+            id="register-password" // Changed id
+            name="new-password" // Added name attribute
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength="6"
             placeholder="至少6位密码"
+            autoComplete="new-password" // Added autocomplete
           />
         </div>
         <div>
-          <label htmlFor="confirmPassword">确认密码:</label>
+          <label htmlFor="register-confirmPassword">确认密码:</label> {/* Changed id */}
           <input
             type="password"
-            id="confirmPassword"
+            id="register-confirmPassword" // Changed id
+            name="confirm-password" // Added name attribute
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             placeholder="再次输入密码"
+            autoComplete="new-password" // Added autocomplete
           />
         </div>
         {error && <p className="error-message">{error}</p>}
