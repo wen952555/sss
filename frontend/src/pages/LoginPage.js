@@ -17,7 +17,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       await login(phone, password);
-      navigate('/game'); // 登录成功后跳转到游戏页面
+      navigate('/game'); 
     } catch (err) {
       setError(err.message || '登录失败，请检查您的手机号和密码。');
     } finally {
@@ -30,25 +30,29 @@ const LoginPage = () => {
       <h2>用户登录</h2>
       <form onSubmit={handleSubmit} className="auth-form">
         <div>
-          <label htmlFor="phone">手机号:</label>
+          <label htmlFor="login-phone">手机号:</label> {/* Changed id */}
           <input
             type="tel"
-            id="phone"
+            id="login-phone" // Changed id
+            name="phone" // Added name attribute
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
             placeholder="请输入手机号"
+            autoComplete="username tel" // Added autocomplete
           />
         </div>
         <div>
-          <label htmlFor="password">密码:</label>
+          <label htmlFor="login-password">密码:</label> {/* Changed id */}
           <input
             type="password"
-            id="password"
+            id="login-password" // Changed id
+            name="password" // Added name attribute
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             placeholder="请输入密码"
+            autoComplete="current-password" // Added autocomplete
           />
         </div>
         {error && <p className="error-message">{error}</p>}
