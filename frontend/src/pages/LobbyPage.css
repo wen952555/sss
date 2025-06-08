@@ -2,6 +2,7 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  font-family: Arial, sans-serif;
 }
 
 .create-room-section {
@@ -12,8 +13,10 @@
 
 .create-room-section input {
   flex: 1;
-  padding: 10px;
+  padding: 10px 15px;
   font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 .create-room-section button {
@@ -21,7 +24,14 @@
   background-color: #4CAF50;
   color: white;
   border: none;
+  border-radius: 4px;
   cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.create-room-section button:hover {
+  background-color: #45a049;
 }
 
 .create-room-section button:disabled {
@@ -32,42 +42,107 @@
 .error-message {
   color: #f44336;
   margin-bottom: 20px;
+  padding: 10px;
+  background-color: #ffebee;
+  border-radius: 4px;
+}
+
+.error-details {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #757575;
 }
 
 .room-list {
-  background-color: #f5f5f5;
+  background-color: #f9f9f9;
   padding: 20px;
-  border-radius: 5px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.room-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.room-list-header h2 {
+  margin: 0;
+}
+
+.room-list-header button {
+  padding: 5px 10px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.room-list-header button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 .room-list ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
-.room-list li {
+.room-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.room-item:hover {
+  background-color: #f0f0f0;
 }
 
 .room-info {
-  display: flex;
-  gap: 15px;
-  align-items: center;
+  flex: 1;
 }
 
-.room-list button {
-  padding: 5px 10px;
+.room-name {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.room-meta {
+  display: flex;
+  gap: 15px;
+  font-size: 14px;
+  color: #666;
+}
+
+.join-button {
+  padding: 6px 12px;
   background-color: #2196F3;
   color: white;
   border: none;
+  border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.room-list button:disabled {
+.join-button:hover {
+  background-color: #0b7dda;
+}
+
+.join-button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+}
+
+.loading-indicator,
+.empty-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
 }
