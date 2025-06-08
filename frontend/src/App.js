@@ -4,8 +4,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-ro
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import GamePage from './pages/GamePage'; // 我们将创建这个页面
+import GamePage from './pages/GamePage';
 import './App.css';
+
+// 新建一个组件来处理根路径的导航逻辑
+const RootRedirect = () => {
+  const { user, loading } = useAuth(); // 在组件内部安全地调用 useAuth
+
+  if (loading) {
+    return <div>应用加载中...</div>; // 或者一个更美观的加载指示器
+  }
+
+  return <Navigate to={user ? "/game" : "/login"} replace />;
+};
+
 
 function App() {
   return (
@@ -17,12 +29,15 @@ function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/game" element={
-                <ProtectedRoute>
-                  <GamePage />
-                </ProtectedRoute>
-              } />
-              <Route path="/" element={<Navigate to={useAuth().user ? "/game" : "/login"} />} /> {/* 根据登录状态重定向 */}
+              <Route 
+                path="/game" 
+                element={
+                  <ProtectedRoute>
+                    <GamePage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="/" element={<RootRedirect />} /> {/* 使用新的 RootRedirect 组件 */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
@@ -35,11 +50,15 @@ function App() {
 const AppHeader = () => {
   const { user, logout, loading } = useAuth();
 
-  if (loading && !user) { // 仅在初始加载且未确定用户状态时显示加载
+  // 在 AppHeader 中，user 可能为 null，但 JSX 的条件渲染 {user ? ... : ...} 会正确处理
+  // 只有当 user 存在时，才会尝试访问 user.phone 和 user.points
+
+  // 初始加载时，不显示用户信息或登出按钮，直到 loading 完成
+  if (loading && !user) { 
     return (
       <header className="app-header">
         <h1>十三水游戏</h1>
-        <nav>正在加载用户信息...</nav>
+        <nav>用户信息加载中...</nav>
       </header>
     );
   }
@@ -55,6 +74,7 @@ const AppHeader = () => {
             <button onClick={logout} className="header-button">登出</button>
           </>
         ) : (
+          // 当 user 为 null (未登录或已登出)
           <>
             <Link to="/login">登录</Link>
             <Link to="/register">注册</Link>
@@ -70,7 +90,7 @@ const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div>加载中...</div>; // 或者一个骨架屏
+    return <div>页面加载中...</div>; 
   }
 
   if (!user) {
@@ -85,6 +105,5 @@ const NotFoundPage = () => (
         <p><Link to="/">返回首页</Link></p>
     </div>
 );
-
 
 export default App;
