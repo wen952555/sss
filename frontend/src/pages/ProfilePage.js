@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import PointsTransfer from '../components/PointsTransfer';
+import './ProfilePage.css';
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
