@@ -15,10 +15,15 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    console.log('LoginPage: Attempting login with phone:', phone);
     try {
-      await login(phone, password);
+      const response = await login(phone, password); // login 现在在AuthContext中处理setUser
+      console.log('LoginPage: Login response received in page:', response);
+      // AuthContext 的 login 方法会处理 setUser。如果成功，user状态会更新。
+      // useAuth() hook 会使依赖它的组件（如AppHeader, ProtectedRoute）重新渲染。
       navigate('/game'); 
     } catch (err) {
+      console.error('LoginPage: Login attempt failed:', err.message, err);
       setError(err.message || '登录失败，请检查您的手机号和密码。');
     } finally {
       setLoading(false);
@@ -30,29 +35,29 @@ const LoginPage = () => {
       <h2>用户登录</h2>
       <form onSubmit={handleSubmit} className="auth-form">
         <div>
-          <label htmlFor="login-phone">手机号:</label> {/* Changed id */}
+          <label htmlFor="login-phone">手机号:</label>
           <input
             type="tel"
-            id="login-phone" // Changed id
-            name="phone" // Added name attribute
+            id="login-phone"
+            name="phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
             placeholder="请输入手机号"
-            autoComplete="username tel" // Added autocomplete
+            autoComplete="username tel"
           />
         </div>
         <div>
-          <label htmlFor="login-password">密码:</label> {/* Changed id */}
+          <label htmlFor="login-password">密码:</label>
           <input
             type="password"
-            id="login-password" // Changed id
-            name="password" // Added name attribute
+            id="login-password"
+            name="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             placeholder="请输入密码"
-            autoComplete="current-password" // Added autocomplete
+            autoComplete="current-password"
           />
         </div>
         {error && <p className="error-message">{error}</p>}
