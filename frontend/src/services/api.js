@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://9526.ip-ddns.com/api',
+  baseURL: 'https://9526.ip-ddns.com/backend/api',
   headers: {
     'Content-Type': 'application/json',
   }
