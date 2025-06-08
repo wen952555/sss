@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // 后端API的基础URL
 // ***** 修改这里，添加 /backend 路段 *****
-const API_BASE_URL = 'https://9526.ip-ddns.com/backend/api/v1'; // 您的后端域名和正确路径
+const API_BASE_URL = 'https://9526.ip-ddns.com/backend/api/v1/test_cors_header.php'; // 您的后端域名和正确路径
 
 // 创建一个Axios实例，可以配置默认值
 const apiClient = axios.create({
