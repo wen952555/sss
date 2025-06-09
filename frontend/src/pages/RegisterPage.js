@@ -1,7 +1,7 @@
 // frontend/src/pages/RegisterPage.js
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // 假设你使用 react-router-dom
-import { useAuth } from '../contexts/AuthContext'; // 用于调用注册函数
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 function RegisterPage() {
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -11,7 +11,7 @@ function RegisterPage() {
     const [successMessage, setSuccessMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
-    const { register } = useAuth(); // 从 AuthContext 获取 register 方法
+    const { register } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -33,16 +33,17 @@ function RegisterPage() {
 
         setIsLoading(true);
         try {
-            const response = await register(phoneNumber, password); // 调用 context 中的 register
+            const response = await register(phoneNumber, password);
             if (response.success) {
                 setSuccessMessage(response.message + ' 请前往登录。');
-                // 可选：几秒后自动跳转到登录页
+                setPhoneNumber(''); // 清空表单
+                setPassword('');
+                setConfirmPassword('');
                 setTimeout(() => {
                     navigate('/login');
                 }, 3000);
             } else {
-                // 错误已由 authApi 或 AuthContext 抛出并捕获
-                // setError(response.message || '注册失败，请重试');
+                // setError(response.message || '注册失败，请重试'); // AuthContext/api.js 会抛出错误
             }
         } catch (err) {
             setError(err.message || '注册时发生未知错误');
@@ -63,6 +64,7 @@ function RegisterPage() {
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         required
+                        autoComplete="tel" // 添加 autocomplete
                         style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
                     />
                 </div>
@@ -75,6 +77,7 @@ function RegisterPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         minLength="6"
+                        autoComplete="new-password" // 添加 autocomplete
                         style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
                     />
                 </div>
@@ -86,6 +89,7 @@ function RegisterPage() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
+                        autoComplete="new-password" // 添加 autocomplete
                         style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
                     />
                 </div>
