@@ -1,23 +1,14 @@
 // frontend/src/utils/thirteenWaterLogic.js
-// 移除了未使用的导入: cardValues, cardSuits
-// import { VALUES_MAP as cardValues, SUITS_DATA as cardSuits } from './cardUtils';
 
 // Helper to get numerical value for sorting (A=14, K=13 ...)
-// 这个函数假设 cardId 的值部分确实是数字字符串，例如 "14s", "2c", "10d"
-// 如果 cardId 是 "As", "Kc" 这种，需要配合 getCardDetails
-function getCardNumericValue(cardIdString) {
-    if (typeof cardString !== 'string' || cardString.length < 2) return 0;
-    const valuePart = cardString.slice(0, -1);
+// 这个函数假设 cardIdString 的值部分确实是数字字符串，例如 "14s", "2c", "10d"
+// 如果 cardIdString 是 "As", "Kc" 这种，需要配合 getCardDetails
+function getCardNumericValue(cardIdString) { // 函数参数是 cardIdString
+    if (typeof cardIdString !== 'string' || cardIdString.length < 2) return 0; // 修正: cardString -> cardIdString
+    const valuePart = cardIdString.slice(0, -1); // 修正: cardString -> cardIdString
     const numericValue = parseInt(valuePart, 10);
-    return isNaN(numericValue) ? 0 : numericValue; // 如果不是数字，返回0或进行其他处理
+    return isNaN(numericValue) ? 0 : numericValue;
 }
-
-// 移除了未使用的函数 getCardSuit
-/*
-function getCardSuit(cardId) { // "14s" -> "s"
-    return cardId.slice(-1);
-}
-*/
 
 /**
  * 十三水AI简易分牌逻辑
