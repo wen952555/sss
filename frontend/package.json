@@ -3,18 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0", // CRA 默认测试库
-    "@testing-library/react": "^13.4.0",    // CRA 默认测试库
-    "@testing-library/user-event": "^13.5.0", // CRA 默认测试库
-    "axios": "^1.6.0",                       // 用于API请求 (可选, fetch也可以)
-    "react": "^18.2.0",                      // React核心
-    "react-dnd": "^16.0.1",                  // 拖拽库
-    "react-dnd-html5-backend": "^16.0.1",    // 拖拽库 HTML5 后端
-    "react-dnd-touch-backend": "^16.0.1",    // 拖拽库 Touch 后端 (可选,用于触摸设备)
-    "react-dom": "^18.2.0",                    // React DOM
-    "react-router-dom": "^6.18.0",           // 前端路由
-    "react-scripts": "5.0.1",                // Create React App 的脚本和配置
-    "web-vitals": "^2.1.4"                   // CRA 默认性能监控
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.6.0",
+    "react": "^18.2.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dnd-touch-backend": "^16.0.1",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.18.0",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
