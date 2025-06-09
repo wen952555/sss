@@ -1,5 +1,5 @@
 // frontend/src/services/api.js
-const API_BASE_URL = 'https://9526.ip-ddns.com/backend/api'; // 你的后端 API URL
+const API_BASE_URL = 'https://9526.ip-ddns.com/backend/api'; // *** 已修正此路径 ***
 
 async function request(endpoint, method = 'GET', data = null) {
     const headers = {
@@ -9,49 +9,74 @@ async function request(endpoint, method = 'GET', data = null) {
     const config = {
         method: method,
         headers: headers,
-        credentials: 'include', // 非常重要！发送和接收 cookies (用于会话)
+        credentials: 'include', 
     };
 
-    if (data && method !== 'GET') { // GET请求不应该有body，参数通过URL传递
+    if (data && method !== 'GET') {
         config.body = JSON.stringify(data);
     }
 
+    let rawResponseText = ''; 
+
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        // 构造完整的请求 URL
+        const fullUrl = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+        console.log(`API Request: ${method} ${fullUrl}`, data || ''); // 打印请求信息
+
+        const response = await fetch(fullUrl, config);
         
-        // 尝试解析JSON，即使响应状态不是 ok，后端可能仍然返回JSON错误信息
-        let responseData;
         try {
-            responseData = await response.json();
-        } catch (e) {
-            // 如果响应体不是JSON (例如，500错误返回HTML页面)
-            if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+            rawResponseText = await response.text(); 
+        } catch (textError) {
+            console.error(`API request to ${fullUrl}: Error reading response text:`, textError);
+            if (!response.ok) { 
+                throw new Error(`HTTP error ${response.status}: ${response.statusText} (and response text unreadable)`);
             }
-            // 如果响应ok但不是json (如204 No Content)，则responseData为undefined
-            if (response.status === 204) return null;
         }
 
         if (!response.ok) {
-            // 使用后端返回的错误信息（如果存在）
-            throw new Error(responseData?.message || `HTTP error ${response.status}`);
+            console.error(`API request to ${fullUrl} FAILED with status ${response.status}. Raw Response Text:`, rawResponseText);
+            let errorData;
+            try {
+                errorData = JSON.parse(rawResponseText);
+                // 如果能解析出JSON，并且有message字段，就用它
+                 throw new Error(errorData?.message || `HTTP error ${response.status}. Raw JSON Error: ${rawResponseText.substring(0, 500)}`);
+            } catch (e) {
+                // 不是JSON错误响应，或者JSON无效
+                throw new Error(`HTTP error ${response.status}: ${response.statusText}. Raw non-JSON response: ${rawResponseText.substring(0, 500)}`);
+            }
         }
         
-        return responseData; // 对于成功的请求，返回解析后的JSON数据
-    } catch (error) {
-        console.error(`API request to ${endpoint} failed:`, error.message);
-        throw error; // 重新抛出错误，让调用者处理
+        if (response.status === 204) { 
+            console.log(`API request to ${fullUrl} returned 204 No Content.`);
+            return null; 
+        }
+
+        try {
+            const jsonData = JSON.parse(rawResponseText); 
+            console.log(`API request to ${fullUrl} SUCCEEDED. Status: ${response.status}. Parsed JSON:`, jsonData);
+            return jsonData;
+        } catch (e) {
+            console.error(`API request to ${fullUrl} SUCCEEDED with status ${response.status}, but FAILED to parse response as JSON. Raw Response Text:`, rawResponseText);
+            throw new Error(`Received non-JSON response from server even though status was OK. Raw: ${rawResponseText.substring(0,500)}`);
+        }
+
+    } catch (error) { 
+        console.error(`API request to ${API_BASE_URL}${endpoint} caught a general error:`, error.message);
+        if (rawResponseText) {
+            console.error(`Raw response text during error for ${API_BASE_URL}${endpoint}:`, rawResponseText.substring(0, 500));
+        }
+        throw error; 
     }
 }
 
 export const authApi = {
     register: (phoneNumber, password) => request('/register.php', 'POST', { phone_number: phoneNumber, password }),
     login: (phoneNumber, password) => request('/login.php', 'POST', { phone_number: phoneNumber, password }),
-    logout: () => request('/logout.php', 'POST'), // 通常是POST来执行操作
-    getUser: () => request('/get_user.php', 'GET'), // 获取当前登录用户信息
+    logout: () => request('/logout.php', 'POST'),
+    getUser: () => request('/get_user.php', 'GET'),
 };
 
-// 积分相关的API可以后续添加
 export const pointsApi = {
-    // transfer: (toPhoneNumber, amount) => request('/transfer_points.php', 'POST', { to_phone_number: toPhoneNumber, amount }),
+    // ... (将来添加)
 };
