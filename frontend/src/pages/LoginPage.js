@@ -11,9 +11,9 @@ function LoginPage() {
     
     const navigate = useNavigate();
     const location = useLocation();
-    const { login } = useAuth(); // 从 AuthContext 获取 login 方法
+    const { login } = useAuth();
 
-    const from = location.state?.from?.pathname || "/"; // 登录后跳转的来源页或首页
+    const from = location.state?.from?.pathname || "/";
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -21,14 +21,11 @@ function LoginPage() {
         setIsLoading(true);
 
         try {
-            const response = await login(phoneNumber, password); // 调用 context 中的 login
+            const response = await login(phoneNumber, password);
             if (response.success && response.user) {
-                // 登录成功，AuthContext 会更新 user 状态
-                // AuthProvider 的 useEffect 会自动获取用户数据
-                navigate(from, { replace: true }); // 跳转到之前的页面或首页
+                navigate(from, { replace: true });
             } else {
-                 // 错误已由 authApi 或 AuthContext 抛出并捕获
-                // setError(response.message || '登录失败，请重试');
+                // setError(response.message || '登录失败，请重试'); // AuthContext/api.js 会抛出错误
             }
         } catch (err) {
             setError(err.message || '登录时发生未知错误');
@@ -49,6 +46,7 @@ function LoginPage() {
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         required
+                        autoComplete="username tel" // 'username' 也可以帮助密码管理器识别
                         style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
                     />
                 </div>
@@ -60,6 +58,7 @@ function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        autoComplete="current-password" // 用于登录表单
                         style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
                     />
                 </div>
