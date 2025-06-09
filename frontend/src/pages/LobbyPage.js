@@ -1,5 +1,5 @@
 // frontend/src/pages/LobbyPage.js
-import React, { useState, useEffect, useRef } from 'react'; // 添加 useRef
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom'; 
 import { useAuth } from '../contexts/AuthContext';
 import { getSocket, sendSocketMessage, connectSocket } from '../services/socket';
@@ -12,24 +12,21 @@ function LobbyPage() {
     const [isLoadingCreate, setIsLoadingCreate] = useState(false);
     const [isLoadingJoin, setIsLoadingJoin] = useState(false);
 
-    // 使用 useRef 来确保只添加一次事件监听器，或者跟踪组件是否已卸载
     const messageListenerRef = useRef(null);
-    const isMountedRef = useRef(true); // 跟踪组件是否挂载
+    const isMountedRef = useRef(true);
 
     useEffect(() => {
-        isMountedRef.current = true; // 组件挂载时设置为 true
+        isMountedRef.current = true;
         
         const handleLobbyMessages = (message) => {
-            if (!isMountedRef.current) return; // 如果组件已卸载，不处理消息
-
+            if (!isMountedRef.current) return; 
             console.log("LobbyPage received WebSocket message:", message);
             if (message.type === 'joined_room' && message.roomId) {
-                setIsLoadingCreate(false); // 清除加载状态
+                setIsLoadingCreate(false); 
                 setIsLoadingJoin(false);
-                // 确保只跳转一次
-                if (window.location.pathname.includes('/lobby')) { // 避免在已跳转后再次跳转
-                     console.log("LobbyPage: Navigating to game room:", message.roomId);
-                     navigate(`/game/${message.roomId}`); 
+                if (window.location.pathname.includes('/lobby')) {
+                    console.log("LobbyPage: Navigating to game room:", message.roomId);
+                    navigate(`/game/${message.roomId}`); 
                 }
             } else if (message.type === 'error') {
                 setError(message.message || '发生未知错误');
@@ -38,7 +35,6 @@ function LobbyPage() {
             }
         };
 
-        // 将回调存到 ref 中，以便在 add/removeEventListener 时使用相同的引用
         messageListenerRef.current = (event) => {
             try {
                 const parsedMessage = JSON.parse(event.data);
@@ -47,85 +43,88 @@ function LobbyPage() {
                 console.error("LobbyPage: Error parsing raw message data", e, event.data);
             }
         };
-        
+           
         let currentSocket = getSocket();
 
         if (user && user.id) {
             if (!currentSocket || currentSocket.readyState !== WebSocket.OPEN) {
                 console.log("LobbyPage: Socket not ready, attempting to connect.");
                 connectSocket(
-                    user.id,
-                    null, // 主 onMessage 由下面的 addEventListener 处理，或由全局处理
+                    user.id, null, 
                     () => { 
                         console.log("LobbyPage: Socket connected via LobbyPage's connectSocket call."); 
                         const freshSocket = getSocket();
-                        if (freshSocket && messageListenerRef.current) {
+                        if (freshSocket && messageListenerRef.current && !freshSocket._lobbyListenerAttached) { // 避免重复添加
                             freshSocket.addEventListener('message', messageListenerRef.current);
+                            freshSocket._lobbyListenerAttached = true; // 标记已添加
                             console.log("LobbyPage: Message listener added after connect.");
                         }
                     },
-                    () => { /* onClose */ if(isMountedRef.current) setError("与服务器断开连接"); setIsLoadingCreate(false); setIsLoadingJoin(false); },
-                    (err) => { /* onError */ if(isMountedRef.current) setError("连接错误: " + err.message); setIsLoadingCreate(false); setIsLoadingJoin(false); }
+                    () => { if(isMountedRef.current) setError("与服务器断开连接"); setIsLoadingCreate(false); setIsLoadingJoin(false); },
+                    (err) => { if(isMountedRef.current) setError("连接错误: " + err.message); setIsLoadingCreate(false); setIsLoadingJoin(false); }
                 );
             } else {
-                // Socket 已连接，确保监听器已添加 (如果之前没有)
-                console.log("LobbyPage: Socket already connected. Adding message listener if not present.");
-                if (messageListenerRef.current) {
-                    // 避免重复添加，但 WebSocket 的 addEventListener 是幂等的（同一个函数引用不会重复添加）
-                    // 但为了安全，可以先尝试移除再添加，或使用标记
-                    // currentSocket.removeEventListener('message', messageListenerRef.current); // 如果之前可能添加过
-                    currentSocket.addEventListener('message', messageListenerRef.current);
+                console.log("LobbyPage: Socket already connected. Ensuring message listener.");
+                if (messageListenerRef.current && !currentSocket._lobbyListenerAttached) {
+                   currentSocket.addEventListener('message', messageListenerRef.current);
+                   currentSocket._lobbyListenerAttached = true;
                 }
             }
         }
 
         return () => {
-            isMountedRef.current = false; // 组件卸载时设置为 false
+            isMountedRef.current = false; 
             const socketForCleanup = getSocket();
-            if (socketForCleanup && messageListenerRef.current) {
+            if (socketForCleanup && messageListenerRef.current && socketForCleanup._lobbyListenerAttached) {
                 console.log("LobbyPage: Cleaning up message listener.");
                 socketForCleanup.removeEventListener('message', messageListenerRef.current);
+                socketForCleanup._lobbyListenerAttached = false; // 清除标记
             }
-            // LobbyPage 不负责关闭全局 socket
         };
-    }, [user, navigate]); // 移除其他依赖，handleLobbyMessages 在内部定义
+    }, [user, navigate]);
 
 
-    const ensureSocketAndSend = (messagePayload, setLoading) => {
-         if (!user || !user.id) { setError('请先登录'); setLoading(false); return; }
-         
-         let currentSocket = getSocket();
-         setError(''); // 清除旧错误
+    const ensureSocketAndSend = (messagePayload, setLoadingStateCallback) => {
+        if (!user || !user.id) { setError('请先登录'); if(setLoadingStateCallback) setLoadingStateCallback(false); return; }
+        
+        let currentSocket = getSocket();
+        setError(''); 
+        if(setLoadingStateCallback) setLoadingStateCallback(true);
 
-         const sendMessage = () => {
-             console.log(`LobbyPage: Socket ready (state ${currentSocket.readyState}), sending message:`, messagePayload);
-             sendSocketMessage(messagePayload);
-             // 等待 joined_room 消息，不再在这里清除 setLoading，由消息处理器清除
-         };
 
-         if (currentSocket && currentSocket.readyState === WebSocket.OPEN) {
-             setLoading(true);
-             sendMessage();
-         } else {
-             setLoading(true); // 开始加载，因为我们要尝试连接
-             console.log("LobbyPage: Socket not open or doesn't exist. Attempting to connect then send.");
-             connectSocket(
-                 user.id,
-                 null, // 主 onMessage 由 useEffect 中的监听器处理
-                 () => { // onOpen - 连接成功后发送消息
-                     console.log("LobbyPage (ensureSocketAndSend): Socket connected. Now sending message.");
-                     currentSocket = getSocket(); // 获取最新的socket实例
-                     if (currentSocket && messageListenerRef.current && !currentSocket._lobbyListenerAttached) { // 避免重复添加
-                         currentSocket.addEventListener('message', messageListenerRef.current);
-                         currentSocket._lobbyListenerAttached = true; // 打个标记
-                     }
-                     sendMessage(); 
-                 },
-                 () => { /* onClose */ if(isMountedRef.current) setError("发送失败：与服务器断开连接"); setLoading(false); },
-                 (err) => { /* onError */ if(isMountedRef.current) setError("发送失败：连接错误: " + err.message); setLoading(false); }
-             );
-         }
-    };
+        const sendMessageAction = () => {
+            const socketToSend = getSocket(); // 获取最新的 socket 实例
+            if (socketToSend && socketToSend.readyState === WebSocket.OPEN) {
+                console.log(`LobbyPage: Socket ready (state ${socketToSend.readyState}), sending message:`, messagePayload);
+                sendSocketMessage(messagePayload);
+                // 等待 joined_room 消息，不再在这里清除 setLoading，由消息处理器清除
+            } else {
+                 console.error("LobbyPage (ensureSocketAndSend): Socket not truly open when trying to send. State:", socketToSend?.readyState);
+                 if(isMountedRef.current) setError('未能发送请求，连接似乎已断开。');
+                 if(setLoadingStateCallback) setLoadingStateCallback(false);
+            }
+        };
+
+        if (currentSocket && currentSocket.readyState === WebSocket.OPEN) {
+            sendMessageAction();
+        } else {
+            console.log("LobbyPage: Socket not open or doesn't exist for sending. Attempting to connect then send.");
+            connectSocket(
+                user.id, null, 
+                () => { 
+                    console.log("LobbyPage (ensureSocketAndSend): Socket connected. Now sending message.");
+                    const freshSocket = getSocket();
+                    if (freshSocket && messageListenerRef.current && !freshSocket._lobbyListenerAttachedOnSend) { 
+                        freshSocket.addEventListener('message', messageListenerRef.current);
+                        freshSocket._lobbyListenerAttachedOnSend = true; 
+                    }
+                    sendMessageAction(); 
+                },
+                () => { if(isMountedRef.current) setError("发送失败：与服务器断开连接"); if(setLoadingStateCallback) setLoadingStateCallback(false); },
+                (err) => { if(isMountedRef.current) setError("发送失败：连接错误: " + err.message); if(setLoadingStateCallback) setLoadingStateCallback(false); }
+            );
+        }
+   };
 
     const handleCreateRoom = () => {
         ensureSocketAndSend({ type: 'create_room', userId: user.id }, setIsLoadingCreate);
@@ -136,7 +135,40 @@ function LobbyPage() {
         ensureSocketAndSend({ type: 'join_room', roomId: roomIdToJoin.trim().toUpperCase(), userId: user.id }, setIsLoadingJoin);
     };
 
-    if (!user) { /* ... (与之前相同) ... */ }
-    return ( /* ... (与之前相同的 JSX，确保按钮的 disabled 状态正确使用 isLoadingCreate 和 isLoadingJoin) ... */ );
+    if (!user) {
+        return ( 
+            <div style={{ padding: '20px', textAlign: 'center' }}> 
+                <p>请先 <Link to="/login">登录</Link> 以进入游戏大厅。</p> 
+            </div> 
+        );
+    }
+
+    return (
+        <div style={{ padding: '20px', maxWidth: '500px', margin: 'auto' }}>
+            <h2>游戏大厅</h2>
+            <p>欢迎, {user.phone_number}!</p>
+            {error && <p style={{ color: 'red' }}>错误: {error}</p>}
+            <div style={{ marginBottom: '30px', padding: '15px', border: '1px solid #eee', borderRadius: '5px' }}>
+                <h3>创建新房间</h3>
+                <button onClick={handleCreateRoom} disabled={isLoadingCreate || isLoadingJoin} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', cursor:'pointer' }}>
+                    {isLoadingCreate ? '创建中...' : '创建房间'}
+                </button>
+            </div>
+            <div style={{ padding: '15px', border: '1px solid #eee', borderRadius: '5px' }}>
+                <h3>加入已有房间</h3>
+                <input 
+                    type="text" 
+                    value={roomIdToJoin}
+                    onChange={(e) => setRoomIdToJoin(e.target.value)}
+                    placeholder="输入房间号"
+                    // 仔细检查这一行，确保没有非法字符或语法问题
+                    style={{ padding: '10px', marginRight: '10px', textTransform: 'uppercase', width: 'calc(100% - 125px)', minWidth: '150px' }} 
+                />
+                <button onClick={handleJoinRoom} disabled={isLoadingCreate || isLoadingJoin || !roomIdToJoin.trim()} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', cursor:'pointer' }}>
+                    {isLoadingJoin ? '加入中...' : '加入房间'}
+                </button>
+            </div>
+        </div>
+    );
 }
 export default LobbyPage;
