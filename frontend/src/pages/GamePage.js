@@ -1,7 +1,8 @@
 // frontend/src/pages/GamePage.js
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { connectSocket, sendSocketMessage, closeSocket, getSocket } from '../services/socket';
+// 从下面这行移除了 closeSocket，因为它在 GamePage.js 文件内部没有被直接调用
+import { connectSocket, sendSocketMessage, getSocket } from '../services/socket'; 
 import Card from '../components/Game/Card';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -33,7 +34,7 @@ const DropZone = ({ zoneId, cardsInZone, onDropCard, acceptType, maxCards, title
                 console.log(`Zone ${zoneId} is full.`);
             }
         },
-        canDrop: () => cardsInZone.length < maxCards, // 简化 canDrop
+        canDrop: () => cardsInZone.length < maxCards,
         collect: (monitor) => ({
             isOver: !!monitor.isOver(),
             canDrop: !!monitor.canDrop(),
@@ -58,7 +59,7 @@ const DropZone = ({ zoneId, cardsInZone, onDropCard, acceptType, maxCards, title
 
 const GamePage = () => {
     const { user } = useAuth();
-    const [gameState, setGameState] = useState({ status: 'disconnected', players: [], gameId: null }); // 初始状态
+    const [gameState, setGameState] = useState({ status: 'disconnected', players: [], gameId: null });
     const [myCards, setMyCards] = useState([]);
     const [handZone, setHandZone] = useState([]);
     const [frontZone, setFrontZone] = useState([]);
@@ -66,8 +67,8 @@ const GamePage = () => {
     const [backZone, setBackZone] = useState([]);
     const [roomId] = useState('default_room');
     const [messages, setMessages] = useState([]);
-    const [isSocketConnected, setIsSocketConnected] = useState(false); // 新增：追踪socket连接状态
-    const [hasJoinedRoom, setHasJoinedRoom] = useState(false); // 新增：追踪是否已加入房间
+    const [isSocketConnected, setIsSocketConnected] = useState(false);
+    const [hasJoinedRoom, setHasJoinedRoom] = useState(false);
 
     const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const DnDBackend = isTouchDevice() ? TouchBackend : HTML5Backend;
@@ -76,13 +77,10 @@ const GamePage = () => {
         setMessages(prev => [{ timestamp: new Date().toLocaleTimeString(), data: msg }, ...prev.slice(0, 49)]);
         console.log('GamePage: Socket Message Received:', msg);
         switch (msg.type) {
-            case 'system': // 这个应该不再从后端发送了
-                console.log("GamePage: System message:", msg.message);
-                break;
             case 'joined_room':
                 console.log("GamePage: Joined room:", msg.roomId, "My UserID:", msg.userId, "Players in room:", msg.players);
-                setGameState(prev => ({ ...prev, players: msg.players.map(id => ({id, ready: false})), status: 'waiting' })); // 初始化玩家状态
-                setHasJoinedRoom(true); // 标记已加入房间
+                setGameState(prev => ({ ...prev, players: msg.players.map(id => ({id, ready: false})), status: 'waiting' }));
+                setHasJoinedRoom(true);
                 break;
             case 'player_joined':
                 console.log("GamePage: Player joined:", msg.userId, "Players:", msg.players);
@@ -115,7 +113,7 @@ const GamePage = () => {
                 setGameState(prev =>({ ...prev, status: 'finished', results: msg.results }));
                 alert("Game Over! Check results.");
                 console.log("GamePage: Game results:", msg.results);
-                setMyCards([]); // 清空手牌
+                setMyCards([]); 
                 setHandZone([]);
                 break;
             case 'game_cancelled':
@@ -134,21 +132,23 @@ const GamePage = () => {
             default:
                 console.log("GamePage: Unknown message type received:", msg);
         }
-    }, []); // 移除 gameState.players 作为依赖，避免不必要的重渲染循环
+    }, []);
 
     useEffect(() => {
-        if (user && user.id && !isSocketConnected) { // 只在未连接时尝试连接
+        let localSocketInstance = null; // 本地副本，用于清理函数
+
+        if (user && user.id && !isSocketConnected) {
             console.log("GamePage: User detected, attempting to connect socket.");
-            connectSocket(
+            localSocketInstance = connectSocket( // 将返回的socket实例存起来
                 user.id,
                 handleSocketMessage,
-                () => { // onOpen
+                () => { 
                     console.log("GamePage: Socket opened successfully. Sending join_room...");
-                    setIsSocketConnected(true); // 标记socket已连接
+                    setIsSocketConnected(true); 
                     sendSocketMessage({ type: 'join_room', roomId: roomId, userId: user.id });
                 },
-                () => { // onClose
-                    console.log("GamePage: Socket closed.");
+                (event) => { // onClose
+                    console.log("GamePage: Socket closed. Reason:", event.reason, "Code:", event.code);
                     setIsSocketConnected(false);
                     setHasJoinedRoom(false);
                     setGameState(prev => ({ ...prev, status: 'disconnected' }));
@@ -160,20 +160,28 @@ const GamePage = () => {
                 }
             );
         }
-        // 清理函数
+        
         return () => {
-            if (getSocket() && getSocket().readyState === WebSocket.OPEN) { // 确保socket存在且打开
-                console.log("GamePage: Unmounting or user changed. Leaving room and closing socket.");
+            // 使用本地副本 localSocketInstance 或 getSocket() 来判断是否需要关闭
+            const socketToClose = localSocketInstance || getSocket(); 
+            if (socketToClose && socketToClose.readyState === WebSocket.OPEN) { 
+                console.log("GamePage: Unmounting or user changed. Leaving room and attempting to close socket.");
                 sendSocketMessage({ type: 'leave_room', roomId: roomId, userId: user?.id });
-                // closeSocket(); // 移除这里，让 onClose 回调处理 setIsSocketConnected=false
-                // 改为由 onclose 事件来设置 isSocketConnected 和 hasJoinedRoom
-            } else if (getSocket()){ // 如果socket存在但未打开 (例如正在连接中被unmount)
-                 console.log("GamePage: Unmounting, socket exists but not open, attempting to close.");
-                 // closeSocket(); // 确保尝试关闭
+                // socket.js 中的 closeSocket() 会处理关闭逻辑
+                // 我们不需要在 GamePage.js 中再次导入和调用它，除非有特殊需求
+                // 让 socket.js 的 onClose 回调来处理状态更新
+                socketToClose.close(); // 直接调用 WebSocket 实例的 close 方法
+            } else if (socketToClose) { 
+                 console.log("GamePage: Unmounting, socket exists but not open (state: "+socketToClose.readyState+"), attempting to close if possible.");
+                 if (socketToClose.readyState === WebSocket.CONNECTING) {
+                     // 如果正在连接，直接关闭可能会导致错误或意外行为，
+                     // 但通常浏览器会处理好。或者可以设置一个标记，在 onOpen 时检查是否需要立即关闭。
+                     socketToClose.close();
+                 }
             }
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps 
-    }, [user, roomId]); // 移除 handleSocketMessage, isSocketConnected, 因为它们是稳定的或在回调中处理
+    }, [user, roomId]); // 保持最少的依赖，handleSocketMessage 是 useCallback 包裹的
 
     const handleDropCard = (cardId, fromZoneId, toZoneId) => {
         if (fromZoneId === toZoneId) return;
@@ -186,7 +194,7 @@ const GamePage = () => {
         }
         const targetZoneLimit = { hand: 13, front: 3, middle: 5, back: 5 };
         if (setZones[toZoneId] && zones[toZoneId].length < targetZoneLimit[toZoneId]) {
-            setZones[toZoneId](prev => [...prev, cardToMove].sort()); // 简单排序
+            setZones[toZoneId](prev => [...prev, cardToMove].sort()); 
         } else {
             console.warn(`Cannot move ${cardToMove} to ${toZoneId}. Zone full or invalid. Returning to ${fromZoneId}.`);
             if (setZones[fromZoneId]) {
@@ -202,12 +210,12 @@ const GamePage = () => {
             alert("请先登录！");
             return;
         }
-        if (!isSocketConnected) { // **新增检查：socket是否连接**
+        if (!isSocketConnected) { 
             alert("WebSocket 尚未连接，请稍候...");
             console.warn("GamePage: Attempted to start game, but socket is not connected.");
             return;
         }
-        if (!hasJoinedRoom) { // **新增检查：是否已加入房间**
+        if (!hasJoinedRoom) { 
              alert("尚未成功加入房间，请稍候...");
              console.warn("GamePage: Attempted to start game, but not yet joined room.");
              return;
@@ -247,7 +255,6 @@ const GamePage = () => {
 
     if (!user) return <p>请先登录才能进入游戏室...</p>;
 
-    // 根据 gameState.status 渲染不同内容
     let gameContent;
     switch (gameState.status) {
         case 'disconnected':
