@@ -1,5 +1,5 @@
 // src/services/api.js
-const API_BASE_URL = 'https://9526.ip-ddns.com/api'; // Your backend API URL
+const API_BASE_URL = 'https://9526.ip-ddns.com/backend/api'; // Your backend API URL
 
 async function request(endpoint, method = 'GET', data = null, requiresAuth = false) {
     const headers = {
