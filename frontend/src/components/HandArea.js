@@ -1,12 +1,11 @@
 // frontend/src/components/HandArea.js
 import React from 'react';
 import { Droppable } from 'react-beautiful-dnd';
-import CardComponent from './Card'; // Use renamed CardComponent
-import { HAND_TYPE_NAMES } from '../logic/handEvaluator';
+import CardComponent from './Card';
+// 移除下面这行导入，因为 HandArea 依赖 evaluateHand 返回的 name 属性
+// import { HAND_TYPE_NAMES } from '../logic/handEvaluator'; 
 
 const HandArea = ({ droppableId, title, cards, requiredCount, evaluatedHandType }) => {
-  // evaluatedHandType is an object { type: number, name: string } from handEvaluator
-
   return (
     <div className="hand-area-zone">
       <div className="hand-area-header">
