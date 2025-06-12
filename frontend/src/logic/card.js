@@ -1,20 +1,18 @@
 // frontend/src/logic/card.js
 
-// Constants for card ranks and suits (consistent with backend and cardUtils)
 export const SUITS = { s: 'spades', h: 'hearts', d: 'diamonds', c: 'clubs' };
-export const SUIT_SYMBOLS = { spades: 'S', hearts: 'H', diamonds: 'D', clubs: 'C' }; // For display or ID
-export const SUIT_CHARS = { spades: 's', hearts: 'h', diamonds: 'd', clubs: 'c' }; // For internal logic
+export const SUIT_SYMBOLS = { spades: 'S', hearts: 'H', diamonds: 'D', clubs: 'C' };
+export const SUIT_CHARS = { spades: 's', hearts: 'h', diamonds: 'd', clubs: 'c' };
 
 export const RANKS = {
     '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
     'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
 };
-export const RANK_SYMBOLS = { // For display or ID
+export const RANK_SYMBOLS = {
     2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9',
     10: 'T', 11: 'J', 12: 'Q', 13: 'K', 14: 'A'
 };
 
-// Map filenames to card data (from your initial request)
 const FILENAME_RANK_MAP = {
     '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
     '10': 'T', 'jack': 'J', 'queen': 'Q', 'king': 'K', 'ace': 'A'
@@ -24,20 +22,15 @@ const FILENAME_SUIT_MAP = {
 };
 const SUIT_NAMES = { s: '黑桃', h: '红桃', d: '方块', c: '梅花' };
 
-
-/**
- * Represents a playing card.
- * Stores data in a format suitable for game logic and AI.
- */
 export class Card {
     constructor(id, rank, suit, rankSymbol, suitSymbol, name, image) {
-        this.id = id;             // Unique ID, e.g., "AS", "TC" (RankSymbol + SuitChar.toUpperCase())
-        this.rank = rank;           // Numeric rank (2-14, A=14)
-        this.suit = suit;           // Suit character ('s', 'h', 'd', 'c')
-        this.rankSymbol = rankSymbol; // 'A', 'K', 'Q', 'J', 'T', '9', ..., '2'
-        this.suitSymbol = suitSymbol; // 'S', 'H', 'D', 'C' (for display, matches backend)
-        this.name = name;           // e.g., "黑桃A"
-        this.image = image;         // e.g., "poker_images/ace_of_spades.svg"
+        this.id = id;
+        this.rank = rank;
+        this.suit = suit;
+        this.rankSymbol = rankSymbol;
+        this.suitSymbol = suitSymbol; // S, H, D, C
+        this.name = name;
+        this.image = image; // <--- 应该是文件名，例如 'ace_of_spades.svg'
     }
 
     toString() {
@@ -45,12 +38,8 @@ export class Card {
     }
 }
 
-/**
- * Parses a filename like "ace_of_spades.svg" into a Card object.
- * @param {string} filename
- * @returns {Card|null}
- */
 export const getCardDataFromFilename = (filename) => {
+    // filename: "ace_of_spades.svg"
     const parts = filename.replace('.svg', '').split('_of_');
     if (parts.length !== 2) return null;
 
@@ -63,20 +52,18 @@ export const getCardDataFromFilename = (filename) => {
     if (!rankSymbol || !suitChar) return null;
 
     const rank = RANKS[rankSymbol];
-    const suitSymbolDisplay = SUIT_SYMBOLS[SUITS[suitChar]]; // S,H,D,C
-    const id = `${rankSymbol}${suitSymbolDisplay}`; // AS, KH, TD (match backend Card ID format)
+    const suitSymbolDisplay = SUIT_SYMBOLS[SUITS[suitChar]];
+    const id = `${rankSymbol}${suitSymbolDisplay}`;
     const name = `${SUIT_NAMES[suitChar]}${rankSymbol}`;
-    const image = `poker_images/${filename}`;
+    
+    // ##################################################################
+    // 关键修改：确保 this.image 仅仅是文件名
+    // ##################################################################
+    const image = filename; // 例如 "ace_of_spades.svg"
 
     return new Card(id, rank, suitChar, rankSymbol, suitSymbolDisplay, name, image);
 };
 
-
-/**
- * Creates a standard 52-card deck using Card objects.
- * Relies on the filename convention.
- * @returns {Card[]}
- */
 export const createFullDeckFromFilenames = () => {
     const deck = [];
     const svgRanks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
@@ -89,39 +76,31 @@ export const createFullDeckFromFilenames = () => {
             if (cardData) {
                 deck.push(cardData);
             } else {
-                console.warn("Could not parse filename:", filename);
+                console.warn("Could not parse filename in createFullDeckFromFilenames:", filename);
             }
         });
     });
-    // console.log("Created deck with IDs:", deck.map(c => c.id));
     return deck;
 };
 
-// This initial deck is created once and can be used to map IDs from backend to full Card objects
 export const FULL_DECK_OBJECTS = createFullDeckFromFilenames();
 
-/**
- * Converts card data from backend (which might be minimal) to full Card objects.
- * @param {Array<{id: string, rank?: number, suit?: string}>} backendCards
- * @returns {Card[]}
- */
 export const mapBackendCardsToFrontendCards = (backendCards) => {
+    if (!backendCards || !Array.isArray(backendCards)) {
+        console.error("mapBackendCardsToFrontendCards received invalid input:", backendCards);
+        return [];
+    }
     return backendCards.map(backendCard => {
+        if (!backendCard || typeof backendCard.id !== 'string') {
+            console.error("Invalid backendCard structure:", backendCard);
+            return null;
+        }
         const fullCard = FULL_DECK_OBJECTS.find(c => c.id === backendCard.id);
         if (!fullCard) {
             console.error(`Card with ID ${backendCard.id} not found in FULL_DECK_OBJECTS.`);
-            // Fallback or error handling - for now, create a basic one if backend provides enough info
-            if (backendCard.rank && backendCard.suit && RANK_SYMBOLS[backendCard.rank] && SUIT_NAMES[backendCard.suit]) {
-                 const rankSymbol = RANK_SYMBOLS[backendCard.rank];
-                 const suitSymbolDisplay = backendCard.suit.toUpperCase();
-                 const name = `${SUIT_NAMES[backendCard.suit]}${rankSymbol}`;
-                 // Image path might be tricky to guess without full filename convention mapping
-                 // This assumes backend ID correctly maps to a filename.
-                 const filenameGuess = `${Object.keys(FILENAME_RANK_MAP).find(key => FILENAME_RANK_MAP[key] === rankSymbol)}_of_${Object.keys(FILENAME_SUIT_MAP).find(key => FILENAME_SUIT_MAP[key] === backendCard.suit)}.svg`;
-
-                 return new Card(backendCard.id, backendCard.rank, backendCard.suit, rankSymbol, suitSymbolDisplay, name, `poker_images/${filenameGuess}`);
-            }
-            return null; // Or a placeholder card
+            // 你可以根据 backendCard 的信息尝试构建一个基础的 Card 对象，但 image 属性可能不准确
+            // return new Card(backendCard.id, backendCard.rank, backendCard.suit, backendCard.rankSymbol, backendCard.suitSymbol, 'Unknown Card', 'unknown.svg');
+            return null;
         }
         return fullCard;
     }).filter(card => card !== null);
