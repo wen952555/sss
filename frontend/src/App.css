@@ -1,60 +1,131 @@
 /* frontend/src/App.css */
-.App {
-  text-align: center;
-}
 
-/* 你之前提供的炫酷界面样式也可以放在这里，或者组织到其他CSS文件中再导入 */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #0a3d62; /* Dark blue background */
-  color: #f7f1e3; /* Light cream text */
-  margin: 0;
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-}
+/* ... (你已有的其他样式，如 body, app-container, game-title, game-board, hand-area 等) ... */
 
-/* ... 其他所有在 App.css 中定义的样式 ... */
-
-.game-message {
+/* 初始手牌区容器的样式 */
+.player-initial-hand-section { /* 这是 App.js 中包裹 PlayerHandDisplay 的 div */
+  width: 100%; /* 或者一个合适的固定宽度，例如 90%, 800px 等 */
+  max-width: 800px; /* 限制最大宽度，避免在超宽屏幕上过于分散 */
+  margin-bottom: 20px; /* 与下方牌道区域的间距 */
   padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.15); /* 给个稍微不同的背景以区分 */
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.player-initial-hand-container { /* PlayerHandDisplay 组件内部的最外层 div */
+  /* 这个容器本身不需要太多特定样式，主要由其子元素 player-hand-droppable 控制布局 */
+}
+
+/* PlayerHandDisplay 组件中 Droppable 包裹的 div 的样式 */
+.player-hand-droppable {
+  display: flex; /* 关键：启用 Flexbox 布局 */
+  flex-direction: row; /* 关键：子元素（卡牌）横向排列 */
+  flex-wrap: wrap; /* 关键：如果卡牌太多，允许换行 */
+  justify-content: center; /* 卡牌在行内居中对齐（如果行未占满）或整体居中（如果只有一行） */
+  /* 或者使用 justify-content: flex-start; 如果希望卡牌从左开始排列 */
+  gap: 8px; /* 卡牌之间的间隙 */
+  padding: 10px; /* Droppable 区域的内边距 */
+  min-height: 110px; /* 至少有一张卡牌的高度，避免区域塌陷 */
+  /* background-color: rgba(0,0,0,0.2); /* 已有，可以保留或调整 */
+  /* border-radius: 8px; /* 已有 */
+  transition: background-color 0.3s ease; /* 用于拖拽悬浮效果 */
+}
+
+/* 当有卡牌拖拽到这个区域上方时的样式 (来自 react-beautiful-dnd) */
+.player-hand-droppable.droppable-active {
+  background-color: rgba(255, 255, 255, 0.2); /* 拖拽悬浮时高亮 */
+}
+
+
+/* 卡牌本身样式 (确保宽度和高度适合横向排列) */
+.card {
+  width: 70px;         /* 卡牌宽度 */
+  height: 100px;        /* 卡牌高度 */
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+  cursor: grab;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+  background-color: white; /* 给卡牌一个白色背景 */
+  flex-shrink: 0; /* 防止卡牌在 flex 容器中被压缩变形 */
+}
+.card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain; /* 确保SVG完整显示在卡牌内 */
+}
+.card:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+  box-shadow: 3px 3px 8px rgba(0,0,0,0.5);
+}
+.card.dragging { /* react-beautiful-dnd 拖动时的类名 */
+  /* 可以添加一些拖动时的特殊样式，比如轻微的旋转或更明显的阴影 */
+}
+
+/* 卡牌占位符样式 (如果CardComponent渲染了占位符) */
+.card-placeholder {
+  width: 70px;
+  height: 100px;
+  border: 1px dashed #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  color: #999;
+  border-radius: 5px;
+  font-size: 24px;
+}
+
+/* 图片加载错误时的文本样式 (如果CardComponent渲染了错误文本) */
+.image-error-text {
+  position: absolute; /* 相对于卡牌定位 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: red;
+  font-size: 10px;
   text-align: center;
-  font-weight: bold;
+  padding: 2px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 3px;
 }
 
-.game-message.error {
-  background-color: #ffdddd;
-  color: #d8000c;
-  border: 1px solid #d8000c;
+
+/* 确保游戏板和控制按钮区域可见 */
+.game-board {
+  display: flex;
+  flex-direction: column; /* 牌道是纵向排列的 */
+  gap: 15px; /* 牌道之间的间距 */
+  padding: 15px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
+  width: 100%;
+  max-width: 600px; /* 牌道区域宽度 */
+  margin-top: 20px; /* 与上方初始手牌区的间距 */
 }
 
-.misarranged-board .hand-area-zone {
-    border: 2px dashed red; /* 示例：倒水时牌区边框变红 */
-}
-.hand-area-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-}
-.hand-type-display {
-    font-size: 0.9em;
-    font-style: italic;
-    color: #ffc312; /* Golden yellow for hand type */
+.hand-area-zone {
+  margin-bottom: 0; /* HandArea 本身的 margin-bottom 可以通过 game-board 的 gap 控制 */
 }
 
-.card-placeholder { /* For CardComponent if cardData is missing */
-    width: 70px;
-    height: 100px;
-    border: 1px dashed #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f0f0f0;
-    color: #999;
-    border-radius: 5px;
+.controls {
+  margin-top: 25px; /* 与游戏板的间距 */
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px; /* 底部也留一些空间 */
+}
+
+/* 确保整体 app-container 能滚动，如果内容超出屏幕 */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  /* max-width: 1000px; /* 你可以根据整体布局调整 */
+  padding-bottom: 50px; /* 底部留白，防止内容被遮挡 */
 }
