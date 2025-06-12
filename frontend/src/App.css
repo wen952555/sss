@@ -1,0 +1,60 @@
+/* frontend/src/App.css */
+.App {
+  text-align: center;
+}
+
+/* 你之前提供的炫酷界面样式也可以放在这里，或者组织到其他CSS文件中再导入 */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #0a3d62; /* Dark blue background */
+  color: #f7f1e3; /* Light cream text */
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+/* ... 其他所有在 App.css 中定义的样式 ... */
+
+.game-message {
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.game-message.error {
+  background-color: #ffdddd;
+  color: #d8000c;
+  border: 1px solid #d8000c;
+}
+
+.misarranged-board .hand-area-zone {
+    border: 2px dashed red; /* 示例：倒水时牌区边框变红 */
+}
+.hand-area-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+.hand-type-display {
+    font-size: 0.9em;
+    font-style: italic;
+    color: #ffc312; /* Golden yellow for hand type */
+}
+
+.card-placeholder { /* For CardComponent if cardData is missing */
+    width: 70px;
+    height: 100px;
+    border: 1px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+    color: #999;
+    border-radius: 5px;
+}
