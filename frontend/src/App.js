@@ -4,8 +4,10 @@ import { DragDropContext } from 'react-beautiful-dnd';
 import HandArea from './components/HandArea';
 import PlayerHandDisplay from './components/PlayerHandDisplay';
 import { API_BASE_URL } from './config';
-import { mapBackendCardsToFrontendCards, FULL_DECK_OBJECTS } from './logic/card';
-import { evaluateHand, compareEvaluatedHands, HAND_TYPES } from './logic/handEvaluator';
+// 从下面这行移除 FULL_DECK_OBJECTS (假设 mapBackendCardsToFrontendCards 内部处理)
+import { mapBackendCardsToFrontendCards } from './logic/card';
+// 从下面这行移除 HAND_TYPES (假设 App.js 不需要直接引用它)
+import { evaluateHand, compareEvaluatedHands } from './logic/handEvaluator';
 import { findBestThirteenWaterArrangement } from './logic/thirteenWaterAI';
 import './App.css';
 
@@ -24,7 +26,7 @@ const HAND_CAPACITIES = {
 };
 
 function App() {
-  const [playerCards, setPlayerCards] = useState({ // Store all cards in one object for easier dnd
+  const [playerCards, setPlayerCards] = useState({
     [DROPPABLE_IDS.PLAYER_INITIAL]: [],
     [DROPPABLE_IDS.TOP]: [],
     [DROPPABLE_IDS.MIDDLE]: [],
@@ -42,9 +44,8 @@ function App() {
   const [isLoadingDeal, setIsLoadingDeal] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [gameMessage, setGameMessage] = useState('');
-  const [isMisArranged, setIsMisArranged] = useState(false); // "倒水"
+  const [isMisArranged, setIsMisArranged] = useState(false);
 
-  // Memoize hand evaluation to avoid re-calculating on every render if cards haven't changed
   const evaluateAllHands = useCallback(() => {
     const newEvaluatedHands = {};
     let misArrangedFlag = false;
@@ -64,7 +65,6 @@ function App() {
       : null;
     newEvaluatedHands[DROPPABLE_IDS.BOTTOM] = bottomEval;
 
-    // Check for misarrangement if all hands are full
     if (topEval && middleEval && bottomEval) {
         const topVsMiddle = compareEvaluatedHands(topEval, middleEval);
         const middleVsBottom = compareEvaluatedHands(middleEval, bottomEval);
@@ -75,7 +75,7 @@ function App() {
             setGameMessage("牌型正确！");
         }
     } else {
-        setGameMessage(''); // Clear message if not fully arranged
+        setGameMessage('');
     }
     setIsMisArranged(misArrangedFlag);
     setEvaluatedHands(newEvaluatedHands);
@@ -123,19 +123,20 @@ function App() {
     } catch (error) {
       console.error("Deal New Hand Error:", error);
       setGameMessage(`发牌请求错误: ${error.message}`);
-       // Fallback for local testing if backend fails
-       // console.warn("Backend deal failed, using local deck for testing.");
-       // const localDeck = [...FULL_DECK_OBJECTS]; // Use a copy
-       // localDeck.sort(() => 0.5 - Math.random()); // Shuffle
-       // setPlayerCards({
-       //   [DROPPABLE_IDS.PLAYER_INITIAL]: localDeck.slice(0,13),
-       //   [DROPPABLE_IDS.TOP]: [], [DROPPABLE_IDS.MIDDLE]: [], [DROPPABLE_IDS.BOTTOM]: [],
-       // });
+      // Fallback (可以注释掉，如果不需要本地测试)
+      // console.warn("Backend deal failed, using local deck for testing.");
+      // const { FULL_DECK_OBJECTS: localFullDeck } = await import('./logic/card'); // 动态导入以避免启动时未使用警告
+      // const localDeck = [...localFullDeck]; 
+      // localDeck.sort(() => 0.5 - Math.random());
+      // setPlayerCards({
+      //   [DROPPABLE_IDS.PLAYER_INITIAL]: localDeck.slice(0,13),
+      //   [DROPPABLE_IDS.TOP]: [], [DROPPABLE_IDS.MIDDLE]: [], [DROPPABLE_IDS.BOTTOM]: [],
+      // });
     }
     setIsLoadingDeal(false);
   };
 
-  useEffect(() => { // Deal on initial load
+  useEffect(() => {
     handleDealNewHand();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -148,21 +149,17 @@ function App() {
     const sourceDroppableId = source.droppableId;
     const destDroppableId = destination.droppableId;
 
-    // Moving within the same list
     if (sourceDroppableId === destDroppableId) {
       const items = Array.from(playerCards[sourceDroppableId]);
       const [reorderedItem] = items.splice(source.index, 1);
       items.splice(destination.index, 0, reorderedItem);
       setPlayerCards(prev => ({ ...prev, [sourceDroppableId]: items }));
     } else {
-      // Moving between lists
       const sourceItems = Array.from(playerCards[sourceDroppableId]);
       const destItems = Array.from(playerCards[destDroppableId]);
       const [movedItem] = sourceItems.splice(source.index, 1);
 
-      // Check capacity of destination if it's a fixed-size hand
       if (HAND_CAPACITIES[destDroppableId] && destItems.length >= HAND_CAPACITIES[destDroppableId]) {
-        // Destination is full, do nothing (or provide feedback)
         setGameMessage("此道已满！");
         return;
       }
@@ -191,7 +188,6 @@ function App() {
     setIsLoadingAI(true);
     setGameMessage('AI 正在思考...');
     
-    // Simulate async for complex AI or just to show loading state
     setTimeout(() => {
         const arrangement = findBestThirteenWaterArrangement(allCurrentCards);
         if (arrangement) {
@@ -201,13 +197,12 @@ function App() {
                 [DROPPABLE_IDS.MIDDLE]: arrangement.middle,
                 [DROPPABLE_IDS.BOTTOM]: arrangement.bottom,
             });
-            // Evaluations will be updated by useEffect -> evaluateAllHands
             setGameMessage('AI 分牌完成！');
         } else {
             setGameMessage('AI 未能找到合适的牌型 (请检查AI逻辑)。');
         }
         setIsLoadingAI(false);
-    }, 50); // Small delay to allow UI update for loading message
+    }, 50);
   };
 
   const handleConfirmHand = () => {
@@ -219,7 +214,6 @@ function App() {
           setGameMessage("牌型组合错误（倒水），请调整后再确认！");
           return;
       }
-      // TODO: Logic for submitting hand to backend for multiplayer game
       console.log("Confirmed Hands:", {
           top: playerCards[DROPPABLE_IDS.TOP].map(c=>c.id),
           middle: playerCards[DROPPABLE_IDS.MIDDLE].map(c=>c.id),
@@ -227,7 +221,6 @@ function App() {
           evaluations: evaluatedHands
       });
       setGameMessage("牌局已确认！(比牌逻辑待实现)");
-      // Potentially disable further dragging or show opponent's hand
   };
 
 
@@ -272,7 +265,12 @@ function App() {
           <button className="game-button" onClick={handleDealNewHand} disabled={isLoadingDeal || isLoadingAI}>
             {isLoadingDeal ? '发牌中...' : '重新发牌'}
           </button>
-          <button className="game-button" onClick={handleAISort} disabled={isLoadingAI || isLoadingDeal || playerCards[DROPPABLE_IDS.PLAYER_INITIAL].length === 0 && isArranged}>
+          {/* 修改下面这行 Line 275 的 disabled 逻辑 */}
+          <button 
+            className="game-button" 
+            onClick={handleAISort} 
+            disabled={isLoadingAI || isLoadingDeal || (playerCards[DROPPABLE_IDS.PLAYER_INITIAL].length === 0 && isArranged)}
+          >
             {isLoadingAI ? 'AI思考中...' : 'AI分牌'}
           </button>
           <button className="game-button" onClick={handleConfirmHand} disabled={!isArranged || isLoadingAI || isLoadingDeal || isMisArranged}>
