@@ -1,16 +1,15 @@
 import React from 'react';
 import StaticCard from './StaticCard';
 
-// 动态堆叠卡牌：保证每张牌都能看到主要牌面，且不会重叠遮住全部内容
+// 堆叠渲染（保证每张牌面都能看到大半内容）
 const renderStackedCards = (cards) => {
-  // 自适应主流屏幕的卡牌尺寸
+  // 响应式宽度
   let cardWidth = 80, cardHeight = 96, overlapRatio = 0.5;
   if (window.innerWidth < 700) {
     cardWidth = 38; cardHeight = 48; overlapRatio = 0.5;
   } else if (window.innerWidth < 1200) {
     cardWidth = 56; cardHeight = 68; overlapRatio = 0.5;
   }
-  // overlap控制为卡牌宽度的 0.5，让每张牌至少露出一半
   const overlap = cardWidth * overlapRatio;
   const totalWidth = cards.length > 1
     ? cardWidth + (cards.length - 1) * overlap
@@ -21,6 +20,7 @@ const renderStackedCards = (cards) => {
       style={{
         width: `${totalWidth}px`,
         height: `${cardHeight}px`,
+        position: 'relative'
       }}
     >
       {cards.map((c, i) => (
@@ -41,49 +41,49 @@ const renderStackedCards = (cards) => {
 };
 
 const PlayerComparisonCell = ({ player, isHuman, players }) => {
-  if (!player || !player.finalArrangement) {
-    return <div className="comparison-cell empty"><span>等待数据...</span></div>;
-  }
-  const topCards = (player.cards && Array.isArray(player.cards.TOP)) ? player.cards.TOP : [];
-  const middleCards = (player.cards && Array.isArray(player.cards.MIDDLE)) ? player.cards.MIDDLE : [];
-  const bottomCards = (player.cards && Array.isArray(player.cards.BOTTOM)) ? player.cards.BOTTOM : [];
-  const roundScore = typeof player.roundScore === 'number' ? player.roundScore : 0;
-  const totalScore = typeof player.score === 'number' ? player.score : 0;
+    if (!player || !player.finalArrangement) {
+        return <div className="comparison-cell empty"><span>等待数据...</span></div>;
+    }
+    const topCards = (player.cards && Array.isArray(player.cards.TOP)) ? player.cards.TOP : [];
+    const middleCards = (player.cards && Array.isArray(player.cards.MIDDLE)) ? player.cards.MIDDLE : [];
+    const bottomCards = (player.cards && Array.isArray(player.cards.BOTTOM)) ? player.cards.BOTTOM : [];
+    const roundScore = typeof player.roundScore === 'number' ? player.roundScore : 0;
+    const totalScore = typeof player.score === 'number' ? player.score : 0;
 
-  return (
-    <div className={`comparison-cell ${isHuman ? 'human-player-cell' : 'ai-player-cell'}`}>
-      <h4> {player.name} <span className="score-summary">(本局: {roundScore >= 0 ? '+' : ''}{roundScore} | 总: {totalScore >= 0 ? '+' : ''}{totalScore})</span> </h4>
-      <div className="comparison-hand-verticals">
-        <div className="comparison-hand-row">
-          <strong>头道:</strong>
-          {renderStackedCards(topCards)}
+    return (
+        <div className={`comparison-cell ${isHuman ? 'human-player-cell' : 'ai-player-cell'}`}>
+            <h4> {player.name} <span className="score-summary">(本局: {roundScore >= 0 ? '+' : ''}{roundScore} | 总: {totalScore >= 0 ? '+' : ''}{totalScore})</span> </h4>
+            <div className="comparison-hand-verticals">
+              <div className="comparison-hand-row">
+                <strong>头道:</strong>
+                {renderStackedCards(topCards)}
+              </div>
+              <div className="comparison-hand-row">
+                <strong>中道:</strong>
+                {renderStackedCards(middleCards)}
+              </div>
+              <div className="comparison-hand-row">
+                <strong>尾道:</strong>
+                {renderStackedCards(bottomCards)}
+              </div>
+            </div>
+            {/* 打枪信息 */}
+            {player.comparisonResults && Object.entries(player.comparisonResults).map(([opponentId, res]) => {
+              const opponent = players.find(p=>p.id === opponentId);
+              if (res.details && Array.isArray(res.details) && res.details.some(d => d.toLowerCase().includes("打枪")) && res.score !== 0) {
+                return (
+                  <p key={`${player.id}_vs_${opponentId}_shoot`} className={`shoot-info ${res.score > 0 ? 'positive-shoot' : 'negative-shoot'}`}>
+                    {res.score > 0 ? `打枪 ${opponent?.name || '对手'}!` : `被 ${opponent?.name || '对手'} 打枪!`}
+                  </p>
+                );
+              }
+              return null;
+            })}
         </div>
-        <div className="comparison-hand-row">
-          <strong>中道:</strong>
-          {renderStackedCards(middleCards)}
-        </div>
-        <div className="comparison-hand-row">
-          <strong>尾道:</strong>
-          {renderStackedCards(bottomCards)}
-        </div>
-      </div>
-      {/* 打枪信息 */}
-      {player.comparisonResults && Object.entries(player.comparisonResults).map(([opponentId, res]) => {
-        const opponent = players.find(p=>p.id === opponentId);
-        if (res.details && Array.isArray(res.details) && res.details.some(d => d.toLowerCase().includes("打枪")) && res.score !== 0) {
-          return (
-            <p key={`${player.id}_vs_${opponentId}_shoot`} className={`shoot-info ${res.score > 0 ? 'positive-shoot' : 'negative-shoot'}`}>
-              {res.score > 0 ? `打枪 ${opponent?.name || '对手'}!` : `被 ${opponent?.name || '对手'} 打枪!`}
-            </p>
-          );
-        }
-        return null;
-      })}
-    </div>
-  );
+    );
 };
 
-// 田字型顺序不变
+// 固定田字型顺序（2x2）：前两为上排，后两为下排
 const get2x2GridOrder = (players, humanPlayerId) => {
   const human = players.find(p => p.id === humanPlayerId);
   const ais = players.filter(p => p.id !== humanPlayerId);
