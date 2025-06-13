@@ -1,13 +1,69 @@
 /* frontend/src/App.css */
 
-/* --- 全局与基础布局 (保持不变) --- */
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑक्सीजन, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background-color: #073b4c; color: #f1f1f1; margin: 0; padding: 0; box-sizing: border-box; }
+/* --- 全局与基础布局 --- */
+body, html { height: 100%; margin: 0; overflow-x: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑक्सीजन, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background-color: #073b4c; color: #f1f1f1; box-sizing: border-box; }
 *, *::before, *::after { box-sizing: inherit; }
-.app-container { display: flex; flex-direction: column; align-items: center; width: 100%; min-height: 100vh; padding: 15px; }
 
-/* --- 顶部玩家状态横幅 (保持不变) --- */
-.top-banner-container { display: flex; justify-content: space-between; align-items: stretch; width: 100%; max-width: 900px; padding: 8px; margin-bottom: 20px; background-color: rgba(0, 0, 0, 0.3); border-radius: 10px; gap: 8px; }
-.player-banner-item { flex: 1 1 23%; min-width: 130px; max-width: 190px; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
+.app-container {
+  display: flex; 
+  flex-direction: column;
+  align-items: center; /* 横幅内容块在其max-width内居中 */
+  width: 100%;
+  min-height: 100vh;
+  padding: 10px 0; /* 上下padding，左右由横幅内部控制或横幅占满 */
+}
+
+/* 主游戏视图容器 (当比牌界面不显示时) */
+.game-view-active {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 让内部的 banner-section 居中（如果它们有max-width） */
+  width: 100%;
+  gap: 10px; /* 横幅之间的间距 */
+}
+
+/* 通用横幅区域样式 - 核心：占满宽度 */
+.banner-section {
+  width: 100%; /* 关键：占满父容器宽度 */
+  /* max-width: 1200px; */ /* 可选：为超大屏幕设置一个最大宽度，使其内容不会过于分散 */
+  /* margin-left: auto; */   /* 如果设置了max-width，这两个可以使其居中 */
+  /* margin-right: auto; */
+  padding: 10px 15px; /* 横幅自身的内边距 */
+  background-color: rgba(0, 0, 0, 0.15); /* 轻微背景区分 */
+  border-radius: 8px; /* 轻微圆角 */
+}
+
+/* 横幅1: 玩家状态显示区 */
+.player-status-banner-section {
+  /* background-color: rgba(0, 0, 0, 0.3); */ /* 可以有更深的背景 */
+  border-radius: 10px;
+  padding: 8px;
+}
+.top-banner-container { 
+  display: flex; 
+  justify-content: space-around; /* 或 space-between */
+  align-items: stretch; 
+  width: 100%; 
+  gap: 8px; 
+  flex-wrap: wrap; /* 允许在小屏幕上换行 */
+  /* 移除背景和边框，因为父元素 banner-section 已提供 */
+  background-color:transparent;
+  padding:0;
+  box-shadow:none;
+  border-radius:0;
+  margin:0;
+}
+/* player-banner-item 的 flex-basis 需要更灵活，以适应父容器宽度 */
+.player-banner-item { 
+  flex: 1 1 150px; /* 允许增长和缩小，基础宽度150px */
+  min-width: 120px; 
+  /* max-width: 220px; */ /* 可以移除max-width，让flex均分 */
+  padding: 8px; 
+  /* ... 其余样式不变 ... */
+  border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(255, 255, 255, 0.05); transition: all 0.3s ease;
+}
+/* ... (其余 TopBanner 内部元素样式，如头像、名字、分数等，保持不变或微调字体大小) ... */
 .human-player-banner-item { border-color: #ffd166; }
 .ai-player-display.arranged { border-color: #06d6a0; }
 .ai-player-display.thinking { border-color: #ffd166; animation: pulse-border 1.5s infinite; }
@@ -25,117 +81,122 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑ�
 .positive { color: #06d6a0; }
 .negative { color: #ef476f; }
 
-
-/* --- 游戏板与牌道区域 (主游戏界面的卡牌尺寸也调整一下) --- */
-.game-board { display: flex; flex-direction: column; gap: 20px; padding: 20px; background-color: rgba(0, 0, 0, 0.35); border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.35); width: 100%; max-width: 720px; margin-top: 0; }
-.hand-lanes-container { display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 100%; margin: 0 auto; }
-.hand-area { background-color: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 10px; display: flex; flex-direction: row; gap: 5px; /* 减小主牌桌卡牌间距 */ transition: background-color 0.25s ease-in-out, box-shadow 0.25s ease; position: relative; align-items: center; min-height: 100px; /* (卡牌高77 + padding 24) */ }
+/* 横幅2,3,4: 牌道区域 */
+.hand-lane-banner-section {
+  /* background-color: rgba(0,0,0,0.3); */ /* 已由 banner-section 提供 */
+  padding: 12px; /* 调整牌道横幅的内边距 */
+  display: flex; /* 使内部的 .hand-area 可以更好地控制宽度 */
+  justify-content: center; /* 让 .hand-area 在横幅内居中 */
+}
+.hand-area {
+  background-color: rgba(0, 0, 0, 0.25); /* 牌道自身背景 */
+  padding: 10px; /* 牌道内边距 */
+  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  position: relative;
+  align-items: center;
+  width: 100%; /* 关键：让牌道区域尝试占满其父横幅的可用宽度 */
+  /* max-width: 680px; */ /* 可以移除这个，让它自适应父横幅 */
+  min-height: 90px; /* (卡牌高63 + padding 20 + 文字一点空间) */
+}
 .hand-info-internal { position: absolute; top: 6px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; z-index: 1;}
-.hand-area-title-internal { color: #ffd166; font-weight: 600; font-size: 0.9em; /* 稍小一点 */ }
+.hand-area-title-internal { color: #ffd166; font-weight: 600; font-size: 0.9em; }
 .hand-type-display-internal { font-size: 0.8em; color: #f1f1f1; background-color: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; font-weight: 500; }
-.hand-area.allow-wrapping { flex-wrap: wrap; justify-content: center; padding-top: 30px; /* 为文字留空间 */ min-height: 165px; /* (卡牌高77*2 + gap 5) + 文字30 + padding 24 */ align-items: flex-start; }
-.hand-area:not(.allow-wrapping) { flex-wrap: nowrap; justify-content: center; padding-top: 30px; }
+
+.hand-area.allow-wrapping { /* 手牌区，13张牌 */
+  flex-wrap: wrap;
+  justify-content: center; /* 卡牌换行后也居中 */
+  padding-top: 30px; 
+  min-height: 145px; /* (卡牌高63*2 + gap 5) + 文字30 + padding 20 */
+  align-items: flex-start;
+}
+.hand-area:not(.allow-wrapping) { /* 头/中(5张)/尾道 */
+  flex-wrap: nowrap;
+  justify-content: center;
+  padding-top: 30px;
+}
 .hand-area.droppable-active { background-color: rgba(66, 153, 225, 0.3); }
 
-/* 卡牌样式 - 主游戏区的卡牌尺寸也调整 */
+/* 卡牌样式 - 尺寸需要自适应或通过媒体查询调整 */
 .card {
-  width: 55px;  /* 调整主游戏区卡牌宽度 */
-  height: 77px; /* 保持比例 (55 * 1.4) */
-  border-radius: 4px; 
-  overflow: hidden; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); background-color: white; flex-shrink: 0; user-select: none; position: relative; transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* 固定尺寸可能不理想，但对于固定数量的牌是常见做法 */
+  /* 更好的自适应需要卡牌宽度是百分比，但这会影响长宽比和内部SVG */
+  width: 48px;  /* 进一步缩小以适应在横幅中完整显示 */
+  height: 67px; /* 48 * 1.4 */
+  border-radius: 3px; 
+  /* ... 其他样式保持不变 ... */
+  overflow: hidden; box-shadow: 1px 1px 3px rgba(0,0,0,0.3); background-color: white; flex-shrink: 0; user-select: none; position: relative; transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-.card:not(.static-card) { cursor: grab; }
-.card img { width: 100%; height: 100%; display: block; object-fit: contain; }
-.card:not(.static-card):hover:not(.dragging) { transform: translateY(-3px) scale(1.04); box-shadow: 3px 5px 10px rgba(0,0,0,0.3); }
-.card:not(.static-card):active, .card.dragging { cursor: grabbing; transform: scale(1.12) rotate(3.5deg) translateY(-2px); box-shadow: 4px 6px 12px rgba(0,0,0,0.45); z-index: 1000; }
+/* ... (Card hover, active, dragging 样式保持不变) ... */
 
 
-/* --- 控制按钮区域 (保持不变) --- */
-.controls { display: flex; justify-content: center; gap: 18px; padding-top: 15px; width: 100%; flex-wrap: wrap; }
-/* ... (GameButton 样式保持不变) ... */
+/* 横幅5: 控制按钮区 */
+.controls-banner-section {
+  padding: 15px 10px; /* 调整内边距 */
+  /* background-color: rgba(0,0,0,0.1); */ /* 可以有轻微不同背景 */
+}
+.controls { display: flex; justify-content: center; gap: 12px; width: 100%; flex-wrap: wrap; padding-top: 0; }
+.game-button { /* ... (保持不变，但其容器现在是100%宽度) ... */ }
+.game-button.compare-all-button { /* ... */ margin-top: 10px; width: calc(100% - 16px); /* 尝试占满，如果按钮少 */ max-width: 300px;}
 
 
-/* --- 比牌结果模态框样式 --- */
+/* --- 比牌视图容器 (全屏自适应) --- */
 .comparison-view-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #0a303c; display: flex; align-items: center; justify-content: center; padding: 15px; z-index: 100; overflow-y: auto; }
-.modal-content.comparison-modal-content { background-color: rgba(12, 43, 53, 0.85); padding: 20px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5); position: relative; width: 100%; max-width: 720px; /* 与主牌桌宽度一致 */ display: flex; flex-direction: column; gap: 15px; /* 减小内部间距 */ }
-.modal-close-button.top-right-close { position: absolute; top: 8px; right: 10px; font-size: 1.8em; /* ... */ }
-.comparison-modal-content h2 { text-align: center; color: #ffd166; margin-top: 0; margin-bottom: 15px; font-size: 1.5em; }
+.comparison-modal-content { background-color: rgba(12, 43, 53, 0.85); padding: 20px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5); position: relative; width: 100%; max-width: 90%; /* 让模态框更宽以适应田字格 */ /* max-height: 95vh; */ display: flex; flex-direction: column; gap: 15px; }
+.modal-close-button.top-right-close { /* ... */ }
+.comparison-modal-content h2 { /* ... */ }
 
 .comparison-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: minmax(min-content, auto); 
-  gap: 10px; /* 减小田字格间距 */
+  /* grid-template-columns: repeat(2, 1fr); */ /* 改为自适应列数 */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); /* 每列最小260px */
+  gap: 12px;
   width: 100%;
 }
+.comparison-cell { background-color: rgba(255, 255, 255, 0.04); padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; min-height: 180px; /* 根据卡牌大小调整 */ }
+/* ... (comparison-cell.empty, human-player-cell, h4, score-summary, comparison-hand-row, strong 样式保持不变或微调) ... */
 
-.comparison-cell {
-  background-color: rgba(255, 255, 255, 0.04);
-  padding: 10px; /* 减小单元格内边距 */
-  border-radius: 6px; /* 减小圆角 */
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  min-height: 180px; /* 根据新的更小卡牌调整 */
+.mini-cards { display: flex; gap: 2px; flex-wrap: nowrap; justify-content: flex-start; /* 卡牌靠左 */ align-items: center; min-height: 38px; /* (卡牌高34 + padding) */ margin-bottom: 3px; }
+.comparison-cell .static-card { /* 比牌界面卡牌，需要非常小 */
+  width: 24px;  /* 极度缩小 */
+  height: 34px; /* 24 * 1.4 */
+  /* ... 其他样式不变 ... */
+  box-shadow: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 2px;
 }
-.comparison-cell.empty { min-height: 100px; /* ... */ }
-.human-player-cell { border-color: #ffd166; }
-.comparison-cell h4 { color: #e0e0e0; margin-top: 0; margin-bottom: 8px; font-size: 0.95em; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 5px; display: flex; justify-content: space-between; flex-wrap: wrap;}
-.score-summary { font-size: 0.75em; color: #b0bec5; white-space: nowrap; }
-.comparison-hand-row { margin-bottom: 6px; }
-.comparison-hand-row strong { color: #89cff0; font-size: 0.8em; display: block; margin-bottom: 3px; }
-
-.mini-cards {
-  display: flex;
-  gap: 2px; /* 非常小的卡牌间距 */
-  flex-wrap: nowrap; 
-  justify-content: flex-start; /* 从左开始排列，以利用空间 */
-  align-items: center;
-  min-height: 40px; /* 根据新的卡牌高度调整 */
-  margin-bottom: 3px;
-}
-
-/* 关键修改：比牌界面中的静态卡牌尺寸 */
-.comparison-cell .static-card {
-  width: 30px;  /* 大幅缩小卡牌 */
-  height: 42px; /* 保持比例 (30 * 1.4) */
-  box-shadow: none; 
-  border: 1px solid rgba(255,255,255,0.1); 
-  border-radius: 2px;
-}
-.comparison-cell .static-card img { object-fit: fill; }
-.comparison-cell .static-card-placeholder { width: 30px; height: 42px; font-size: 9px; }
-.comparison-cell .image-error-text { font-size: 7px; }
-
-.shoot-info { font-weight: bold; font-size: 0.8em; margin-top: auto; padding: 3px; } /* 减小字体 */
-.modal-actions { text-align: center; margin-top: 15px; }
-.game-button.continue-game-button { /* ... */ }
+/* ... (shoot-info, modal-actions, continue-game-button 样式保持不变) ... */
 
 
-/* --- 响应式调整 --- */
+/* --- 响应式调整 (媒体查询需要重新审视以适应新的横幅和卡牌自适应策略) --- */
 @media (max-width: 768px) {
-  .player-banner-item { flex-basis: calc(50% - 4px); min-width: 110px; } /* 顶部横幅调整 */
-  .game-board { max-width: 100%; padding: 10px; gap: 12px; }
-  .card { width: 50px; height: 70px; } /* 主游戏区卡牌在平板上 */
-  .hand-area { min-height: 90px; padding: 8px; }
-  .hand-area.allow-wrapping { min-height: 155px; }
-  .comparison-modal-content { max-width: 95%; padding: 15px; }
-  .comparison-grid { grid-template-columns: 1fr; }
-  .comparison-cell .static-card { width: 28px; height: 39px; } /* 平板模态框卡牌 */
-}
-@media (max-width: 480px) {
-  .player-banner-item { min-width: 100px; padding: 6px; } /* 顶部横幅再调整 */
-  .player-avatar-banner {width: 24px; height: 24px; font-size: 0.8em;}
-  .player-name-banner {font-size: 0.75em;}
-  .player-status-banner {font-size: 0.6em;}
-  .player-score-container-banner {font-size: 0.7em;}
-  .card { width: 42px; height: 59px; } /* 手机主游戏区卡牌 */
-  .hand-area { min-height: 75px; gap: 4px;}
-  .hand-area.allow-wrapping { min-height: 135px; padding-top: 28px; }
-  .hand-info-internal { top: 5px; left: 8px; right: 8px; }
+  .app-container.game-view-active { padding: 8px 0; gap: 8px; } /* 主视图更紧凑 */
+  .banner-section { padding: 8px 10px; border-radius: 6px; }
+  .player-banner-item { flex-basis: calc(50% - 5px); /* 一行两个 */ min-width: 100px; } /* 顶部横幅更紧凑 */
+  
+  .hand-area { min-height: 80px; /* (卡牌高56 + padding) */ gap: 4px; }
+  .hand-info-internal { top: 4px; left: 6px; right: 6px; }
   .hand-area-title-internal { font-size: 0.8em; }
-  .hand-type-display-internal { font-size: 0.7em; padding: 2px 5px;}
-  .comparison-cell .static-card { width: 24px; height: 34px; } /* 手机模态框卡牌 */
-  .comparison-cell h4 {font-size: 0.9em;}
-  .comparison-hand-row strong {font-size: 0.75em;}
+  .hand-type-display-internal { font-size: 0.7em; padding: 2px 4px;}
+  .hand-area.allow-wrapping { min-height: 130px; /* (卡牌高56*2 + gap) + 文字 + padding */ padding-top: 25px; }
+  .hand-area:not(.allow-wrapping) { padding-top: 25px; }
+  .card { width: 40px; height: 56px; } /* 主游戏区卡牌缩小 */
+
+  .controls { gap: 8px; padding-top: 10px; }
+  .controls .game-button { width: calc(33.33% - 6px); font-size: 0.85em; padding: 6px 8px; }
+  .game-button.compare-all-button { width: calc(100% - 12px); font-size: 0.95em; padding: 10px; }
+  
+  .comparison-modal-content { max-width: 95%; padding: 15px; }
+  .comparison-grid { grid-template-columns: 1fr; } /* 小屏幕单列 */
+  .comparison-cell .static-card { width: 26px; height: 36px; }
+}
+
+@media (max-width: 420px) { /* 非常小的屏幕 */
+  .player-banner-item { flex-basis: 100%; } /* 顶部横幅每个玩家占一行 */
+  .card { width: 32px; height: 45px; } /* 主游戏区卡牌再缩小 */
+  .hand-area { min-height: 60px; gap: 3px; }
+  .hand-area.allow-wrapping { min-height: 110px; }
+  .controls .game-button { width: calc(50% - 5px); font-size: 0.8em; }
+  .game-button.compare-all-button { width: calc(100% - 10px); }
+  .comparison-cell .static-card { width: 22px; height: 31px; }
 }
