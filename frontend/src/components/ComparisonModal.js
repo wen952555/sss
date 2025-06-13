@@ -19,19 +19,19 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
               <div className="comparison-hand-row">
                 <strong>头道:</strong>
                 <div className="mini-cards">
-                  {topCards.map(c => <StaticCard key={c.id + '_modal_top_static'} cardData={c} />)}
+                  {topCards.map((c, i) => <StaticCard key={c.id + '_modal_top_static'} cardData={c} />)}
                 </div>
               </div>
               <div className="comparison-hand-row">
                 <strong>中道:</strong>
                 <div className="mini-cards">
-                  {middleCards.map(c => <StaticCard key={c.id + '_modal_middle_static'} cardData={c} />)}
+                  {middleCards.map((c, i) => <StaticCard key={c.id + '_modal_middle_static'} cardData={c} />)}
                 </div>
               </div>
               <div className="comparison-hand-row">
                 <strong>尾道:</strong>
                 <div className="mini-cards">
-                  {bottomCards.map(c => <StaticCard key={c.id + '_modal_bottom_static'} cardData={c} />)}
+                  {bottomCards.map((c, i) => <StaticCard key={c.id + '_modal_bottom_static'} cardData={c} />)}
                 </div>
               </div>
             </div>
