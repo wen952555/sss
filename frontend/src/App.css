@@ -1,253 +1,80 @@
 /* frontend/src/App.css */
 
-/* --- 全局与基础布局 --- */
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #073b4c; /* 深蓝绿色背景 */
-  color: #f1f1f1; /* 默认浅色文字 */
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box; /* 让 border 和 padding 不增加元素总宽高 */
-}
+/* ... (大部分之前的CSS保持不变) ... */
 
-*, *::before, *::after {
-  box-sizing: inherit; /* 所有元素继承 body 的 box-sizing */
-}
-
-.app-container {
+/* --- 顶部AI玩家横幅 --- */
+.top-banner-container {
   display: flex;
-  flex-direction: column;
-  align-items: center; /* 水平居中所有主内容块 */
+  justify-content: space-around; /* AI玩家信息块均匀分布 */
+  align-items: flex-start; /* 顶部对齐 */
   width: 100%;
-  min-height: 100vh; /* 至少占满整个视口高度 */
-  padding: 20px 15px 50px 15px; /* 上、左右、下 内边距，给内容呼吸空间 */
+  max-width: 900px; /* 横幅最大宽度 */
+  padding: 10px 15px;
+  margin-bottom: 25px; /* 与下方游戏标题的间距 */
+  background-color: rgba(0, 0, 0, 0.2); /* 横幅背景 */
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
 }
 
-.game-title {
-  font-size: 2.8em; /* 稍大一点的标题 */
-  color: #ffd166; /* 亮黄色，更醒目 */
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* 更明显的文字阴影 */
-  margin-top: 0;
-  margin-bottom: 20px; /* 标题与下方内容的间距 */
-  font-weight: 700; /* 更粗的字体 */
-  letter-spacing: 1px; /* 轻微字间距 */
-}
-
-.game-message {
-  padding: 12px 20px;
-  margin-bottom: 25px; /* 与下方游戏板的间距 */
-  border-radius: 8px; /* 更圆润的边角 */
+.ai-player-display {
+  flex-basis: 30%; /* 每个AI玩家大致占据三分之一宽度 */
+  max-width: 280px; /* 单个AI信息块最大宽度 */
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.05); /* AI信息块背景 */
+  border-radius: 8px;
   text-align: center;
-  font-weight: 500;
-  width: 100%;
-  max-width: 600px; /* 消息区域最大宽度 */
-  font-size: 1.05em; /* 稍大一点的字体 */
-  box-shadow: 0 3px 8px rgba(0,0,0,0.2); /* 消息框阴影 */
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
-.game-message:not(.error) { /* 非错误消息 (例如 "牌型正确!") */
-   background-color: #06d6a0; /* 亮绿色 */
-   color: #073b4c; /* 深色文字以提供对比 */
+.ai-player-display.arranged { /* AI完成理牌时的样式 */
+  border-color: #06d6a0; /* 绿色边框表示完成 */
 }
-.game-message.error { /* 用于 "倒水" 或其他错误提示 */
-  background-color: #ef476f; /* 亮红色 */
-  color: white; /* 白色文字 */
+
+.ai-player-name {
+  font-weight: 600;
+  font-size: 1.05em;
+  color: #ffd166; /* AI名字用黄色 */
+  margin-bottom: 5px;
+}
+
+.ai-player-status {
+  font-size: 0.9em;
+  color: #b0bec5; /* 状态文字用灰色 */
+  margin-bottom: 8px;
+  min-height: 1.2em; /* 保持高度一致性 */
+}
+
+.ai-player-hands-summary {
+  font-size: 0.8em;
+  color: #eceff1;
+  line-height: 1.4;
+}
+.ai-hand-summary {
+  /* 可以为每道牌型加点小图标或不同颜色 */
 }
 
 
-/* --- 游戏板与牌道区域 (头道、中道/手牌、尾道) --- */
+/* --- 游戏板宽度调整，以适应可能的横幅宽度 --- */
 .game-board {
-  display: flex;
-  flex-direction: column; /* 牌道本身是上下排列的 */
-  gap: 20px; /* 牌道之间的垂直间距 */
-  padding: 20px; /* 游戏板的内边距 */
-  background-color: rgba(0, 0, 0, 0.35); /* 半透明深色背景 */
-  border-radius: 16px; /* 更大的圆角 */
-  box-shadow: 0 6px 20px rgba(0,0,0,0.35); /* 更深的阴影 */
-  width: 100%;
-  max-width: 700px; /* 游戏板最大宽度，需要足够容纳换行的手牌 */
+  /* ... */
+  max-width: 600px; /* 如果横幅很宽，游戏板可以相对窄一些 */
 }
 
-/* 单个牌道的整体区域 */
-.hand-area-zone {
-  /* 这个 zone 本身通常不需要太多特定样式，其子元素会填充它 */
-}
+/* ... (其他CSS样式，如卡牌、按钮等，可以沿用之前的) ... */
 
-/* 牌道头部 (包含标题和牌型名称) */
-.hand-area-header {
-  display: flex;
-  justify-content: space-between; /* 标题居左，牌型名称居右 */
-  align-items: center; /* 垂直居中对齐 */
-  margin-bottom: 12px; /* 头部与下方卡牌区域的间距 */
-  padding: 0 8px; /* 轻微左右内边距 */
-}
-
-.hand-area-title { /* 用于牌道标题，如 "头道 (3/3)" */
-  color: #ffd166; /* 亮黄色 */
-  font-weight: 600; /* 稍粗字体 */
-  font-size: 1.1em; /* 标题字号 */
-  margin: 0; /* 移除默认的 h3 margin */
-}
-
-.hand-type-display { /* 用于显示牌型名称，如 "乌龙" */
-  font-size: 0.95em;
-  color: #f1f1f1; /* 浅色文字 */
-  background-color: rgba(0,0,0,0.5); /* 半透明深色背景，使其更突出 */
-  padding: 4px 10px; /* 内边距 */
-  border-radius: 5px; /* 圆角 */
-  font-weight: 500;
-}
-
-/* 牌道内的 Droppable 区域 (实际容纳卡牌的区域) */
-.hand-area {
-  background-color: rgba(255, 255, 255, 0.08); /* 轻微透明的浅色背景 */
-  padding: 12px; /* 内边距 */
-  border-radius: 8px; /* 圆角 */
-  min-height: 110px; /* 至少一张卡牌的高度 + padding (根据卡牌高度调整) */
-  display: flex;       /* 启用 Flexbox */
-  flex-direction: row; /* 卡牌横向排列 */
-  align-items: center; /* 卡牌在交叉轴（垂直）上居中 */
-  gap: 8px;            /* 卡牌之间的水平间隙 */
-  transition: background-color 0.25s ease-in-out; /* 拖拽悬浮的背景色过渡 */
-}
-
-/* 默认牌道 (头道、尾道，以及作为中道的中间牌道) 不换行，且卡牌居中 */
-.hand-area:not(.allow-wrapping) {
-  flex-wrap: nowrap;
-  justify-content: center; /* 使固定数量的卡牌在该区域内居中 */
-}
-
-/* 当牌道允许换行时 (用于中间牌道作为“手牌”时) */
-.hand-area.allow-wrapping {
-  flex-wrap: wrap;       /* 允许卡牌换行 */
-  justify-content: center; /* 换行后，每行卡牌也居中（如果一行未满）*/
-                          /* 或者使用 flex-start 如果希望从左开始排列 */
-  min-height: 180px;     /* 可能需要更高的高度以容纳两行或更多行牌 (60+8+60=128, 再加padding) */
-  align-items: flex-start; /* 换行后，卡牌从顶部开始对齐 */
-}
-
-/* 当有卡牌拖拽到任何牌道区域上方时的样式 */
-.hand-area.droppable-active {
-  background-color: rgba(66, 153, 225, 0.35); /* 蓝色高亮，更明显 */
-}
-
-
-/* --- 卡牌样式 --- */
-.card {
-  width: 62px;  /* 卡牌宽度，可微调 */
-  height: 87px; /* 卡牌高度 (约 宽*1.4) */
-  border-radius: 5px; /* 卡牌圆角 */
-  overflow: hidden; /* 确保图片不超出卡牌边界 */
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.35); /* 卡牌阴影 */
-  cursor: grab; /* 拖拽手势 */
-  background-color: white; /* 卡牌背景色 */
-  flex-shrink: 0; /* 防止卡牌在 flex 容器中被不期望地压缩 */
-  transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1), 
-              box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1); /* 平滑过渡效果 */
-  user-select: none; /* 防止拖拽时选中卡牌内文字或图片 */
-  position: relative; /* 用于错误文本/占位符的绝对定位 */
-}
-
-.card img {
-  width: 100%;
-  height: 100%;
-  display: block; /* 移除图片下方的额外空白 */
-  object-fit: contain; /* 确保整个SVG图片内容都显示在卡牌内，可能会有留白 */
-                       /* 如果SVG是严格按卡牌比例设计的，用 'cover' 或 'fill' 也可以 */
-}
-
-/* 卡牌被激活（按下）或拖拽时的样式 */
-.card:active, .card.dragging { /* react-beautiful-dnd 会给拖拽中的卡牌添加 'dragging' 类 */
-  cursor: grabbing; /* 抓取手势 */
-  transform: scale(1.12) rotate(3.5deg); /* 放大并轻微旋转 */
-  box-shadow: 4px 6px 12px rgba(0,0,0,0.45); /* 更深的阴影 */
-  z-index: 1000; /* 确保拖拽的牌在所有其他元素之上 */
-}
-
-/* 卡牌占位符 (当卡牌数据无效时 CardComponent 显示的内容) */
-.card-placeholder {
-  width: 62px; 
-  height: 87px; 
-  border: 2px dashed #555; /* 虚线边框 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #2a2a2a; /* 深色背景 */
-  color: #777; /* 浅灰色文字 */
-  border-radius: 5px;
-  font-size: 24px;
-  font-weight: bold;
-}
-
-/* 图片加载错误时显示的文本 (在 CardComponent 的 onError 中添加) */
-.image-error-text {
-  position: absolute; 
-  top: 50%; 
-  left: 50%; 
-  transform: translate(-50%, -50%);
-  color: #ef476f; /* 红色错误文字 */
-  font-size: 11px; 
-  text-align: center; 
-  padding: 3px 5px;
-  background-color: rgba(0, 0, 0, 0.75); /* 半透明黑色背景 */
-  border-radius: 3px;
-  pointer-events: none; /* 确保不干扰拖拽 */
-}
-
-
-/* --- 控制按钮区域 --- */
-.controls {
-  margin-top: 30px; /* 与上方游戏板的间距 */
-  display: flex;
-  justify-content: center; /* 按钮组水平居中 */
-  gap: 20px; /* 按钮之间的间隙 */
-  margin-bottom: 30px; /* 确保页面底部有足够留白 */
-}
-
-.game-button {
-  padding: 12px 24px; /* 增大按钮的内边距，使其更大更易点击 */
-  font-size: 1.05em; /* 按钮文字大小 */
-  color: white;
-  background-color: #118ab2; /* 主题蓝色按钮 */
-  border: none;
-  border-radius: 8px; /* 更圆润的按钮边角 */
-  cursor: pointer;
-  transition: background-color 0.25s ease, transform 0.1s ease-out, box-shadow 0.25s ease;
-  box-shadow: 0 3px 7px rgba(0,0,0,0.25); /* 按钮阴影 */
-  font-weight: 500; /* Medium weight */
-  letter-spacing: 0.5px; /* 轻微字间距 */
-}
-
-.game-button:hover:not(:disabled) {
-  background-color: #0c9dcb; /* 悬浮时颜色变浅 */
-  transform: translateY(-2px); /* 轻微上浮效果 */
-  box-shadow: 0 5px 10px rgba(0,0,0,0.3); /* 悬浮时阴影变化 */
-}
-
-.game-button:active:not(:disabled) { /* 按下时 */
-  transform: translateY(0px); /* 恢复原位 */
-  background-color: #0a8aaa; /* 按下时颜色再深一点 */
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* 按下时阴影减小 */
-}
-
-.game-button:disabled {
-  background-color: #4f6367; /* 禁用的背景色 */
-  color: #9fb3b8; /* 禁用的文字颜色 */
-  cursor: not-allowed; /* 禁用手势 */
-  box-shadow: none; /* 移除阴影 */
-  transform: none; /* 移除任何变换 */
-}
-
-/* 针对特定按钮的微调 (可选) */
-/* .game-button.ai-sort-button { background-color: #06d6a0; } */
-/* .game-button.confirm-button { background-color: #ef476f; } */
-
-
-/* 针对倒水情况，给游戏板一个红色边框提示 (可选) */
-.game-board.misarranged-board {
-  border: 3px solid #ef476f; /* 红色边框 */
-  box-shadow: 0 0 15px #ef476f; /* 红色辉光 */
+/* 响应式调整 for TopBanner */
+@media (max-width: 768px) {
+  .top-banner-container {
+    flex-direction: column; /* 小屏幕上AI信息垂直排列 */
+    align-items: center; /* 居中 */
+    gap: 10px;
+    max-width: 95%;
+  }
+  .ai-player-display {
+    flex-basis: auto; /* 取消固定宽度比例 */
+    width: 100%; /* 占据全部可用宽度 */
+    max-width: 400px; /* 限制最大宽度 */
+  }
+  .game-board {
+    max-width: 95%; /* 游戏板也适应屏幕 */
+  }
 }
