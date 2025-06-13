@@ -1,9 +1,9 @@
 // frontend/src/App.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext } from 'react-beautiful-dnd';
-import HandArea from './components/HandArea'; // 用于头中尾道
-import TopBanner from './components/TopBanner'; // 用于玩家状态横幅
-import ComparisonModal from './components/ComparisonModal'; // 用于比牌界面
+import HandArea from './components/HandArea';
+import TopBanner from './components/TopBanner';
+import ComparisonModal from './components/ComparisonModal';
 import { API_BASE_URL } from './config';
 import { mapBackendCardsToFrontendCards } from './logic/card';
 import { evaluateHand, compareEvaluatedHands, HAND_TYPE_NAMES } from './logic/handEvaluator'; 
@@ -33,11 +33,10 @@ function App() {
   const [showComparisonView, setShowComparisonView] = useState(false); 
   const [gameStarted, setGameStarted] = useState(false); 
 
-  // --- (Helper functions 和大部分 useEffects - 保持不变，此处省略以保持核心代码清晰) ---
-  // (请确保您 App.js 中这些函数的逻辑是正确的，如 getPlayerDroppableId, checkPlayerFullyArranged, evaluateAndSetPlayerArrangement, handleDealNewHand, autoArrangeAIHand, onDragEnd, handleHumanPlayerAISort, handleConfirmHand)
-  // 我将只列出与新流程相关的关键函数和修改
+  // --- (Helper functions 和大部分 useEffects - 保持不变) ---
+  // (省略以保持核心代码清晰，请确保您文件中的这些部分是正确的)
   const getPlayerDroppableId = (playerId, areaKey) => `${DROPPABLE_IDS_PLAYER_PREFIX}${playerId}_${areaKey}`;
-  const checkPlayerFullyArranged = useCallback((player) => { if (!player) return false; return player.cards.TOP.length === HAND_FIXED_CAPACITIES.TOP && player.cards.MIDDLE.length === HAND_FIXED_CAPACITIES.MIDDLE && player.cards.BOTTOM.length === HAND_FIXED_CAPACITIES.BOTTOM; }, []);
+  const checkPlayerFullyArranged = useCallback((player) => { /* ... */ return player.cards.TOP.length === HAND_FIXED_CAPACITIES.TOP && player.cards.MIDDLE.length === HAND_FIXED_CAPACITIES.MIDDLE && player.cards.BOTTOM.length === HAND_FIXED_CAPACITIES.BOTTOM; }, []);
   const evaluateAndSetPlayerArrangement = useCallback((playerId, newCards) => { setPlayers(prevPlayers => prevPlayers.map(p => { if (p.id === playerId) { const isFullyArrangedNow = checkPlayerFullyArranged({cards: newCards}); let finalEval = null; let misArranged = false; if (isFullyArrangedNow) { const topEval = evaluateHand(newCards.TOP); const middleEval = evaluateHand(newCards.MIDDLE); const bottomEval = evaluateHand(newCards.BOTTOM); finalEval = { topEval, middleEval, bottomEval }; if (!p.isAI && (compareEvaluatedHands(topEval, middleEval) > 0 || compareEvaluatedHands(middleEval, bottomEval) > 0)) { misArranged = true; if (misArranged && playerId === HUMAN_PLAYER_ID) setTimeout(()=>alert("注意：你的牌型组合错误（倒水）！"),0); } } return { ...p, cards: newCards, isArranged: isFullyArrangedNow, finalArrangement: finalEval, isMisArranged: misArranged, isThinking: false, }; } return p; })); }, [checkPlayerFullyArranged]);
   useEffect(() => { if (showComparisonView) return; if (!gameStarted && !isLoadingDeal) return; if (!humanPlayer) return; const isHumanArranged = checkPlayerFullyArranged(humanPlayer); setHumanMiddleHandLabel(isHumanArranged ? '中道' : '手牌'); }, [humanPlayer, checkPlayerFullyArranged, players, showComparisonView, isLoadingDeal, gameStarted]);
   useEffect(() => { const allArranged = players.every(p => p.isArranged); setAllPlayersArranged(allArranged); }, [players]);
@@ -47,31 +46,8 @@ function App() {
   const onDragEnd = (result) => { const { source, destination } = result; if (!destination || !humanPlayer || showComparisonView) return; const sourceDroppableId = source.droppableId; const destDroppableId = destination.droppableId; if (!sourceDroppableId.startsWith(`${DROPPABLE_IDS_PLAYER_PREFIX}${HUMAN_PLAYER_ID}_`) || !destDroppableId.startsWith(`${DROPPABLE_IDS_PLAYER_PREFIX}${HUMAN_PLAYER_ID}_`)) { return; } const parseAreaFromPlayerId = (idStr) => idStr.substring(idStr.lastIndexOf('_') + 1); const sourceAreaKey = parseAreaFromPlayerId(sourceDroppableId); const destAreaKey = parseAreaFromPlayerId(destDroppableId); const newHumanCards = { ...humanPlayer.cards }; const sourceList = [...newHumanCards[sourceAreaKey]]; const [movedCard] = sourceList.splice(source.index, 1); if (sourceAreaKey === destAreaKey) { sourceList.splice(destination.index, 0, movedCard); newHumanCards[sourceAreaKey] = sourceList; } else { const destList = [...newHumanCards[destAreaKey]]; let destCapacity = (destAreaKey === 'MIDDLE' && !checkPlayerFullyArranged(humanPlayer)) ? 13 : HAND_FIXED_CAPACITIES[destAreaKey]; if (destList.length >= destCapacity) { alert(`此道 (${destAreaKey}) 已满!`); return; } destList.splice(destination.index, 0, movedCard); newHumanCards[sourceAreaKey] = sourceList; newHumanCards[destAreaKey] = destList; } evaluateAndSetPlayerArrangement(HUMAN_PLAYER_ID, newHumanCards); };
   const handleHumanPlayerAISort = () => { if (!humanPlayer || !gameStarted || humanPlayer.isArranged || humanPlayer.isThinking || showComparisonView) return; const currentCardsInPlay = [ ...humanPlayer.cards.TOP, ...humanPlayer.cards.MIDDLE, ...humanPlayer.cards.BOTTOM, ].filter(Boolean); let cardsToArrange = currentCardsInPlay; if (currentCardsInPlay.length !== 13) { const initialCards = humanPlayer.initial13Cards; if (!initialCards || initialCards.length !== 13) { alert("AI辅助理牌失败：未找到完整的13张初始牌。"); return; } cardsToArrange = [...initialCards]; } setPlayers(prev => prev.map(p => p.id === HUMAN_PLAYER_ID ? { ...p, isThinking: true, cards: {TOP:[], MIDDLE:[], BOTTOM:[]} } : p)); autoArrangeAIHand(HUMAN_PLAYER_ID, cardsToArrange); };
   const handleConfirmHand = () => { if (!humanPlayer || !gameStarted || !humanPlayer.isArranged || showComparisonView) { if (!showComparisonView && gameStarted) alert("请先将您的13张牌按3-5-5的组合摆好。"); return; } if (humanPlayer.isMisArranged) { alert("您的牌型组合错误（倒水），请调整！"); return; } setPlayers(prev => prev.map(p => p.id === HUMAN_PLAYER_ID ? {...p, confirmedThisRound: true} : p)); };
-  
-  const handleStartCompare = () => { 
-    if (!allPlayersArranged) { 
-      alert("尚有玩家未完成理牌！"); 
-      return; 
-    } 
-    const playersAfterComparison = calculateAllPlayerScores(players, HAND_TYPE_NAMES); 
-    const updatedPlayersWithTotalScore = playersAfterComparison.map(p => ({ 
-        ...p, 
-        score: (players.find(op => op.id === p.id)?.score || 0) + (p.roundScore || 0), 
-    })); 
-    setPlayers(updatedPlayersWithTotalScore); 
-    setShowComparisonView(true); 
-  };
-
-  const handleContinueGame = () => {
-    setShowComparisonView(false); 
-    // 清理上一局的牌，但保留总分，并重置游戏开始状态等待用户点击“重新发牌”
-    setPlayers(prevPlayers => prevPlayers.map(p => ({
-        ...createInitialPlayerState(p.id, p.name, p.isAI),
-        score: p.score 
-    })));
-    setAllPlayersArranged(false);
-    setGameStarted(false); 
-  };
+  const handleStartCompare = () => { if (!allPlayersArranged) { alert("尚有玩家未完成理牌！"); return; } const playersAfterComparison = calculateAllPlayerScores(players, HAND_TYPE_NAMES); const updatedPlayersWithTotalScore = playersAfterComparison.map(p => ({ ...p, score: (players.find(op => op.id === p.id)?.score || 0) + (p.roundScore || 0), })); setPlayers(updatedPlayersWithTotalScore); setShowComparisonView(true); };
+  const handleContinueGame = () => { setShowComparisonView(false); setPlayers(prevPlayers => prevPlayers.map(p => ({ ...createInitialPlayerState(p.id, p.name, p.isAI), score: p.score }))); setAllPlayersArranged(false); setGameStarted(false); };
   
   if (!humanPlayer) return <div className="app-container"><p>正在加载玩家数据...</p></div>;
 
@@ -82,7 +58,6 @@ function App() {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      {/* 根据 showComparisonView 状态条件渲染主游戏界面或比牌界面 */}
       {showComparisonView ? (
         <ComparisonModal 
             onClose={handleContinueGame} 
@@ -91,10 +66,10 @@ function App() {
             humanPlayerId={HUMAN_PLAYER_ID}
         />
       ) : (
-        // 主游戏界面，现在是一个垂直的 flex 容器，包含5个横幅
+        // 主游戏界面，严格按照五道横幅结构
         <div className="app-container game-view-active"> 
           {/* 横幅1: 玩家状态 */}
-          <div className="banner-section player-status-banner-section">
+          <div className="banner-section player-status-banner">
             <TopBanner 
                 humanPlayer={humanPlayer}
                 aiPlayers={aiPlayers}
@@ -102,22 +77,22 @@ function App() {
           </div>
 
           {/* 横幅2: 头道 */}
-          <div className="banner-section hand-lane-banner-section">
+          <div className={`banner-section hand-lane-banner top-lane ${humanPlayer.isMisArranged && humanPlayer.isArranged ? 'misarranged-lane' : ''}`}>
             <HandArea droppableId={getPlayerDroppableId(HUMAN_PLAYER_ID, 'TOP')} title={`头道 (${humanTopCurrentCount}/${HAND_FIXED_CAPACITIES.TOP})`} cards={humanPlayer.cards.TOP} evaluatedHandType={humanPlayer.finalArrangement?.topEval} allowWrap={false} />
           </div>
 
           {/* 横幅3: 手牌/中道 */}
-          <div className="banner-section hand-lane-banner-section middle-lane">
+          <div className={`banner-section hand-lane-banner middle-lane ${humanPlayer.isMisArranged && humanPlayer.isArranged ? 'misarranged-lane' : ''}`}>
             <HandArea droppableId={getPlayerDroppableId(HUMAN_PLAYER_ID, 'MIDDLE')} title={`${humanMiddleHandLabel} (${humanMiddleCurrentCount}/${Math.max(0, humanMiddleExpectedCount)})`} cards={humanPlayer.cards.MIDDLE} evaluatedHandType={humanPlayer.isArranged ? humanPlayer.finalArrangement?.middleEval : null} allowWrap={!humanPlayer.isArranged} />
           </div>
 
           {/* 横幅4: 尾道 */}
-          <div className="banner-section hand-lane-banner-section">
+          <div className={`banner-section hand-lane-banner bottom-lane ${humanPlayer.isMisArranged && humanPlayer.isArranged ? 'misarranged-lane' : ''}`}>
             <HandArea droppableId={getPlayerDroppableId(HUMAN_PLAYER_ID, 'BOTTOM')} title={`尾道 (${humanBottomCurrentCount}/${HAND_FIXED_CAPACITIES.BOTTOM})`} cards={humanPlayer.cards.BOTTOM} evaluatedHandType={humanPlayer.finalArrangement?.bottomEval} allowWrap={false} />
           </div>
         
           {/* 横幅5: 控制按钮 */}
-          <div className="banner-section controls-banner-section">
+          <div className="banner-section controls-banner">
             <div className="controls">
               <button className="game-button" onClick={handleDealNewHand} disabled={isLoadingDeal}> {isLoadingDeal ? '发牌中...' : '重新发牌'} </button>
               <button className="game-button" onClick={handleHumanPlayerAISort} disabled={isLoadingDeal || !gameStarted || humanPlayer.isArranged || humanPlayer.isThinking}> {humanPlayer.isThinking && humanPlayer.id === HUMAN_PLAYER_ID ? 'AI理牌中...' : 'AI帮我理牌'} </button>
