@@ -80,11 +80,10 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  overflow: hidden; /* 禁止滚动条出现 */
+  overflow: hidden;
   border-top: 1px solid rgba(0,0,0,0.4);
 }
 
-/* 置牌区占满横幅 */
 .hand-area {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
@@ -98,11 +97,9 @@ html, body {
   min-height: 0;
   margin: 0 auto;
   justify-content: center;
-  overflow: visible;   /* 禁止滚动条，也不裁剪说明文字 */
+  overflow: visible;
   padding: 0 10px;
 }
-
-/* 说明文字半透明覆盖（可被扑克牌覆盖） */
 .hand-info-internal {
   position: absolute;
   top: 50%;
@@ -114,7 +111,7 @@ html, body {
   align-items: center;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.22; /* 半透明 */
+  opacity: 0.22;
   font-size: 1.22em;
   font-weight: bold;
   padding: 0 18px;
@@ -122,14 +119,10 @@ html, body {
   text-shadow: 1px 1px 5px #222, 0 0 4px #000;
   user-select: none;
 }
-
-/* 扑克牌可覆盖说明文字 */
 .hand-area .card {
   position: relative;
   z-index: 2;
 }
-
-/* 卡牌自适应横幅高度 */
 .card {
   height: 80%;
   aspect-ratio: 7/10;
@@ -153,7 +146,7 @@ html, body {
   pointer-events: none;
 }
 
-/* 控制按钮区 - 让其也平均分配剩余高度 */
+/* 控制按钮区 */
 .controls-banner-section {
   padding: 10px;
   background-color: rgba(0,0,0,0.25);
@@ -170,7 +163,7 @@ html, body {
 .game-button { font-size: 0.8em; padding: 6px 12px; }
 .game-button.compare-all-button { width: auto; max-width: 220px; font-size: 0.9em; padding: 7px 18px; }
 
-/* 比牌视图容器 - 田字型全屏显示 */
+/* 比牌视图容器 - 固定2x2田字型布局 */
 .comparison-view-container { 
   position: fixed; 
   top: 0; left: 0; width: 100vw; height: 100vh;
@@ -199,10 +192,11 @@ html, body {
 }
 .comparison-modal-content h2 { font-size: 1.3em; margin-bottom: 22px; }
 
-/* 田字型布局，所有玩家横向排布，每个玩家的三道纵向，且自适应撑满屏幕 */
+/* 固定2行2列田字型，不响应式 */
 .comparison-grid { 
   display: grid; 
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
   gap: 0 56px;
   width: 100%;
   margin-bottom: 24px;
@@ -222,8 +216,6 @@ html, body {
   padding-bottom: 4px; 
   text-align: center;
 }
-
-/* 三道横向均分，且3-5-5田字型 */
 .comparison-hand-verticals {
   display: flex;
   flex-direction: column;
@@ -262,8 +254,6 @@ html, body {
   width: 100%;
   height: 100%;
 }
-
-/* 打枪等信息 */
 .shoot-info, .positive-shoot, .negative-shoot {
   font-size: 1.05em;
   margin: 6px 0 0 0;
@@ -302,30 +292,20 @@ html, body {
   margin-top: 0;
 }
 
-/* 响应式 */
-@media (max-width: 1200px) {
-  .comparison-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 10px;}
-  .comparison-cell { min-width: 180px;}
-  .comparison-cell .static-card { width: 27px; height: 38px;}
-}
-@media (max-width: 1100px) {
-  .comparison-modal-content {
-    padding: 6px 2vw 16px 2vw;
-    max-width: 98vw;
+/* 禁止田字型响应式变化 */
+@media (max-width: 1200px), (max-width: 900px), (max-width: 700px) {
+  .comparison-grid { 
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 0 10px;
   }
-  .comparison-grid { gap: 22px 6px; }
-  .comparison-cell .static-card { width: 26px; height: 36px; }
 }
+
 @media (max-width: 800px) {
   .card {
     min-width: 16px;
     height: 70%;
   }
-}
-@media (max-width: 700px) {
-  .comparison-modal-content { padding: 2vw 0 12px 0; }
-  .comparison-grid { gap: 10px 1vw; }
-  .comparison-cell .static-card { width: 19px; height: 27px;}
 }
 @media (max-width: 600px) {
   .player-banner-item { flex-basis: calc(50% - 4px); min-width: 100px; }
