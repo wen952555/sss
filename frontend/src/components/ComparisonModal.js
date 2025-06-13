@@ -1,14 +1,13 @@
 // frontend/src/components/ComparisonModal.js
 import React from 'react';
 import StaticCard from './StaticCard';
-// HAND_TYPE_NAMES 导入不再需要，因为 getTypeName 被移除
+// HAND_TYPE_NAMES 的导入不再需要，因为 getTypeName 已移除
 // import { HAND_TYPE_NAMES } from '../logic/handEvaluator';
 
-// getTypeName 函数已被移除，因为它不再被使用
+// getTypeName 函数已被彻底移除
 // const getTypeName = (typeNum) => HAND_TYPE_NAMES[typeNum] || '未知';
 
 const PlayerComparisonCell = ({ player, isHuman, players }) => {
-    // 确保 player 和 player.finalArrangement (表示理牌完成) 存在
     if (!player || !player.finalArrangement) {
         return <div className="comparison-cell empty"><span>等待数据...</span></div>;
     }
@@ -17,8 +16,7 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
     const middleCards = (player.cards && Array.isArray(player.cards.MIDDLE)) ? player.cards.MIDDLE : [];
     const bottomCards = (player.cards && Array.isArray(player.cards.BOTTOM)) ? player.cards.BOTTOM : [];
     
-    // 从 player.finalArrangement 解构 topEval, middleEval, bottomEval 已不再需要，
-    // 因为我们不再显示牌型名称。
+    // 移除对 topEval, middleEval, bottomEval 的解构，因为它们不再被使用
     // const { topEval, middleEval, bottomEval } = player.finalArrangement; 
     
     const roundScore = typeof player.roundScore === 'number' ? player.roundScore : 0;
@@ -31,7 +29,7 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
                 <span className="score-summary">(本局: {roundScore >= 0 ? '+' : ''}{roundScore} | 总: {totalScore >= 0 ? '+' : ''}{totalScore})</span>
             </h4>
             <div className="comparison-hand-row">
-                {/* 不再显示牌型名称 */}
+                {/* 只显示 "头道:" */}
                 <strong>头道:</strong>
                 <div className="mini-cards">
                     {topCards.map(c => <StaticCard key={c.id + '_modal_top_static'} cardData={c} />)}
@@ -51,7 +49,6 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
             </div>
             {player.comparisonResults && Object.entries(player.comparisonResults).map(([opponentId, res]) => {
                 const opponent = players.find(p=>p.id === opponentId);
-                // 确保 res.details 存在且是数组
                 if (res.details && Array.isArray(res.details) && res.details.some(d => d.toLowerCase().includes("打枪")) && res.score !== 0) {
                     return (
                         <p key={`${player.id}_vs_${opponentId}_shoot`} className={`shoot-info ${res.score > 0 ? 'positive-shoot' : 'negative-shoot'}`}>
