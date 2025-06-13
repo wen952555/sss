@@ -1,7 +1,6 @@
 // frontend/src/components/ComparisonModal.js
 import React from 'react';
-// import CardComponent from './Card'; // 不再使用可拖拽的 CardComponent
-import StaticCard from './StaticCard'; // 引入新的静态卡牌组件
+import StaticCard from './StaticCard'; // 确保你已经创建了这个组件
 import { HAND_TYPE_NAMES } from '../logic/handEvaluator';
 
 const getTypeName = (typeNum) => HAND_TYPE_NAMES[typeNum] || '未知';
@@ -28,34 +27,33 @@ const PlayerComparisonCell = ({ player, isHuman }) => {
             <div className="comparison-hand-row">
                 <strong>头道 ({getTypeName(topEval?.type)}):</strong>
                 <div className="mini-cards">
-                    {/* 使用 StaticCard */}
                     {topCards.map(c => <StaticCard key={c.id + '_modal_top_static'} cardData={c} />)}
                 </div>
             </div>
             <div className="comparison-hand-row">
                 <strong>中道 ({getTypeName(middleEval?.type)}):</strong>
                 <div className="mini-cards">
-                    {/* 使用 StaticCard */}
                     {middleCards.map(c => <StaticCard key={c.id + '_modal_middle_static'} cardData={c} />)}
                 </div>
             </div>
             <div className="comparison-hand-row">
                 <strong>尾道 ({getTypeName(bottomEval?.type)}):</strong>
                 <div className="mini-cards">
-                    {/* 使用 StaticCard */}
                     {bottomCards.map(c => <StaticCard key={c.id + '_modal_bottom_static'} cardData={c} />)}
                 </div>
             </div>
-            {player.comparisonResults && Object.values(player.comparisonResults).map((res, idx) => (
+            {/* 显示打枪信息 */}
+            {player.comparisonResults && Object.entries(player.comparisonResults).map(([opponentId, res]) => (
                 res.details.some(d => d.toLowerCase().includes("打枪")) && res.score !== 0 ? (
-                    <p key={`${player.id}_shoot_${idx}`} className={`shoot-info ${res.score > 0 ? 'positive-shoot' : 'negative-shoot'}`}>
-                        {res.score > 0 ? `打枪对手!` : `被对手打枪!`}
+                    <p key={`${player.id}_vs_${opponentId}_shoot`} className={`shoot-info ${res.score > 0 ? 'positive-shoot' : 'negative-shoot'}`}>
+                        {res.score > 0 ? `打枪 ${players.find(p=>p.id===opponentId)?.name || '对手'}!` : `被 ${players.find(p=>p.id===opponentId)?.name || '对手'} 打枪!`}
                     </p>
                 ) : null
             ))}
         </div>
     );
 };
+
 
 const ComparisonModal = ({ isOpen, onClose, players, humanPlayerId }) => {
   if (!isOpen || !players || players.length === 0) {
@@ -71,10 +69,14 @@ const ComparisonModal = ({ isOpen, onClose, players, humanPlayerId }) => {
         <button className="modal-close-button" onClick={onClose}>×</button>
         <h2>本局比牌结果</h2>
         <div className="comparison-grid">
-            {humanPlayer && <PlayerComparisonCell player={humanPlayer} isHuman={true} />}
-            {aiOpponents[0] && <PlayerComparisonCell player={aiOpponents[0]} isHuman={false}/>}
-            {aiOpponents[1] ? <PlayerComparisonCell player={aiOpponents[1]} isHuman={false}/> : <div className="comparison-cell empty">AI②槽位空</div>}
-            {aiOpponents[2] ? <PlayerComparisonCell player={aiOpponents[2]} isHuman={false}/> : <div className="comparison-cell empty">AI③槽位空</div>}
+            {humanPlayer && <PlayerComparisonCell player={humanPlayer} isHuman={true} players={players} />}
+            {aiOpponents[0] && <PlayerComparisonCell player={aiOpponents[0]} isHuman={false} players={players} />}
+            {aiOpponents[1] ? <PlayerComparisonCell player={aiOpponents[1]} isHuman={false} players={players}/> : <div className="comparison-cell empty"></div>}
+            {aiOpponents[2] ? <PlayerComparisonCell player={aiOpponents[2]} isHuman={false} players={players}/> : <div className="comparison-cell empty"></div>}
+        </div>
+        {/* 可以添加一个“开始新一局”的按钮在模态框底部 */}
+        <div style={{textAlign: 'center', marginTop: '20px'}}>
+            <button className="game-button" onClick={onClose}>关闭详情 (开始新一局请点“重新发牌”)</button>
         </div>
       </div>
     </div>
