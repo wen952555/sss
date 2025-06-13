@@ -12,27 +12,47 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
     const roundScore = typeof player.roundScore === 'number' ? player.roundScore : 0;
     const totalScore = typeof player.score === 'number' ? player.score : 0;
 
+    // 堆叠用绝对定位，动态赋 left
+    const renderStackedCards = (cards) => (
+      <div
+        className="mini-cards"
+        style={{
+          '--card-count': cards.length,
+          width:
+            cards.length > 1
+              ? `${80 + (cards.length - 1) * 32}px`
+              : '80px',
+        }}
+      >
+        {cards.map((c, i) => (
+          <StaticCard
+            key={c.id + '_static'}
+            cardData={c}
+            style={{
+              position: 'absolute',
+              left: `${i * 32}px`,
+              zIndex: i + 1,
+            }}
+          />
+        ))}
+      </div>
+    );
+
     return (
         <div className={`comparison-cell ${isHuman ? 'human-player-cell' : 'ai-player-cell'}`}>
             <h4> {player.name} <span className="score-summary">(本局: {roundScore >= 0 ? '+' : ''}{roundScore} | 总: {totalScore >= 0 ? '+' : ''}{totalScore})</span> </h4>
             <div className="comparison-hand-verticals">
               <div className="comparison-hand-row">
                 <strong>头道:</strong>
-                <div className="mini-cards">
-                  {topCards.map((c, i) => <StaticCard key={c.id + '_modal_top_static'} cardData={c} />)}
-                </div>
+                {renderStackedCards(topCards)}
               </div>
               <div className="comparison-hand-row">
                 <strong>中道:</strong>
-                <div className="mini-cards">
-                  {middleCards.map((c, i) => <StaticCard key={c.id + '_modal_middle_static'} cardData={c} />)}
-                </div>
+                {renderStackedCards(middleCards)}
               </div>
               <div className="comparison-hand-row">
                 <strong>尾道:</strong>
-                <div className="mini-cards">
-                  {bottomCards.map((c, i) => <StaticCard key={c.id + '_modal_bottom_static'} cardData={c} />)}
-                </div>
+                {renderStackedCards(bottomCards)}
               </div>
             </div>
             {/* 打枪信息 */}
@@ -51,9 +71,8 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
     );
 };
 
-// 固定田字型顺序（2x2）：前两为上排，后两为下排
+// 田字型顺序不变
 const get2x2GridOrder = (players, humanPlayerId) => {
-  // 保证最多4人。如果不足4人则补空位
   const human = players.find(p => p.id === humanPlayerId);
   const ais = players.filter(p => p.id !== humanPlayerId);
   let order = [];
