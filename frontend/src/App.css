@@ -10,49 +10,36 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑ�
   align-items: center;
   width: 100%;
   min-height: 100vh;
-  padding: 20px 15px 40px 15px; /* 上下边距可以调整 */
+  padding: 20px 15px 40px 15px; /* 顶部可以留出更多空间或根据整体设计调整 */
 }
 
-/* game-title 的样式可以删除了，因为它不再被使用 */
-/*
-.game-title { ... }
-*/
-
-/* gameMessage 的样式也可以删除了 */
-/*
-.game-message { ... }
-.game-message:not(.error) { ... }
-.game-message.error { ... }
-*/
-
-/* player-score-display 的样式也可以删除了，分数已移到 TopBanner */
-/*
-.player-score-display { ... }
-*/
+/* .game-title 样式已移除 */
+/* .game-message 样式已移除 */
+/* .player-score-display 样式已移除 */
 
 
 /* --- 游戏板 (现在是主要的游戏区域容器) --- */
 .game-board {
   display: flex;
-  flex-direction: column; /* 内部元素：横幅、牌道、按钮区，垂直排列 */
-  gap: 20px; /* 各主要部分之间的间距 */
+  flex-direction: column;
+  gap: 25px; /* 内部主要模块之间的间距 (Banner, HandLanes, Controls) */
   padding: 20px;
-  background-color: rgba(0, 0, 0, 0.35); /* 深色背景 */
+  background-color: rgba(0, 0, 0, 0.35);
   border-radius: 16px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.35);
   width: 100%;
-  max-width: 850px; /* 游戏板可以更宽，以容纳横幅 */
-  /* margin-top: 0; /* 移除了 game-title 后，它可能是第一个主要元素 */
+  max-width: 850px; 
+  margin-top: 20px; /* game-board 与页面顶部的间距 (如果需要) */
 }
 
 /* 包裹三个牌道区域的容器 */
 .hand-lanes-container {
     display: flex;
     flex-direction: column;
-    gap: 18px; /* 牌道之间的间距 */
+    gap: 18px;
     width: 100%;
-    max-width: 680px; /* 牌道区域保持之前的宽度 */
-    margin: 0 auto; /* 使牌道区域在 game-board 内居中 (如果 game-board 比它宽) */
+    max-width: 680px; 
+    margin: 0 auto; 
 }
 
 
@@ -62,27 +49,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑ�
   justify-content: space-around;
   align-items: stretch;
   flex-wrap: wrap;
-  width: 100%; /* 宽度适应 game-board */
-  /* max-width: 800px; /* 这个可以移除或调整，因为它现在受限于 game-board */
-  padding: 10px 0; /* 调整内边距，因为外层 game-board 有 padding */
-  /* margin-bottom: 0; /* 移除了，由 game-board 的 gap 控制 */
-  background-color: transparent; /* 背景由 game-board 提供，这里设为透明 */
-  border-radius: 0; /* 圆角由 game-board 控制 */
+  width: 100%; 
+  padding: 10px 0; /* 移除左右padding，因为game-board已有 */
+  background-color: transparent; 
+  border-radius: 0; 
   gap: 10px;
-  box-shadow: none; /* 阴影由 game-board 提供 */
-  /* border-bottom: 1px solid rgba(255,255,255,0.1); */ /* 可选：加个分隔线 */
+  box-shadow: none; 
+  /* border-bottom: 1px solid rgba(255,255,255,0.1); */ /* 可选分隔线 */
   /* padding-bottom: 15px; */
 }
-/* ... (AIPlayerDisplay 和 HumanPlayerBannerDisplay 的样式保持不变，但它们现在是 .top-banner-container 的子元素) ... */
+/* ... (AIPlayerDisplay 和 HumanPlayerBannerDisplay 的样式保持不变) ... */
 .human-player-banner-display { flex: 1 1 220px; min-width: 200px; padding: 12px 15px; background-color: rgba(255, 221, 102, 0.15); border-radius: 8px; border: 1px solid #ffd166; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 0 10px rgba(255, 209, 102, 0.25); }
 .human-player-avatar { width: 45px; height: 45px; border-radius: 50%; background-color: #ffd166; color: #073b4c; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.3em; margin-bottom: 10px; border: 2px solid #fca311; }
-.human-player-info { }
 .human-player-name { font-weight: 600; font-size: 1.1em; color: #fff; margin-bottom: 5px; }
 .human-player-score-container { margin-top: 8px; font-size: 0.95em; }
 .human-player-total-score, .human-player-round-score { display: inline-block; padding: 3px 6px; border-radius: 4px; margin: 0 4px; }
 .human-player-total-score { font-weight: bold; color: #ffd166; }
 .human-player-round-score { font-size: 0.9em; opacity: 0.9; color: #f1f1f1; }
-
 .ai-player-display { flex: 1 1 220px; min-width: 200px; padding: 12px; background-color: rgba(255, 255, 255, 0.06); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; align-items: center; text-align: center; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
 .ai-player-display.arranged { border-color: #06d6a0; box-shadow: 0 0 8px rgba(6, 214, 160, 0.3); }
 .ai-player-display.thinking { border-color: #ffd166; animation: pulse-border 1.5s infinite; }
@@ -98,18 +81,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑ�
 .negative { color: #ef476f; }
 
 
-/* HandArea 和 Card 样式 (基本保持不变) */
-.hand-area-header { /* ... */ }
-.hand-area-title { /* ... */ }
-.hand-type-display { /* ... */ }
-.hand-area { /* ... */ }
-.hand-area:not(.allow-wrapping) { /* ... */ }
-.hand-area.allow-wrapping { /* ... */ }
-.hand-area.droppable-active { /* ... */ }
-.card { /* ... */ }
-.card img { /* ... */ }
-.card:not(.static-card):hover:not(.dragging) { /* ... */ }
-.card:not(.static-card):active, .card.dragging { /* ... */ }
+/* HandArea 和 Card 样式 (保持不变) */
+.hand-area-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 6px; }
+.hand-area-title { color: #ffd166; font-weight: 500; font-size: 1.05em; margin: 0; }
+.hand-type-display { font-size: 0.9em; color: #f1f1f1; background-color: rgba(0,0,0,0.45); padding: 3px 8px; border-radius: 4px; font-weight: 500; }
+.hand-area { background-color: rgba(255, 255, 255, 0.07); padding: 10px; border-radius: 6px; min-height: 105px; display: flex; flex-direction: row; align-items: center; gap: 7px; transition: background-color 0.25s ease-in-out, box-shadow 0.25s ease; }
+.hand-area:not(.allow-wrapping) { flex-wrap: nowrap; justify-content: center; }
+.hand-area.allow-wrapping { flex-wrap: wrap; justify-content: center; min-height: 185px; align-items: flex-start; }
+.hand-area.droppable-active { background-color: rgba(66, 153, 225, 0.3); box-shadow: inset 0 0 10px rgba(66, 153, 225, 0.2); }
+.card { width: 62px; height: 87px; border-radius: 5px; overflow: hidden; box-shadow: 2px 2px 6px rgba(0,0,0,0.35); background-color: white; flex-shrink: 0; user-select: none; position: relative; transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.card:not(.static-card) { cursor: grab; }
+.card img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.card:not(.static-card):hover:not(.dragging) { transform: translateY(-3px) scale(1.04); box-shadow: 3px 5px 10px rgba(0,0,0,0.3); }
+.card:not(.static-card):active, .card.dragging { cursor: grabbing; transform: scale(1.12) rotate(3.5deg) translateY(-2px); box-shadow: 4px 6px 12px rgba(0,0,0,0.45); z-index: 1000; }
 
 
 /* --- 控制按钮区域 (现在在 game-board 内部) --- */
@@ -117,29 +101,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑ�
   display: flex;
   justify-content: center;
   gap: 18px;
-  margin-top: 0; /* 移除了，由 game-board 的 gap 控制 */
-  margin-bottom: 0; /* 移除了，由 game-board 的 gap 控制，或 game-board padding */
-  padding-top: 10px; /* 可选：与上方牌道区域的分隔 */
-  /* border-top: 1px solid rgba(255,255,255,0.1); */ /* 可选：加个分隔线 */
-  width: 100%; /* 适应 game-board 宽度 */
+  /* margin-top and margin-bottom are now controlled by .game-board's gap */
+  padding-top: 15px; /* 与上方牌道区域的间距 */
+  width: 100%;
   flex-wrap: wrap;
 }
-/* GameButton 样式 (基本保持不变) */
-.game-button { /* ... */ }
-.game-button:hover:not(:disabled) { /* ... */ }
-.game-button:active:not(:disabled) { /* ... */ }
-.game-button:disabled { /* ... */ }
+/* GameButton 样式 (保持不变) */
+.game-button { padding: 10px 22px; font-size: 1em; color: white; background-color: #118ab2; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease-out, box-shadow 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-weight: 500; }
+.game-button:hover:not(:disabled) { background-color: #0c9dcb; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.25); }
+.game-button:active:not(:disabled) { transform: translateY(0px); background-color: #0a8aaa; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.game-button:disabled { background-color: #4f6367; color: #9fb3b8; cursor: not-allowed; box-shadow: none; transform: none; }
 
 /* "开始比牌" 按钮 (现在也在 game-board 内部) */
 .game-button.compare-all-button {
   background-color: #06d6a0;
   color: #073b4c;
-  /* margin-top: 0; /* 由 game-board 的 gap 或 controls 的 padding-top 控制 */
   font-weight: bold;
   padding: 12px 28px;
   font-size: 1.1em;
-  width: auto; /* 或者给一个固定宽度/百分比宽度 */
-  /* display: block; */ /* 如果希望它单独一行 */
+  width: auto; 
+  /* margin-top is now controlled by .game-board's gap or .controls padding */
+  /* display: block; */ /* 如果希望它单独一行，则取消注释并调整 margin */
   /* margin-left: auto; */
   /* margin-right: auto; */
 }
@@ -149,28 +131,42 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑ�
 /* --- 比牌结果模态框样式 (保持不变) --- */
 .modal-overlay { /* ... */ }
 /* ... (其余模态框相关样式) ... */
-
+.modal-content { background-color: #0c2b35; padding: 25px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); position: relative; width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.15); }
+.modal-close-button { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 2em; color: #aaa; cursor: pointer; line-height: 1; padding: 5px; }
+.modal-close-button:hover { color: #fff; }
+.comparison-modal-content h2 { text-align: center; color: #ffd166; margin-top: 0; margin-bottom: 25px; font-size: 1.8em; }
+.comparison-grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, auto); gap: 20px; width: 100%; }
+.comparison-cell { background-color: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); }
+.comparison-cell.empty { display: flex; align-items: center; justify-content: center; color: #666; font-style: italic; min-height: 150px; }
+.human-player-cell { border-color: #ffd166; box-shadow: 0 0 10px rgba(255, 209, 102, 0.2); }
+.comparison-cell h4 { color: #f1f1f1; margin-top: 0; margin-bottom: 12px; font-size: 1.15em; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+.human-player-cell h4 { color: #ffd166; }
+.comparison-hand-row { margin-bottom: 10px; }
+.comparison-hand-row strong { color: #90e0ef; font-size: 0.9em; display: block; margin-bottom: 5px; }
+.mini-cards { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
+.comparison-cell .static-card { width: 38px; height: 53px; box-shadow: 1px 1px 2px rgba(0,0,0,0.2); cursor: default; transition: none; }
+.comparison-cell .static-card:hover, .comparison-cell .static-card:active { transform: none; box-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+.shoot-info { font-weight: bold; font-size: 0.9em; margin-top: 10px; padding: 5px; border-radius: 4px; text-align: center; }
+.shoot-info:first-of-type { margin-top: 15px; }
+.shoot-info.positive-shoot { color: #06d6a0; background-color: rgba(6, 214, 160, 0.1); }
+.shoot-info.negative-shoot { color: #ef476f; background-color: rgba(239, 71, 111, 0.1); }
 
 /* --- 响应式调整 --- */
 @media (max-width: 768px) {
   .app-container { padding: 10px 10px 30px 10px; }
-  .game-board { max-width: 95%; padding: 15px; gap: 15px; }
-  .hand-lanes-container { max-width: 100%; } /* 牌道区域在小屏幕上可以占满game-board宽度 */
-
+  .game-board { max-width: 95%; padding: 15px; gap: 15px; margin-top: 15px; } /* 确保game-board有上边距 */
+  .hand-lanes-container { max-width: 100%; }
   .top-banner-container { flex-direction: column; align-items: center; gap: 12px; padding: 10px 0; }
-  .human-player-banner-display, .ai-player-display {
-    width: 90%; 
-    max-width: 350px;
-  }
-  /* ... (其他组件的响应式调整) ... */
+  .human-player-banner-display, .ai-player-display { width: 90%; max-width: 350px; }
   .controls { flex-direction: column; align-items: center; gap: 12px; padding-top: 15px; }
   .controls .game-button { width: 80%; max-width: 300px; }
-  .game-button.compare-all-button { width: 80%; max-width: 300px; }
+  .game-button.compare-all-button { width: 80%; max-width: 300px; margin-top: 10px; /* 如果controls是column，这个可能不需要 */ }
+  .modal-content { max-width: 95%; padding: 20px 15px; }
+  .comparison-grid { grid-template-columns: 1fr; grid-template-rows: repeat(4, auto); }
+  .comparison-cell .static-card { width: 32px; height: 45px; }
 }
-
 @media (max-width: 480px) {
-  /* ... (更小屏幕的进一步调整) ... */
   .game-board { padding: 10px; gap: 10px; }
-  .hand-lanes-container { gap: 10px; }
   .controls .game-button, .game-button.compare-all-button { width: 90%; }
+  .comparison-cell .static-card { width: 28px; height: 39px; }
 }
