@@ -1,28 +1,81 @@
 // frontend/src/components/ComparisonModal.js
 import React from 'react';
-import StaticCard from './StaticCard';
-import { HAND_TYPE_NAMES } from '../logic/handEvaluator';
+import StaticCard from './StaticCard'; // 确保这个导入被使用
+import { HAND_TYPE_NAMES } from '../logic/handEvaluator'; // 这个导入也是需要的
 
-const getTypeName = (typeNum) => HAND_TYPE_NAMES[typeNum] || '未知';
+// getTypeName 函数现在会被 PlayerComparisonCell 使用
+const getTypeName = (typeNum) => {
+  if (typeof typeNum === 'number' && HAND_TYPE_NAMES[typeNum]) {
+    return HAND_TYPE_NAMES[typeNum];
+  }
+  return '未知'; // 或者 '处理中'，根据您的偏好
+};
 
-const PlayerComparisonCell = ({ player, isHuman, players }) => { /* ... (保持不变) ... */ };
-// (PlayerComparisonCell 的代码与上一版本完全相同，此处省略以保持简洁)
-// 确保这里的 PlayerComparisonCell 代码是您满意的最新版本
+const PlayerComparisonCell = ({ player, isHuman, players }) => {
+    if (!player || !player.finalArrangement) {
+        return <div className="comparison-cell empty"><span>等待数据...</span></div>;
+    }
 
-const ComparisonModal = ({ onClose, players, humanPlayerId, onContinueGame }) => {
-  // isOpen prop 不再需要，由 App.js 控制渲染
-  if (!players || players.length === 0) {
-    return null; // 或者一个加载/错误状态
+    const topCards = (player.cards && Array.isArray(player.cards.TOP)) ? player.cards.TOP : [];
+    const middleCards = (player.cards && Array.isArray(player.cards.MIDDLE)) ? player.cards.MIDDLE : [];
+    const bottomCards = (player.cards && Array.isArray(player.cards.BOTTOM)) ? player.cards.BOTTOM : [];
+    
+    const { topEval, middleEval, bottomEval } = player.finalArrangement;
+    const roundScore = typeof player.roundScore === 'number' ? player.roundScore : 0;
+    const totalScore = typeof player.score === 'number' ? player.score : 0;
+
+    return (
+        <div className={`comparison-cell ${isHuman ? 'human-player-cell' : 'ai-player-cell'}`}>
+            <h4>
+                {player.name} 
+                <span className="score-summary">(本局: {roundScore >= 0 ? '+' : ''}{roundScore} | 总: {totalScore >= 0 ? '+' : ''}{totalScore})</span>
+            </h4>
+            <div className="comparison-hand-row">
+                {/* 使用 getTypeName 来显示牌型 */}
+                <strong>头道 <span className="hand-eval-name">({getTypeName(topEval?.type)})</span>:</strong>
+                <div className="mini-cards">
+                    {/* 使用 StaticCard 来渲染卡牌 */}
+                    {topCards.map(c => <StaticCard key={c.id + '_modal_top_static'} cardData={c} />)}
+                </div>
+            </div>
+            <div className="comparison-hand-row">
+                <strong>中道 <span className="hand-eval-name">({getTypeName(middleEval?.type)})</span>:</strong>
+                <div className="mini-cards">
+                    {middleCards.map(c => <StaticCard key={c.id + '_modal_middle_static'} cardData={c} />)}
+                </div>
+            </div>
+            <div className="comparison-hand-row">
+                <strong>尾道 <span className="hand-eval-name">({getTypeName(bottomEval?.type)})</span>:</strong>
+                <div className="mini-cards">
+                    {bottomCards.map(c => <StaticCard key={c.id + '_modal_bottom_static'} cardData={c} />)}
+                </div>
+            </div>
+            {player.comparisonResults && Object.entries(player.comparisonResults).map(([opponentId, res]) => {
+                const opponent = players.find(p=>p.id === opponentId);
+                if (res.details && res.details.some(d => d.toLowerCase().includes("打枪")) && res.score !== 0) {
+                    return (
+                        <p key={`${player.id}_vs_${opponentId}_shoot`} className={`shoot-info ${res.score > 0 ? 'positive-shoot' : 'negative-shoot'}`}>
+                            {res.score > 0 ? `打枪 ${opponent?.name || '对手'}!` : `被 ${opponent?.name || '对手'} 打枪!`}
+                        </p>
+                    );
+                }
+                return null;
+            })}
+        </div>
+    );
+};
+
+const ComparisonModal = ({ isOpen, onClose, players, humanPlayerId, onContinueGame }) => {
+  if (!isOpen || !players || players.length === 0) {
+    return null;
   }
 
   const humanPlayer = players.find(p => p.id === humanPlayerId);
   const aiOpponents = players.filter(p => p.id !== humanPlayerId);
   
   return (
-    // 这个 div 现在是全屏的“比牌视图”容器
     <div className="comparison-view-container"> 
-      <div className="modal-content comparison-modal-content" /*onClick={(e) => e.stopPropagation()} // 不再需要阻止冒泡，因为没有覆盖层点击关闭 */ >
-        {/* 关闭按钮可以保留，或者完全依赖底部的“继续游戏”按钮 */}
+      <div className="modal-content comparison-modal-content">
         <button className="modal-close-button top-right-close" onClick={onClose}>×</button>
         <h2>本局比牌结果</h2>
         <div className="comparison-grid">
