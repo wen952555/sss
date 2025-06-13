@@ -51,25 +51,39 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
     );
 };
 
+// 固定田字型顺序（2x2）：前两为上排，后两为下排
+const get2x2GridOrder = (players, humanPlayerId) => {
+  // 保证最多4人。如果不足4人则补空位
+  const human = players.find(p => p.id === humanPlayerId);
+  const ais = players.filter(p => p.id !== humanPlayerId);
+  let order = [];
+  if (human) order.push(human);
+  order = order.concat(ais.slice(0, 3));
+  while (order.length < 4) order.push(null);
+  return [
+    order[0], order[1],
+    order[2], order[3]
+  ];
+};
+
 const ComparisonModal = ({ onClose, players, humanPlayerId, onContinueGame }) => {
   if (!players || players.length === 0) return null;
+  const gridOrder = get2x2GridOrder(players, humanPlayerId);
 
-  const humanPlayer = players.find(p => p.id === humanPlayerId);
-  const aiOpponents = players.filter(p => p.id !== humanPlayerId);
-  
   return (
     <div className="comparison-view-container"> 
       <div className="modal-content comparison-modal-content">
         <button className="modal-close-button top-right-close" onClick={onClose}>×</button>
         <h2>本局比牌结果</h2>
         <div className="comparison-grid">
-            {humanPlayer    ? <PlayerComparisonCell player={humanPlayer}    isHuman={true}  players={players} /> : <div className="comparison-cell empty"><span>真人玩家</span></div>}
-            {aiOpponents[0] ? <PlayerComparisonCell player={aiOpponents[0]} isHuman={false} players={players} /> : <div className="comparison-cell empty"><span>AI ①</span></div>}
-            {aiOpponents[1] ? <PlayerComparisonCell player={aiOpponents[1]} isHuman={false} players={players} /> : <div className="comparison-cell empty"><span>AI ②</span></div>}
-            {aiOpponents[2] ? <PlayerComparisonCell player={aiOpponents[2]} isHuman={false} players={players} /> : <div className="comparison-cell empty"><span>AI ③</span></div>}
+          {gridOrder.map((p, idx) =>
+            p
+              ? <PlayerComparisonCell key={p.id} player={p} isHuman={p.id === humanPlayerId} players={players} />
+              : <div className="comparison-cell empty" key={idx}><span>玩家</span></div>
+          )}
         </div>
         <div className="modal-actions">
-            <button className="game-button continue-game-button" onClick={onContinueGame}>继续游戏</button>
+          <button className="game-button continue-game-button" onClick={onContinueGame}>继续游戏</button>
         </div>
       </div>
     </div>
