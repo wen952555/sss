@@ -170,7 +170,7 @@ html, body {
 .game-button { font-size: 0.8em; padding: 6px 12px; }
 .game-button.compare-all-button { width: auto; max-width: 220px; font-size: 0.9em; padding: 7px 18px; }
 
-/* 比牌视图容器 - 全屏显示，横向理牌 */
+/* 比牌视图容器 - 田字型全屏显示 */
 .comparison-view-container { 
   position: fixed; 
   top: 0; left: 0; width: 100vw; height: 100vh;
@@ -180,67 +180,82 @@ html, body {
   justify-content: center; 
   padding: 0;
   z-index: 1000; 
-  overflow-y: auto; 
+  overflow: auto; 
 }
 .comparison-modal-content { 
   background-color: rgba(0, 0, 0, 0.45); 
-  padding: 30px 20px 24px 20px;
-  border-radius: 18px; 
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5); 
+  padding: 32px 32px 32px 32px;
+  border-radius: 24px; 
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); 
   position: relative; 
-  width: 98vw; 
-  height: 96vh;
-  max-width: 1700px;
+  width: 99vw; 
+  height: 97vh;
+  max-width: 99vw;
   max-height: 98vh;
   display: flex; 
   flex-direction: column; 
-  gap: 10px;
+  gap: 18px;
   overflow: auto;
 }
-.comparison-modal-content h2 { font-size: 1.3em; margin-bottom: 18px; }
+.comparison-modal-content h2 { font-size: 1.3em; margin-bottom: 22px; }
 
-/* 网格横向间距加大 */
+/* 田字型布局，所有玩家横向排布，每个玩家的三道纵向，且自适应撑满屏幕 */
 .comparison-grid { 
   display: grid; 
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-  gap: 40px 32px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+  gap: 0 56px;
   width: 100%;
-  margin-bottom: 18px;
+  margin-bottom: 24px;
+  align-items: start;
+  justify-items: center;
 }
 .comparison-cell { 
-  padding: 8px; 
-  min-height: 180px;
+  min-width: 300px;
+  padding: 8px 0 20px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 .comparison-cell h4 { 
-  font-size: 1em; 
-  margin-bottom: 10px; 
+  font-size: 1.07em; 
+  margin-bottom: 12px; 
   padding-bottom: 4px; 
   text-align: center;
 }
+
+/* 三道横向均分，且3-5-5田字型 */
+.comparison-hand-verticals {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 98%;
+  gap: 4px;
+}
 .comparison-hand-row { 
   display: flex; 
-  flex-direction: row; /* 横向排列 */
   align-items: center;
-  margin: 5px 0 8px 0;
+  flex-direction: row;
+  margin: 5px 0 6px 0;
+  justify-content: center;
+  width: 100%;
 }
 .comparison-hand-row strong { 
   font-size: 0.96em; 
-  margin-right: 8px; 
+  margin-right: 10px; 
   white-space: nowrap;
+  width: 2.5em;
+  text-align: right;
+  opacity: 0.85;
 }
 .mini-cards { 
   display: flex; 
-  flex-direction: row; /* 横向排列 */
-  gap: 2px;
+  flex-direction: row; 
+  gap: 4px;
   align-items: center;
-  min-height: 36px;
 }
 .comparison-cell .static-card { 
-  width: 32px;
-  height: 44px;
+  width: 38px;
+  height: 54px;
   margin: 0 2px;
 }
 .comparison-cell .static-card img {
@@ -248,10 +263,12 @@ html, body {
   height: 100%;
 }
 
+/* 打枪等信息 */
 .shoot-info, .positive-shoot, .negative-shoot {
-  font-size: 1em;
-  margin: 4px 0 0 0;
-  text-align: center;
+  font-size: 1.05em;
+  margin: 6px 0 0 0;
+  text-align: left;
+  min-height: 1.3em;
 }
 .positive-shoot { color: #ff6f00; }
 .negative-shoot { color: #00bfff; }
@@ -284,6 +301,13 @@ html, body {
   border-radius: 6px;
   margin-top: 0;
 }
+
+/* 响应式 */
+@media (max-width: 1200px) {
+  .comparison-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 10px;}
+  .comparison-cell { min-width: 180px;}
+  .comparison-cell .static-card { width: 27px; height: 38px;}
+}
 @media (max-width: 1100px) {
   .comparison-modal-content {
     padding: 6px 2vw 16px 2vw;
@@ -301,7 +325,7 @@ html, body {
 @media (max-width: 700px) {
   .comparison-modal-content { padding: 2vw 0 12px 0; }
   .comparison-grid { gap: 10px 1vw; }
-  .comparison-cell .static-card { width: 19px; height: 27px; }
+  .comparison-cell .static-card { width: 19px; height: 27px;}
 }
 @media (max-width: 600px) {
   .player-banner-item { flex-basis: calc(50% - 4px); min-width: 100px; }
