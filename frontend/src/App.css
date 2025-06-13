@@ -3,127 +3,174 @@
 /* --- 全局与基础布局 --- */
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑक्सीजन, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background-color: #073b4c; color: #f1f1f1; margin: 0; padding: 0; box-sizing: border-box; }
 *, *::before, *::after { box-sizing: inherit; }
-.app-container { display: flex; flex-direction: column; align-items: center; width: 100%; min-height: 100vh; padding: 15px 15px 40px 15px; }
-.game-title { font-size: 2.6em; color: #ffd166; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.45); margin-top: 0; margin-bottom: 20px; /* 调整标题与下方横幅的间距 */ font-weight: 700; }
 
-/* Game Message (主要用于操作反馈) */
-.game-message { padding: 10px 18px; margin-bottom: 20px; border-radius: 6px; text-align: center; font-weight: 500; width: 100%; max-width: 650px; font-size: 1em; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease, transform 0.3s ease; }
-.game-message:not(.error) { background-color: #06d6a0; color: #073b4c; }
-.game-message.error { background-color: #ef476f; color: white; }
-/* 移除之前的 .player-score-display，分数移到横幅 */
-
-
-/* --- 顶部玩家状态横幅 (包含真人和AI) --- */
-.top-banner-container {
-  display: flex;
-  justify-content: space-around; /* 子元素均匀分布 */
-  align-items: stretch; /* 高度一致 */
-  flex-wrap: wrap; /* 允许换行 */
-  width: 100%;
-  max-width: 960px; /* 可以根据屏幕宽度调整 */
-  padding: 12px;
-  margin-bottom: 25px; /* 横幅与下方游戏板的间距 */
-  background-color: rgba(0, 0, 0, 0.3); /* 稍深的背景 */
-  border-radius: 14px; /* 圆角 */
-  gap: 12px; /* 玩家信息块之间的间隙 */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-.top-banner-container.empty { /* ... (保持不变) ... */ }
-
-/* 真人玩家在横幅中的显示 */
-.human-player-banner-display {
-  flex: 1 1 220px; /* 与AI玩家块类似的flex属性 */
-  min-width: 200px;
-  padding: 12px 15px;
-  background-color: rgba(255, 221, 102, 0.15); /* 真人玩家用黄色调背景 */
-  border-radius: 8px;
-  border: 1px solid #ffd166; /* 黄色边框 */
+.app-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  box-shadow: 0 0 10px rgba(255, 209, 102, 0.25);
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px 15px 40px 15px; /* 上下边距可以调整 */
 }
-.human-player-avatar { /* 真人头像/标识 */
-  width: 45px; height: 45px; border-radius: 50%; background-color: #ffd166; color: #073b4c; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.3em; margin-bottom: 10px; border: 2px solid #fca311; }
-.human-player-info { /* 包裹名字、分数等 */ }
+
+/* game-title 的样式可以删除了，因为它不再被使用 */
+/*
+.game-title { ... }
+*/
+
+/* gameMessage 的样式也可以删除了 */
+/*
+.game-message { ... }
+.game-message:not(.error) { ... }
+.game-message.error { ... }
+*/
+
+/* player-score-display 的样式也可以删除了，分数已移到 TopBanner */
+/*
+.player-score-display { ... }
+*/
+
+
+/* --- 游戏板 (现在是主要的游戏区域容器) --- */
+.game-board {
+  display: flex;
+  flex-direction: column; /* 内部元素：横幅、牌道、按钮区，垂直排列 */
+  gap: 20px; /* 各主要部分之间的间距 */
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.35); /* 深色背景 */
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  width: 100%;
+  max-width: 850px; /* 游戏板可以更宽，以容纳横幅 */
+  /* margin-top: 0; /* 移除了 game-title 后，它可能是第一个主要元素 */
+}
+
+/* 包裹三个牌道区域的容器 */
+.hand-lanes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px; /* 牌道之间的间距 */
+    width: 100%;
+    max-width: 680px; /* 牌道区域保持之前的宽度 */
+    margin: 0 auto; /* 使牌道区域在 game-board 内居中 (如果 game-board 比它宽) */
+}
+
+
+/* --- 顶部玩家状态横幅 (现在在 game-board 内部) --- */
+.top-banner-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  flex-wrap: wrap;
+  width: 100%; /* 宽度适应 game-board */
+  /* max-width: 800px; /* 这个可以移除或调整，因为它现在受限于 game-board */
+  padding: 10px 0; /* 调整内边距，因为外层 game-board 有 padding */
+  /* margin-bottom: 0; /* 移除了，由 game-board 的 gap 控制 */
+  background-color: transparent; /* 背景由 game-board 提供，这里设为透明 */
+  border-radius: 0; /* 圆角由 game-board 控制 */
+  gap: 10px;
+  box-shadow: none; /* 阴影由 game-board 提供 */
+  /* border-bottom: 1px solid rgba(255,255,255,0.1); */ /* 可选：加个分隔线 */
+  /* padding-bottom: 15px; */
+}
+/* ... (AIPlayerDisplay 和 HumanPlayerBannerDisplay 的样式保持不变，但它们现在是 .top-banner-container 的子元素) ... */
+.human-player-banner-display { flex: 1 1 220px; min-width: 200px; padding: 12px 15px; background-color: rgba(255, 221, 102, 0.15); border-radius: 8px; border: 1px solid #ffd166; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 0 10px rgba(255, 209, 102, 0.25); }
+.human-player-avatar { width: 45px; height: 45px; border-radius: 50%; background-color: #ffd166; color: #073b4c; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.3em; margin-bottom: 10px; border: 2px solid #fca311; }
+.human-player-info { }
 .human-player-name { font-weight: 600; font-size: 1.1em; color: #fff; margin-bottom: 5px; }
 .human-player-score-container { margin-top: 8px; font-size: 0.95em; }
 .human-player-total-score, .human-player-round-score { display: inline-block; padding: 3px 6px; border-radius: 4px; margin: 0 4px; }
 .human-player-total-score { font-weight: bold; color: #ffd166; }
 .human-player-round-score { font-size: 0.9em; opacity: 0.9; color: #f1f1f1; }
 
-
-/* AI玩家显示 (与之前类似，确保与真人玩家风格协调) */
 .ai-player-display { flex: 1 1 220px; min-width: 200px; padding: 12px; background-color: rgba(255, 255, 255, 0.06); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; align-items: center; text-align: center; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
-.ai-player-display.arranged { border-color: #06d6a0; /* ... */ }
-.ai-player-display.thinking { border-color: #ffd166; /* ... */ }
-/* ... (其余 .ai-player-display 子元素样式，如 avatar, name, status, score-container 等，确保它们与 human-player-banner-display 协调) ... */
-.ai-player-avatar { width: 40px; height: 40px; /* ... */ }
-.ai-player-name { font-weight: 600; font-size: 1em; /* ... */ }
-.ai-player-status { font-size: 0.85em; /* ... */ }
+.ai-player-display.arranged { border-color: #06d6a0; box-shadow: 0 0 8px rgba(6, 214, 160, 0.3); }
+.ai-player-display.thinking { border-color: #ffd166; animation: pulse-border 1.5s infinite; }
+@keyframes pulse-border { 0% { box-shadow: 0 0 5px rgba(255, 209, 102, 0.2); } 50% { box-shadow: 0 0 10px rgba(255, 209, 102, 0.5); } 100% { box-shadow: 0 0 5px rgba(255, 209, 102, 0.2); } }
+.ai-player-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #073b4c; color: #ffd166; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2em; margin-bottom: 8px; border: 2px solid #118ab2; }
+.ai-player-name { font-weight: 600; font-size: 1em; color: #f1f1f1; margin-bottom: 4px; }
+.ai-player-status { font-size: 0.85em; color: #a0aec0; margin-bottom: 6px; min-height: 1.1em; font-style: italic; }
 .ai-player-score-container { margin-top: 8px; font-size: 0.9em; }
-.ai-player-total-score, .ai-player-round-score { /* ... */ }
+.ai-player-total-score, .ai-player-round-score { display: inline-block; padding: 2px 5px; border-radius: 3px; margin: 0 3px; }
+.ai-player-total-score { font-weight: bold; }
+.ai-player-round-score { font-size: 0.9em; opacity: 0.8; }
 .positive { color: #06d6a0; }
 .negative { color: #ef476f; }
 
 
-/* --- 游戏板与牌道区域 --- */
-.game-board { display: flex; flex-direction: column; gap: 18px; padding: 18px; background-color: rgba(0, 0, 0, 0.3); border-radius: 14px; box-shadow: 0 5px 18px rgba(0,0,0,0.3); width: 100%; max-width: 680px; margin-top: 0; /* 横幅下方紧接着游戏板 */ }
-/* ... (HandArea, Card 等样式保持不变) ... */
-.hand-area-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 6px; }
-.hand-area-title { color: #ffd166; font-weight: 500; font-size: 1.05em; margin: 0; }
-.hand-type-display { font-size: 0.9em; color: #f1f1f1; background-color: rgba(0,0,0,0.45); padding: 3px 8px; border-radius: 4px; font-weight: 500; }
-.hand-area { background-color: rgba(255, 255, 255, 0.07); padding: 10px; border-radius: 6px; min-height: 105px; display: flex; flex-direction: row; align-items: center; gap: 7px; transition: background-color 0.25s ease-in-out, box-shadow 0.25s ease; }
-.hand-area:not(.allow-wrapping) { flex-wrap: nowrap; justify-content: center; }
-.hand-area.allow-wrapping { flex-wrap: wrap; justify-content: center; min-height: 185px; align-items: flex-start; }
-.hand-area.droppable-active { background-color: rgba(66, 153, 225, 0.3); box-shadow: inset 0 0 10px rgba(66, 153, 225, 0.2); }
-.card { width: 62px; height: 87px; border-radius: 5px; overflow: hidden; box-shadow: 2px 2px 6px rgba(0,0,0,0.35); cursor: grab; background-color: white; flex-shrink: 0; transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1); user-select: none; position: relative; }
-.card img { width: 100%; height: 100%; display: block; object-fit: contain; }
-.card:not(.static-card):hover:not(.dragging) { transform: translateY(-3px) scale(1.04); box-shadow: 3px 5px 10px rgba(0,0,0,0.3); }
-.card:not(.static-card):active, .card.dragging { cursor: grabbing; transform: scale(1.12) rotate(3.5deg) translateY(-2px); box-shadow: 4px 6px 12px rgba(0,0,0,0.45); z-index: 1000; }
+/* HandArea 和 Card 样式 (基本保持不变) */
+.hand-area-header { /* ... */ }
+.hand-area-title { /* ... */ }
+.hand-type-display { /* ... */ }
+.hand-area { /* ... */ }
+.hand-area:not(.allow-wrapping) { /* ... */ }
+.hand-area.allow-wrapping { /* ... */ }
+.hand-area.droppable-active { /* ... */ }
+.card { /* ... */ }
+.card img { /* ... */ }
+.card:not(.static-card):hover:not(.dragging) { /* ... */ }
+.card:not(.static-card):active, .card.dragging { /* ... */ }
 
 
-/* --- 控制按钮 --- */
-.controls { margin-top: 25px; /* ... (保持不变) ... */ }
-/* ... (GameButton 样式保持不变) ... */
-.game-button { padding: 10px 22px; font-size: 1em; color: white; background-color: #118ab2; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease-out, box-shadow 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-weight: 500; }
-.game-button:hover:not(:disabled) { background-color: #0c9dcb; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.25); }
-.game-button:active:not(:disabled) { transform: translateY(0px); background-color: #0a8aaa; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-.game-button:disabled { background-color: #4f6367; color: #9fb3b8; cursor: not-allowed; box-shadow: none; transform: none; }
-.game-button.compare-all-button { background-color: #06d6a0; color: #073b4c; margin-top: 10px; font-weight: bold; padding: 12px 28px; font-size: 1.1em; }
+/* --- 控制按钮区域 (现在在 game-board 内部) --- */
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 0; /* 移除了，由 game-board 的 gap 控制 */
+  margin-bottom: 0; /* 移除了，由 game-board 的 gap 控制，或 game-board padding */
+  padding-top: 10px; /* 可选：与上方牌道区域的分隔 */
+  /* border-top: 1px solid rgba(255,255,255,0.1); */ /* 可选：加个分隔线 */
+  width: 100%; /* 适应 game-board 宽度 */
+  flex-wrap: wrap;
+}
+/* GameButton 样式 (基本保持不变) */
+.game-button { /* ... */ }
+.game-button:hover:not(:disabled) { /* ... */ }
+.game-button:active:not(:disabled) { /* ... */ }
+.game-button:disabled { /* ... */ }
+
+/* "开始比牌" 按钮 (现在也在 game-board 内部) */
+.game-button.compare-all-button {
+  background-color: #06d6a0;
+  color: #073b4c;
+  /* margin-top: 0; /* 由 game-board 的 gap 或 controls 的 padding-top 控制 */
+  font-weight: bold;
+  padding: 12px 28px;
+  font-size: 1.1em;
+  width: auto; /* 或者给一个固定宽度/百分比宽度 */
+  /* display: block; */ /* 如果希望它单独一行 */
+  /* margin-left: auto; */
+  /* margin-right: auto; */
+}
 .game-button.compare-all-button:hover:not(:disabled) { background-color: #05c08d; }
 
 
 /* --- 比牌结果模态框样式 (保持不变) --- */
 .modal-overlay { /* ... */ }
-.modal-content { /* ... */ }
-.modal-close-button { /* ... */ }
-.comparison-modal-content h2 { /* ... */ }
-.comparison-grid { /* ... */ }
-.comparison-cell { /* ... */ }
-.comparison-cell.empty { /* ... */ }
-.human-player-cell { /* ... */ } /* 这个可以用于模态框中的真人玩家格子 */
-.comparison-cell h4 { /* ... */ }
-/* .human-player-cell h4 { color: #ffd166; } */ /* 如果模态框中真人标题也用这个颜色 */
-.comparison-hand-row { /* ... */ }
-.comparison-hand-row strong { /* ... */ }
-.mini-cards { /* ... */ }
-.comparison-cell .static-card { width: 38px; height: 53px; box-shadow: 1px 1px 2px rgba(0,0,0,0.2); cursor: default; transition: none; }
-.comparison-cell .static-card:hover, .comparison-cell .static-card:active { transform: none; box-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
-.shoot-info { /* ... */ }
-.shoot-info.positive-shoot { /* ... */ }
-.shoot-info.negative-shoot { /* ... */ }
+/* ... (其余模态框相关样式) ... */
 
-/* --- 响应式调整 (确保之前的响应式样式也存在并作适当调整) --- */
+
+/* --- 响应式调整 --- */
 @media (max-width: 768px) {
-  /* ... (调整 .top-banner-container, .human-player-banner-display, .ai-player-display 的 flex-basis 或 width) ... */
-  .top-banner-container { flex-direction: column; align-items: center; gap: 12px; max-width: 100%; padding: 10px; }
+  .app-container { padding: 10px 10px 30px 10px; }
+  .game-board { max-width: 95%; padding: 15px; gap: 15px; }
+  .hand-lanes-container { max-width: 100%; } /* 牌道区域在小屏幕上可以占满game-board宽度 */
+
+  .top-banner-container { flex-direction: column; align-items: center; gap: 12px; padding: 10px 0; }
   .human-player-banner-display, .ai-player-display {
-    flex-basis: auto; /* 在垂直排列时取消固定基准 */
-    width: 90%; /* 让它们占据大部分宽度 */
-    max-width: 380px; /* 但不要太宽 */
+    width: 90%; 
+    max-width: 350px;
   }
-  /* ... (其他响应式调整) ... */
+  /* ... (其他组件的响应式调整) ... */
+  .controls { flex-direction: column; align-items: center; gap: 12px; padding-top: 15px; }
+  .controls .game-button { width: 80%; max-width: 300px; }
+  .game-button.compare-all-button { width: 80%; max-width: 300px; }
 }
-/* ... (更小屏幕的 @media (max-width: 480px) 调整) ... */
+
+@media (max-width: 480px) {
+  /* ... (更小屏幕的进一步调整) ... */
+  .game-board { padding: 10px; gap: 10px; }
+  .hand-lanes-container { gap: 10px; }
+  .controls .game-button, .game-button.compare-all-button { width: 90%; }
+}
