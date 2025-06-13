@@ -2,6 +2,49 @@
 import React from 'react';
 import StaticCard from './StaticCard';
 
+// 动态堆叠卡牌，每张牌都可见主要信息
+const renderStackedCards = (cards) => {
+  // 响应式宽度
+  let cardWidth = 80, cardHeight = 96, overlap = 32;
+  if (window.innerWidth < 700) {
+    cardWidth = 38; cardHeight = 48; overlap = 15;
+  } else if (window.innerWidth < 1200) {
+    cardWidth = 56; cardHeight = 68; overlap = 24;
+  }
+  // 如果牌多则自动压缩重叠量，保证所有牌都能进容器
+  const maxWidth = 5 * cardWidth; // 容器最大宽度，5张牌时
+  const innerWidth = cards.length > 1
+    ? Math.min(cardWidth + overlap * (cards.length - 1), maxWidth)
+    : cardWidth;
+  const realOverlap = cards.length > 1
+    ? (innerWidth - cardWidth) / (cards.length - 1)
+    : 0;
+
+  return (
+    <div
+      className="mini-cards"
+      style={{
+        width: `${innerWidth}px`,
+        height: `${cardHeight}px`,
+      }}
+    >
+      {cards.map((c, i) => (
+        <StaticCard
+          key={c.id + '_static'}
+          cardData={c}
+          style={{
+            position: 'absolute',
+            left: `${i * realOverlap}px`,
+            zIndex: i + 1,
+            width: `${cardWidth}px`,
+            height: `${cardHeight}px`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 const PlayerComparisonCell = ({ player, isHuman, players }) => {
     if (!player || !player.finalArrangement) {
         return <div className="comparison-cell empty"><span>等待数据...</span></div>;
@@ -11,32 +54,6 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
     const bottomCards = (player.cards && Array.isArray(player.cards.BOTTOM)) ? player.cards.BOTTOM : [];
     const roundScore = typeof player.roundScore === 'number' ? player.roundScore : 0;
     const totalScore = typeof player.score === 'number' ? player.score : 0;
-
-    // 堆叠用绝对定位，动态赋 left
-    const renderStackedCards = (cards) => (
-      <div
-        className="mini-cards"
-        style={{
-          '--card-count': cards.length,
-          width:
-            cards.length > 1
-              ? `${80 + (cards.length - 1) * 32}px`
-              : '80px',
-        }}
-      >
-        {cards.map((c, i) => (
-          <StaticCard
-            key={c.id + '_static'}
-            cardData={c}
-            style={{
-              position: 'absolute',
-              left: `${i * 32}px`,
-              zIndex: i + 1,
-            }}
-          />
-        ))}
-      </div>
-    );
 
     return (
         <div className={`comparison-cell ${isHuman ? 'human-player-cell' : 'ai-player-cell'}`}>
