@@ -34,9 +34,10 @@ html, body {
   width: 100%;
   height: 100%;
   padding: 0;
+
+  /* 调整为三栏布局，横幅、理牌区和按钮区 */
 }
 
-/* 通用横幅区域样式 */
 .banner-section {
   width: 100%;
   padding: 5px 10px;
@@ -121,11 +122,11 @@ html, body {
   flex-shrink: 0;    /* 防止卡牌被压缩 */
 }
 
-/* 控制按钮区 */
+/* 控制按钮区 - 让其也平均分配剩余高度 */
 .controls-banner-section {
   padding: 10px;
   background-color: rgba(0,0,0,0.25);
-  flex: 0 0 auto;    /* 固定高度 */
+  flex: 1 1 0;   /* 关键：剩余空间平均分配 */
   border-top: 1px solid rgba(0,0,0,0.4); 
   display: flex; 
   flex-direction: column;
@@ -180,4 +181,37 @@ html, body {
     .hand-lane-banner {
       min-height: 60px;
     }
+}
+
+/* 让主游戏区域（横幅+理牌区+按钮区）占满高度，并平均分配理牌区和按钮区剩余空间 */
+.game-view-active {
+  /* 横幅高度自适应，理牌区和按钮区平均分配剩余空间 */
+  height: 100vh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 让理牌区和按钮区高度均分剩余空间，且每个 hand-lane-banner 可拉伸 */
+.hand-lane-banner,
+.controls-banner-section {
+  min-height: 0;
+}
+
+.top-lane,
+.middle-lane,
+.bottom-lane {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.controls-banner-section {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
