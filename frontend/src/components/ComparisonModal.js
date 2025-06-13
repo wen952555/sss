@@ -1,11 +1,10 @@
 // frontend/src/components/ComparisonModal.js
 import React from 'react';
-import StaticCard from './StaticCard';
+import StaticCard from './StaticCard'; 
 import { HAND_TYPE_NAMES } from '../logic/handEvaluator';
 
 const getTypeName = (typeNum) => HAND_TYPE_NAMES[typeNum] || '未知';
 
-// 1. 修改 PlayerComparisonCell 的 props，添加 players
 const PlayerComparisonCell = ({ player, isHuman, players }) => {
     if (!player || !player.finalArrangement) {
         return <div className="comparison-cell empty">等待数据...</div>;
@@ -43,11 +42,9 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
                     {bottomCards.map(c => <StaticCard key={c.id + '_modal_bottom_static'} cardData={c} />)}
                 </div>
             </div>
-            {/* 显示打枪信息 - 现在可以安全使用 players prop */}
             {player.comparisonResults && Object.entries(player.comparisonResults).map(([opponentId, res]) => (
                 res.details.some(d => d.toLowerCase().includes("打枪")) && res.score !== 0 ? (
                     <p key={`${player.id}_vs_${opponentId}_shoot`} className={`shoot-info ${res.score > 0 ? 'positive-shoot' : 'negative-shoot'}`}>
-                        {/* 使用传递进来的 players 数组 */}
                         {res.score > 0 ? `打枪 ${players.find(p=>p.id===opponentId)?.name || '对手'}!` : `被 ${players.find(p=>p.id===opponentId)?.name || '对手'} 打枪!`}
                     </p>
                 ) : null
@@ -55,7 +52,6 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
         </div>
     );
 };
-
 
 const ComparisonModal = ({ isOpen, onClose, players, humanPlayerId }) => {
   if (!isOpen || !players || players.length === 0) {
@@ -71,7 +67,6 @@ const ComparisonModal = ({ isOpen, onClose, players, humanPlayerId }) => {
         <button className="modal-close-button" onClick={onClose}>×</button>
         <h2>本局比牌结果</h2>
         <div className="comparison-grid">
-            {/* 2. 在这里调用 PlayerComparisonCell 时，传递 players prop */}
             {humanPlayer && <PlayerComparisonCell player={humanPlayer} isHuman={true} players={players} />}
             {aiOpponents[0] && <PlayerComparisonCell player={aiOpponents[0]} isHuman={false} players={players} />}
             {aiOpponents[1] ? <PlayerComparisonCell player={aiOpponents[1]} isHuman={false} players={players} /> : <div className="comparison-cell empty"></div>}
