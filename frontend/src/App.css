@@ -24,7 +24,7 @@ body {
   align-items: center;
   width: 100%;
   min-height: 100vh;
-  padding: 15px 15px 40px 15px; /* 上左右15, 下40 */
+  padding: 15px 15px 40px 15px;
 }
 
 .game-title {
@@ -32,7 +32,7 @@ body {
   color: #ffd166;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.45);
   margin-top: 0;
-  margin-bottom: 15px; /* 标题与横幅/消息的间距 */
+  margin-bottom: 15px;
   font-weight: 700;
 }
 
@@ -43,9 +43,10 @@ body {
   text-align: center;
   font-weight: 500;
   width: 100%;
-  max-width: 650px; /* 消息区宽度 */
+  max-width: 650px;
   font-size: 1em;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: background-color 0.3s ease, color 0.3s ease; /* 平滑过渡 */
 }
 .game-message:not(.error) {
    background-color: #06d6a0;
@@ -60,49 +61,35 @@ body {
 /* --- 顶部AI玩家横幅 --- */
 .top-banner-container {
   display: flex;
-  justify-content: space-between; /* AI玩家信息块均匀分布 */
-  align-items: stretch; /* 使AIPlayerDisplay高度一致（如果内容不同） */
-  flex-wrap: wrap; /* 在较窄的屏幕上，如果一行放不下3个，可以换行 */
+  justify-content: space-between;
+  align-items: stretch;
+  flex-wrap: wrap;
   width: 100%;
-  max-width: 800px; /* 横幅最大宽度 */
+  max-width: 800px;
   padding: 10px;
-  margin-bottom: 20px; /* 与下方游戏标题的间距 */
+  margin-bottom: 20px;
   background-color: rgba(0, 0, 0, 0.25);
   border-radius: 12px;
-  gap: 10px; /* AI玩家之间的间隙 */
+  gap: 10px;
 }
-.top-banner-container.empty {
-    min-height: 50px; /* 空横幅时给一点高度 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-}
+.top-banner-container.empty { min-height: 50px; display: flex; align-items: center; justify-content: center; color: #666; }
 
 .ai-player-display {
-  flex: 1 1 200px; /* flex-grow, flex-shrink, flex-basis (允许伸缩，基础宽度约200px) */
-  min-width: 180px; /* 最小宽度，防止过度压缩 */
+  flex: 1 1 200px;
+  min-width: 180px;
   padding: 12px;
   background-color: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex; /* 内部使用flex布局 */
-  flex-direction: column; /* 头像、信息垂直排列 */
-  align-items: center; /* 内部元素居中 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
-.ai-player-display.placeholder {
-    opacity: 0.5;
-}
-.ai-player-display.arranged {
-  border-color: #06d6a0; /* 绿色边框表示完成 */
-  box-shadow: 0 0 8px rgba(6, 214, 160, 0.3);
-}
-.ai-player-display.thinking {
-  border-color: #ffd166; /* 黄色边框表示思考中 */
-  animation: pulse-border 1.5s infinite;
-}
+.ai-player-display.placeholder { opacity: 0.5; }
+.ai-player-display.arranged { border-color: #06d6a0; box-shadow: 0 0 8px rgba(6, 214, 160, 0.3); }
+.ai-player-display.thinking { border-color: #ffd166; animation: pulse-border 1.5s infinite; }
 
 @keyframes pulse-border {
   0% { box-shadow: 0 0 5px rgba(255, 209, 102, 0.2); }
@@ -110,247 +97,126 @@ body {
   100% { box-shadow: 0 0 5px rgba(255, 209, 102, 0.2); }
 }
 
-.ai-player-avatar { /* AI头像占位符 */
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #073b4c;
-  color: #ffd166;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 1.2em;
-  margin-bottom: 8px;
-  border: 2px solid #118ab2;
-}
+.ai-player-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #073b4c; color: #ffd166; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2em; margin-bottom: 8px; border: 2px solid #118ab2; }
+.ai-player-info { /* 包裹名字、状态、牌型概要、分数 */ }
+.ai-player-name { font-weight: 600; font-size: 1em; color: #f1f1f1; margin-bottom: 4px; }
+.ai-player-status { font-size: 0.85em; color: #a0aec0; margin-bottom: 6px; min-height: 1.1em; font-style: italic; }
+.ai-player-hands-summary { font-size: 0.75em; color: #cbd5e0; line-height: 1.5; width: 100%; margin-bottom: 5px; }
+.ai-hand-summary { padding: 1px 0; }
+.ai-hand-summary.top { color: #fca311; }
+.ai-hand-summary.middle { color: #90e0ef; }
+.ai-hand-summary.bottom { color: #f94144; }
 
-.ai-player-info {
-    /* 包裹名字、状态、牌型概要 */
+.ai-player-score-container { /* 包裹总分和本局得分 */
+    margin-top: 8px;
+    font-size: 0.9em;
 }
+.ai-player-total-score, .ai-player-round-score {
+    display: inline-block; /* 或者 block 如果希望各占一行 */
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin: 0 3px;
+}
+.ai-player-total-score { font-weight: bold; }
+.ai-player-round-score { font-size: 0.9em; opacity: 0.8; }
 
-.ai-player-name {
-  font-weight: 600;
-  font-size: 1em;
-  color: #f1f1f1; /* AI名字用浅色 */
-  margin-bottom: 4px;
-}
-
-.ai-player-status {
-  font-size: 0.85em;
-  color: #a0aec0; /* 状态文字用稍暗的灰色 */
-  margin-bottom: 6px;
-  min-height: 1.1em;
-  font-style: italic;
-}
-
-.ai-player-hands-summary {
-  font-size: 0.75em;
-  color: #cbd5e0;
-  line-height: 1.5; /* 增加行高使牌型更清晰 */
-  width: 100%;
-}
-.ai-hand-summary {
-  padding: 1px 0;
-  /* border-bottom: 1px solid rgba(255,255,255,0.05); */
-}
-.ai-hand-summary:last-child {
-  /* border-bottom: none; */
-}
-.ai-hand-summary.top { color: #fca311; } /* 头道牌型用不同颜色 */
-.ai-hand-summary.middle { color: #90e0ef; } /* 中道 */
-.ai-hand-summary.bottom { color: #f94144; } /* 尾道 */
+.positive { color: #06d6a0; /* background-color: rgba(6, 214, 160, 0.1); */ }
+.negative { color: #ef476f; /* background-color: rgba(239, 71, 111, 0.1); */ }
 
 
 /* --- 游戏板与牌道区域 --- */
-.game-board {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 18px;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 14px;
-  box-shadow: 0 5px 18px rgba(0,0,0,0.3);
-  width: 100%;
-  max-width: 680px; /* 游戏板宽度 */
-}
+.game-board { display: flex; flex-direction: column; gap: 18px; padding: 18px; background-color: rgba(0, 0, 0, 0.3); border-radius: 14px; box-shadow: 0 5px 18px rgba(0,0,0,0.3); width: 100%; max-width: 680px; }
+.hand-area-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 6px; }
+.hand-area-title { color: #ffd166; font-weight: 500; font-size: 1.05em; margin: 0; }
+.hand-type-display { font-size: 0.9em; color: #f1f1f1; background-color: rgba(0,0,0,0.45); padding: 3px 8px; border-radius: 4px; font-weight: 500; }
+.hand-area { background-color: rgba(255, 255, 255, 0.07); padding: 10px; border-radius: 6px; min-height: 105px; display: flex; flex-direction: row; align-items: center; gap: 7px; transition: background-color 0.25s ease-in-out, box-shadow 0.25s ease; }
+.hand-area:not(.allow-wrapping) { flex-wrap: nowrap; justify-content: center; }
+.hand-area.allow-wrapping { flex-wrap: wrap; justify-content: center; min-height: 185px; align-items: flex-start; }
+.hand-area.droppable-active { background-color: rgba(66, 153, 225, 0.3); box-shadow: inset 0 0 10px rgba(66, 153, 225, 0.2); }
 
-.hand-area-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  padding: 0 6px;
-}
-
-.hand-area-title {
+/* --- 真人玩家分数显示 --- */
+.player-score-display {
+  font-size: 1.15em;
+  font-weight: bold;
   color: #ffd166;
-  font-weight: 500;
-  font-size: 1.05em;
-  margin: 0;
-}
-
-.hand-type-display {
-  font-size: 0.9em;
-  color: #f1f1f1;
-  background-color: rgba(0,0,0,0.45);
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.hand-area {
-  background-color: rgba(255, 255, 255, 0.07);
-  padding: 10px;
-  border-radius: 6px;
-  min-height: 105px; /* 卡牌高度 (87px) + padding (2*10=20px) = 107px */
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 7px;
-  transition: background-color 0.25s ease-in-out, box-shadow 0.25s ease;
-}
-
-.hand-area:not(.allow-wrapping) {
-  flex-wrap: nowrap;
-  justify-content: center;
-}
-
-.hand-area.allow-wrapping {
-  flex-wrap: wrap;
-  justify-content: center; /* 换行后卡牌也居中排列 */
-  min-height: 185px; /* 2行卡牌 (87+7+87) + padding (2*10) = 181 + 20 = 201px, 略小于这个值 */
-  align-items: flex-start; /* 多行时从顶部对齐 */
-}
-
-.hand-area.droppable-active {
-  background-color: rgba(66, 153, 225, 0.3);
-  box-shadow: inset 0 0 10px rgba(66, 153, 225, 0.2);
+  margin-bottom: 18px;
+  padding: 10px 18px;
+  background-color: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 
 /* --- 卡牌样式 --- */
-.card {
-  width: 62px;
-  height: 87px;
-  border-radius: 5px;
-  overflow: hidden;
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.35);
-  cursor: grab;
-  background-color: white;
-  flex-shrink: 0;
-  transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1), 
-              box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
-  user-select: none;
-  position: relative;
-}
-.card img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-}
-.card:hover:not(.dragging) {
-  transform: translateY(-3px) scale(1.04);
-  box-shadow: 3px 5px 10px rgba(0,0,0,0.3);
-}
-.card:active, .card.dragging {
-  cursor: grabbing;
-  transform: scale(1.12) rotate(3.5deg) translateY(-2px);
-  box-shadow: 4px 6px 12px rgba(0,0,0,0.45);
-  z-index: 1000;
-}
-.card-placeholder { /* ... */ }
-.image-error-text { /* ... */ }
+.card { width: 62px; height: 87px; border-radius: 5px; overflow: hidden; box-shadow: 2px 2px 6px rgba(0,0,0,0.35); cursor: grab; background-color: white; flex-shrink: 0; transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1); user-select: none; position: relative; }
+.card img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.card:hover:not(.dragging) { transform: translateY(-3px) scale(1.04); box-shadow: 3px 5px 10px rgba(0,0,0,0.3); }
+.card:active, .card.dragging { cursor: grabbing; transform: scale(1.12) rotate(3.5deg) translateY(-2px); box-shadow: 4px 6px 12px rgba(0,0,0,0.45); z-index: 1000; }
+.card-placeholder { width: 62px; height: 87px; border: 2px dashed #555; display: flex; align-items: center; justify-content: center; background-color: #2a2a2a; color: #777; border-radius: 5px; font-size: 24px; font-weight: bold; }
+.image-error-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ef476f; font-size: 11px; text-align: center; padding: 3px 5px; background-color: rgba(0, 0, 0, 0.75); border-radius: 3px; pointer-events: none; }
 
 
 /* --- 控制按钮 --- */
-.controls {
-  margin-top: 25px;
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  margin-bottom: 20px;
-  flex-wrap: wrap; /* 按钮多时可换行 */
-}
+.controls { margin-top: 25px; display: flex; justify-content: center; gap: 18px; margin-bottom: 20px; flex-wrap: wrap; }
+.game-button { padding: 10px 22px; font-size: 1em; color: white; background-color: #118ab2; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease-out, box-shadow 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-weight: 500; }
+.game-button:hover:not(:disabled) { background-color: #0c9dcb; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.25); }
+.game-button:active:not(:disabled) { transform: translateY(0px); background-color: #0a8aaa; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.game-button:disabled { background-color: #4f6367; color: #9fb3b8; cursor: not-allowed; box-shadow: none; transform: none; }
+.game-button.compare-all-button { background-color: #06d6a0; color: #073b4c; margin-top: 10px; font-weight: bold; padding: 12px 28px; font-size: 1.1em; }
+.game-button.compare-all-button:hover:not(:disabled) { background-color: #05c08d; }
 
-.game-button {
-  padding: 10px 22px;
-  font-size: 1em;
-  color: white;
-  background-color: #118ab2;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease-out, box-shadow 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  font-weight: 500;
-}
-.game-button:hover:not(:disabled) {
-  background-color: #0c9dcb;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.25);
-}
-.game-button:active:not(:disabled) {
-  transform: translateY(0px);
-  background-color: #0a8aaa;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-.game-button:disabled {
-  background-color: #4f6367;
-  color: #9fb3b8;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
-}
-.game-button.compare-all-button { /* "开始比牌" 按钮的特殊样式 */
-    background-color: #06d6a0; /* 绿色 */
-    color: #073b4c; /* 深色文字 */
-    margin-top: 10px; /* 如果与其他按钮分开显示 */
-}
-.game-button.compare-all-button:hover:not(:disabled) {
-    background-color: #05c08d;
-}
+/* --- 比牌结果详情容器 --- */
+.comparison-results-container { width: 100%; max-width: 700px; margin-top: 25px; padding: 20px; background-color: rgba(0, 0, 0, 0.3); border-radius: 12px; color: #e0e0e0; }
+.comparison-results-container h2 { text-align: center; color: #ffd166; margin-top: 0; margin-bottom: 20px; font-size: 1.5em; }
+.player-result-detail { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.player-result-detail:last-child { border-bottom: none; margin-bottom: 0; }
+.player-result-detail h3 { color: #f1f1f1; margin-top: 0; margin-bottom: 10px; font-size: 1.2em; }
+.player-result-detail ul { list-style-type: none; padding-left: 0; /* 改为0，由li::before控制缩进 */ margin: 0; }
+.player-result-detail li { font-size: 0.9em; margin-bottom: 6px; line-height: 1.5; color: #c0c0c0; padding-left: 20px; /* 为自定义符号留出空间 */ position:relative; }
+.player-result-detail li::before { content: "▹"; color: #ffd166; font-weight: bold; position:absolute; left: 0px; top: 1px; /* 微调对齐 */ }
+.player-result-detail ul ul { margin-top: 5px; padding-left: 15px; } /* 内嵌列表样式 */
+.player-result-detail ul ul li { font-size: 0.95em; color: #b0bec5; }
+.player-result-detail ul ul li::before { content: "▪"; color: #90e0ef; }
 
 
 /* --- 响应式调整 --- */
 @media (max-width: 768px) {
   .app-container { padding: 10px 10px 30px 10px; }
   .game-title { font-size: 2.1em; margin-bottom: 15px; }
-  .top-banner-container {
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    max-width: 100%; /* 小屏幕占满宽度 */
-    padding: 8px;
-  }
-  .ai-player-display {
-    width: 90%; /* AI信息块宽度 */
-    max-width: 350px;
-    padding: 10px;
-  }
+  .top-banner-container { flex-direction: column; align-items: center; gap: 12px; max-width: 100%; padding: 8px; }
+  .ai-player-display { width: 90%; max-width: 350px; padding: 10px; }
   .ai-player-avatar { width: 35px; height: 35px; font-size: 1em; }
   .ai-player-name { font-size: 0.95em; }
   .ai-player-status { font-size: 0.8em; }
   .ai-player-hands-summary { font-size: 0.7em; }
+  .ai-player-score-container { font-size: 0.85em; }
 
   .game-board { max-width: 100%; padding: 15px; gap: 15px; }
   .hand-area-title { font-size: 1em; }
   .hand-type-display { font-size: 0.85em; padding: 2px 6px; }
-  .card { width: 52px; height: 73px; } /* 进一步缩小卡牌 */
+  .card { width: 52px; height: 73px; }
   .hand-area { min-height: 85px; padding: 8px; gap: 5px; }
-  .hand-area.allow-wrapping { min-height: 155px; } /* 2行 (73+5+73) + padding(16) */
+  .hand-area.allow-wrapping { min-height: 155px; }
   
+  .player-score-display { font-size: 1.05em; margin-bottom: 15px; padding: 8px 12px; }
   .game-message { max-width: 100%; font-size: 0.95em; padding: 8px 12px; }
   .controls { gap: 12px; flex-direction: column; align-items: center; }
   .controls .game-button { width: 70%; max-width: 280px; padding: 10px 15px; font-size: 0.95em; }
+  .game-button.compare-all-button { width: 70%; max-width: 280px; font-size: 1em; }
+  .comparison-results-container { padding: 15px; }
+  .comparison-results-container h2 { font-size: 1.3em; }
+  .player-result-detail h3 { font-size: 1.1em; }
+  .player-result-detail li { font-size: 0.85em; }
 }
 
-@media (max-width: 420px) { /* 非常小的屏幕 */
+@media (max-width: 420px) {
   .game-title { font-size: 1.8em; }
   .card { width: 40px; height: 56px; }
-  .hand-area { min-height: 68px; } /* 56 + padding(12) */
-  .hand-area.allow-wrapping { min-height: 125px; } /* (56+5+56) + padding(12) */
+  .hand-area { min-height: 68px; }
+  .hand-area.allow-wrapping { min-height: 125px; }
   .ai-player-avatar { width: 30px; height: 30px; font-size: 0.9em; }
   .controls .game-button { width: 85%; }
+  .game-button.compare-all-button { width: 85%; }
+  .player-score-display { font-size: 1em; }
 }
