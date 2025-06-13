@@ -1,173 +1,204 @@
 // frontend/src/logic/scoreCalculator.js
-import { compareEvaluatedHands, HAND_TYPES } from './handEvaluator';
+import { compareEvaluatedHands, HAND_TYPES } from './handEvaluator'; // 确保 HAND_TYPES 被正确导入
 
 /**
  * 获取特定牌道和牌型的基础得分和特殊牌型得分。
- * 注意：这些得分规则可以根据你的具体游戏设定进行调整。
- * @param {string}道 ('TOP', 'MIDDLE', 'BOTTOM')
+ * 这些规则是示例，请根据您的具体游戏规则调整。
+ * @param {string}道Key ('TOP', 'MIDDLE', 'BOTTOM')
  * @param {object} handEval - 牌型评估结果 { type, kickers, ... }
- * @returns {number} 特殊牌型应得的水数 (如果普通赢则为1)
+ * @returns {number} 该道胜利时应得的基础水数 (考虑特殊牌型加成)
  */
-function getSpecialHandScore(道, handEval) {
+function getPointsForWinningHand(道Key, handEval) {
   if (!handEval || typeof handEval.type !== 'number') return 1; // 默认普通赢1水
 
-  if (道 === 'TOP') {
-    if (handEval.type === HAND_TYPES.THREE_OF_A_KIND) return 3; // 头道冲三，得3水
-  } else if (道 === 'MIDDLE') {
-    if (handEval.type === HAND_TYPES.FULL_HOUSE) return 2;    // 中道葫芦，得2水
-    if (handEval.type === HAND_TYPES.FOUR_OF_A_KIND) return 8; // 中道铁支，得8水 (有些规则是4或5)
-    if (handEval.type >= HAND_TYPES.STRAIGHT_FLUSH) return 10; // 中道同花顺，得10水 (有些规则是5或7)
-  } else if (道 === 'BOTTOM') {
-    if (handEval.type === HAND_TYPES.FOUR_OF_A_KIND) return 5; // 尾道铁支，得5水 (有些规则是4)
-    if (handEval.type >= HAND_TYPES.STRAIGHT_FLUSH) return 7; // 尾道同花顺，得7水 (有些规则是5)
+  // 示例得分规则:
+  if (道Key === 'TOP') {
+    if (handEval.type === HAND_TYPES.THREE_OF_A_KIND) return 3; // 头道三条（冲三）
+  } else if (道Key === 'MIDDLE') {
+    // 注意：十三水中道铁支和同花顺的加分通常非常高
+    if (handEval.type === HAND_TYPES.FULL_HOUSE) return 2;    // 中道葫芦
+    if (handEval.type === HAND_TYPES.FOUR_OF_A_KIND) return 8; // 中道铁支 (示例分)
+    if (handEval.type >= HAND_TYPES.STRAIGHT_FLUSH) return 10; // 中道同花顺 (示例分)
+  } else if (道Key === 'BOTTOM') {
+    if (handEval.type === HAND_TYPES.FOUR_OF_A_KIND) return 5; // 尾道铁支 (示例分)
+    if (handEval.type >= HAND_TYPES.STRAIGHT_FLUSH) return 7; // 尾道同花顺 (示例分)
   }
   return 1; // 普通牌型赢，得1水
 }
 
 /**
  * 比较两个玩家的三道牌，并计算 playerA 相对于 playerB 的得分。
- * @param {object} playerA - 玩家A的状态对象，包含 finalArrangement: {topEval, middleEval, bottomEval}
+ * @param {object} playerA - 玩家A的状态对象
  * @param {object} playerB - 玩家B的状态对象
- * @returns {{scoreA: number, scoreB: number, details: string[]}} 返回A和B的得分变化，以及比牌详情
+ * @param {object} handTypeNames - 包含牌型名称的对象，用于生成详情
+ * @returns {{scoreChangeA: number, details: string[]}} 返回A的得分变化和比牌详情
  */
-export function compareTwoPlayers(playerA, playerB) {
-  let scoreChangeA = 0;
+export function compareTwoPlayers(playerA, playerB, handTypeNames) {
+  let scoreChangeForA = 0;
   const details = [];
 
   if (!playerA.finalArrangement || !playerB.finalArrangement) {
-    console.error("One or both players have no final arrangement for comparison.");
-    return { scoreA: 0, scoreB: 0, details: ["比牌错误: 玩家牌型未确定"] };
+    details.push("比牌错误: 一方或双方牌型未确定。");
+    return { scoreChangeA: 0, details };
   }
+
+  const getEvalName = (evalObj) => evalObj && handTypeNames[evalObj.type] ? handTypeNames[evalObj.type] : '未知牌型';
 
   const { topEval: topA, middleEval: middleA, bottomEval: bottomA } = playerA.finalArrangement;
   const { topEval: topB, middleEval: middleB, bottomEval: bottomB } = playerB.finalArrangement;
 
   let aWinsTop = 0, aWinsMiddle = 0, aWinsBottom = 0;
 
-  // 1. 头道比较
+  // 头道比较
   const topComparison = compareEvaluatedHands(topA, topB);
-  if (topComparison > 0) { // A赢头道
-    const points = getSpecialHandScore('TOP', topA);
-    scoreChangeA += points;
-    aWinsTop = 1;
-    details.push(`${playerA.name} 头道(${topA.name}) 胜 ${playerB.name} (${topB.name}) 得 ${points} 水`);
-  } else if (topComparison < 0) { // B赢头道
-    const points = getSpecialHandScore('TOP', topB);
-    scoreChangeA -= points;
-    aWinsTop = -1;
-    details.push(`${playerB.name} 头道(${topB.name}) 胜 ${playerA.name} (${topA.name}) 得 ${points} 水`);
+  if (topComparison > 0) {
+    const points = getPointsForWinningHand('TOP', topA);
+    scoreChangeForA += points; aWinsTop = 1;
+    details.push(`头道: ${playerA.name}(${getEvalName(topA)}) 胜 ${playerB.name}(${getEvalName(topB)}) +${points}`);
+  } else if (topComparison < 0) {
+    const points = getPointsForWinningHand('TOP', topB);
+    scoreChangeForA -= points; aWinsTop = -1;
+    details.push(`头道: ${playerB.name}(${getEvalName(topB)}) 胜 ${playerA.name}(${getEvalName(topA)}) -${points}`);
   } else {
-    details.push(`${playerA.name} 头道 与 ${playerB.name} 平手`);
+    details.push(`头道: ${playerA.name}(${getEvalName(topA)}) 平 ${playerB.name}(${getEvalName(topB)})`);
   }
 
-  // 2. 中道比较
+  // 中道比较
   const middleComparison = compareEvaluatedHands(middleA, middleB);
-  if (middleComparison > 0) { // A赢中道
-    const points = getSpecialHandScore('MIDDLE', middleA);
-    scoreChangeA += points;
-    aWinsMiddle = 1;
-    details.push(`${playerA.name} 中道(${middleA.name}) 胜 ${playerB.name} (${middleB.name}) 得 ${points} 水`);
-  } else if (middleComparison < 0) { // B赢中道
-    const points = getSpecialHandScore('MIDDLE', middleB);
-    scoreChangeA -= points;
-    aWinsMiddle = -1;
-    details.push(`${playerB.name} 中道(${middleB.name}) 胜 ${playerA.name} (${middleA.name}) 得 ${points} 水`);
+  if (middleComparison > 0) {
+    const points = getPointsForWinningHand('MIDDLE', middleA);
+    scoreChangeForA += points; aWinsMiddle = 1;
+    details.push(`中道: ${playerA.name}(${getEvalName(middleA)}) 胜 ${playerB.name}(${getEvalName(middleB)}) +${points}`);
+  } else if (middleComparison < 0) {
+    const points = getPointsForWinningHand('MIDDLE', middleB);
+    scoreChangeForA -= points; aWinsMiddle = -1;
+    details.push(`中道: ${playerB.name}(${getEvalName(middleB)}) 胜 ${playerA.name}(${getEvalName(middleA)}) -${points}`);
   } else {
-    details.push(`${playerA.name} 中道 与 ${playerB.name} 平手`);
+    details.push(`中道: ${playerA.name}(${getEvalName(middleA)}) 平 ${playerB.name}(${getEvalName(middleB)})`);
   }
 
-  // 3. 尾道比较
+  // 尾道比较
   const bottomComparison = compareEvaluatedHands(bottomA, bottomB);
-  if (bottomComparison > 0) { // A赢尾道
-    const points = getSpecialHandScore('BOTTOM', bottomA);
-    scoreChangeA += points;
-    aWinsBottom = 1;
-    details.push(`${playerA.name} 尾道(${bottomA.name}) 胜 ${playerB.name} (${bottomB.name}) 得 ${points} 水`);
-  } else if (bottomComparison < 0) { // B赢尾道
-    const points = getSpecialHandScore('BOTTOM', bottomB);
-    scoreChangeA -= points;
-    aWinsBottom = -1;
-    details.push(`${playerB.name} 尾道(${bottomB.name}) 胜 ${playerA.name} (${bottomA.name}) 得 ${points} 水`);
+  if (bottomComparison > 0) {
+    const points = getPointsForWinningHand('BOTTOM', bottomA);
+    scoreChangeForA += points; aWinsBottom = 1;
+    details.push(`尾道: ${playerA.name}(${getEvalName(bottomA)}) 胜 ${playerB.name}(${getEvalName(bottomB)}) +${points}`);
+  } else if (bottomComparison < 0) {
+    const points = getPointsForWinningHand('BOTTOM', bottomB);
+    scoreChangeForA -= points; aWinsBottom = -1;
+    details.push(`尾道: ${playerB.name}(${getEvalName(bottomB)}) 胜 ${playerA.name}(${getEvalName(bottomA)}) -${points}`);
   } else {
-    details.push(`${playerA.name} 尾道 与 ${playerB.name} 平手`);
+    details.push(`尾道: ${playerA.name}(${getEvalName(bottomA)}) 平 ${playerB.name}(${getEvalName(bottomB)})`);
   }
 
-  // 4. 处理打枪 (A打枪B 或 B打枪A)
-  // 打枪定义：三道全胜 (1, 1, 1) 或三道全输 (-1, -1, -1)
+  // 处理打枪: 如果一方三道全胜，则总得分翻倍
   if (aWinsTop === 1 && aWinsMiddle === 1 && aWinsBottom === 1) {
-    details.push(`${playerA.name} 打枪 ${playerB.name}! 得分翻倍!`);
-    scoreChangeA *= 2; // 基础分翻倍
+    details.push(`${playerA.name} 打枪 ${playerB.name}! 总得分翻倍.`);
+    scoreChangeForA *= 2;
   } else if (aWinsTop === -1 && aWinsMiddle === -1 && aWinsBottom === -1) {
-    details.push(`${playerB.name} 打枪 ${playerA.name}! ${playerA.name}失分翻倍!`);
-    scoreChangeA *= 2; // A的失分翻倍
+    details.push(`${playerB.name} 打枪 ${playerA.name}! ${playerA.name}总失分翻倍.`);
+    scoreChangeForA *= 2; // scoreChangeForA 此时是负数，翻倍后依然是负数
   }
   
-  // 返回 playerA 的得分变化，playerB 的得分变化是其相反数
-  return { scoreA: scoreChangeA, scoreB: -scoreChangeA, details };
+  return { scoreChangeA, details };
 }
-
 
 /**
  * 计算所有玩家的最终得分。
- * @param {Array<object>} playersArray - 包含所有玩家状态的数组。
- * @returns {Array<object>} 返回更新了 score 和 comparisonDetails 的玩家数组。
+ * @param {Array<object>} originalPlayers - 包含所有玩家状态的数组。
+ * @param {object} handTypeNames - 包含牌型名称的对象，用于生成详情。
+ * @returns {Array<object>} 返回更新了 score 和 comparisonResults (对每个对手的详情) 的玩家数组。
  */
-export function calculateAllPlayerScores(playersArray) {
-  const numPlayers = playersArray.length;
-  if (numPlayers < 2) return playersArray; // 少于2个玩家无法比牌
+export function calculateAllPlayerScores(originalPlayers, handTypeNames) {
+  const numPlayers = originalPlayers.length;
+  if (numPlayers < 2) return originalPlayers;
 
-  // 复制玩家数组以避免直接修改原状态，并初始化比较详情
-  let playersWithScores = playersArray.map(p => ({ ...p, score: 0, comparisonDetails: [] }));
+  // 创建玩家数据的深拷贝副本进行操作，并初始化分数和比较结果
+  let playersWithScores = JSON.parse(JSON.stringify(originalPlayers)); // 简易深拷贝
+  playersWithScores.forEach(p => {
+    p.score = 0; // 初始化本轮得分为0
+    p.comparisonResults = {}; // 用于存储对每个其他玩家的比牌详情和得分
+  });
 
   for (let i = 0; i < numPlayers; i++) {
     for (let j = i + 1; j < numPlayers; j++) {
       const playerA = playersWithScores[i];
       const playerB = playersWithScores[j];
+      let roundScoreA = 0;
+      let roundDetails = [];
 
-      // 确保玩家都已摆好牌且没有倒水 (AI默认不倒水)
-      // 如果一个玩家倒水，则算自动输给未倒水的玩家，通常是输掉每道的基础分或特定惩罚分
-      if (playerA.isMisArranged && !playerB.isMisArranged) {
-        const penalty = - (getSpecialHandScore('TOP', playerB.finalArrangement.topEval) +
-                           getSpecialHandScore('MIDDLE', playerB.finalArrangement.middleEval) +
-                           getSpecialHandScore('BOTTOM', playerB.finalArrangement.bottomEval)) * 2; // 倒水通常输打枪
-        playerA.score += penalty;
-        playerB.score -= penalty;
-        playerA.comparisonDetails.push(`对 ${playerB.name}: 倒水，输 ${-penalty} 水`);
-        playerB.comparisonDetails.push(`对 ${playerA.name}: 对方倒水，赢 ${-penalty} 水`);
-        continue; // 跳过正常比牌
-      }
-      if (playerB.isMisArranged && !playerA.isMisArranged) {
-        const penalty = - (getSpecialHandScore('TOP', playerA.finalArrangement.topEval) +
-                           getSpecialHandScore('MIDDLE', playerA.finalArrangement.middleEval) +
-                           getSpecialHandScore('BOTTOM', playerA.finalArrangement.bottomEval)) * 2;
-        playerB.score += penalty;
-        playerA.score -= penalty;
-        playerB.comparisonDetails.push(`对 ${playerA.name}: 倒水，输 ${-penalty} 水`);
-        playerA.comparisonDetails.push(`对 ${playerB.name}: 对方倒水，赢 ${-penalty} 水`);
-        continue;
-      }
-      // 如果双方都倒水，可以算平局或按其他规则处理，这里简化为不计分
-      if (playerA.isMisArranged && playerB.isMisArranged) {
-        playerA.comparisonDetails.push(`对 ${playerB.name}: 双方均倒水`);
-        playerB.comparisonDetails.push(`对 ${playerA.name}: 双方均倒水`);
-        continue;
+      // 处理倒水：倒水方直接输给未倒水方（通常算被打枪）
+      const misArrangedA = playerA.isMisArranged;
+      const misArrangedB = playerB.isMisArranged;
+
+      if (misArrangedA && !misArrangedB) {
+        // A倒水，B未倒水：A输给B，通常按B每道普通赢，然后打枪计算
+        let penaltyForA = -(getPointsForWinningHand('TOP', playerB.finalArrangement.topEval) +
+                            getPointsForWinningHand('MIDDLE', playerB.finalArrangement.middleEval) +
+                            getPointsForWinningHand('BOTTOM', playerB.finalArrangement.bottomEval));
+        penaltyForA *= 2; // 打枪翻倍
+        roundScoreA = penaltyForA;
+        roundDetails.push(`${playerA.name} 倒水，输给 ${playerB.name} ${-penaltyForA} 水 (打枪)`);
+      } else if (!misArrangedA && misArrangedB) {
+        // B倒水，A未倒水：A赢B
+        let winForA = (getPointsForWinningHand('TOP', playerA.finalArrangement.topEval) +
+                       getPointsForWinningHand('MIDDLE', playerA.finalArrangement.middleEval) +
+                       getPointsForWinningHand('BOTTOM', playerA.finalArrangement.bottomEval));
+        winForA *= 2; // 打枪翻倍
+        roundScoreA = winForA;
+        roundDetails.push(`${playerA.name} 胜 ${playerB.name} (对方倒水) ${winForA} 水 (打枪)`);
+      } else if (misArrangedA && misArrangedB) {
+        // 双方都倒水，平局，不得分
+        roundDetails.push(`${playerA.name} 与 ${playerB.name} 双方均倒水，平局`);
+      } else {
+        // 双方均未倒水，正常比牌
+        const result = compareTwoPlayers(playerA, playerB, handTypeNames);
+        roundScoreA = result.scoreChangeA;
+        roundDetails = result.details;
       }
 
+      playerA.score += roundScoreA;
+      playerB.score -= roundScoreA; // B的得分是A的相反数
 
-      const result = compareTwoPlayers(playerA, playerB);
-      playerA.score += result.scoreA;
-      playerB.score += result.scoreB;
-      
-      // 存储详细比牌过程，可选
-      playerA.comparisonDetails.push(`对 ${playerB.name}: ${result.details.join('; ')} -> 得分变化: ${result.scoreA}`);
-      playerB.comparisonDetails.push(`对 ${playerA.name}: ${result.details.map(d => d.includes(playerA.name + " ") ? d.replace(playerA.name + " ", playerB.name + " TEMP_SWAP_PLAYER ").replace(playerB.name + " ", playerA.name + " ").replace("TEMP_SWAP_PLAYER", "") : d.includes(playerB.name + " ") ? d.replace(playerB.name + " ", playerA.name + " TEMP_SWAP_PLAYER ").replace(playerA.name + " ", playerB.name + " ").replace("TEMP_SWAP_PLAYER", "") : d ).join('; ')} -> 得分变化: ${result.scoreB}`);
+      // 记录对战详情
+      playerA.comparisonResults[playerB.id] = { score: roundScoreA, details: roundDetails };
+      // B对A的详情可以从A对B的详情反推，或者也记录下来
+      const bDetails = roundDetails.map(detail => {
+         // 简单替换名字，实际可能需要更复杂的逻辑来反转胜负描述
+        return detail.replace(new RegExp(playerA.name, 'g'), 'TEMP_NAME_B')
+                     .replace(new RegExp(playerB.name, 'g'), playerA.name)
+                     .replace(/TEMP_NAME_B/g, playerB.name)
+                     // 反转得分符号的描述
+                     .replace(/\+\d+/g, (match) => `-${match.substring(1)}`)
+                     .replace(/-\d+/g, (match) => `+${match.substring(1)}`);
+
+      });
+      playerB.comparisonResults[playerA.id] = { score: -roundScoreA, details: bDetails };
     }
   }
+  
+  // TODO: 实现全垒打逻辑。
+  // 全垒打：如果一个玩家打枪了其他所有三个玩家（即对其他每个玩家的 scoreChange 都是正数且是打枪的情况）。
+  // 需要检查每个玩家的 comparisonResults。如果一个玩家对其他所有玩家的 individual scoreChange 都是通过打枪赢的，
+  // 则该玩家的总 score 可能会再次翻倍。
+  // 例如：
+  // playersWithScores.forEach(player => {
+  //   let shootCount = 0;
+  //   if (numPlayers > 1) { // 至少要有对手
+  //       Object.keys(player.comparisonResults).forEach(opponentId => {
+  //           const res = player.comparisonResults[opponentId];
+  //           // 假设打枪会在 details 包含 "打枪" 并且 score > 0
+  //           if (res.score > 0 && res.details.some(d => d.includes("打枪"))) {
+  //               shootCount++;
+  //           }
+  //       });
+  //   }
+  //   if (shootCount === numPlayers - 1 && numPlayers > 1) { // 打枪了所有对手
+  //       player.score *= 2; // 全垒打得分再翻倍 (这是一个示例规则)
+  //       player.comparisonResults["all"] = { score: player.score, details: ["全垒打！最终得分翻倍！"]};
+  //   }
+  // });
 
-  // TODO: 处理全垒打 (Home Run / Scoop)
-  // 如果一个玩家打枪了其他所有三个玩家，则其总得分可能会再次翻倍或获得额外奖励。
-  // 例如，检查 playersWithScores 中是否有玩家的 score 是通过3次打枪累积的。
-  // 这部分逻辑可以根据具体规则添加。
 
   return playersWithScores;
 }
