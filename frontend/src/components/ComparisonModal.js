@@ -1,24 +1,21 @@
 // frontend/src/components/ComparisonModal.js
 import React from 'react';
-import CardComponent from './Card';
+// import CardComponent from './Card'; // 不再使用可拖拽的 CardComponent
+import StaticCard from './StaticCard'; // 引入新的静态卡牌组件
 import { HAND_TYPE_NAMES } from '../logic/handEvaluator';
 
 const getTypeName = (typeNum) => HAND_TYPE_NAMES[typeNum] || '未知';
 
 const PlayerComparisonCell = ({ player, isHuman }) => {
-    // 首先确保 player 对象和 finalArrangement 存在
     if (!player || !player.finalArrangement) {
         return <div className="comparison-cell empty">等待数据...</div>;
     }
 
-    // 安全地获取牌道卡牌，如果 player.cards 或其属性不存在，则默认为空数组
     const topCards = (player.cards && Array.isArray(player.cards.TOP)) ? player.cards.TOP : [];
     const middleCards = (player.cards && Array.isArray(player.cards.MIDDLE)) ? player.cards.MIDDLE : [];
     const bottomCards = (player.cards && Array.isArray(player.cards.BOTTOM)) ? player.cards.BOTTOM : [];
     
     const { topEval, middleEval, bottomEval } = player.finalArrangement;
-
-    // 确保 roundScore 和 score 是数字，或者提供默认值
     const roundScore = typeof player.roundScore === 'number' ? player.roundScore : 0;
     const totalScore = typeof player.score === 'number' ? player.score : 0;
 
@@ -31,19 +28,22 @@ const PlayerComparisonCell = ({ player, isHuman }) => {
             <div className="comparison-hand-row">
                 <strong>头道 ({getTypeName(topEval?.type)}):</strong>
                 <div className="mini-cards">
-                    {topCards.map(c => <CardComponent key={c.id + '_modal_top'} cardData={c} draggableId={c.id+'_modal_top'} index={0} />)}
+                    {/* 使用 StaticCard */}
+                    {topCards.map(c => <StaticCard key={c.id + '_modal_top_static'} cardData={c} />)}
                 </div>
             </div>
             <div className="comparison-hand-row">
                 <strong>中道 ({getTypeName(middleEval?.type)}):</strong>
                 <div className="mini-cards">
-                    {middleCards.map(c => <CardComponent key={c.id + '_modal_middle'} cardData={c} draggableId={c.id+'_modal_middle'} index={0} />)}
+                    {/* 使用 StaticCard */}
+                    {middleCards.map(c => <StaticCard key={c.id + '_modal_middle_static'} cardData={c} />)}
                 </div>
             </div>
             <div className="comparison-hand-row">
                 <strong>尾道 ({getTypeName(bottomEval?.type)}):</strong>
                 <div className="mini-cards">
-                    {bottomCards.map(c => <CardComponent key={c.id + '_modal_bottom'} cardData={c} draggableId={c.id+'_modal_bottom'} index={0} />)}
+                    {/* 使用 StaticCard */}
+                    {bottomCards.map(c => <StaticCard key={c.id + '_modal_bottom_static'} cardData={c} />)}
                 </div>
             </div>
             {player.comparisonResults && Object.values(player.comparisonResults).map((res, idx) => (
@@ -56,7 +56,6 @@ const PlayerComparisonCell = ({ player, isHuman }) => {
         </div>
     );
 };
-
 
 const ComparisonModal = ({ isOpen, onClose, players, humanPlayerId }) => {
   if (!isOpen || !players || players.length === 0) {
@@ -72,7 +71,6 @@ const ComparisonModal = ({ isOpen, onClose, players, humanPlayerId }) => {
         <button className="modal-close-button" onClick={onClose}>×</button>
         <h2>本局比牌结果</h2>
         <div className="comparison-grid">
-            {/* 确保传递的 player 对象是有效的 */}
             {humanPlayer && <PlayerComparisonCell player={humanPlayer} isHuman={true} />}
             {aiOpponents[0] && <PlayerComparisonCell player={aiOpponents[0]} isHuman={false}/>}
             {aiOpponents[1] ? <PlayerComparisonCell player={aiOpponents[1]} isHuman={false}/> : <div className="comparison-cell empty">AI②槽位空</div>}
