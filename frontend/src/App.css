@@ -1,66 +1,91 @@
 /* frontend/src/App.css */
 
 /* --- 全局与基础布局 --- */
-body, html { height: 100%; margin: 0; overflow-x: hidden; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑक्सीजन, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background-color: #073b4c; color: #f1f1f1; box-sizing: border-box; display: flex; /* 让body也成为flex容器 */ flex-direction: column; /* 确保app-container能撑满 */ }
-*, *::before, *::after { box-sizing: inherit; }
+body, html { 
+  height: 100%; 
+  margin: 0; 
+  overflow-x: hidden; 
+  background-color: #073b4c; /* 背景色放在 body 上 */
+}
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑक्सीजन, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; 
+  -webkit-font-smoothing: antialiased; 
+  -moz-osx-font-smoothing: grayscale; 
+  color: #f1f1f1; 
+  box-sizing: border-box; 
+  display: flex; /* 让body也成为flex容器 */ 
+  flex-direction: column; /* 确保app-container能撑满 */ 
+}
+*, *::before, *::after { 
+  box-sizing: inherit; 
+}
 
 .app-container {
   display: flex; 
-  flex-direction: column;
-  align-items: stretch; /* 子横幅占满宽度 */
+  flex-direction: column; /* 确保其子元素（game-view-active 或 comparison-view-container）能正确应用flex-grow */
   width: 100%;
-  flex-grow: 1; /* 关键：让 app-container 占据所有可用垂直空间 */
-  /* padding 由 game-view-active 控制 */
+  flex-grow: 1; /* 占据body内所有可用垂直空间 */
+  /* padding 由子视图内部控制，或不设 */
 }
 
 /* 主游戏视图容器 (包含5个横幅) */
 .game-view-active {
   display: flex;
-  flex-direction: column;
-  align-items: center; 
+  flex-direction: column; /* 五个横幅垂直排列 */
+  align-items: stretch;    /* 关键：让子横幅默认拉伸以占满宽度 */
   width: 100%;
-  flex-grow: 1; /* 关键：让 game-view-active 也占据父容器所有可用垂直空间 */
-  padding: 10px 0; 
-  gap: 8px; /* 减小横幅间距，为内容区争取更多空间 */
+  flex-grow: 1;          /* 占据app-container内所有可用垂直空间 */
+  padding: 10px 0;       /* 上下padding，左右由banner-section控制 */
+  gap: 8px;              /* 横幅之间的垂直间距 */
 }
 
-/* 通用横幅区域样式 */
+/* 通用横幅区域样式 - 核心：占满宽度 */
 .banner-section {
-  width: 100%;
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 8px 15px; /* 统一减小一点横幅的上下padding */
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  width: 100%;           /* 关键：占满父容器 (.game-view-active) 的宽度 */
+  padding: 10px 15px;    /* 横幅自身的左右内边距，上下padding根据内容调整 */
+  background-color: rgba(0, 0, 0, 0.2); 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; /* 横幅内部的内容块（如top-banner-container, hand-area, controls）水平居中 */
 }
-.player-status-banner-section { background-color: rgba(0,0,0,0.25); padding: 6px 15px; /* 顶部横幅可以更紧凑 */ }
-.hand-lane-banner { background-color: rgba(0,0,0,0.3); padding: 10px 15px; /* 牌道横幅padding */ }
-.controls-banner-section { background-color: rgba(0,0,0,0.15); }
+/* 移除之前为第一个和最后一个横幅添加的圆角，除非特别需要 */
+/* .game-view-active > .banner-section:first-child { ... } */
+/* .game-view-active > .banner-section:last-child { ... } */
 
 
-/* 横幅1: 玩家状态显示区 (样式保持不变) */
-.top-banner-container { /* ... */ }
-/* ... (AIPlayerDisplay 和 HumanPlayerBannerDisplay 的样式保持不变) ... */
+/* 横幅1: 玩家状态显示区 */
+.player-status-banner-section { 
+  background-color: rgba(0,0,0,0.25); 
+  padding-top: 8px;
+  padding-bottom: 8px;
+  flex-shrink: 0; /* 不允许此横幅在空间不足时被压缩 */
+}
+.top-banner-container { 
+  display: flex; 
+  justify-content: space-around; 
+  align-items: stretch; 
+  width: 100%; 
+  max-width: 900px; /* TopBanner内部的内容可以有一个最大宽度 */
+  margin: 0 auto; 
+  gap: 8px; 
+  flex-wrap: wrap;
+}
+/* ... (player-banner-item 及其子元素样式保持不变或微调字体/间距) ... */
+.player-banner-item { flex: 1 1 150px; min-width: 130px; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(255, 255, 255, 0.05); }
 
 
 /* 横幅2,3,4: 牌道区域 */
 .hand-lane-banner {
-  /* background-color: rgba(0,0,0,0.3); */
-  padding: 10px 15px;
-  flex-grow: 1; /* 关键：让每个牌道横幅平均分配剩余的垂直空间 */
-  display: flex; /* 确保内部 .hand-area 能正确居中和限制大小 */
+  background-color: rgba(0,0,0,0.3); 
+  padding: 10px 15px; /* 牌道横幅的内边距 */
+  flex-grow: 1;     /* 关键：让每个牌道横幅平均分配剩余的垂直空间 */
+  display: flex;      /* 使内部.hand-area能正确居中和限制大小 */
   justify-content: center;
+  align-items: center; /* 如果 hand-area 不占满100%高度，则垂直居中 */
 }
-/* 对于中间的手牌/中道，可以给它更大的flex-grow比例 */
 .hand-lane-banner.middle-lane {
-  flex-grow: 1.5; /* 例如，让它比头尾道多占50%的额外空间 */
+  flex-grow: 1.5; /* 中道/手牌区获得更多垂直空间 */
 }
-
 .hand-area {
   background-color: rgba(0, 0, 0, 0.25);
   padding: 10px;
@@ -73,9 +98,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑ�
   width: 100%; 
   max-width: 680px; 
   margin: 0 auto; 
-  /* min-height 不再固定，将由 flex-grow 和内部内容决定，或通过js计算 */
-  height: 100%; /* 尝试让 hand-area 填满其父 hand-lane-banner */
-  overflow: hidden; /* 如果内容过多，避免溢出父横幅 */
+  height: 100%; /* 关键：让 hand-area 填满其父 hand-lane-banner 的高度 */
+  overflow: hidden; /* 处理内容溢出 */
 }
 .hand-info-internal { position: absolute; top: 6px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; z-index: 1;}
 .hand-area-title-internal { color: #ffd166; font-weight: 600; font-size: 0.9em; }
@@ -93,45 +117,46 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ऑ�
   justify-content: center;
   padding-top: 30px;
 }
-
-/* 卡牌样式 (保持之前的尺寸或按需微调) */
-.card { width: 55px; height: 77px; /* ... */ }
+.card { width: 55px; height: 77px; /* 卡牌尺寸 */ /* ...其他不变... */ }
 /* ... (Card hover, active, dragging 样式保持不变) ... */
 
 
 /* 横幅5: 控制按钮区 */
 .controls-banner-section {
-  padding: 15px 10px; /* 增加按钮区上下padding使其"增高" */
-  /* min-height: 100px; */ /* 或者设置一个最小高度 */
-  flex-shrink: 0; /* 防止在空间不足时被压缩 */
+  padding: 20px 10px; /* 增加上下 padding 使其高度增加 */
+  background-color: rgba(0,0,0,0.15);
+  flex-shrink: 0; /* 不允许此横幅在空间不足时被压缩 */
+  display: flex; /* 使用 flex 方便内部按钮组居中 */
+  flex-direction: column; /* 让 .controls 和 .compare-all-button 垂直排列 */
+  align-items: center; /* 内部元素水平居中 */
+  gap: 10px; /* 按钮组和比牌按钮之间的间距 */
 }
 .controls { display: flex; justify-content: center; gap: 15px; width: 100%; flex-wrap: wrap; padding-top: 0; }
 .game-button { /* ... (保持不变) ... */ }
-.game-button.compare-all-button { /* ... */ margin-top: 10px; width: auto; max-width: 300px; }
+.game-button.compare-all-button { /* ... */ margin-top: 0; /* 因为父级有gap */ width: auto; max-width: 300px; }
 
 
-/* --- 比牌视图容器 (保持不变) --- */
-.comparison-view-container { /* ... */ }
+/* --- 比牌视图容器 (全屏自适应) --- */
+.comparison-view-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #073b4c; display: flex; align-items: center; justify-content: center; padding: 15px; z-index: 1000; overflow-y: auto; }
+.comparison-modal-content { background-color: rgba(0, 0, 0, 0.45); padding: 20px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5); position: relative; width: 100%; max-width: 90%; display: flex; flex-direction: column; gap: 15px; }
 /* ... (其余比牌模态框相关样式保持不变) ... */
 
 
 /* --- 响应式调整 --- */
+@media (max-width: 960px) {
+  .banner-section {
+    /* max-width: 100%; */ /* 确保在中小屏幕上横幅内容也能占满 */
+  }
+  .top-banner-container { /* 在此断点下，如果内容区最大宽度减小，它也应该减小 */
+      max-width: 100%;
+  }
+  .hand-area {
+      max-width: 100%;
+  }
+}
 @media (max-width: 768px) {
   .app-container.game-view-active { padding: 8px 0; gap: 6px; }
   .banner-section { padding: 8px 10px; }
-  .hand-lane-banner { flex-grow: 1; /* 平板上保持均分或按需调整 */ }
-  .hand-lane-banner.middle-lane { flex-grow: 1.2; /* 平板上中道可以稍微多一点空间 */ }
-  .hand-area { min-height: 80px; /* 根据卡牌尺寸调整 */ }
-  .card { width: 45px; height: 63px; }
-  .hand-area.allow-wrapping { min-height: 120px; /* (63*2 + gap) + 文字 + padding */ }
-  .controls-banner-section { padding: 12px 10px; }
   /* ... (其他响应式调整) ... */
 }
-@media (max-width: 480px) {
-  .hand-lane-banner.middle-lane { flex-grow: 1.5; /* 手机上中道需要更多空间换行 */ }
-  .card { width: 38px; height: 53px; }
-  .hand-area { min-height: 70px; }
-  .hand-area.allow-wrapping { min-height: 115px; }
-  .controls-banner-section { padding: 10px; }
-  /* ... (其他响应式调整) ... */
-}
+/* ... (更小屏幕的响应式调整) ... */
