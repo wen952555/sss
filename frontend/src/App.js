@@ -1,32 +1,52 @@
 // frontend/src/App.js
 import React, { useState, useEffect, useCallback } from 'react';
-// ... (其他 imports 保持不变)
-import './App.css';
+import { DragDropContext } from 'react-beautiful-dnd';
+import HandArea from './components/HandArea';
+import TopBanner from './components/TopBanner';
+import ComparisonModal from './components/ComparisonModal';
+import { API_BASE_URL } from './config'; // 确保 config.js 存在且导出此常量
+import { mapBackendCardsToFrontendCards } from './logic/card'; // 确保 card.js 存在且导出此函数
+import { evaluateHand, compareEvaluatedHands, HAND_TYPE_NAMES } from './logic/handEvaluator'; // 确保 handEvaluator.js 存在且导出这些
+import { findBestThirteenWaterArrangement } from './logic/thirteenWaterAI'; // 确保 thirteenWaterAI.js 存在且导出此函数
+import { calculateAllPlayerScores } from './logic/scoreCalculator'; // 确保 scoreCalculator.js 存在且导出此函数
+import './App.css'; // 确保 App.css 存在于 src 目录
 
-// ... (常量定义和 createInitialPlayerState 保持不变)
 const DROPPABLE_IDS_PLAYER_PREFIX = "player_";
 const HAND_FIXED_CAPACITIES = { TOP: 3, MIDDLE: 5, BOTTOM: 5 };
 const createInitialPlayerState = (id, name, isAI = false) => ({ id, name, isAI, cards: { TOP: [], MIDDLE: [], BOTTOM: [] }, initial13Cards: [], isArranged: false, isThinking: false, finalArrangement: null, isMisArranged: false, score: 0, roundScore: 0, comparisonResults: {}, confirmedThisRound: false });
 const HUMAN_PLAYER_ID = 'human_player_0';
 
 function App() {
-  const [players, setPlayers] = useState(() => [ /* ... (玩家初始化) ... */ ]);
+  const [players, setPlayers] = useState(() => [
+    createInitialPlayerState(HUMAN_PLAYER_ID, '你'),
+    createInitialPlayerState('ai_player_1', 'AI 悟空', true),
+    createInitialPlayerState('ai_player_2', 'AI 八戒', true),
+    createInitialPlayerState('ai_player_3', 'AI 沙僧', true),
+  ]);
+
   const humanPlayer = players.find(p => p.id === HUMAN_PLAYER_ID);
   const aiPlayers = players.filter(p => p.isAI);
 
   const [humanMiddleHandLabel, setHumanMiddleHandLabel] = useState('手牌');
   const [isLoadingDeal, setIsLoadingDeal] = useState(false);
   const [allPlayersArranged, setAllPlayersArranged] = useState(false);
-  // showComparisonModal 现在控制是否 *只* 显示比牌界面
   const [showComparisonView, setShowComparisonView] = useState(false); 
   const [gameStarted, setGameStarted] = useState(false); 
 
-  // --- (Helper functions 和大部分 useEffects - 保持不变，此处省略) ---
   const getPlayerDroppableId = (playerId, areaKey) => `${DROPPABLE_IDS_PLAYER_PREFIX}${playerId}_${areaKey}`;
   const checkPlayerFullyArranged = useCallback((player) => { if (!player) return false; return player.cards.TOP.length === HAND_FIXED_CAPACITIES.TOP && player.cards.MIDDLE.length === HAND_FIXED_CAPACITIES.MIDDLE && player.cards.BOTTOM.length === HAND_FIXED_CAPACITIES.BOTTOM; }, []);
   const evaluateAndSetPlayerArrangement = useCallback((playerId, newCards) => { setPlayers(prevPlayers => prevPlayers.map(p => { if (p.id === playerId) { const isFullyArrangedNow = checkPlayerFullyArranged({cards: newCards}); let finalEval = null; let misArranged = false; if (isFullyArrangedNow) { const topEval = evaluateHand(newCards.TOP); const middleEval = evaluateHand(newCards.MIDDLE); const bottomEval = evaluateHand(newCards.BOTTOM); finalEval = { topEval, middleEval, bottomEval }; if (!p.isAI && (compareEvaluatedHands(topEval, middleEval) > 0 || compareEvaluatedHands(middleEval, bottomEval) > 0)) { misArranged = true; if (misArranged && playerId === HUMAN_PLAYER_ID) setTimeout(()=>alert("注意：你的牌型组合错误（倒水）！"),0); } } return { ...p, cards: newCards, isArranged: isFullyArrangedNow, finalArrangement: finalEval, isMisArranged: misArranged, isThinking: false, }; } return p; })); }, [checkPlayerFullyArranged]);
-  useEffect(() => { if (!humanPlayer) return; const isHumanArranged = checkPlayerFullyArranged(humanPlayer); setHumanMiddleHandLabel(isHumanArranged ? '中道' : '手牌'); }, [humanPlayer, checkPlayerFullyArranged, players]);
+
+  useEffect(() => { 
+    if (showComparisonView) return; 
+    if (!gameStarted && !isLoadingDeal) return; 
+    if (!humanPlayer) return; 
+    const isHumanArranged = checkPlayerFullyArranged(humanPlayer); 
+    setHumanMiddleHandLabel(isHumanArranged ? '中道' : '手牌'); 
+  }, [humanPlayer, checkPlayerFullyArranged, players, showComparisonView, isLoadingDeal, gameStarted]);
+
   useEffect(() => { const allArranged = players.every(p => p.isArranged); setAllPlayersArranged(allArranged); }, [players]);
+  
   const handleDealNewHand = async () => { setIsLoadingDeal(true); setAllPlayersArranged(false); setShowComparisonView(false); setGameStarted(true); try { const dealPromises = players.map(player => fetch(`${API_BASE_URL}/api/deal_cards.php`).then(res => { if (!res.ok) throw new Error(`API error for ${player.name}! status: ${res.status}`); return res.json(); })); const results = await Promise.all(dealPromises); const updatedPlayersData = players.map((player, index) => { const dealResult = results[index]; const baseState = createInitialPlayerState(player.id, player.name, player.isAI); if (dealResult.success && dealResult.hand) { const dealtCards = mapBackendCardsToFrontendCards(dealResult.hand); return { ...baseState, score: player.score, initial13Cards: [...dealtCards], cards: { ...baseState.cards, MIDDLE: player.isAI ? [] : dealtCards }, isThinking: player.isAI, confirmedThisRound: false }; } console.error(`Failed to deal cards for ${player.name}`, dealResult.message); return {...baseState, score: player.score, confirmedThisRound: false }; }); setPlayers(updatedPlayersData); updatedPlayersData.filter(p => p.isAI).forEach(aiPlayer => { if (aiPlayer.initial13Cards.length === 13) { autoArrangeAIHand(aiPlayer.id, aiPlayer.initial13Cards); } }); } catch (error) { console.error("Deal New Hand Error:", error); alert(`发牌请求错误: ${error.message}`); setGameStarted(false); } setIsLoadingDeal(false); };
   const autoArrangeAIHand = useCallback((aiPlayerId, cardsForAI) => { setPlayers(prev => prev.map(p => p.id === aiPlayerId ? { ...p, isThinking: true } : p)); setTimeout(() => { const arrangement = findBestThirteenWaterArrangement(cardsForAI); if (arrangement) { evaluateAndSetPlayerArrangement(aiPlayerId, { TOP: arrangement.top, MIDDLE: arrangement.middle, BOTTOM: arrangement.bottom, }); } else { console.error(`AI ${aiPlayerId} failed to arrange hand.`); setPlayers(prev => prev.map(p => p.id === aiPlayerId ? { ...p, isThinking: false, isArranged: false } : p)); } }, 300 + Math.random() * 1200); }, [evaluateAndSetPlayerArrangement]);
   useEffect(() => { /* 初始不执行任何操作 */ }, []);
@@ -42,28 +62,24 @@ function App() {
     const playersAfterComparison = calculateAllPlayerScores(players, HAND_TYPE_NAMES); 
     const updatedPlayersWithTotalScore = playersAfterComparison.map(p => ({ 
         ...p, 
-        // 累加本轮得分到总分
         score: (players.find(op => op.id === p.id)?.score || 0) + (p.roundScore || 0), 
     })); 
     setPlayers(updatedPlayersWithTotalScore); 
-    setShowComparisonView(true); // 关键：显示比牌视图
+    setShowComparisonView(true); 
   };
 
   const handleContinueGame = () => {
-    setShowComparisonView(false); // 关闭比牌视图，返回到（空的）牌桌
-    // 可以在这里重置 gameStarted，或者让“重新发牌”按钮处理
-    // setGameStarted(false); // 如果希望返回到初始界面
-    // 清理上一局的牌，但保留总分
+    setShowComparisonView(false); 
     setPlayers(prevPlayers => prevPlayers.map(p => ({
         ...createInitialPlayerState(p.id, p.name, p.isAI),
-        score: p.score // 保留总分
+        score: p.score 
     })));
     setAllPlayersArranged(false);
+    setGameStarted(false); // 重置游戏开始状态，等待用户点“重新发牌”
   };
   
   if (!humanPlayer) return <div className="app-container"><p>正在加载玩家数据...</p></div>;
 
-  // ... (计算 humanMiddleCurrentCount 等逻辑保持不变) ...
   const humanMiddleCurrentCount = humanPlayer.cards.MIDDLE.length;
   const humanTopCurrentCount = humanPlayer.cards.TOP.length;
   const humanBottomCurrentCount = humanPlayer.cards.BOTTOM.length;
@@ -71,17 +87,15 @@ function App() {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      {/* 根据 showComparisonView 状态条件渲染主游戏界面或比牌模态框 */}
       {showComparisonView ? (
         <ComparisonModal 
-            // isOpen prop 不再需要，因为其显示由外部条件控制
-            onClose={handleContinueGame} // 关闭模态框即为继续游戏
+            onClose={handleContinueGame} 
             onContinueGame={handleContinueGame} 
             players={players}
             humanPlayerId={HUMAN_PLAYER_ID}
         />
       ) : (
-        <div className="app-container game-view-container"> {/* 主游戏界面 */}
+        <div className="app-container game-view-container">
           <div className={`game-board ${humanPlayer.isMisArranged && humanPlayer.isArranged ? 'misarranged-board' : ''}`}>
             <TopBanner 
                 humanPlayer={humanPlayer}
