@@ -2,29 +2,28 @@
 import React from 'react';
 import StaticCard from './StaticCard';
 
-// 动态堆叠卡牌，每张牌都可见主要信息
+// 动态堆叠卡牌：保证每张牌都能看到主要牌面，且不会重叠遮住全部内容
 const renderStackedCards = (cards) => {
-  // 响应式宽度
-  let cardWidth = 80, cardHeight = 96, overlap = 32;
+  // 响应式宽度、重叠量
+  let cardWidth = 80, cardHeight = 96, minOverlap = 16, maxOverlap = 70;
   if (window.innerWidth < 700) {
-    cardWidth = 38; cardHeight = 48; overlap = 15;
+    cardWidth = 38; cardHeight = 48; minOverlap = 6; maxOverlap = 20;
   } else if (window.innerWidth < 1200) {
-    cardWidth = 56; cardHeight = 68; overlap = 24;
+    cardWidth = 56; cardHeight = 68; minOverlap = 10; maxOverlap = 32;
   }
-  // 如果牌多则自动压缩重叠量，保证所有牌都能进容器
-  const maxWidth = 5 * cardWidth; // 容器最大宽度，5张牌时
-  const innerWidth = cards.length > 1
-    ? Math.min(cardWidth + overlap * (cards.length - 1), maxWidth)
-    : cardWidth;
-  const realOverlap = cards.length > 1
-    ? (innerWidth - cardWidth) / (cards.length - 1)
+  // 动态计算最佳重叠偏移量，使所有牌都能展示大部分牌面
+  let overlap = cards.length > 1
+    ? Math.max(minOverlap, Math.min(maxOverlap, (cardWidth * 1.2 - cardWidth) / (cards.length - 1)))
     : 0;
+  // 但如果牌特别多，容器宽度不能太大，自动减小重叠
+  const maxStackWidth = cardWidth + Math.max(0, (cards.length - 1)) * overlap;
+  const totalWidth = cards.length > 1 ? maxStackWidth : cardWidth;
 
   return (
     <div
       className="mini-cards"
       style={{
-        width: `${innerWidth}px`,
+        width: `${totalWidth}px`,
         height: `${cardHeight}px`,
       }}
     >
@@ -34,7 +33,7 @@ const renderStackedCards = (cards) => {
           cardData={c}
           style={{
             position: 'absolute',
-            left: `${i * realOverlap}px`,
+            left: `${i * overlap}px`,
             zIndex: i + 1,
             width: `${cardWidth}px`,
             height: `${cardHeight}px`,
