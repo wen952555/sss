@@ -15,22 +15,24 @@ const PlayerComparisonCell = ({ player, isHuman, players }) => {
     return (
         <div className={`comparison-cell ${isHuman ? 'human-player-cell' : 'ai-player-cell'}`}>
             <h4> {player.name} <span className="score-summary">(本局: {roundScore >= 0 ? '+' : ''}{roundScore} | 总: {totalScore >= 0 ? '+' : ''}{totalScore})</span> </h4>
-            <div className="comparison-hand-row">
-              <strong>头道:</strong>
-              <div className="mini-cards">
-                {topCards.map(c => <StaticCard key={c.id + '_modal_top_static'} cardData={c} />)}
+            <div className="comparison-hand-verticals">
+              <div className="comparison-hand-row">
+                <strong>头道:</strong>
+                <div className="mini-cards">
+                  {topCards.map(c => <StaticCard key={c.id + '_modal_top_static'} cardData={c} />)}
+                </div>
               </div>
-            </div>
-            <div className="comparison-hand-row">
-              <strong>中道:</strong>
-              <div className="mini-cards">
-                {middleCards.map(c => <StaticCard key={c.id + '_modal_middle_static'} cardData={c} />)}
+              <div className="comparison-hand-row">
+                <strong>中道:</strong>
+                <div className="mini-cards">
+                  {middleCards.map(c => <StaticCard key={c.id + '_modal_middle_static'} cardData={c} />)}
+                </div>
               </div>
-            </div>
-            <div className="comparison-hand-row">
-              <strong>尾道:</strong>
-              <div className="mini-cards">
-                {bottomCards.map(c => <StaticCard key={c.id + '_modal_bottom_static'} cardData={c} />)}
+              <div className="comparison-hand-row">
+                <strong>尾道:</strong>
+                <div className="mini-cards">
+                  {bottomCards.map(c => <StaticCard key={c.id + '_modal_bottom_static'} cardData={c} />)}
+                </div>
               </div>
             </div>
             {/* 打枪信息 */}
