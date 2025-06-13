@@ -248,24 +248,26 @@ html, body {
   opacity: 0.85;
 }
 
-/* 堆叠显示，牌面能看清，且最大化放大，正常无重影 */
-.mini-cards { 
+/* ----------- 必须彻底展开显示所有牌面 ----------- */
+.mini-cards {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   position: relative;
   height: 96px;
-  min-height: 96px;
-  max-height: 19vw;
-  width: auto;
-  display: block;
+  min-height: 48px;
 }
+/* 关键！彻底摊开：不要absolute，relative即可 */
 .comparison-cell .static-card {
-  position: absolute;
+  position: relative;
   width: 80px;
   height: 96px;
-  top: 0;
   box-shadow: 2px 2px 10px #000a;
+  border-radius: 6px;
+  background: white;
+  margin: 0;
   z-index: 1;
   transition: transform 0.1s, z-index 0s;
-  background: white;
 }
 .comparison-cell .static-card img {
   width: 100%;
@@ -279,6 +281,8 @@ html, body {
   z-index: 10;
   transform: scale(1.14) translateY(-10px);
 }
+
+/* ----------- END 必须彻底展开显示所有牌面 ----------- */
 
 /* 响应式缩小 */
 @media (max-width: 1200px), (max-width: 900px), (max-width: 700px) {
