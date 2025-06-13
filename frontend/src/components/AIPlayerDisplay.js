@@ -1,18 +1,15 @@
 // frontend/src/components/AIPlayerDisplay.js
 import React from 'react';
 
-// 简单的牌型名称获取函数
 const getHandTypeName = (typeNumber, handTypeNamesObject) => {
   if (handTypeNamesObject && typeof typeNumber === 'number') {
     return handTypeNamesObject[typeNumber] || '处理中';
   }
-  return '未知';
+  const names = { 0: "乌龙", 1: "一对", 3: "三条", 5: "同花", 6: "葫芦", 7: "铁支", 8: "同花顺"}; // 简易回退
+  return names[typeNumber] || '未知';
 };
 
 const AIPlayerDisplay = ({ player, handEvaluator }) => {
-  // handEvaluator 期望是一个包含 HAND_TYPE_NAMES 的对象
-  // 例如: handEvaluator={{ HAND_TYPE_NAMES: HAND_TYPE_NAMES_FROM_LOGIC }}
-
   if (!player) {
     return (
       <div className="ai-player-display placeholder">
@@ -22,17 +19,16 @@ const AIPlayerDisplay = ({ player, handEvaluator }) => {
   }
 
   const getStatusText = () => {
-    if (player.isArranged) return "已亮牌";
+    if (player.isArranged && player.finalArrangement) return "已亮牌"; // 确保 finalArrangement 也存在
     if (player.isThinking) return "理牌中...";
-    if (player.initial13Cards && player.initial13Cards.length === 13) return "等待理牌";
+    if (player.initial13Cards && player.initial13Cards.length === 13 && !player.isArranged) return "等待理牌";
     return "等待发牌";
   };
 
   return (
     <div className={`ai-player-display ${player.isArranged ? 'arranged' : ''} ${player.isThinking ? 'thinking' : ''}`}>
-      <div className="ai-player-avatar"> {/* 可选：AI头像 */}
-        {/* <img src={`/avatars/${player.id}.png`} alt={player.name} /> */}
-        <span>{player.name.substring(0, 2)}</span> {/* 简易头像替代 */}
+      <div className="ai-player-avatar">
+        <span>{player.name.substring(0, 2)}</span>
       </div>
       <div className="ai-player-info">
         <div className="ai-player-name">{player.name}</div>
@@ -48,9 +44,21 @@ const AIPlayerDisplay = ({ player, handEvaluator }) => {
             <div className="ai-hand-summary bottom">
               尾: {getHandTypeName(player.finalArrangement.bottomEval?.type, handEvaluator.HAND_TYPE_NAMES)}
             </div>
-            {/* 可以根据 player.finalArrangement.isMisArranged (虽然AI不应该倒水) 或特殊牌型显示 */}
           </div>
         )}
+        {/* 显示总分和本局得分 */}
+        <div className="ai-player-score-container">
+            {typeof player.score === 'number' && (
+                <span className={`ai-player-total-score ${player.score > 0 ? 'positive' : player.score < 0 ? 'negative' : ''}`}>
+                    总: {player.score > 0 ? '+' : ''}{player.score}
+                </span>
+            )}
+            {typeof player.roundScore === 'number' && player.isArranged && // 只有本局已结算才显示
+                <span className={`ai-player-round-score ${player.roundScore > 0 ? 'positive' : player.roundScore < 0 ? 'negative' : ''}`}>
+                    (本局: {player.roundScore > 0 ? '+' : ''}{player.roundScore})
+                </span>
+            }
+        </div>
       </div>
     </div>
   );
