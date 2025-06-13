@@ -2,16 +2,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext } from 'react-beautiful-dnd';
 import HandArea from './components/HandArea';
-import TopBanner from './components/TopBanner'; // 引入TopBanner
+import TopBanner from './components/TopBanner';
 import { API_BASE_URL } from './config';
 import { mapBackendCardsToFrontendCards } from './logic/card';
-// 确保 HAND_TYPE_NAMES 被导入并传递给需要它的组件
 import { evaluateHand, compareEvaluatedHands, HAND_TYPE_NAMES } from './logic/handEvaluator'; 
 import { findBestThirteenWaterArrangement } from './logic/thirteenWaterAI';
 import './App.css';
 
 const DROPPABLE_IDS_PLAYER_PREFIX = "player_";
-const DROPPABLE_AREAS = ['TOP', 'MIDDLE', 'BOTTOM']; // 牌道区域的键名
+// const DROPPABLE_AREAS = ['TOP', 'MIDDLE', 'BOTTOM']; // 此行已被移除，因为未被使用
 
 const HAND_FIXED_CAPACITIES = {
   TOP: 3,
@@ -32,7 +31,7 @@ const createInitialPlayerState = (id, name, isAI = false) => ({
   score: 0,
 });
 
-const HUMAN_PLAYER_ID = 'human_player_0'; // 给真人玩家一个唯一的ID
+const HUMAN_PLAYER_ID = 'human_player_0';
 
 function App() {
   const [players, setPlayers] = useState([
@@ -42,7 +41,7 @@ function App() {
     createInitialPlayerState('ai_player_3', 'AI 闲家③', true),
   ]);
 
-  const humanPlayer = players.find(p => !p.isAI); // 通过 isAI 找到真人玩家
+  const humanPlayer = players.find(p => !p.isAI);
   const aiPlayers = players.filter(p => p.isAI);
 
   const [humanMiddleHandLabel, setHumanMiddleHandLabel] = useState('手牌');
@@ -59,7 +58,7 @@ function App() {
            player.cards.BOTTOM.length === HAND_FIXED_CAPACITIES.BOTTOM;
   }, []);
 
-  const evaluateAndSetPlayerArrangement = useCallback((playerId, newCards, all13CardsForAI) => {
+  const evaluateAndSetPlayerArrangement = useCallback((playerId, newCards) => {
     setPlayers(prevPlayers => {
       return prevPlayers.map(p => {
         if (p.id === playerId) {
@@ -88,8 +87,7 @@ function App() {
             isArranged: isFullyArrangedNow,
             finalArrangement: finalEval,
             isMisArranged: misArranged,
-            isThinking: false, // AI理牌完成或真人拖拽完成
-            // initial13Cards 保持不变，除非是新发牌
+            isThinking: false, 
           };
         }
         return p;
@@ -115,16 +113,15 @@ function App() {
   useEffect(() => {
     const allArranged = players.every(p => p.isArranged);
     setAllPlayersReadyForCompare(allArranged);
-    if (allArranged && players.length > 0 && players.some(p => p.initial13Cards.length > 0)) { // 确保不是初始状态
+    if (allArranged && players.length > 0 && players.some(p => p.initial13Cards.length > 0)) {
       setGameMessage("所有玩家已准备就绪！可以进行比牌。");
-      // Here you would typically enable a "Compare Hands" button or auto-trigger comparison
     }
   }, [players]);
 
   const handleDealNewHand = async () => {
     setIsLoadingDeal(true);
     setGameMessage('正在为所有玩家发牌...');
-    setAllPlayersReadyForCompare(false); // 重置比牌状态
+    setAllPlayersReadyForCompare(false);
 
     try {
       const dealPromises = players.map(player =>
@@ -140,14 +137,14 @@ function App() {
         if (dealResult.success && dealResult.hand) {
           const dealtCards = mapBackendCardsToFrontendCards(dealResult.hand);
           return {
-            ...createInitialPlayerState(player.id, player.name, player.isAI), // 重置状态
+            ...createInitialPlayerState(player.id, player.name, player.isAI),
             initial13Cards: [...dealtCards],
-            cards: { ...createInitialPlayerState().cards, MIDDLE: player.isAI ? [] : dealtCards }, // AI的牌先不放牌道，真人放手牌区
-            isThinking: player.isAI, // AI 开始思考
+            cards: { ...createInitialPlayerState().cards, MIDDLE: player.isAI ? [] : dealtCards },
+            isThinking: player.isAI,
           };
         }
         console.error(`Failed to deal cards for ${player.name}`, dealResult.message);
-        return {...player, initial13Cards:[], cards: createInitialPlayerState().cards }; // 发牌失败则清空
+        return {...player, initial13Cards:[], cards: createInitialPlayerState().cards };
       });
       setPlayers(updatedPlayersData);
       setGameMessage('发牌完毕！请你理牌，AI正在理牌...');
@@ -168,7 +165,6 @@ function App() {
   const autoArrangeAIHand = useCallback((aiPlayerId, cardsForAI) => {
     setPlayers(prev => prev.map(p => p.id === aiPlayerId ? { ...p, isThinking: true } : p));
     
-    // 模拟AI思考，实际项目中AI计算可能很快，但为了演示可以加延迟
     setTimeout(() => {
       const arrangement = findBestThirteenWaterArrangement(cardsForAI);
       if (arrangement) {
@@ -181,12 +177,12 @@ function App() {
         console.error(`AI ${aiPlayerId} failed to arrange hand.`);
         setPlayers(prev => prev.map(p => p.id === aiPlayerId ? { ...p, isThinking: false, isArranged: false } : p));
       }
-    }, 500 + Math.random() * 1500); // 随机延迟0.5到2秒
+    }, 500 + Math.random() * 1500);
   }, [evaluateAndSetPlayerArrangement]);
 
 
-  useEffect(() => { // 初始加载时不自动发牌
-    // handleDealNewHand(); 
+  useEffect(() => {
+    // 初始加载时不自动发牌
   }, []);
 
   const onDragEnd = (result) => {
@@ -196,24 +192,23 @@ function App() {
     const sourceDroppableId = source.droppableId;
     const destDroppableId = destination.droppableId;
 
-    // 确保拖拽的是真人玩家的牌 (通过droppableId前缀判断)
     if (!sourceDroppableId.startsWith(`${DROPPABLE_IDS_PLAYER_PREFIX}${HUMAN_PLAYER_ID}_`) || 
         !destDroppableId.startsWith(`${DROPPABLE_IDS_PLAYER_PREFIX}${HUMAN_PLAYER_ID}_`)) {
-      return; // 不是在操作真人玩家的牌道
+      return;
     }
 
     const parseAreaFromPlayerId = (idStr) => idStr.substring(idStr.lastIndexOf('_') + 1);
-    const sourceAreaKey = parseAreaFromPlayerId(sourceDroppableId); // 'TOP', 'MIDDLE', or 'BOTTOM'
+    const sourceAreaKey = parseAreaFromPlayerId(sourceDroppableId);
     const destAreaKey = parseAreaFromPlayerId(destDroppableId);
 
     const newHumanCards = { ...humanPlayer.cards };
     const sourceList = [...newHumanCards[sourceAreaKey]];
     const [movedCard] = sourceList.splice(source.index, 1);
 
-    if (sourceAreaKey === destAreaKey) { // 同区域内移动
+    if (sourceAreaKey === destAreaKey) {
       sourceList.splice(destination.index, 0, movedCard);
       newHumanCards[sourceAreaKey] = sourceList;
-    } else { // 跨区域移动
+    } else {
       const destList = [...newHumanCards[destAreaKey]];
       let destCapacity = (destAreaKey === 'MIDDLE' && !checkPlayerFullyArranged(humanPlayer)) 
                          ? 13 
@@ -221,7 +216,7 @@ function App() {
       
       if (destList.length >= destCapacity) {
         setGameMessage(`此道 (${destAreaKey}) 已满 (${destList.length}/${destCapacity})！`);
-        return; // 不执行移动
+        return;
       }
       destList.splice(destination.index, 0, movedCard);
       newHumanCards[sourceAreaKey] = sourceList;
@@ -237,26 +232,21 @@ function App() {
       ...humanPlayer.cards.TOP,
       ...humanPlayer.cards.MIDDLE,
       ...humanPlayer.cards.BOTTOM,
-    ].filter(Boolean); // 确保没有undefined混入
+    ].filter(Boolean);
 
+    let cardsToArrange = allHumanCards;
     if (allHumanCards.length !== 13) {
-      // 如果牌不在默认的MIDDLE区，就从所有牌道收集
-      const collectedCards = players.find(p=>p.id === HUMAN_PLAYER_ID)?.initial13Cards;
+      const collectedCards = humanPlayer.initial13Cards;
       if (!collectedCards || collectedCards.length !== 13) {
         setGameMessage("无法收集齐13张牌进行AI辅助！请先发牌。");
         return;
       }
-      // 使用 initial13Cards 进行AI排序
-      setPlayers(prev => prev.map(p => p.id === HUMAN_PLAYER_ID ? { ...p, isThinking: true, cards: {TOP:[], MIDDLE:[], BOTTOM:[]} } : p));
-      setGameMessage('AI 正在帮你理牌...');
-      autoArrangeAIHand(HUMAN_PLAYER_ID, [...collectedCards]); // 传递副本
-      return;
+      cardsToArrange = [...collectedCards];
     }
     
-    // 如果牌都在牌道中，则正常AI辅助
     setPlayers(prev => prev.map(p => p.id === HUMAN_PLAYER_ID ? { ...p, isThinking: true, cards: {TOP:[], MIDDLE:[], BOTTOM:[]} } : p));
     setGameMessage('AI 正在帮你理牌...');
-    autoArrangeAIHand(HUMAN_PLAYER_ID, allHumanCards);
+    autoArrangeAIHand(HUMAN_PLAYER_ID, cardsToArrange);
   };
   
   const handleConfirmHand = () => {
@@ -269,7 +259,6 @@ function App() {
       return;
     }
     setGameMessage("你的牌已确认！等待其他AI玩家...");
-    // 实际逻辑由useEffect based on allPlayersReadyForCompare 处理
   };
   
   if (!humanPlayer) return <div className="app-container"><p>正在加载玩家数据...</p></div>;
@@ -287,7 +276,7 @@ function App() {
       <div className="app-container">
         <TopBanner 
             aiPlayers={aiPlayers} 
-            handEvaluator={{ HAND_TYPE_NAMES }} // 传递包含 HAND_TYPE_NAMES 的对象
+            handEvaluator={{ HAND_TYPE_NAMES }}
         />
         
         <h1 className="game-title">十三水</h1>
@@ -306,7 +295,7 @@ function App() {
             title={`${humanMiddleHandLabel} (${humanMiddleCurrentCount}/${Math.max(0, humanMiddleExpectedCount)})`}
             cards={humanPlayer.cards.MIDDLE}
             evaluatedHandType={humanPlayer.isArranged ? humanPlayer.finalArrangement?.middleEval : null}
-            allowWrap={!humanPlayer.isArranged} // 只有作为“手牌”时才允许换行
+            allowWrap={!humanPlayer.isArranged}
           />
           <HandArea
             droppableId={getPlayerDroppableId(HUMAN_PLAYER_ID, 'BOTTOM')}
