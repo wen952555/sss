@@ -139,7 +139,8 @@ html, body {
   max-width: calc((100vw - 80px) / 13);
   min-width: 20px;
   border-radius: 2px;
-  box-shadow: 1px 1px 2px rgba(0,0,0,0.25);
+  box-shadow: none !important; /* 移除所有卡牌外阴影 */
+  border: none !important;     /* 移除所有卡牌边框 */
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -152,7 +153,9 @@ html, body {
   display: block;
   object-fit: contain;
   pointer-events: none;
-  border: none; /* 移除所有img边框 */
+  border: none !important;     /* 移除所有img边框 */
+  box-shadow: none !important; /* 移除所有img阴影 */
+  background: none !important;
 }
 
 /* 控制按钮区 */
@@ -262,20 +265,20 @@ html, body {
   position: relative;
   width: 80px;
   height: 96px;
-  box-shadow: none; /* 移除卡片阴影 */
+  box-shadow: none !important; /* 移除卡片阴影 */
   border-radius: 6px;
   background: white;
   margin: 0;
   z-index: 1;
   transition: transform 0.1s, z-index 0s;
-  border: none; /* 移除边框 */
+  border: none !important; /* 移除边框 */
 }
 .comparison-cell .static-card img {
   width: 100%;
   height: 100%;
   border-radius: 6px;
   border: none !important;   /* 保证img没有边框 */
-  background: white;
+  background: none !important;
   display: block;
   box-shadow: none !important; /* 防止图片自带阴影 */
 }
