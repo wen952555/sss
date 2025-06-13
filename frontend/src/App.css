@@ -1,80 +1,356 @@
 /* frontend/src/App.css */
 
-/* ... (大部分之前的CSS保持不变) ... */
+/* --- 全局与基础布局 --- */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #073b4c;
+  color: #f1f1f1;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 15px 15px 40px 15px; /* 上左右15, 下40 */
+}
+
+.game-title {
+  font-size: 2.6em;
+  color: #ffd166;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.45);
+  margin-top: 0;
+  margin-bottom: 15px; /* 标题与横幅/消息的间距 */
+  font-weight: 700;
+}
+
+.game-message {
+  padding: 10px 18px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 500;
+  width: 100%;
+  max-width: 650px; /* 消息区宽度 */
+  font-size: 1em;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.game-message:not(.error) {
+   background-color: #06d6a0;
+   color: #073b4c;
+}
+.game-message.error {
+  background-color: #ef476f;
+  color: white;
+}
+
 
 /* --- 顶部AI玩家横幅 --- */
 .top-banner-container {
   display: flex;
-  justify-content: space-around; /* AI玩家信息块均匀分布 */
-  align-items: flex-start; /* 顶部对齐 */
+  justify-content: space-between; /* AI玩家信息块均匀分布 */
+  align-items: stretch; /* 使AIPlayerDisplay高度一致（如果内容不同） */
+  flex-wrap: wrap; /* 在较窄的屏幕上，如果一行放不下3个，可以换行 */
   width: 100%;
-  max-width: 900px; /* 横幅最大宽度 */
-  padding: 10px 15px;
-  margin-bottom: 25px; /* 与下方游戏标题的间距 */
-  background-color: rgba(0, 0, 0, 0.2); /* 横幅背景 */
-  border-radius: 10px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  max-width: 800px; /* 横幅最大宽度 */
+  padding: 10px;
+  margin-bottom: 20px; /* 与下方游戏标题的间距 */
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  gap: 10px; /* AI玩家之间的间隙 */
+}
+.top-banner-container.empty {
+    min-height: 50px; /* 空横幅时给一点高度 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
 }
 
 .ai-player-display {
-  flex-basis: 30%; /* 每个AI玩家大致占据三分之一宽度 */
-  max-width: 280px; /* 单个AI信息块最大宽度 */
-  padding: 10px;
-  background-color: rgba(255, 255, 255, 0.05); /* AI信息块背景 */
+  flex: 1 1 200px; /* flex-grow, flex-shrink, flex-basis (允许伸缩，基础宽度约200px) */
+  min-width: 180px; /* 最小宽度，防止过度压缩 */
+  padding: 12px;
+  background-color: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
-  text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex; /* 内部使用flex布局 */
+  flex-direction: column; /* 头像、信息垂直排列 */
+  align-items: center; /* 内部元素居中 */
+  text-align: center;
+  transition: border-color 0.3s ease;
 }
-.ai-player-display.arranged { /* AI完成理牌时的样式 */
+.ai-player-display.placeholder {
+    opacity: 0.5;
+}
+.ai-player-display.arranged {
   border-color: #06d6a0; /* 绿色边框表示完成 */
+  box-shadow: 0 0 8px rgba(6, 214, 160, 0.3);
+}
+.ai-player-display.thinking {
+  border-color: #ffd166; /* 黄色边框表示思考中 */
+  animation: pulse-border 1.5s infinite;
+}
+
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 5px rgba(255, 209, 102, 0.2); }
+  50% { box-shadow: 0 0 10px rgba(255, 209, 102, 0.5); }
+  100% { box-shadow: 0 0 5px rgba(255, 209, 102, 0.2); }
+}
+
+.ai-player-avatar { /* AI头像占位符 */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #073b4c;
+  color: #ffd166;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-bottom: 8px;
+  border: 2px solid #118ab2;
+}
+
+.ai-player-info {
+    /* 包裹名字、状态、牌型概要 */
 }
 
 .ai-player-name {
   font-weight: 600;
-  font-size: 1.05em;
-  color: #ffd166; /* AI名字用黄色 */
-  margin-bottom: 5px;
+  font-size: 1em;
+  color: #f1f1f1; /* AI名字用浅色 */
+  margin-bottom: 4px;
 }
 
 .ai-player-status {
-  font-size: 0.9em;
-  color: #b0bec5; /* 状态文字用灰色 */
-  margin-bottom: 8px;
-  min-height: 1.2em; /* 保持高度一致性 */
+  font-size: 0.85em;
+  color: #a0aec0; /* 状态文字用稍暗的灰色 */
+  margin-bottom: 6px;
+  min-height: 1.1em;
+  font-style: italic;
 }
 
 .ai-player-hands-summary {
-  font-size: 0.8em;
-  color: #eceff1;
-  line-height: 1.4;
+  font-size: 0.75em;
+  color: #cbd5e0;
+  line-height: 1.5; /* 增加行高使牌型更清晰 */
+  width: 100%;
 }
 .ai-hand-summary {
-  /* 可以为每道牌型加点小图标或不同颜色 */
+  padding: 1px 0;
+  /* border-bottom: 1px solid rgba(255,255,255,0.05); */
 }
+.ai-hand-summary:last-child {
+  /* border-bottom: none; */
+}
+.ai-hand-summary.top { color: #fca311; } /* 头道牌型用不同颜色 */
+.ai-hand-summary.middle { color: #90e0ef; } /* 中道 */
+.ai-hand-summary.bottom { color: #f94144; } /* 尾道 */
 
 
-/* --- 游戏板宽度调整，以适应可能的横幅宽度 --- */
+/* --- 游戏板与牌道区域 --- */
 .game-board {
-  /* ... */
-  max-width: 600px; /* 如果横幅很宽，游戏板可以相对窄一些 */
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 14px;
+  box-shadow: 0 5px 18px rgba(0,0,0,0.3);
+  width: 100%;
+  max-width: 680px; /* 游戏板宽度 */
 }
 
-/* ... (其他CSS样式，如卡牌、按钮等，可以沿用之前的) ... */
+.hand-area-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 6px;
+}
 
-/* 响应式调整 for TopBanner */
+.hand-area-title {
+  color: #ffd166;
+  font-weight: 500;
+  font-size: 1.05em;
+  margin: 0;
+}
+
+.hand-type-display {
+  font-size: 0.9em;
+  color: #f1f1f1;
+  background-color: rgba(0,0,0,0.45);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.hand-area {
+  background-color: rgba(255, 255, 255, 0.07);
+  padding: 10px;
+  border-radius: 6px;
+  min-height: 105px; /* 卡牌高度 (87px) + padding (2*10=20px) = 107px */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  transition: background-color 0.25s ease-in-out, box-shadow 0.25s ease;
+}
+
+.hand-area:not(.allow-wrapping) {
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+
+.hand-area.allow-wrapping {
+  flex-wrap: wrap;
+  justify-content: center; /* 换行后卡牌也居中排列 */
+  min-height: 185px; /* 2行卡牌 (87+7+87) + padding (2*10) = 181 + 20 = 201px, 略小于这个值 */
+  align-items: flex-start; /* 多行时从顶部对齐 */
+}
+
+.hand-area.droppable-active {
+  background-color: rgba(66, 153, 225, 0.3);
+  box-shadow: inset 0 0 10px rgba(66, 153, 225, 0.2);
+}
+
+
+/* --- 卡牌样式 --- */
+.card {
+  width: 62px;
+  height: 87px;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.35);
+  cursor: grab;
+  background-color: white;
+  flex-shrink: 0;
+  transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1), 
+              box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+  user-select: none;
+  position: relative;
+}
+.card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+.card:hover:not(.dragging) {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 3px 5px 10px rgba(0,0,0,0.3);
+}
+.card:active, .card.dragging {
+  cursor: grabbing;
+  transform: scale(1.12) rotate(3.5deg) translateY(-2px);
+  box-shadow: 4px 6px 12px rgba(0,0,0,0.45);
+  z-index: 1000;
+}
+.card-placeholder { /* ... */ }
+.image-error-text { /* ... */ }
+
+
+/* --- 控制按钮 --- */
+.controls {
+  margin-top: 25px;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 20px;
+  flex-wrap: wrap; /* 按钮多时可换行 */
+}
+
+.game-button {
+  padding: 10px 22px;
+  font-size: 1em;
+  color: white;
+  background-color: #118ab2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease-out, box-shadow 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  font-weight: 500;
+}
+.game-button:hover:not(:disabled) {
+  background-color: #0c9dcb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+}
+.game-button:active:not(:disabled) {
+  transform: translateY(0px);
+  background-color: #0a8aaa;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.game-button:disabled {
+  background-color: #4f6367;
+  color: #9fb3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+.game-button.compare-all-button { /* "开始比牌" 按钮的特殊样式 */
+    background-color: #06d6a0; /* 绿色 */
+    color: #073b4c; /* 深色文字 */
+    margin-top: 10px; /* 如果与其他按钮分开显示 */
+}
+.game-button.compare-all-button:hover:not(:disabled) {
+    background-color: #05c08d;
+}
+
+
+/* --- 响应式调整 --- */
 @media (max-width: 768px) {
+  .app-container { padding: 10px 10px 30px 10px; }
+  .game-title { font-size: 2.1em; margin-bottom: 15px; }
   .top-banner-container {
-    flex-direction: column; /* 小屏幕上AI信息垂直排列 */
-    align-items: center; /* 居中 */
-    gap: 10px;
-    max-width: 95%;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%; /* 小屏幕占满宽度 */
+    padding: 8px;
   }
   .ai-player-display {
-    flex-basis: auto; /* 取消固定宽度比例 */
-    width: 100%; /* 占据全部可用宽度 */
-    max-width: 400px; /* 限制最大宽度 */
+    width: 90%; /* AI信息块宽度 */
+    max-width: 350px;
+    padding: 10px;
   }
-  .game-board {
-    max-width: 95%; /* 游戏板也适应屏幕 */
-  }
+  .ai-player-avatar { width: 35px; height: 35px; font-size: 1em; }
+  .ai-player-name { font-size: 0.95em; }
+  .ai-player-status { font-size: 0.8em; }
+  .ai-player-hands-summary { font-size: 0.7em; }
+
+  .game-board { max-width: 100%; padding: 15px; gap: 15px; }
+  .hand-area-title { font-size: 1em; }
+  .hand-type-display { font-size: 0.85em; padding: 2px 6px; }
+  .card { width: 52px; height: 73px; } /* 进一步缩小卡牌 */
+  .hand-area { min-height: 85px; padding: 8px; gap: 5px; }
+  .hand-area.allow-wrapping { min-height: 155px; } /* 2行 (73+5+73) + padding(16) */
+  
+  .game-message { max-width: 100%; font-size: 0.95em; padding: 8px 12px; }
+  .controls { gap: 12px; flex-direction: column; align-items: center; }
+  .controls .game-button { width: 70%; max-width: 280px; padding: 10px 15px; font-size: 0.95em; }
+}
+
+@media (max-width: 420px) { /* 非常小的屏幕 */
+  .game-title { font-size: 1.8em; }
+  .card { width: 40px; height: 56px; }
+  .hand-area { min-height: 68px; } /* 56 + padding(12) */
+  .hand-area.allow-wrapping { min-height: 125px; } /* (56+5+56) + padding(12) */
+  .ai-player-avatar { width: 30px; height: 30px; font-size: 0.9em; }
+  .controls .game-button { width: 85%; }
 }
