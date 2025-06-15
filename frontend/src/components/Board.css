@@ -1,0 +1,11 @@
+/* frontend_react/src/components/Board.css */
+.game-board {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 15px;
+  font-family: sans-serif;
+}
+.game-board h3 {
+    text-align: center;
+    color: #333;
+}
