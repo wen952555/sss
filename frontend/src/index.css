@@ -6,8 +6,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #2E7D32; /* 深绿色主背景 */
-  color: #ffffff; /* 默认文字改为白色以适应深色背景 */
+  background-color: #2E7D32; /* 深绿色主背景 (e.g., Material Green 700) */
+  color: #ffffff; 
 }
 
 code {
