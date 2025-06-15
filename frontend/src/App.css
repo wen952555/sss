@@ -4,24 +4,23 @@
   margin: 0 auto;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: transparent; /* Let body background show through */
-  min-height: 100vh;
+  background-color: #2E7D32;
+  min-height: 100vh; /* Ensure it takes at least full viewport height */
   display: flex;
-  flex-direction: column;
+  flex-direction: column; 
+  /* justify-content: space-between; // This might push footer to bottom */
 }
 
-.app-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-size: 1.5em;
-  color: #f0f0f0;
-}
+.app-loading { /* Unchanged */ }
 
 .game-content-area {
-  flex-grow: 1;
-  /* padding: 5px; // Padding can be handled by HumanPlayerBoard itself if needed */
-  display: flex; /* Allow HumanPlayerBoard to potentially grow */
-  flex-direction: column;
+  /* flex-grow: 1; // REMOVE or set to 0 if ActionButtons should be immediately after */
+  flex-shrink: 0; /* Prevent this area from shrinking if content is small */
+  padding: 5px; 
+  /* The HumanPlayerBoard will define its own height based on its content */
 }
+
+/* ActionButtons component is a direct child after game-content-area.
+   If game-content-area doesn't grow, ActionButtons will naturally follow it.
+   The remaining space below ActionButtons (if any, on a tall screen) will be the body background.
+*/
