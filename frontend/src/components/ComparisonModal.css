@@ -1,183 +1,157 @@
 /* frontend_react/src/components/ComparisonModal.css */
 .comparison-modal-overlay-fullscreen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.7); 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 0;
-  box-sizing: border-box;
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6); display: flex;
+  justify-content: center; align-items: center; z-index: 1000;
+  padding: 0; box-sizing: border-box;
 }
 
-.comparison-modal-content-fullscreen-v8 { 
-  background-color: #2E7D32; /* 深绿色主背景 */
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+.comparison-modal-content-fullscreen-v9 { /* Versioned */
+  background-color: #e9ebee; /* Light grey background as per latest image */
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
   justify-content: space-between; 
-  box-sizing: border-box;
-  overflow: hidden; 
-  color: #f0f0f0; 
+  box-sizing: border-box; overflow: hidden; 
 }
 
-/* Title is removed */
+/* No title bar */
 
-.players-comparison-area-v8 {
-  display: flex;
-  flex-direction: row; 
-  flex-grow: 1; 
-  overflow-y: auto; 
-  padding: 8px; 
-  gap: 8px; 
+.players-comparison-area-v9 {
+  display: flex; flex-direction: row; 
+  flex-grow: 1; overflow-y: auto; 
+  padding: 8px; gap: 8px; 
 }
 
-.player-column-v8 {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px; 
+.player-column-v9 {
+  flex: 1; display: flex; flex-direction: column; gap: 8px; 
 }
 
-.player-result-cell-v8 {
-  background-color: #388E3C; /* 中等绿色 */
-  border: 1px solid #4CAF50; /* 亮一点的绿色边框 */
-  border-radius: 4px;
+.player-result-cell-v9 {
+  background-color: #ffffff; 
+  border: 1px solid #d3d6db;
+  border-radius: 3px;
   padding: 10px; 
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+  display: flex; flex-direction: column; /* Header and all-duns will stack */
+  color: #1c1e21;
+  flex-grow: 1; flex-basis: 0;
+  justify-content: flex-start; /* Align content to top */
+}
+.player-result-cell-v9.empty-player-cell-v9 { /* Styles for empty cell */ }
+.player-result-cell-v9.error-cell-v9 { /* Styles for error cell */ }
+
+/* Player header (name + score) is now part of the tou dun section */
+
+.all-duns-compact-v9 {
   display: flex;
   flex-direction: column;
-  gap: 6px; 
+  gap: 6px; /* Gap between duns */
   flex-grow: 1; 
-  flex-basis: 0;
-  justify-content: flex-start; 
-}
-.player-result-cell-v8.empty-player-cell-v8 {
-  background-color: rgba(0,0,0,0.1); 
-  border: 1px dashed #4CAF50;
-  min-height: 200px; 
-}
-.player-result-cell-v8.error-cell-v8 { /* Styles for error cell */ }
-
-
-.player-header-v8 {
-  display: flex;
-  justify-content: center; 
-  align-items: baseline; 
-  gap: 5px;
-  margin-bottom: 8px; 
-  flex-shrink: 0; 
-  border-bottom: 1px solid rgba(255,255,255,0.1); 
-  padding-bottom: 5px;
+  justify-content: space-around; /* Distribute duns vertically */
 }
 
-.player-name-modal-v8 {
-  margin: 0;
-  font-size: 1.1em; 
-  font-weight: 500; 
-  color: #FFFFFF; 
-}
-
-.player-total-score-modal-v8 {
-  margin: 0;
-  font-size: 0.9em; 
-  color: #C8E6C9; 
-  font-weight: normal;
-}
-
-.all-duns-compact-v8 {
-  display: flex;
-  flex-direction: column;
-  gap: 6px; 
-  flex-grow: 1; 
-  justify-content: space-around; 
-}
-
-.single-dun-stacked-cards-v8 {
-  display: flex;
-  position: relative;
-  align-items: center; 
-  background-color: #4CAF50; /* 稍浅的绿色作为牌的直接背景 */
+.single-dun-container-v9 { /* Wrapper for each dun */
+  display: flex; /* Default for zhong and wei (cards only) */
+  align-items: center; /* Vertically center cards in their slot */
+  background-color: #f0f2f5; /* Lighter grey for dun background, as per image */
   border-radius: 3px; 
-  padding: 5px; 
-  min-height: 90px; 
-  min-width: 130px; 
-  flex-grow: 1; 
-  flex-basis: 0;
-  border: 1px solid rgba(255,255,255,0.15);
+  padding: 6px;
+  min-height: 75px; /* Base height for a dun, adjust with card size */
+  border: 1px solid #e0e3e6; /* Subtle border for dun */
 }
 
-.single-dun-stacked-cards-v8 .card {
-  width: 55px;  
-  height: 80px; 
-  border: 1px solid #757575; 
-  box-shadow: 0px 1px 2px rgba(0,0,0,0.4); 
-  background-color: white; 
+.single-dun-container-v9.tou-dun-special-layout {
+  /* display: flex; // Already flex by default from .single-dun-container-v9 */
+  justify-content: space-between; /* Cards on left, info on right */
+  align-items: center; /* Vertically align cards and info block */
+}
+
+.dun-cards-stacked-v9 {
+  display: flex; /* To allow cards to stack with relative/absolute inside */
+  position: relative; /* For absolute positioning of cards */
+  align-items: center; /* Vertically center the stack */
+  flex-shrink: 0; /* Prevent card area from shrinking excessively */
+  /* Width will be determined by stacked cards, height by parent or cards */
+  min-width: 90px;  /* (e.g. 2*15 + 60 for 3 cards) */
+  height: 100%; /* Try to make card stack take full height of its dun container */
+}
+
+.dun-cards-stacked-v9 .card {
+  width: 60px;  /* Increased card width */
+  height: 88px; /* Increased card height */
+  border: 1px solid #adb5bd;
+  box-shadow: 0px 1px 2px rgba(0,0,0,0.2);
+  background-color: white;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
 }
 
-.single-dun-stacked-cards-v8 .card:nth-child(1) { left: 0px;   z-index: 1; }
-.single-dun-stacked-cards-v8 .card:nth-child(2) { left: 18px;  z-index: 2; }
-.single-dun-stacked-cards-v8 .card:nth-child(3) { left: 36px;  z-index: 3; }
-.single-dun-stacked-cards-v8 .card:nth-child(4) { left: 54px;  z-index: 4; }
-.single-dun-stacked-cards-v8 .card:nth-child(5) { left: 72px;  z-index: 5; }
+/* Stacking logic (card width 60px). Visible part ~20px. Next left = prev_left + 20px */
+.dun-cards-stacked-v9 .card:nth-child(1) { left: 0px;   z-index: 1; }
+.dun-cards-stacked-v9 .card:nth-child(2) { left: 20px;  z-index: 2; }
+.dun-cards-stacked-v9 .card:nth-child(3) { left: 40px;  z-index: 3; }
+.dun-cards-stacked-v9 .card:nth-child(4) { left: 60px;  z-index: 4; }
+.dun-cards-stacked-v9 .card:nth-child(5) { left: 80px;  z-index: 5; }
 
-
-.comparison-modal-footer-v8 {
-  padding: 10px 15px;
-  background-color: #1B5E20; /* 更深的绿色页脚 */
-  border-top: 1px solid #4CAF50; 
+.player-info-beside-tou-v9 { /* For player name and score next to tou dun cards */
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  align-items: center;
-  flex-shrink: 0; 
+  align-items: flex-start; /* Align text to the left */
+  padding-left: 10px; /* Space from tou cards */
+  flex-grow: 1; /* Take remaining space in the tou-dun-special-layout */
+  text-align: left;
 }
 
-.continue-game-button-v8 {
-  background-color: #81C784; 
-  color: #1B5E20; /* 深绿色文字 */
-  padding: 8px 20px; 
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 0.95em; 
-  font-weight: bold;
-  transition: background-color 0.2s ease;
-}
-.continue-game-button-v8:hover {
-  background-color: #A5D6A7;
-}
-.continue-game-button-v8:disabled {
-  background-color: #4a784c;
-  color: #9e9e9e;
-  cursor: wait;
-  opacity: 0.7;
+.player-name-modal-v9 { /* Now used inside player-info-beside-tou-v9 */
+  margin: 0;
+  font-size: 1.05em; 
+  font-weight: 600;
+  color: #333; /* Darker text for light background */
 }
 
+.player-total-score-modal-v9 { /* Now used inside player-info-beside-tou-v9 */
+  margin: 0;
+  font-size: 0.85em; 
+  color: #007bff; /* Blue score text */
+  font-weight: normal;
+}
+
+
+.comparison-modal-footer-v9 { /* Styles for footer */ }
+.continue-game-button-v9 { /* Styles for button */ }
+
+/* --- Responsive: Media Queries for Wider Screens --- */
 @media (min-width: 768px) {
-  /* ... (Wider screen styles for ComparisonModal remain largely the same as previous version,
-           just ensure color theme consistency) ... */
   .comparison-modal-overlay-fullscreen { padding: 10px; } 
-  .comparison-modal-content-fullscreen-v8 { border-radius: 6px; max-height: 98vh; }
-  .players-comparison-area-v8 { display: grid; grid-template-columns: repeat(2, 1fr); padding: 10px; gap: 10px; }
-  .player-result-cell-v8 { padding: 12px; gap: 8px; }
-  .player-header-v8 { margin-bottom: 10px; }
-  .player-name-modal-v8 { font-size: 1.1em; } 
-  .player-total-score-modal-v8 { font-size: 0.9em; }
-  .all-duns-compact-v8 { gap: 8px; }
-  .single-dun-stacked-cards-v8 { min-height: 105px; min-width: 150px; padding: 6px; }
-  .single-dun-stacked-cards-v8 .card { width: 60px; height: 88px; }
-  .single-dun-stacked-cards-v8 .card:nth-child(1) { left: 0px; }
-  .single-dun-stacked-cards-v8 .card:nth-child(2) { left: 20px; } 
-  .single-dun-stacked-cards-v8 .card:nth-child(3) { left: 40px; }
-  .single-dun-stacked-cards-v8 .card:nth-child(4) { left: 60px; }
-  .single-dun-stacked-cards-v8 .card:nth-child(5) { left: 80px; }
-  .continue-game-button-v8 { padding: 10px 22px; font-size: 1em; }
+  .comparison-modal-content-fullscreen-v9 {
+    border-radius: 6px; 
+    max-height: 98vh; 
+  }
+  .players-comparison-area-v9 {
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    padding: 10px; 
+    gap: 10px; 
+  }
+  .player-result-cell-v9 { padding: 12px; gap: 8px; }
+  
+  .single-dun-container-v9 { min-height: 95px; padding: 8px; }
+  .dun-cards-stacked-v9 { min-width: 110px; } /* (e.g. 2*22 + 65 for 3 cards) */
+  .dun-cards-stacked-v9 .card {
+    width: 65px;  
+    height: 95px; 
+  }
+  .dun-cards-stacked-v9 .card:nth-child(1) { left: 0px; }
+  .dun-cards-stacked-v9 .card:nth-child(2) { left: 22px; } 
+  .dun-cards-stacked-v9 .card:nth-child(3) { left: 44px; }
+  .dun-cards-stacked-v9 .card:nth-child(4) { left: 66px; }
+  .dun-cards-stacked-v9 .card:nth-child(5) { left: 88px; }
+
+  .player-info-beside-tou-v9 { padding-left: 15px; }
+  .player-name-modal-v9 { font-size: 1.1em; }
+  .player-total-score-modal-v9 { font-size: 0.9em; }
+
+  .continue-game-button-v9 { padding: 10px 22px; font-size: 1em; }
 }
