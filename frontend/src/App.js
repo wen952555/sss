@@ -34,14 +34,13 @@ function App() {
   const [gameState, setGameState] = useState(initialGameState);
   const [arrangedHumanHand, setArrangedHumanHand] = useState({ tou: [], zhong: [], wei: [] });
   const [showComparisonModal, setShowComparisonModal] = useState(false);
-  // selectedCardsInfo is now an array: [{ card: CardObject, fromDun: string }, ...]
   const [selectedCardsInfo, setSelectedCardsInfo] = useState([]);
 
   const humanPlayerFromState = gameState.players.find(p => p.isHuman);
 
   const initializeNewGame = useCallback(() => {
     setShowComparisonModal(false);
-    setSelectedCardsInfo([]); // Reset to empty array
+    setSelectedCardsInfo([]);
     setArrangedHumanHand({ tou: [], zhong: [], wei: [] });
 
     let newState = startGameLogic(initialGameState);
@@ -51,23 +50,43 @@ function App() {
       if (!player.isHuman) {
         const aiArrangement = arrangeCardsAILogic(player.hand);
         if (aiArrangement && isValidArrangementLogic(aiArrangement.tou, aiArrangement.zhong, aiArrangement.wei)) {
-          const evalHands = { /* ... evaluate AI hands ... */ };
+          const evalHands = {
+            tou: evaluateHandLogic(aiArrangement.tou),
+            zhong: evaluateHandLogic(aiArrangement.zhong),
+            wei: evaluateHandLogic(aiArrangement.wei),
+          };
           return { ...player, arranged: aiArrangement, evalHands, confirmed: true };
         } else {
-          // AI fallback arrangement
-          console.error(`AI ${player.name} fallback arrangement on init.`);
+          console.error(`AI ${player.name} failed initial arrangement. Using fallback.`);
           const fallbackTou = player.hand.slice(0, 3);
           const fallbackZhong = player.hand.slice(3, 8);
           const fallbackWei = player.hand.slice(8, 13);
+          // Ensure fallback arrangement is valid (3,5,5) before evaluating
           if (fallbackTou.length === 3 && fallbackZhong.length === 5 && fallbackWei.length === 5 && isValidArrangementLogic(fallbackTou, fallbackZhong, fallbackWei)) {
             return {
               ...player,
               arranged: { tou: fallbackTou, zhong: fallbackZhong, wei: fallbackWei },
-              evalHands: { tou: evaluateHandLogic(fallbackTou), zhong: evaluateHandLogic(fallbackZhong), wei: evaluateHandLogic(fallbackWei) },
+              evalHands: {
+                tou: evaluateHandLogic(fallbackTou),
+                zhong: evaluateHandLogic(fallbackZhong),
+                wei: evaluateHandLogic(fallbackWei),
+              },
               confirmed: true
             };
           }
-          return { ...player, arranged: { tou: [], zhong: [], wei: [] }, evalHands: null, confirmed: true };
+          // If even the slice fallback is not 3,5,5 (e.g. player.hand < 13, which shouldn't happen)
+          // or not valid, provide a default evaluated structure for empty/invalid hands.
+          const emptyArrangement = { tou: [], zhong: [], wei: [] };
+          return {
+            ...player,
+            arranged: emptyArrangement,
+            evalHands: { // *** CRITICAL CHANGE HERE ***
+              tou: evaluateHandLogic(emptyArrangement.tou),
+              zhong: evaluateHandLogic(emptyArrangement.zhong),
+              wei: evaluateHandLogic(emptyArrangement.wei),
+            },
+            confirmed: true
+          };
         }
       } else {
         humanHandForAISuggestion = [...player.hand];
@@ -97,19 +116,22 @@ function App() {
     }
   }, [gameState.gameState, initializeNewGame]);
 
+
   const handleSubmitPlayerHand = useCallback(() => {
     if (!humanPlayerFromState) return;
     const { tou, zhong, wei } = arrangedHumanHand;
+
     const totalCardsInDuns = tou.length + zhong.length + wei.length;
-    if (totalCardsInDuns !== 13) { /* ... alert ... */ return; }
-    if (tou.length !== 3 || zhong.length !== 5 || wei.length !== 5) { /* ... alert ... */ return; }
-    if (!isValidArrangementLogic(tou, zhong, wei)) { /* ... alert ... */ return; }
+    if (totalCardsInDuns !== 13) { alert(`总牌数必须是13张，当前为 ${totalCardsInDuns} 张。请检查各墩牌数。`); return; }
+    if (tou.length !== 3 || zhong.length !== 5 || wei.length !== 5) { alert(`墩牌数量不正确！\n头道需3张 (当前${tou.length}张)\n中道需5张 (当前${zhong.length}张)\n尾道需5张 (当前${wei.length}张)`); return; }
+    if (!isValidArrangementLogic(tou, zhong, wei)) { alert("您的墩牌不合法！请确保头道 ≤ 中道 ≤ 尾道。"); return; }
 
     let stateAfterHumanConfirm = confirmPlayerArrangementLogic(gameState, humanPlayerFromState.id, arrangedHumanHand);
-    const finalStateWithResults = compareAllHandsLogic(stateAfterHumanConfirm);
+    const finalStateWithResults = compareAllHandsLogic(stateAfterHumanConfirm); // This is where the error likely originates if evalHands are bad
     setGameState(finalStateWithResults);
     setShowComparisonModal(true);
   }, [humanPlayerFromState, arrangedHumanHand, gameState]);
+
 
   const handleAIHelperForHuman = useCallback(() => {
     const humanP = gameState.players.find(p => p.isHuman);
@@ -117,61 +139,48 @@ function App() {
       const suggestion = arrangeCardsAILogic(humanP.hand);
       if (suggestion && isValidArrangementLogic(suggestion.tou, suggestion.zhong, suggestion.wei)) {
         setArrangedHumanHand(suggestion);
-        setSelectedCardsInfo([]); // Clear selection
+        setSelectedCardsInfo([]);
       } else {
         alert("AI未能给出新的有效分牌建议。");
       }
     }
   }, [gameState.players]);
 
-  // Card interaction logic for multi-select
+
   const handleCardClick = useCallback((cardClicked, currentDunOfCard) => {
     setSelectedCardsInfo(prevSelected => {
       const existingIndex = prevSelected.findIndex(info => info.card.id === cardClicked.id);
       if (existingIndex > -1) {
-        // Card is already selected, remove it (deselect)
         return prevSelected.filter((_, index) => index !== existingIndex);
       } else {
-        // Card is not selected, add it
         return [...prevSelected, { card: cardClicked, fromDun: currentDunOfCard }];
       }
     });
   }, []);
 
   const handleDunClick = useCallback((targetDunName) => {
-    if (selectedCardsInfo.length > 0) { // If there are selected cards
+    if (selectedCardsInfo.length > 0) {
       setArrangedHumanHand(prevArrangement => {
         const newArrangement = {
           tou: [...prevArrangement.tou],
           zhong: [...prevArrangement.zhong],
           wei: [...prevArrangement.wei],
         };
-
-        // Cards to be added to the target dun
         const cardsToAddToTarget = [];
-
         selectedCardsInfo.forEach(selectedInfo => {
           const { card, fromDun } = selectedInfo;
-          // Remove card from its original dun
           if (fromDun && newArrangement[fromDun]) {
             newArrangement[fromDun] = newArrangement[fromDun].filter(c => c.id !== card.id);
           }
-          // Add to our temporary list for the target dun
           cardsToAddToTarget.push(card);
         });
-        
-        // Add all selected cards to the target dun, ensuring no duplicates within the additions
-        // and also not re-adding if a card was already in targetDun (though filter should handle this)
         const existingTargetDunCardIds = new Set(newArrangement[targetDunName].map(c=>c.id));
         const uniqueCardsToAdd = cardsToAddToTarget.filter(c => !existingTargetDunCardIds.has(c.id));
-
         newArrangement[targetDunName] = [...newArrangement[targetDunName], ...uniqueCardsToAdd];
-        
         return newArrangement;
       });
-      setSelectedCardsInfo([]); // Clear selection after moving
+      setSelectedCardsInfo([]);
     }
-    // If no cards are selected, clicking a dun area does nothing.
   }, [selectedCardsInfo]);
 
 
@@ -190,7 +199,7 @@ function App() {
           <div className="game-content-area">
             <HumanPlayerBoard
               arrangedHand={arrangedHumanHand}
-              selectedCardsInfo={selectedCardsInfo} // Pass array of selected cards
+              selectedCardsInfo={selectedCardsInfo}
               onCardClick={handleCardClick}
               onDunClick={handleDunClick}
             />
