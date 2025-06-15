@@ -5,146 +5,159 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.8); /* Slightly darker overlay */
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 10px; /* Add some padding for small screens */
+  padding: 10px;
   box-sizing: border-box;
 }
 
 .comparison-modal-content-fullscreen {
-  background-color: #f0f2f5;
+  background-color: #f0f2f5; /* Main modal background */
   width: 100%;
   height: 100%;
-  max-width: 1200px; /* Max width for very wide screens */
-  max-height: 95vh; /* Max height to leave some space */
+  max-width: 1200px;
+  max-height: 95vh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-sizing: border-box;
-  border-radius: 8px; /* Rounded corners for the modal itself */
+  border-radius: 8px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-  overflow: hidden; /* Prevent content from spilling before scroll kicks in */
+  overflow: hidden; 
 }
 
 .comparison-modal-title {
   text-align: center;
   color: #333;
-  font-size: 1.6em; /* Adjusted size */
-  padding: 15px 0; /* Adjusted padding */
+  font-size: 1.6em;
+  padding: 15px 0;
   margin: 0;
   background-color: #ffffff;
   border-bottom: 1px solid #d9d9d9;
-  flex-shrink: 0; /* Prevent title from shrinking */
+  flex-shrink: 0;
 }
 
-.players-grid-2x2 {
+.players-grid-layout-modal { /* Updated class name */
   display: grid;
-  /* Mobile First: Default to single column (stacked) */
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr; /* Mobile first: 1 column */
   gap: 15px;
-  padding: 15px; /* Padding for the grid container */
+  padding: 15px;
   flex-grow: 1;
-  overflow-y: auto; /* Enable scrolling for player cards area */
+  overflow-y: auto;
   align-content: start;
 }
 
 .player-result-cell {
-  background-color: #ffffff;
+  background-color: #ffffff; /* Each player's card area background */
   border: 1px solid #d9d9d9;
-  border-radius: 6px; /* Consistent radius */
-  padding: 12px; /* Adjusted padding */
+  border-radius: 6px;
+  padding: 15px; /* Padding around player's content */
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   display: flex;
   flex-direction: column;
+  gap: 10px; /* Gap between player name/score and their duns */
 }
 .player-result-cell.empty-player-cell {
   background-color: transparent;
-  border: 1px dashed #d9d9d9; /* Show empty cells slightly */
+  border: 1px dashed #d9d9d9;
   box-shadow: none;
-  min-height: 150px; /* Give empty cells some height */
+  min-height: 150px;
 }
-.player-result-cell.error-cell {
+.player-result-cell.error-cell { /* Style for error cell */
   align-items: center;
   justify-content: center;
   color: #cc0000;
   min-height: 150px;
 }
 
-.player-result-cell h4 {
+.player-name-modal { /* Class for player name */
   margin-top: 0;
-  margin-bottom: 8px; /* Adjusted margin */
-  font-size: 1.1em;
+  margin-bottom: 5px;
+  font-size: 1.2em;
+  font-weight: 600; /* Slightly bolder */
   color: #1a1a1a;
   text-align: center;
 }
 
-.player-total-score {
-  font-size: 0.95em; /* Adjusted size */
+.player-total-score-modal { /* Class for player score */
+  font-size: 1em;
   font-weight: bold;
   color: #007bff;
   text-align: center;
-  margin-bottom: 12px; /* Adjusted margin */
+  margin-bottom: 15px;
 }
 
-.dun-display-section {
-  margin-bottom: 8px; /* Adjusted margin */
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
+.dun-evaluation-section-modal { /* New wrapper for each dun: cards + info */
+  display: flex; /* Key change: cards and info side-by-side */
+  align-items: flex-start; /* Align items to the top of the flex container */
+  gap: 10px; /* Gap between card area and info area */
+  margin-bottom: 12px; /* Space between dun sections */
+  padding: 8px;
+  background-color: #f8f9fa; /* Light bg for each dun section */
+  border-radius: 4px;
 }
-.dun-display-section:last-child {
+.dun-evaluation-section-modal:last-child {
   margin-bottom: 0;
 }
 
-.dun-label-modal {
-  display: block;
-  font-size: 0.9em; /* Adjusted size */
-  font-weight: 500;
-  color: #444;
-  margin-bottom: 6px; /* Adjusted margin */
-  text-align: left;
-}
-
-.cards-area-modal {
+.dun-cards-display-modal { /* Container for cards */
   display: flex;
   flex-wrap: wrap;
-  gap: 3px; /* Slightly smaller gap */
+  gap: 4px;
   justify-content: flex-start;
-  background-color: #f8f9fa;
-  padding: 6px; /* Adjusted padding */
-  border-radius: 3px; /* Smaller radius */
-  min-height: 75px; /* Adjusted min-height */
-  flex-grow: 1;
-  align-items: center; /* Center cards vertically if not filling height */
+  align-items: center; /* Center cards vertically if they wrap */
+  /* Removed min-height, height will be determined by card size */
 }
 
-.cards-area-modal .card {
-  width: 50px; /* Smaller cards for modal */
-  height: 72px; /* Adjusted height */
+.dun-cards-display-modal .card {
+  width: 60px; /* Increased card width */
+  height: 90px; /* Increased card height */
   cursor: default;
 }
 
+.dun-info-modal { /* Container for "头道: 牌型" */
+  display: flex;
+  flex-direction: column; /* Stack label and type vertically */
+  justify-content: center; /* Center text vertically if needed */
+  padding-left: 5px; /* Some space from cards */
+  flex-shrink: 0; /* Prevent text from being squeezed too much */
+  min-width: 80px; /* Ensure enough space for text */
+}
+
+.dun-title-modal { /* For "头道:", "中道:", "尾道:" */
+  font-size: 0.95em;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 3px;
+}
+
+.dun-type-modal { /* For牌型名称 like "一对" */
+  font-size: 0.9em;
+  color: #555;
+  font-weight: normal;
+}
+
 .comparison-modal-footer {
-  padding: 12px 15px; /* Adjusted padding */
+  padding: 12px 15px;
   background-color: #ffffff;
   border-top: 1px solid #d9d9d9;
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-shrink: 0; /* Prevent footer from shrinking */
+  flex-shrink: 0;
 }
 
 .continue-game-button {
   background-color: #28a745;
   color: white;
-  padding: 10px 20px; /* Adjusted padding */
+  padding: 10px 20px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 1em; /* Adjusted size */
+  font-size: 1em;
   font-weight: 500;
   transition: background-color 0.2s ease;
 }
@@ -153,16 +166,14 @@
 }
 
 /* --- Responsive: Media Queries --- */
-
-/* For tablets and wider screens (e.g., > 768px) - 2x2 grid */
 @media (min-width: 768px) {
   .comparison-modal-overlay-fullscreen {
-    padding: 20px; /* More padding on wider screens */
+    padding: 20px;
   }
   .comparison-modal-content-fullscreen {
-    max-height: 90vh; /* Can take more vertical space */
+    max-height: 90vh;
   }
-  .players-grid-2x2 {
+  .players-grid-layout-modal { /* Updated class name */
     grid-template-columns: repeat(2, 1fr); /* 2 columns for 2x2 */
     padding: 20px;
   }
@@ -170,9 +181,9 @@
     font-size: 1.8em;
     padding: 20px 0;
   }
-  .cards-area-modal .card {
-    width: 55px; /* Slightly larger cards on wider screens */
-    height: 80px;
+  .dun-cards-display-modal .card { /* Slightly larger cards on wider screens if desired */
+    width: 65px; 
+    height: 98px;
   }
    .continue-game-button {
     padding: 12px 25px;
@@ -180,20 +191,18 @@
   }
 }
 
-/* For very wide screens (e.g., > 1200px) - potentially 4 columns in a row */
-/* You can decide if you want a 4-column layout on very wide screens,
-   or stick to 2x2 which might be easier to compare side-by-side.
-   The image shows 2x2 structure even when there's space.
-   If you want 4 columns for very wide screens:
-*/
+/* Optional: For very wide screens, if you want 4 columns */
 /*
-@media (min-width: 1200px) {
-  .players-grid-2x2 {
-    grid-template-columns: repeat(4, 1fr); // 4 columns
-    grid-template-rows: 1fr; // All in one row if they fit
+@media (min-width: 1300px) { 
+  .players-grid-layout-modal {
+    grid-template-columns: repeat(4, 1fr);
   }
   .player-result-cell {
-     padding: 15px; // Potentially more padding
+     padding: 12px; 
+  }
+  .dun-cards-display-modal .card {
+    width: 60px; 
+    height: 90px;
   }
 }
 */
