@@ -1,26 +1,11 @@
 /* frontend_react/src/components/ComparisonModal.css */
-/* ... (all previous v8 styles remain the same) ... */
-
-/* Add this at the end for the disabled button state */
-.continue-game-button-v8:disabled {
-  background-color: #5f73bc; /* Example: A duller version of the button color */
-  border-color: #5f73bc;
-  color: #c0c0c0; /* Lighter text for disabled state */
-  cursor: wait; /* Indicate a waiting state */
-  opacity: 0.7;
-}
-
-/* Ensure other v8 styles from your "非常完美" version are here.
-   The only addition is the :disabled style for the button.
-   Specifically, make sure these styles are present from the version before this one:
-*/
 .comparison-modal-overlay-fullscreen {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7); /* Darker overlay for more contrast */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -29,8 +14,8 @@
   box-sizing: border-box;
 }
 
-.comparison-modal-content-fullscreen-v8 { /* Versioned */
-  background-color: #e9ebee; 
+.comparison-modal-content-fullscreen-v8 {
+  background-color: #2E7D32; /* 主深绿色背景 */
   width: 100%;
   height: 100%;
   display: flex;
@@ -38,44 +23,46 @@
   justify-content: space-between; 
   box-sizing: border-box;
   overflow: hidden; 
+  color: #f0f0f0; /* Default light text for dark background */
 }
+
+/* Title is removed */
 
 .players-comparison-area-v8 {
   display: flex;
   flex-direction: row; 
   flex-grow: 1; 
   overflow-y: auto; 
-  padding: 6px; 
-  gap: 6px; 
+  padding: 8px; 
+  gap: 8px; 
 }
 
 .player-column-v8 {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px; 
+  gap: 8px; 
 }
 
 .player-result-cell-v8 {
-  background-color: #ffffff; 
-  border: 1px solid #d3d6db;
-  border-radius: 3px;
-  padding: 8px 10px; 
-  box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+  background-color: #388E3C; /* 中等绿色，比主背景稍浅 */
+  border: 1px solid #4CAF50; /* 亮一点的绿色边框 */
+  border-radius: 4px; /* Consistent radius */
+  padding: 10px; 
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2); /* Shadow for depth on dark theme */
   display: flex;
   flex-direction: column;
   gap: 6px; 
-  color: #1c1e21;
   flex-grow: 1; 
   flex-basis: 0;
-  justify-content: space-between; 
+  justify-content: flex-start; 
 }
 .player-result-cell-v8.empty-player-cell-v8 {
-  background-color: #f0f2f5;
-  border: 1px dashed #ced0d4;
-  min-height: 200px; 
+  background-color: rgba(0,0,0,0.1); /* Darker transparent for empty */
+  border: 1px dashed #4CAF50;
+  min-height: 220px; 
 }
-.player-result-cell-v8.error-cell-v8 { /* Styles for error cell */ }
+.player-result-cell-v8.error-cell-v8 { color: #FFCDD2; }
 
 
 .player-header-v8 {
@@ -83,27 +70,30 @@
   justify-content: center; 
   align-items: baseline; 
   gap: 5px;
-  margin-bottom: 6px; 
+  margin-bottom: 8px; 
   flex-shrink: 0; 
+  border-bottom: 1px solid rgba(255,255,255,0.1); /* Subtle separator */
+  padding-bottom: 5px;
 }
 
 .player-name-modal-v8 {
   margin: 0;
-  font-size: 1em; 
-  font-weight: 600;
+  font-size: 1.1em; 
+  font-weight: 500; /* Slightly less bold for better readability on dark */
+  color: #FFFFFF; /* Bright white name */
 }
 
 .player-total-score-modal-v8 {
   margin: 0;
-  font-size: 0.8em; 
-  color: #3b5998; 
+  font-size: 0.9em; 
+  color: #C8E6C9; /*浅绿色分数 */
   font-weight: normal;
 }
 
 .all-duns-compact-v8 {
   display: flex;
   flex-direction: column;
-  gap: 4px; 
+  gap: 6px; 
   flex-grow: 1; 
   justify-content: space-around; 
 }
@@ -112,21 +102,22 @@
   display: flex;
   position: relative;
   align-items: center; 
-  background-color: #e0e3e6; 
-  border-radius: 2px; 
-  padding: 4px 0px 4px 4px; 
+  background-color: #66BB6A; /* 更浅的绿色作为牌的直接背景 */
+  border-radius: 3px; 
+  padding: 5px; /* Padding around cards */
   min-height: 90px; 
-  min-width: 125px; 
+  min-width: 130px; 
   flex-grow: 1; 
   flex-basis: 0;
+  border: 1px solid rgba(255,255,255,0.15);
 }
 
 .single-dun-stacked-cards-v8 .card {
   width: 55px;  
   height: 80px; 
-  border: 1px solid #90969e; 
-  box-shadow: 0px 1px 2px rgba(0,0,0,0.3);
-  background-color: white;
+  border: 1px solid #757575; /* Darker border for cards */
+  box-shadow: 0px 1px 2px rgba(0,0,0,0.4); /* Stronger shadow */
+  background-color: white; /* Cards remain white */
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -140,9 +131,9 @@
 
 
 .comparison-modal-footer-v8 {
-  padding: 8px 10px;
-  background-color: #f5f6f7;
-  border-top: 1px solid #ced0d4;
+  padding: 10px 15px;
+  background-color: #23272a; /* Dark footer */
+  border-top: 1px solid #4f545c; /* Separator */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -150,18 +141,24 @@
 }
 
 .continue-game-button-v8 {
-  background-color: #4267b2;
-  color: white;
-  padding: 7px 18px;
+  background-color: #81C784; /* Lighter green button */
+  color: #2E7D32; /* Dark green text on light green button */
+  padding: 8px 20px; 
   border: none;
-  border-radius: 2px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 0.95em; 
   font-weight: bold;
   transition: background-color 0.2s ease;
 }
 .continue-game-button-v8:hover {
-  background-color: #365899;
+  background-color: #A5D6A7;
+}
+.continue-game-button-v8:disabled {
+  background-color: #4a784c;
+  color: #9e9e9e;
+  cursor: wait;
+  opacity: 0.7;
 }
 
 
@@ -185,16 +182,16 @@
   }
   .player-header-v8 { margin-bottom: 10px; }
   .player-name-modal-v8 { font-size: 1.1em; } 
-  .player-total-score-modal-v8 { font-size: 0.85em; }
+  .player-total-score-modal-v8 { font-size: 0.9em; }
 
   .all-duns-compact-v8 { 
-    gap: 6px; 
+    gap: 8px; 
   }
 
   .single-dun-stacked-cards-v8 {
-    min-height: 95px; 
-    min-width: 140px; 
-    padding: 5px 0px 5px 5px;
+    min-height: 105px; 
+    min-width: 150px; 
+    padding: 6px;
   }
   .single-dun-stacked-cards-v8 .card {
     width: 60px;  
@@ -206,5 +203,5 @@
   .single-dun-stacked-cards-v8 .card:nth-child(4) { left: 60px; }
   .single-dun-stacked-cards-v8 .card:nth-child(5) { left: 80px; }
 
-  .continue-game-button-v8 { padding: 10px 22px; font-size: 0.95em; }
+  .continue-game-button-v8 { padding: 10px 22px; font-size: 1em; }
 }
