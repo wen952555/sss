@@ -1,9 +1,7 @@
 /* frontend_react/src/components/HumanPlayerBoard.css */
 .human-player-board-container-v4 {
   padding: 10px 5px;
-  background-color: #e9ebee; /* Match image background */
-  border-radius: 0;
-  box-shadow: none;
+  background-color: #e9ebee;
   margin: 0;
 }
 
@@ -27,9 +25,8 @@
   position: relative;
   display: block; 
   width: 100%;
-  /* Set a base height for the dun area. Cards will scale to 98% of this. */
-  height: 125px; /* Default height for a dun area on mobile. Adjust as needed. */
-  padding: 0; /* Remove padding if cards are to be very close to edges or if wrapper handles it */
+  height: 120px; /* BASE HEIGHT for dun area - ADJUST THIS! */
+  padding: 0; 
   border: 1px solid #dcdfe6;
   border-radius: 4px;
   background-color: #ffffff; 
@@ -54,74 +51,39 @@
 
 .card-wrapper-hpb {
   position: absolute; 
-  /* Make wrapper itself take 98% of parent height, centered */
   top: 1%; /* (100% - 98%) / 2 */
-  bottom: 1%; /* (100% - 98%) / 2 */
-  height: 98%;
-  /* Width of wrapper will be determined by card's aspect ratio via its child card */
-  /* We need to give it a starting point or let the card dictate it */
-  display: flex; 
+  height: 98%; /* Wrapper takes 98% of parent dun area height */
+  /* Width is determined by the card's aspect ratio when height is set */
+  /* left is set by :nth-child */
+  display: flex;
   align-items: center;
-  justify-content: center;
-  /* left positioning by :nth-child */
+  justify-content: flex-start; /* Align card to its 'left' position */
 }
 
 .card-wrapper-hpb .card {
-  width: auto; 
   height: 100%; /* Card fills the wrapper's 98% height */
-  max-width: 100%; 
-  object-fit: contain; 
-  /* Border and shadow applied by Card.js or selection style */
+  width: auto;   /* Width adjusts based on height and SVG's aspect ratio */
+  max-width: none; /* Allow it to be wider if aspect ratio dictates */
+  object-fit: contain; /* Or remove if SVG handles scaling */
 }
 
-/* Stacking logic for .card-wrapper-hpb */
-/* Assume effective card width for stacking calculations around 70-80px after scaling to 98% height */
-/* Let's use slightly larger card base for calculations: 75px width for overlap */
-.card-wrapper-hpb:nth-child(1) { left: 2%;   z-index: 1; width: calc(0.98 * (125px * 0.7)); /* Approx width, if dun area height is 125px and card aspect ratio 0.7 W/H */ }
-.card-wrapper-hpb:nth-child(2) { left: 18%;  z-index: 2; width: calc(0.98 * (125px * 0.7)); }
-.card-wrapper-hpb:nth-child(3) { left: 34%;  z-index: 3; width: calc(0.98 * (125px * 0.7)); }
-.card-wrapper-hpb:nth-child(4) { left: 50%;  z-index: 4; width: calc(0.98 * (125px * 0.7)); }
-.card-wrapper-hpb:nth-child(5) { left: 66%;  z-index: 5; width: calc(0.98 * (125px * 0.7)); }
-/* Note: Setting width on card-wrapper might be tricky if card itself has intrinsic aspect ratio.
-   It's often better to set width on the .card and let wrapper be positioned.
-   Let's revert to setting width on .card if this doesn't work well.
-*/
+/* Stacking logic using :nth-child on .card-wrapper-hpb */
+/* Card height is 0.98 * DUN_AREA_HEIGHT. Let's say DUN_AREA_HEIGHT is 120px. Card height ~117.6px. */
+/* If typical card aspect ratio W/H is 0.7, then card width ~ 0.7 * 117.6px ~ 82px. */
+/* If we want 25px of previous card visible: next left = prev_left + 25px */
+.card-wrapper-hpb:nth-child(1) { left: 5px;   z-index: 1; } /* Small initial indent */
+.card-wrapper-hpb:nth-child(2) { left: 30px;  z-index: 2; } /* 5 + 25 */
+.card-wrapper-hpb:nth-child(3) { left: 55px;  z-index: 3; } /* 30 + 25 */
+.card-wrapper-hpb:nth-child(4) { left: 80px;  z-index: 4; } /* 55 + 25 */
+.card-wrapper-hpb:nth-child(5) { left: 105px; z-index: 5; } /* 80 + 25 */
 
-/* Alternative for card-wrapper-hpb if card itself has defined aspect ratio from Card.js: */
-/* .card-wrapper-hpb {
-  position: absolute;
-  top: 1%;
-  bottom: 1%;
-  height: 98%;
-  aspect-ratio: 70 / 100; // Assuming card has approx 70:100 aspect ratio
-  // left is set by :nth-child
-}
-.card-wrapper-hpb .card { height: 100%; width: 100%; } */
-
-
-.card-placeholder-visual-hpb-v2 { 
-  /* Styles for placeholder if needed */
-}
+.card-placeholder-visual-hpb-v2 { /* Unchanged */ }
 
 
 /* --- Responsive: Media Queries for WIDER screens --- */
 @media (min-width: 768px) {
   .dun-cards-area-hpb-v2 {
     height: 150px; /* Taller dun area on wider screens */
-    padding: 6px; /* Slightly more padding */
   }
   .dun-cards-area-hpb-v2.with-background-text-v2::before {
-    font-size: 3.2em; 
-  }
-
-  /* Re-calculate width for card wrapper if using aspect-ratio or fixed width for card */
-  .card-wrapper-hpb:nth-child(1) { left: 2%;   width: calc(0.98 * (150px * 0.7));}
-  .card-wrapper-hpb:nth-child(2) { left: 20%;  width: calc(0.98 * (150px * 0.7));}
-  .card-wrapper-hpb:nth-child(3) { left: 38%;  width: calc(0.98 * (150px * 0.7));}
-  .card-wrapper-hpb:nth-child(4) { left: 56%;  width: calc(0.98 * (150px * 0.7));}
-  .card-wrapper-hpb:nth-child(5) { left: 74%;  width: calc(0.98 * (150px * 0.7));}
-
-  /* If using aspect-ratio on card-wrapper for wider screens: */
-  /* .card-wrapper-hpb { aspect-ratio: 75 / 108; } */
-
-}
+    font
