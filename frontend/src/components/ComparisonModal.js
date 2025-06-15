@@ -6,7 +6,7 @@ import './ComparisonModal.css'; // Ensure this CSS is updated
 const PlayerResultDisplay = ({ player }) => {
   if (!player || !player.arranged || !player.evalHands) {
     return (
-      <div className="player-result-cell-v3 error-cell-v3"> {/* Updated class */}
+      <div className="player-result-cell-v4 error-cell-v4"> {/* Versioning class names */}
         <h4>{player?.name || '未知玩家'}</h4>
         <p>数据错误</p>
       </div>
@@ -14,33 +14,27 @@ const PlayerResultDisplay = ({ player }) => {
   }
 
   const dunOrder = ['tou', 'zhong', 'wei'];
-  const dunLabelMap = { tou: '头道', zhong: '中道', wei: '尾道' };
+  // No dunLabelMap needed here as labels are not shown in this compact stacked view per image
 
   return (
-    <div className="player-result-cell-v3"> {/* Updated class */}
-      <h4 className="player-name-modal-v3">{player.name}</h4> {/* Updated class */}
-      <p className="player-total-score-modal-v3">本局得分: {player.score}</p> {/* Updated class */}
+    <div className="player-result-cell-v4">
+      <h4 className="player-name-modal-v4">{player.name}</h4>
+      <p className="player-total-score-modal-v4">本局得分: {player.score}</p>
       
-      <div className="all-duns-container-v3"> {/* Container for all duns of a player */}
+      <div className="all-duns-compact-v4"> {/* Compact container for all duns */}
         {dunOrder.map(dunKey => {
           const dunHand = player.arranged[dunKey] || [];
-          const dunEval = player.evalHands[dunKey];
-          const dunHandName = dunEval?.name || "未评估";
+          // const dunEval = player.evalHands[dunKey]; //牌型名称不在此处显示
+          // const dunHandName = dunEval?.name || "未评估";
 
           return (
-            <div key={dunKey} className="single-dun-layout-v3"> {/* Main layout for one dun: cards + text info */}
-              <div className="dun-cards-stacked-v3"> {/* Card container for stacking */}
-                {dunHand.map((card) => (
-                  <Card 
-                    key={card.id} 
-                    card={card} 
-                  />
-                ))}
-              </div>
-              <div className="dun-text-info-v3"> {/* Text on the right of cards */}
-                <span className="dun-title-v3">{dunLabelMap[dunKey]}:</span>
-                <span className="dun-type-v3">{dunHandName}</span>
-              </div>
+            <div key={dunKey} className="single-dun-stacked-cards-v4"> {/* Only cards, stacked */}
+              {dunHand.map((card) => (
+                <Card 
+                  key={card.id} 
+                  card={card} 
+                />
+              ))}
             </div>
           );
         })}
@@ -52,26 +46,35 @@ const PlayerResultDisplay = ({ player }) => {
 const ComparisonModal = ({ players, onClose }) => {
   if (!players || players.length === 0) return null;
 
-  // Pad with nulls for 2x2 grid if less than 4 players
-  const displayPlayers = [...players];
-  while (displayPlayers.length < 4 && displayPlayers.length > 0) {
-    displayPlayers.push(null); 
+  // Prepare players for 2x2 layout, filling with placeholders if necessary
+  const PADDING_PLAYER_COUNT = 4;
+  const displayablePlayers = [...players];
+  while (displayablePlayers.length < PADDING_PLAYER_COUNT && displayablePlayers.length > 0) {
+    displayablePlayers.push(null); // Placeholder for empty slots in the grid
   }
+  // Ensure we only try to render up to 4, even if more are passed (shouldn't happen for 4-player game)
+  const finalPlayersToDisplay = displayablePlayers.slice(0, PADDING_PLAYER_COUNT);
 
 
   return (
     <div className="comparison-modal-overlay-fullscreen">
       <div className="comparison-modal-content-fullscreen">
         <h2 className="comparison-modal-title">本局比牌结果</h2>
-        <div className="players-grid-2x2-v3"> {/* Main 2x2 grid layout for player cells */}
-          {displayPlayers.slice(0, 4).map((player, index) => // Only take up to 4 for 2x2
-            player ? (
-              <PlayerResultDisplay key={player.id || `player-${index}`} player={player} />
-            ) : (
-              <div key={`empty-cell-${index}`} className="player-result-cell-v3 empty-player-cell-v3"></div>
-            )
-          )}
+        
+        {/* This container will be flex row on narrow, grid on wide */}
+        <div className="players-comparison-area-v4">
+            {/* Left Column (Players 0 and 1) */}
+            <div className="player-column-v4">
+                {finalPlayersToDisplay[0] ? <PlayerResultDisplay player={finalPlayersToDisplay[0]} /> : <div className="player-result-cell-v4 empty-player-cell-v4"></div>}
+                {finalPlayersToDisplay[1] ? <PlayerResultDisplay player={finalPlayersToDisplay[1]} /> : <div className="player-result-cell-v4 empty-player-cell-v4"></div>}
+            </div>
+            {/* Right Column (Players 2 and 3) */}
+            <div className="player-column-v4">
+                {finalPlayersToDisplay[2] ? <PlayerResultDisplay player={finalPlayersToDisplay[2]} /> : <div className="player-result-cell-v4 empty-player-cell-v4"></div>}
+                {finalPlayersToDisplay[3] ? <PlayerResultDisplay player={finalPlayersToDisplay[3]} /> : <div className="player-result-cell-v4 empty-player-cell-v4"></div>}
+            </div>
         </div>
+
         <div className="comparison-modal-footer">
           <button onClick={onClose} className="continue-game-button">
             继续游戏
