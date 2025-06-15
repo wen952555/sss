@@ -1,38 +1,30 @@
 // frontend_react/src/components/ComparisonModal.js
 import React from 'react';
 import Card from './Card';
-import './ComparisonModal.css'; // Will use v8 styles
+import './ComparisonModal.css';
 
 const PlayerResultDisplay = ({ player }) => {
   if (!player || !player.arranged || !player.evalHands) {
     return (
-      <div className="player-result-cell-v8 error-cell-v8"> {/* Versioning class names */}
+      <div className="player-result-cell-v8 error-cell-v8">
         <h4>{player?.name || '未知玩家'}</h4>
         <p>数据错误</p>
       </div>
     );
   }
-
   const dunOrder = ['tou', 'zhong', 'wei'];
-
   return (
     <div className="player-result-cell-v8">
       <div className="player-header-v8">
         <h4 className="player-name-modal-v8">{player.name}</h4>
         <span className="player-total-score-modal-v8">(得分: {player.score})</span>
       </div>
-      
       <div className="all-duns-compact-v8">
         {dunOrder.map(dunKey => {
           const dunHand = player.arranged[dunKey] || [];
           return (
             <div key={dunKey} className="single-dun-stacked-cards-v8">
-              {dunHand.map((card) => (
-                <Card 
-                  key={card.id} 
-                  card={card} 
-                />
-              ))}
+              {dunHand.map((card) => (<Card key={card.id} card={card} />))}
             </div>
           );
         })}
@@ -41,7 +33,7 @@ const PlayerResultDisplay = ({ player }) => {
   );
 };
 
-const ComparisonModal = ({ players, onClose }) => {
+const ComparisonModal = ({ players, onClose, isLoading }) => { // Added isLoading prop
   if (!players || players.length === 0) return null;
 
   const PADDING_PLAYER_COUNT = 4;
@@ -53,7 +45,8 @@ const ComparisonModal = ({ players, onClose }) => {
 
   return (
     <div className="comparison-modal-overlay-fullscreen">
-      <div className="comparison-modal-content-fullscreen-v8"> {/* Versioned */}
+      <div className="comparison-modal-content-fullscreen-v8">
+        {/* Title is removed */}
         
         <div className="players-comparison-area-v8">
             <div className="player-column-v8">
@@ -67,8 +60,12 @@ const ComparisonModal = ({ players, onClose }) => {
         </div>
 
         <div className="comparison-modal-footer-v8">
-          <button onClick={onClose} className="continue-game-button-v8">
-            继续游戏
+          <button 
+            onClick={onClose} 
+            className="continue-game-button-v8"
+            disabled={isLoading} // Use isLoading prop
+          >
+            {isLoading ? "正在准备牌局..." : "继续游戏"} {/* Change text */}
           </button>
         </div>
       </div>
