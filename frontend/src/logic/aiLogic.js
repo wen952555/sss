@@ -1,93 +1,119 @@
 // frontend_react/src/logic/aiLogic.js
-import { evaluateHand, isValidArrangement, compareCards } from './cardUtils'; // Removed createDeck
+import { evaluateHand, isValidArrangement, compareCards } from './cardUtils';
 
 /**
  * 生成数组的所有K元子集 (组合)
- * @param {Array} arr - 输入数组
- * @param {number} k - 子集大小
- * @returns {Array<Array>} - 所有k元子集
  */
 const combinations = (arr, k) => {
+  if (k < 0 || k > arr.length) return []; // Added boundary check
   if (k === 0) return [[]];
-  if (arr.length < k) return [];
   if (arr.length === k) return [[...arr]];
+  if (k === 1) return arr.map(item => [item]); // Optimization for k=1
 
   const first = arr[0];
-  const withoutFirst = combinations(arr.slice(1), k);
+  // Combinations that include the first element
   const withFirst = combinations(arr.slice(1), k - 1).map(c => [first, ...c]);
+  // Combinations that don't include the first element
+  const withoutFirst = combinations(arr.slice(1), k);
 
-  return [...withoutFirst, ...withFirst];
+  return [...withFirst, ...withoutFirst];
 };
 
-/**
- * 简单的启发式AI分牌逻辑 (更快，但不一定最优)
- */
 export const arrangeCardsAI = (hand) => {
-  if (!hand || hand.length !== 13) return null;
+  if (!hand || hand.length !== 13) {
+    console.error("AI Arrange: Invalid hand provided.", hand);
+    return null;
+  }
 
-  const allCards = [...hand].sort((a,b) => b.rankValue - a.rankValue || b.suitRank - a.suitRank);
+  // Sort cards once initially for consistency if needed, though combinations will explore orders.
+  // For deterministic behavior in tie-breaking or combo generation, an initial sort can be useful.
+  const allCardsInitiallySorted = [...hand].sort(compareCards); // Ascending sort
 
   let bestArrangement = null;
-  let highestScoreSum = -Infinity; 
+  let highestScoreSum = -Infinity;
 
-  const fiveCardCombos = combinations(allCards, 5);
-  if (!fiveCardCombos || fiveCardCombos.length === 0) return null;
+  // C(13,5) = 1287 for wei_candidates
+  const weiCandidates = combinations(allCardsInitiallySorted, 5);
 
-  for (const weiCandidate of fiveCardCombos) {
-    const evalWei = evaluateHand(weiCandidate);
-    const remainingAfterWei = allCards.filter(card => !weiCandidate.some(wc => wc.id === card.id));
-
+  for (const wei_cand of weiCandidates) {
+    const remainingAfterWei = allCardsInitiallySorted.filter(c1 => !wei_cand.some(c2 => c2.id === c1.id));
     if (remainingAfterWei.length !== 8) continue;
 
-    const zhongCombos = combinations(remainingAfterWei, 5);
-    if (!zhongCombos || zhongCombos.length === 0) continue;
+    // C(8,5) = 56 for zhong_candidates
+    const zhongCandidates = combinations(remainingAfterWei, 5);
 
-    for (const zhongCandidate of zhongCombos) {
-      const evalZhong = evaluateHand(zhongCandidate);
-      const touCandidate = remainingAfterWei.filter(card => !zhongCandidate.some(zc => zc.id === card.id));
+    for (const zhong_cand of zhongCandidates) {
+      const tou_cand = remainingAfterWei.filter(c1 => !zhong_cand.some(c2 => c2.id === c1.id));
+      if (tou_cand.length !== 3) continue;
 
-      if (touCandidate.length !== 3) continue;
-      const evalTou = evaluateHand(touCandidate);
-
-      if (isValidArrangement(touCandidate, zhongCandidate, weiCandidate)) {
+      // Crucially, check for validity (no "倒水") BEFORE evaluating ranks for sum
+      if (isValidArrangement(tou_cand, zhong_cand, wei_cand)) {
+        const evalTou = evaluateHand(tou_cand);
+        const evalZhong = evaluateHand(zhong_cand);
+        const evalWei = evaluateHand(wei_cand);
+        
+        // Simple sum of ranks. More sophisticated scoring could be used.
         const currentScoreSum = (evalTou.rank || 0) + (evalZhong.rank || 0) + (evalWei.rank || 0);
+
         if (currentScoreSum > highestScoreSum) {
           highestScoreSum = currentScoreSum;
           bestArrangement = {
-            tou: [...touCandidate].sort(compareCards),
-            zhong: [...zhongCandidate].sort(compareCards),
-            wei: [...weiCandidate].sort(compareCards),
+            tou: [...tou_cand].sort(compareCards), // Ensure duns are sorted for consistent display/comparison
+            zhong: [...zhong_cand].sort(compareCards),
+            wei: [...wei_cand].sort(compareCards),
           };
         }
       }
     }
   }
-  
-  if (!bestArrangement) {
-    console.warn("AI: Exhaustive combination search did not yield a best valid hand. Using basic sort fallback.");
-    const sortedHand = [...hand].sort(compareCards);
-    const tou_fb = sortedHand.slice(0, 3);
-    const zhong_fb = sortedHand.slice(3, 8);
-    const wei_fb = sortedHand.slice(8, 13);
 
-    if (isValidArrangement(tou_fb, zhong_fb, wei_fb)) {
-        bestArrangement = { tou: tou_fb, zhong: zhong_fb, wei: wei_fb };
+  // If the above loop (which should find a valid one if one exists) fails,
+  // or if for some reason bestArrangement is still null.
+  if (!bestArrangement) {
+    console.warn("AI: Primary arrangement logic did not find an optimal valid hand. Attempting fallback strategies.");
+    
+    // Fallback 1: Simple sorted split, then check validity
+    const sortedHandAsc = [...hand].sort(compareCards);
+    let fb_tou = sortedHandAsc.slice(0, 3);
+    let fb_zhong = sortedHandAsc.slice(3, 8);
+    let fb_wei = sortedHandAsc.slice(8, 13);
+
+    if (isValidArrangement(fb_tou, fb_zhong, fb_wei)) {
+      bestArrangement = { tou: fb_tou, zhong: fb_zhong, wei: fb_wei };
+      console.log("AI: Used simple sorted split fallback.");
     } else {
-        console.error("AI: Basic sort fallback was invalid. Trying random shuffles (max 100 attempts).");
-        for (let i = 0; i < 100; i++) {
-            let tempHand = [...hand].sort(() => 0.5 - Math.random());
-            const t = tempHand.slice(0,3);
-            const m = tempHand.slice(3,8);
-            const b = tempHand.slice(8,13);
-            if (isValidArrangement(t,m,b)) {
-                bestArrangement = { tou: t.sort(compareCards), zhong: m.sort(compareCards), wei: b.sort(compareCards) };
-                break;
-            }
-        }
-        if (!bestArrangement) {
-             console.error("AI: CRITICAL - Could not find any valid arrangement even after random shuffles.");
-             bestArrangement = { tou: sortedHand.slice(0,3), zhong: sortedHand.slice(3,8), wei: sortedHand.slice(8,13) };
-        }
+      // Fallback 2: Try a few permutations of the sorted split to find a valid one
+      // This is still a bit naive but tries to avoid full random shuffles immediately
+      const permutations = [
+        // Example: try swapping smallest from mid with largest from head if head > mid
+        // This is where more intelligent adjustment logic would go.
+        // For now, let's stick to a limited random search if the simple sort fails.
+      ];
+      // If intelligent permutations don't work, resort to limited random shuffles.
+
+      console.error("AI: Simple sorted split was invalid. Trying limited random shuffles (max 200 attempts).");
+      for (let i = 0; i < 200; i++) { // Increased attempts, but this is still a sign of a weak primary algo
+          let tempHand = [...hand].sort(() => 0.5 - Math.random()); // Shuffle
+          const t = tempHand.slice(0,3).sort(compareCards);
+          const m = tempHand.slice(3,8).sort(compareCards);
+          const b = tempHand.slice(8,13).sort(compareCards);
+          if (isValidArrangement(t,m,b)) {
+              bestArrangement = { tou: t, zhong: m, wei: b };
+              console.log("AI: Used random shuffle fallback after attempt: ", i + 1);
+              break;
+          }
+      }
+      
+      if (!bestArrangement) {
+           console.error("AI: CRITICAL - Could not find any valid arrangement even after random shuffles. Returning potentially invalid raw slice.");
+           // As a last resort, return the slices even if invalid, so the game doesn't crash.
+           // The UI or game logic should ideally handle displaying an error for this AI.
+           bestArrangement = { 
+             tou: sortedHandAsc.slice(0,3).sort(compareCards), 
+             zhong: sortedHandAsc.slice(3,8).sort(compareCards), 
+             wei: sortedHandAsc.slice(8,13).sort(compareCards) 
+           };
+      }
     }
   }
   return bestArrangement;
