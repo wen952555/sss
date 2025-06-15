@@ -1,16 +1,16 @@
 /* frontend_react/src/components/HumanPlayerBoard.css */
 .human-player-board-container-v4 {
-  padding: 10px 5px;
-  background-color: #e9ebee;
+  padding: 10px 0; /* No horizontal padding, let content decide */
+  background-color: transparent; /* Transparent to show app's dark green */
   margin: 0;
 }
 
 .hpb-instruction-text-v4 {
   font-size: 0.9em;
-  color: #555;
-  margin-bottom: 10px;
+  color: #d0d0d0; /* Lighter text for dark theme */
+  margin-bottom: 12px;
   padding: 8px 10px;
-  background-color: #f0f2f5;
+  background-color: rgba(0, 0, 0, 0.15); /* Darker semi-transparent for instructions */
   border-radius: 4px;
   text-align: center;
 }
@@ -18,18 +18,18 @@
 .duns-layout-v4 {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px; /* Increased gap for better separation */
 }
 
 .dun-cards-area-hpb-v2 {
   position: relative;
   display: block; 
   width: 100%;
-  height: 120px; /* BASE HEIGHT for dun area - ADJUST THIS! */
+  height: 130px; /* Increased height for larger cards */
   padding: 0; 
-  border: 1px solid #dcdfe6;
+  border: 1px solid #4CAF50; /* A slightly lighter green border */
   border-radius: 4px;
-  background-color: #ffffff; 
+  background-color: #81C784; /* 浅绿色置牌区背景 */
   cursor: pointer;
   overflow: hidden; 
 }
@@ -42,7 +42,7 @@
   transform: translate(-50%, -50%);
   font-size: 2.8em; 
   font-weight: bold;
-  color: rgba(0, 0, 0, 0.06); 
+  color: rgba(46, 125, 50, 0.3); /* 深一点但仍半透明的绿色文字，用于浅绿背景 */
   white-space: nowrap;
   z-index: 0;
   pointer-events: none;
@@ -51,39 +51,45 @@
 
 .card-wrapper-hpb {
   position: absolute; 
-  top: 1%; /* (100% - 98%) / 2 */
-  height: 98%; /* Wrapper takes 98% of parent dun area height */
-  /* Width is determined by the card's aspect ratio when height is set */
-  /* left is set by :nth-child */
+  top: 2%; /* (100% - 96%) / 2 - Using 96% for cards */
+  height: 96%; /* Cards take 96% of dun area height */
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* Align card to its 'left' position */
+  justify-content: flex-start;
 }
 
 .card-wrapper-hpb .card {
-  height: 100%; /* Card fills the wrapper's 98% height */
-  width: auto;   /* Width adjusts based on height and SVG's aspect ratio */
-  max-width: none; /* Allow it to be wider if aspect ratio dictates */
-  object-fit: contain; /* Or remove if SVG handles scaling */
+  height: 100%; 
+  width: auto;   
+  max-width: none; 
+  object-fit: contain; 
 }
 
-/* Stacking logic using :nth-child on .card-wrapper-hpb */
-/* Card height is 0.98 * DUN_AREA_HEIGHT. Let's say DUN_AREA_HEIGHT is 120px. Card height ~117.6px. */
-/* If typical card aspect ratio W/H is 0.7, then card width ~ 0.7 * 117.6px ~ 82px. */
-/* If we want 25px of previous card visible: next left = prev_left + 25px */
-.card-wrapper-hpb:nth-child(1) { left: 5px;   z-index: 1; } /* Small initial indent */
-.card-wrapper-hpb:nth-child(2) { left: 30px;  z-index: 2; } /* 5 + 25 */
-.card-wrapper-hpb:nth-child(3) { left: 55px;  z-index: 3; } /* 30 + 25 */
-.card-wrapper-hpb:nth-child(4) { left: 80px;  z-index: 4; } /* 55 + 25 */
-.card-wrapper-hpb:nth-child(5) { left: 105px; z-index: 5; } /* 80 + 25 */
+/* Stacking: Card height ~0.96 * 130px = 124.8px. Width ~ 124.8 * 0.7 = 87px. */
+/* Visible part ~30px. Next left = prev_left + 30px */
+.card-wrapper-hpb:nth-child(1) { left: 5px;   z-index: 1; }
+.card-wrapper-hpb:nth-child(2) { left: 35px;  z-index: 2; } /* 5 + 30 */
+.card-wrapper-hpb:nth-child(3) { left: 65px;  z-index: 3; } /* 35 + 30 */
+.card-wrapper-hpb:nth-child(4) { left: 95px;  z-index: 4; }
+.card-wrapper-hpb:nth-child(5) { left: 125px; z-index: 5; }
 
-.card-placeholder-visual-hpb-v2 { /* Unchanged */ }
+.card-placeholder-visual-hpb-v2 { 
+  /* ... (styles can remain, or be adjusted for new theme) ... */
+}
 
-
-/* --- Responsive: Media Queries for WIDER screens --- */
 @media (min-width: 768px) {
   .dun-cards-area-hpb-v2 {
-    height: 150px; /* Taller dun area on wider screens */
+    height: 160px; /* Even taller on wider screens */
   }
+  /* Stacking: Card height ~0.96 * 160px = 153.6px. Width ~ 153.6 * 0.7 = 107.5px. */
+  /* Visible part ~35px. Next left = prev_left + 35px */
+  .card-wrapper-hpb:nth-child(1) { left: 8px; }
+  .card-wrapper-hpb:nth-child(2) { left: 43px; } /* 8 + 35 */
+  .card-wrapper-hpb:nth-child(3) { left: 78px; } /* 43 + 35 */
+  .card-wrapper-hpb:nth-child(4) { left: 113px; }
+  .card-wrapper-hpb:nth-child(5) { left: 148px; }
+
   .dun-cards-area-hpb-v2.with-background-text-v2::before {
-    font
+    font-size: 3.5em; 
+  }
+}
