@@ -1,43 +1,74 @@
 /* frontend_react/src/components/ActionButtons.css */
-.action-buttons-container {
+.action-buttons-banner-v2 { /* Changed from -container to -banner */
   display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding: 15px 0; /* Reduced top padding */
-  margin-top: 10px; /* Reduced margin */
-  /* border-top: 1px solid rgba(255, 255, 255, 0.1); // Subtle top border */
+  flex-direction: row; /* Arrange buttons horizontally */
+  justify-content: space-around; /* Distribute space around buttons */
+  align-items: center; /* Align buttons vertically */
+  padding: 12px 8px; /* Padding for the banner */
+  margin-top: 15px; /* Space above the banner (below HumanPlayerBoard) */
+  background-color: #4CAF50; /* Match the main dark green theme from image */
+  border-radius: 0; /* No radius, as it's a full-width banner look in image */
+  /* box-shadow: 0 -2px 5px rgba(0,0,0,0.1); // Optional top shadow */
 }
 
-.action-button {
-  padding: 10px 25px; /* Slightly wider buttons */
-  font-size: 1em;
+.action-button-v2 {
+  padding: 8px 12px; /* Adjust padding for potentially more buttons */
+  font-size: 0.9em; /* Slightly smaller font for more buttons */
   border: none;
-  border-radius: 5px;
+  border-radius: 4px; /* Consistent button radius */
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
   font-weight: 500;
+  color: white; /* Default text color for buttons */
+  flex-grow: 1; /* Allow buttons to grow to fill space if fewer than max */
+  text-align: center;
+  margin: 0 4px; /* Small margin between buttons */
+  max-width: 150px; /* Prevent buttons from becoming too wide */
 }
-.action-button:active {
-  transform: scale(0.98);
-}
-
-.ai-helper-button {
-  background-color: #03A9F4; /* A contrasting blue */
-  color: white;
-}
-.ai-helper-button:hover {
-  background-color: #0288D1;
+.action-button-v2:active {
+  transform: scale(0.97);
 }
 
-.submit-button {
-  background-color: #8BC34A; /* A contrasting light green */
-  color: white;
+/* Specific button colors based on the image */
+.ai-helper-button-v2, 
+.profile-button-v2, /* Assuming similar style for new buttons */
+.ai-play-button-v2,
+.auto-match-button-v2 {
+  background-color: #2196F3; /* Blue like "AI智能分牌" */
 }
-.submit-button:hover {
+.ai-helper-button-v2:hover, 
+.profile-button-v2:hover,
+.ai-play-button-v2:hover,
+.auto-match-button-v2:hover {
+  background-color: #1976D2;
+}
+
+.submit-button-v2 {
+  background-color: #8BC34A; /* Green like "提交牌型" */
+}
+.submit-button-v2:hover {
   background-color: #7CB342;
 }
-.submit-button:disabled {
-  background-color: #757575; /* Darker grey for disabled on dark theme */
-  color: #bdbdbd;
+
+.action-button-v2:disabled {
+  background-color: #757575 !important; /* Ensure disabled style overrides */
+  color: #bdbdbd !important;
   cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Responsive adjustments for very narrow screens if buttons start to feel too cramped */
+@media (max-width: 400px) {
+  .action-buttons-banner-v2 {
+    flex-wrap: wrap; /* Allow buttons to wrap onto next line */
+    justify-content: center; /* Center wrapped buttons */
+    gap: 8px; /* Gap when wrapped */
+  }
+  .action-button-v2 {
+    flex-grow: 0; /* Don't grow when wrapped */
+    flex-basis: calc(50% - 8px); /* Two buttons per row, considering gap */
+    max-width: none; /* Allow them to take the basis width */
+    font-size: 0.85em;
+    padding: 8px 10px;
+  }
 }
