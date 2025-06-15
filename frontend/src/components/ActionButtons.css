@@ -3,36 +3,41 @@
   display: flex;
   justify-content: center;
   gap: 20px;
-  padding: 20px 0;
-  margin-top: 15px;
-  border-top: 1px solid #eee;
+  padding: 15px 0; /* Reduced top padding */
+  margin-top: 10px; /* Reduced margin */
+  /* border-top: 1px solid rgba(255, 255, 255, 0.1); // Subtle top border */
 }
 
 .action-button {
-  padding: 10px 20px;
+  padding: 10px 25px; /* Slightly wider buttons */
   font-size: 1em;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  font-weight: 500;
+}
+.action-button:active {
+  transform: scale(0.98);
 }
 
 .ai-helper-button {
-  background-color: #5bc0de; /* Info blue */
+  background-color: #03A9F4; /* A contrasting blue */
   color: white;
 }
 .ai-helper-button:hover {
-  background-color: #31b0d5;
+  background-color: #0288D1;
 }
 
 .submit-button {
-  background-color: #5cb85c; /* Success green */
+  background-color: #8BC34A; /* A contrasting light green */
   color: white;
 }
 .submit-button:hover {
-  background-color: #449d44;
+  background-color: #7CB342;
 }
 .submit-button:disabled {
-  background-color: #cccccc;
+  background-color: #757575; /* Darker grey for disabled on dark theme */
+  color: #bdbdbd;
   cursor: not-allowed;
 }
