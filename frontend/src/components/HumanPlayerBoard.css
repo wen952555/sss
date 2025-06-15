@@ -1,121 +1,118 @@
 /* frontend_react/src/components/HumanPlayerBoard.css */
-.human-player-board-container-v3 {
-  padding: 10px;
-  background-color: #ffffff;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
-  margin: 10px 5px;
+.human-player-board-container-v4 {
+  padding: 10px 5px; /* Reduced horizontal padding */
+  background-color: #e9ebee; /* Match image background */
+  border-radius: 0; /* No radius as per image */
+  box-shadow: none; /* No shadow as per image */
+  margin: 0; /* No margin, let App.css handle overall page spacing */
 }
 
-.hpb-instruction-text-v3 {
+.hpb-instruction-text-v4 {
   font-size: 0.9em;
-  color: #666;
-  margin-bottom: 12px;
-  padding: 6px 10px;
+  color: #555;
+  margin-bottom: 10px; /* Space below instruction */
+  padding: 8px 10px;
   background-color: #f0f2f5;
   border-radius: 4px;
   text-align: center;
 }
 
-.duns-layout-v3 {
+.duns-layout-v4 {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px; /* Gap between duns, can be reduced further if needed */
 }
 
-.dun-cards-area-hpb.with-background-text {
+.dun-cards-area-hpb-v2 { /* Renamed and re-styled */
   position: relative;
-  flex-grow: 1;
-  display: flex;
-  /* Default: Stacking for narrow screens - no flex-wrap initially */
-  gap: 0; /* No gap when stacking, rely on negative margin */
-  padding: 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 5px;
-  background-color: #f8f9fa;
-  min-height: 100px; /* Adjust based on new larger card size for main board */
-  align-items: center;
-  justify-content: flex-start; /* Cards start from left */
+  display: block; /* Changed from flex to block, children will be absolute */
+  width: 100%; /* Take full width of its column in App.js */
+  /* Height will be determined by aspect ratio or a fixed value in media queries */
+  /* Example: aspect-ratio: 5 / 1.5; (width / desired height ratio) */
+  /* Or, set a specific height, e.g., height: 120px; and cards scale to it */
+  height: 120px; /* Default height for a dun area on mobile */
+  padding: 5px; /* Small padding inside the dun area */
+  border: 1px solid #dcdfe6; /* Light border for dun area */
+  border-radius: 4px;
+  background-color: #ffffff; /* White background for card area */
   cursor: pointer;
-  overflow: hidden; /* Important for background text and potentially for stacked cards */
+  overflow: hidden; 
 }
 
-.dun-cards-area-hpb.with-background-text::before {
+.dun-cards-area-hpb-v2.with-background-text-v2::before {
   content: attr(data-background-text);
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 50%; /* Center the text */
   transform: translate(-50%, -50%);
-  font-size: 2em; /* Larger background text */
+  font-size: 2.8em; /* Larger background text */
   font-weight: bold;
-  color: rgba(0, 0, 0, 0.08); /* Even more transparent */
+  color: rgba(0, 0, 0, 0.06); /* Very faint */
   white-space: nowrap;
   z-index: 0;
   pointer-events: none;
-  letter-spacing: 1px;
   text-transform: uppercase;
 }
 
-/* Card styling for NARROW screens (stacked) */
-.dun-cards-area-hpb .card {
-  width: 70px;  /* Default card width (can be larger than modal's) */
-  height: 100px; /* Default card height */
-  border: 1px solid #b0b0b0; /* Slightly more prominent border for stacks */
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.25);
+.card-wrapper-hpb { /* New wrapper for each card */
+  position: absolute; /* Key for stacking */
+  top: 0; /* Align to top of .dun-cards-area-hpb-v2 */
+  height: 100%; /* Card wrapper takes full height of dun area */
+  /* Width will be determined by card's aspect ratio based on 100% height */
+  /* Let Card.js internal img handle aspect ratio */
+  display: flex; /* To center card if needed, though Card.js might handle it */
+  align-items: center;
+  justify-content: center;
+}
+
+.card-wrapper-hpb .card { /* The actual Card component */
+  width: auto; /* Allow width to be determined by height and aspect ratio */
+  height: 100%; /* Card fills the wrapper height */
+  max-width: 100%; /* Ensure it doesn't overflow wrapper if aspect ratio is weird */
+  /* border: 1px solid #b0b0b0; // Applied via inline style for selection */
+  /* box-shadow: 1px 1px 3px rgba(0,0,0,0.25); // Can be added if desired */
   background-color: white;
-  margin-left: -45px; /* << KEY FOR STACKING. Adjust based on card width */
-                      /* (e.g., card width 70px, overlap 45px means 25px visible part) */
-  position: relative; /* For z-index if needed and for selected style transform */
-  z-index: 1; /* Default z-index for cards over background */
-  transition: transform 0.1s ease-out, border-color 0.1s ease-out; /* Smooth selection */
+  object-fit: contain; /* Ensure SVG scales nicely */
 }
 
-.dun-cards-area-hpb .card:first-child {
-  margin-left: 0; /* First card in a stack has no left negative margin */
-}
+/* Stacking logic using :nth-child on .card-wrapper-hpb */
+/* Card height is 100% of parent (e.g. 110px if dun area is 120px high with 5px padding top/bottom) */
+/* Card width will be e.g. 100px * (SVG_ASPECT_WIDTH/SVG_ASPECT_HEIGHT) ~ 100 * (7/10) = 70px */
+/* Let's assume effective card width for stacking calculations is around 70-80px */
+/* Aim for ~25-30px visible part of underlying cards */
+.card-wrapper-hpb:nth-child(1) { left: 2%;   z-index: 1; } /* Use percentages for responsiveness */
+.card-wrapper-hpb:nth-child(2) { left: 18%;  z-index: 2; } /* (e.g. 25px / 140px container_width ~ 18%) */
+.card-wrapper-hpb:nth-child(3) { left: 34%;  z-index: 3; }
+.card-wrapper-hpb:nth-child(4) { left: 50%;  z-index: 4; }
+.card-wrapper-hpb:nth-child(5) { left: 66%;  z-index: 5; }
 
-/* Visual placeholders for empty duns - these are mostly for when dun is totally empty */
-.card-placeholder-slot-visual-only {
-  width: 70px;
-  height: 100px;
+.card-placeholder-visual-hpb-v2 { /* If still needed */
+  flex-shrink: 0; /* Prevent placeholders from shrinking */
+  width: 70px; /* Match an approximate card width */
+  height: 100px; /* Match an approximate card height */
   border: 2px dashed #e0e0e0;
   border-radius: 5px;
   background-color: rgba(240, 242, 245, 0.3);
-  margin: 2px; /* To somewhat align with potential card margins if they existed */
-  /* These are less critical if background text clearly indicates the dun */
+  /* These might not be used if the background text suffices */
 }
-
 
 /* --- Responsive: Media Queries for WIDER screens --- */
-/* At this breakpoint, cards will unstack and spread out */
-@media (min-width: 768px) { /* Adjust breakpoint as needed */
-  .dun-cards-area-hpb.with-background-text {
-    flex-wrap: wrap; /* Allow cards to wrap for flat display */
-    gap: 6px; /* Gap between flat cards */
-    min-height: 115px; /* Adjust if card height changes for wide screens */
-    justify-content: center; /* Center cards if they don't fill the width */
+@media (min-width: 768px) {
+  .dun-cards-area-hpb-v2 {
+    height: 140px; /* Taller dun area on wider screens */
+    padding: 8px;
+  }
+  .dun-cards-area-hpb-v2.with-background-text-v2::before {
+    font-size: 3em; 
   }
 
-  .dun-cards-area-hpb.with-background-text::before {
-    font-size: 2.2em; /* Background text can be slightly larger */
-  }
-
-  .dun-cards-area-hpb .card {
-    width: 70px;  /* Card width for wide screens (can be same or different) */
-    height: 100px; /* Card height for wide screens */
-    margin-left: 0; /* Remove stacking margin */
-    /* margin-right: 6px; // Gap is now handled by flex 'gap' property on container */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Subtler shadow for flat display */
-  }
-}
-
-/* Optional: Even wider screens for potentially larger cards or more spacing */
-@media (min-width: 1024px) {
-  .dun-cards-area-hpb.with-background-text::before {
-    font-size: 2.5em;
-  }
-  .dun-cards-area-hpb .card {
-    /* width: 75px; */ /* Example: slightly larger cards */
-    /* height: 108px; */
-  }
+  /* Stacking offsets might need slight adjustment if card aspect ratio changes significantly
+     or if the container width allows for less overlap.
+     For wider screens, if you want them less overlapped:
+  */
+  .card-wrapper-hpb:nth-child(1) { left: 2%; }
+  .card-wrapper-hpb:nth-child(2) { left: 20%; } /* More visible part */
+  .card-wrapper-hpb:nth-child(3) { left: 38%; }
+  .card-wrapper-hpb:nth-child(4) { left: 56%; }
+  .card-wrapper-hpb:nth-child(5) { left: 74%; }
 }
