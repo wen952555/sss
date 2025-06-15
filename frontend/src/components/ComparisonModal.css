@@ -5,196 +5,209 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 5px;
+  padding: 0; /* No padding on overlay, content will handle it */
   box-sizing: border-box;
 }
 
 .comparison-modal-content-fullscreen {
-  background-color: #f0f2f5;
+  background-color: #2c2f33; /* Dark background for modal content, like image */
   width: 100%;
   height: 100%;
-  max-width: 1200px;
-  max-height: 98vh;
+  /* max-width: 1200px; // Not needed if always fullscreen */
+  /* max-height: 98vh; // Not needed if always fullscreen */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-sizing: border-box;
-  border-radius: 6px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+  /* border-radius: 0; // No radius for fullscreen */
+  box-shadow: none; /* No shadow for fullscreen */
   overflow: hidden;
 }
 
 .comparison-modal-title {
   text-align: center;
-  color: #333;
-  font-size: 1.5em;
-  padding: 12px 0;
+  color: #ffffff; /* White text on dark background */
+  font-size: 1.4em; /* Adjust size */
+  padding: 10px 0;
   margin: 0;
-  background-color: #ffffff;
-  border-bottom: 1px solid #d9d9d9;
+  background-color: #23272a; /* Slightly different dark for title bar */
+  flex-shrink: 0;
+  border-bottom: 1px solid #4f545c; /* Separator line */
+}
+
+/* Main area for player comparisons */
+.players-comparison-area-v4 {
+  display: flex; /* Key: creates left and right columns */
+  flex-direction: row; /* Columns side-by-side */
+  flex-grow: 1; /* Takes up available space */
+  overflow-y: auto; /* Allow vertical scroll if columns are too tall */
+  padding: 8px; /* Small padding around the columns area */
+  gap: 8px; /* Gap between left and right columns */
+}
+
+.player-column-v4 {
+  flex: 1; /* Each column takes half the space */
+  display: flex;
+  flex-direction: column; /* Players stack vertically within a column */
+  gap: 8px; /* Gap between player cells in a column */
+}
+
+.player-result-cell-v4 {
+  background-color: #36393f; /* Darker cell background */
+  border: 1px solid #4f545c; /* Border for cell */
+  border-radius: 4px;
+  padding: 8px; /* Padding inside each player's cell */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px; /* Gap between elements inside a player cell */
+  color: #dcddde; /* Light text color for dark theme */
+}
+.player-result-cell-v4.empty-player-cell-v4 {
+  background-color: transparent;
+  border: 1px dashed #4f545c;
+  min-height: 100px;
+}
+.player-result-cell-v4.error-cell-v4 {
+  align-items: center;
+  justify-content: center;
+  color: #ff6b6b; /* Error text color for dark theme */
+}
+
+.player-name-modal-v4 {
+  margin-top: 0;
+  margin-bottom: 2px;
+  font-size: 1em;
+  font-weight: 500;
+  text-align: center;
+}
+
+.player-total-score-modal-v4 {
+  font-size: 0.85em;
+  font-weight: bold;
+  color: #7289da; /* Discord-like blue for score */
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.all-duns-compact-v4 { /* Container for the three duns of a player */
+  display: flex;
+  flex-direction: column; /* Duns stack vertically */
+  gap: 6px; /* Space between duns */
+}
+
+.single-dun-stacked-cards-v4 { /* Each dun's card area */
+  display: flex;
+  position: relative;
+  min-height: 55px; /* Adjust based on small stacked card height */
+  align-items: center; /* Vertically center the stack if container is taller */
+  padding-left: 2px; /* Slight indent for the first card in stack */
+  background-color: #2c2f33; /* Background for card area */
+  border-radius: 3px;
+  padding-top: 2px; /* Small padding around cards */
+  padding-bottom: 2px;
+}
+
+.single-dun-stacked-cards-v4 .card {
+  width: 38px;  /* Very small card width for compact stacking */
+  height: 55px; /* Very small card height */
+  border: 1px solid #5c5f66; /* Border for stacked cards */
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+  background-color: white;
+  position: absolute;
+  top: 50%; /* Center vertically */
+  transform: translateY(-50%); /* Adjust vertical centering */
+  /* left will be set by nth-child */
+}
+
+/* Stacking logic for very compact display (adjust 'left' for overlap) */
+.single-dun-stacked-cards-v4 .card:nth-child(1) { left: 2px;   z-index: 1; }
+.single-dun-stacked-cards-v4 .card:nth-child(2) { left: 12px;  z-index: 2; } /* Overlap: card_width - this_left_offset + prev_left_offset */
+.single-dun-stacked-cards-v3 .card:nth-child(3) { left: 22px;  z-index: 3; }
+.single-dun-stacked-cards-v4 .card:nth-child(4) { left: 32px;  z-index: 4; }
+.single-dun-stacked-cards-v4 .card:nth-child(5) { left: 42px;  z-index: 5; }
+
+
+.comparison-modal-footer {
+  padding: 8px 10px; /* Smaller footer padding */
+  background-color: #23272a; /* Dark footer */
+  border-top: 1px solid #4f545c;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   flex-shrink: 0;
 }
 
-/* Main 2x2 grid for player cells */
-.players-grid-2x2-v3 {
-  display: grid;
-  /* Default to 1 column for narrow screens (players stack vertically) */
-  grid-template-columns: 1fr;
-  gap: 10px; /* Gap between player cells */
-  padding: 10px;
-  flex-grow: 1;
-  overflow-y: auto; /* Scroll if content overflows */
-  align-content: start; /* Align grid items to the start */
-}
-
-.player-result-cell-v3 {
-  background-color: #ffffff;
-  border: 1px solid #d9d9d9;
-  border-radius: 5px;
-  padding: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  display: flex;
-  flex-direction: column;
-  gap: 8px; /* Gap between name/score and duns area */
-}
-.player-result-cell-v3.empty-player-cell-v3 {
-  background-color: transparent;
-  border: 1px dashed #e0e0e0;
-  box-shadow: none;
-  min-height: 150px; /* Give some visual space to empty cells */
-}
-.player-result-cell-v3.error-cell-v3 { /* Styles for error display */ }
-
-.player-name-modal-v3 {
-  margin-top: 0;
-  margin-bottom: 4px;
-  font-size: 1.15em;
-  font-weight: 600;
-  color: #1a1a1a;
-  text-align: center;
-}
-
-.player-total-score-modal-v3 {
-  font-size: 0.95em;
-  font-weight: bold;
-  color: #007bff;
-  text-align: center;
-  margin-bottom: 12px;
-}
-
-.all-duns-container-v3 { /* Container for all three duns of a player */
-  display: flex;
-  flex-direction: column;
-  gap: 10px; /* Space between duns */
-}
-
-/* Layout for a single dun: cards on left, text info on right */
-.single-dun-layout-v3 {
-  display: flex; /* Key: cards and text info side-by-side */
-  align-items: flex-start; /* Align to top */
-  padding: 6px 0; /* Padding for each dun row, no background needed here */
-  border-bottom: 1px solid #f0f0f0; /* Light separator between duns */
-}
-.single-dun-layout-v3:last-child {
-  border-bottom: none;
-}
-
-.dun-cards-stacked-v3 { /* Container for stacked cards on the left */
-  display: flex;
-  position: relative;
-  min-height: 70px; /* Adjust based on stacked card height */
-  align-items: flex-start;
-  flex-shrink: 0; /* Prevent card area from shrinking too much */
-  /* Add some right margin to create space for dun-text-info if it's not taking full width */
-  margin-right: 10px; 
-}
-
-.dun-cards-stacked-v3 .card {
-  width: 50px;
-  height: 72px;
-  border: 1px solid #aaa;
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-  background-color: white;
-  position: absolute;
-  top: 0px; 
-  left: 0px;
-}
-/* Stacking logic for narrow screens */
-.dun-cards-stacked-v3 .card:nth-child(1) { left: 0px;   z-index: 1; }
-.dun-cards-stacked-v3 .card:nth-child(2) { left: 15px;  /* top: 2px; */ z-index: 2; }
-.dun-cards-stacked-v3 .card:nth-child(3) { left: 30px;  /* top: 4px; */ z-index: 3; }
-.dun-cards-stacked-v3 .card:nth-child(4) { left: 45px;  /* top: 6px; */ z-index: 4; }
-.dun-cards-stacked-v3 .card:nth-child(5) { left: 60px;  /* top: 8px; */ z-index: 5; }
-
-
-.dun-text-info-v3 { /* Text on the right: "头道: 乌龙" */
-  display: flex;
-  flex-direction: column; /* Stack "头道:" and "乌龙" vertically */
-  justify-content: center; /* Vertically center if dun height allows */
-  text-align: left; /* Align text to the left */
-  flex-grow: 1; /* Allow it to take remaining space */
-  padding-left: 5px; /* Small padding from the cards */
-}
-
-.dun-title-v3 { /* For "头道:" */
+.continue-game-button {
+  background-color: #7289da; /* Discord-like blue */
+  color: white;
+  padding: 6px 15px; /* Smaller button */
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
   font-size: 0.9em;
   font-weight: 500;
-  color: #495057;
-  margin-bottom: 2px; /* Space between title and type */
+  transition: background-color 0.2s ease;
 }
-.dun-type-v3 { /* For "乌龙" */
-  font-size: 0.95em; /* Make type slightly larger or bolder */
-  color: #17a2b8; /* Example color */
-  font-weight: bold;
+.continue-game-button:hover {
+  background-color: #5f73bc;
 }
 
-
-.comparison-modal-footer { /* Styles for footer */ }
-.continue-game-button { /* Styles for button */ }
-
-/* --- Responsive: Media Queries --- */
-/* For wider screens (e.g., > 768px) - 2x2 grid for players, cards become flat */
-@media (min-width: 768px) {
-  .comparison-modal-overlay-fullscreen { padding: 20px; }
-  .comparison-modal-content-fullscreen { max-height: 90vh; }
-  .players-grid-2x2-v3 { /* Updated class name */
-    grid-template-columns: repeat(2, 1fr); /* Back to 2x2 grid for players */
-    padding: 20px;
-    gap: 20px;
+/* --- Responsive: Media Queries for Wider Screens --- */
+/* On wider screens, we can revert to a more spacious 2x2 grid if desired,
+   or keep the compact stacked cards but with more space around player cells.
+   The image implies the compact stacked card view is consistent.
+   The main change for wider screens would be the .players-comparison-area-v4
+   potentially going to a grid for the player cells.
+*/
+@media (min-width: 768px) { /* Tablet and up */
+  .comparison-modal-overlay-fullscreen {
+    padding: 20px; /* More padding around the modal on larger screens */
   }
-  .comparison-modal-title { font-size: 1.8em; padding: 20px 0; }
-  
-  .single-dun-layout-v3 {
-     align-items: center; /* Better vertical alignment on wider screens */
+  .comparison-modal-content-fullscreen {
+    border-radius: 8px; /* Restore radius for non-edge-to-edge modal */
+    max-height: 90vh;
+  }
+  .comparison-modal-title {
+    font-size: 1.6em;
+    padding: 15px 0;
   }
 
-  .dun-cards-stacked-v3 { /* On wide screens, cards are flat */
-    min-height: 105px; /* Adjust for larger flat cards */
-    position: static; /* Revert for normal flow */
-    margin-right: 15px; /* More space for text */
+  .players-comparison-area-v4 {
+    /* Optionally change to grid for player cells if desired, but image shows two columns */
+    /* For example, to make player cells larger: */
+    padding: 15px;
+    gap: 15px;
   }
-  .dun-cards-stacked-v3 .card {
-    width: 65px; 
-    height: 98px;
-    position: static; 
-    left: auto; top: auto; z-index: auto; 
-    margin-right: 5px; /* Spacing between flat cards */
-    margin-left:0; /* Reset stacking margin */
-    display: inline-block; 
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-  }
-   .dun-cards-stacked-v3 .card:last-child { margin-right: 0; }
 
-  .dun-text-info-v3 {
-    padding-left: 10px;
+  .player-result-cell-v4 {
+    padding: 15px; /* More padding inside cells */
   }
-  .dun-title-v3 { font-size: 1em; }
-  .dun-type-v3 { font-size: 1.05em; }
+  .player-name-modal-v4 { font-size: 1.2em; }
+  .player-total-score-modal-v4 { font-size: 1em; margin-bottom: 15px; }
 
-  .continue-game-button { padding: 12px 25px; font-size: 1.1em; }
+  .single-dun-stacked-cards-v4 {
+    min-height: 72px; /* Accommodate slightly larger cards */
+  }
+  .single-dun-stacked-cards-v4 .card { /* Can make cards a bit larger on wider screens */
+    width: 42px;  
+    height: 60px; 
+  }
+  /* Adjust stacking offsets if card width changes */
+  .single-dun-stacked-cards-v4 .card:nth-child(1) { left: 2px; }
+  .single-dun-stacked-cards-v4 .card:nth-child(2) { left: 14px; }
+  .single-dun-stacked-cards-v4 .card:nth-child(3) { left: 26px; }
+  .single-dun-stacked-cards-v4 .card:nth-child(4) { left: 38px; }
+  .single-dun-stacked-cards-v4 .card:nth-child(5) { left: 50px; }
+
+  .all-duns-compact-v4 { gap: 8px; }
+  .single-dun-display-v4 { padding: 10px; }
+  .dun-info-text-v4 { font-size: 0.95em; margin-bottom: 8px; }
+
+  .continue-game-button { padding: 10px 20px; font-size: 1em; }
 }
