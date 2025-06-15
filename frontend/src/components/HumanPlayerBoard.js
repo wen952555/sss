@@ -7,13 +7,14 @@ import './HumanPlayerBoard.css';
 const DunSection = ({ dunName, label, cards, expectedSize, onDunClick, onCardClickInDun, arrangedHand }) => {
   const currentDunCards = arrangedHand[dunName] || [];
   const handEvaluation = currentDunCards.length === expectedSize ? evaluateHand(currentDunCards) : null;
-  const牌型名称 = handEvaluation ? handEvaluation.name : (currentDunCards.length > 0 ? "组合中..." : "空");
+  // eslint-disable-next-line no-unused-vars
+  const cardTypeDisplay = handEvaluation ? handEvaluation.name : (currentDunCards.length > 0 ? "组合中..." : "空"); // 将中文变量名改为英文
 
   return (
     <div className="dun-row">
       <div className="dun-label-container">
         <div className="dun-label">{label}</div>
-        <div className="dun-type-display">{牌型名称}</div>
+        <div className="dun-type-display">{cardTypeDisplay}</div> {/* 使用修改后的变量名 */}
       </div>
       <div className="dun-cards-area" onClick={() => onDunClick(dunName)}>
         {currentDunCards.map((card) => (
