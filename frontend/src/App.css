@@ -1,0 +1,54 @@
+/* frontend_react/src/App.css */
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.App-header h1 {
+  margin: 0;
+  display: inline-block;
+  margin-right: 20px;
+}
+
+.App-header button {
+  padding: 10px 15px;
+  font-size: 1em;
+  cursor: pointer;
+  background-color: #61dafb;
+  border: none;
+  border-radius: 4px;
+}
+.App-header button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+
+.results-display {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #4caf50;
+  background-color: #f0fff0;
+  text-align: left;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.results-display h3, .results-display h4 {
+  color: #388e3c;
+}
+.results-display ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+.results-display li {
+  margin-bottom: 10px;
+  padding: 8px;
+  border-bottom: 1px dashed #ccc;
+}
