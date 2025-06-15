@@ -1,0 +1,33 @@
+/* frontend_react/src/components/Card.css */
+.card {
+  width: 70px; /* 根据实际图片大小调整 */
+  height: 100px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin: 2px;
+  display: inline-block;
+  background-color: white;
+  overflow: hidden; /* 防止图片溢出 */
+  cursor: pointer;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 或者 cover, fill */
+}
+
+.card.face-down img {
+  /* 如果牌背图片设计不同，可能需要调整 */
+}
+
+.card-placeholder {
+  width: 70px;
+  height: 100px;
+  border: 1px dashed #ddd;
+  border-radius: 5px;
+  margin: 2px;
+  display: inline-block;
+  background-color: #f0f0f0;
+}
