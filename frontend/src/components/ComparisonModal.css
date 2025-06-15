@@ -1,0 +1,128 @@
+/* frontend_react/src/components/ComparisonModal.css */
+.modal-overlay-comparison {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content-comparison {
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 1000px; /* 调整最大宽度以容纳多个玩家 */
+  max-height: 90vh;
+  overflow-y: auto;
+  text-align: center;
+}
+
+.modal-content-comparison h2 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.all-players-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* 响应式列 */
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.player-result-column {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 15px;
+  background-color: #f9f9f9;
+}
+
+.player-result-column h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.1em;
+  color: #1a1a1a;
+}
+.player-score {
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #007bff;
+}
+
+.dun-result {
+  margin-bottom: 10px;
+}
+.dun-result strong {
+  display: block;
+  font-size: 0.9em;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+.cards-compact {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap; /* 如果牌多，允许换行 */
+  gap: 3px;
+}
+.cards-compact .card { /* 缩小比牌界面的牌 */
+  width: 50px;
+  height: 70px;
+  font-size: 0.8em; /* 如果牌上有文字，也缩小 */
+  cursor: default;
+}
+
+
+.comparison-details-section {
+  text-align: left;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed #ccc;
+}
+.comparison-details-section h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+.comparison-details-section ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+.comparison-detail-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px; /* 行间距 列间距 */
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9em;
+}
+.comparison-detail-item:last-child {
+  border-bottom: none;
+}
+.comparison-detail-item span {
+    margin-right: 5px;
+}
+
+
+.modal-close-button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  margin-top: 20px;
+  transition: background-color 0.2s ease;
+}
+.modal-close-button:hover {
+  background-color: #0056b3;
+}
