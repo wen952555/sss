@@ -1,106 +1,83 @@
 /* frontend_react/src/components/HumanPlayerBoard.css */
-.human-player-board-container {
+.human-player-board-container-new { /* Renamed to avoid conflicts if old styles linger */
   padding: 15px;
-  background-color: #fff;
+  background-color: #ffffff; /* Main board area white */
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  margin: 10px; /* Margin from TopInfoBar and ActionButtons */
 }
 
-.unassigned-cards-header {
-  font-size: 0.9em;
+.hpb-instruction-text {
+  font-size: 0.95em;
   color: #555;
-  margin-bottom: 8px;
-}
-
-.unassigned-cards-area {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  padding: 10px;
-  border: 1px solid #e0e0e0;
+  margin-bottom: 15px;
+  padding: 8px;
+  background-color: #e9ecef;
   border-radius: 4px;
-  min-height: 110px; /* 至少一行牌的高度 */
-  margin-bottom: 20px;
-  background-color: #f9f9f9;
-}
-
-.no-unassigned-cards {
-  color: #777;
-  font-style: italic;
-  width: 100%;
   text-align: center;
-  padding: 20px 0;
 }
 
-.duns-layout {
+.duns-layout-hpb {
   display: flex;
   flex-direction: column;
-  gap: 10px; /* 各道之间的垂直间距 */
+  gap: 15px; /* Vertical gap between dun rows */
 }
 
-.dun-row {
+.dun-row-hpb {
   display: flex;
-  align-items: stretch; /* 让标签和牌区等高 */
-  border-bottom: 1px solid #eee; /* 图片中的分隔线 */
-  padding-bottom: 10px;
+  align-items: flex-start; /* Align label to the top of card area */
+  border-bottom: 1px solid #e9ecef; /* Separator line like in image */
+  padding-bottom: 15px;
 }
-.dun-row:last-child {
+.dun-row-hpb:last-child {
   border-bottom: none;
   padding-bottom: 0;
 }
 
-
-.dun-label-container {
-  display: flex;
-  flex-direction: column; /* 标签和牌型上下排列 */
-  justify-content: center;
-  align-items: center; /* 居中对齐 */
-  width: 80px; /* 调整宽度以适应文字 */
-  padding-right: 10px;
-  text-align: center;
+.dun-label-container-hpb {
+  width: 70px; /* Width for "头道" and "空" text */
+  padding-right: 15px;
+  text-align: left; /* Label text aligned left */
+  flex-shrink: 0; /* Prevent label container from shrinking */
 }
 
-.dun-label {
-  font-size: 1.6em; /* 根据图片调整大小 */
+.dun-label-hpb {
+  font-size: 1.5em; /* Large "头道" etc. */
   font-weight: bold;
-  color: #444;
-  /* writing-mode: vertical-rl; */ /* 如果需要竖排文字 */
-  /* text-orientation: mixed; */
-}
-.dun-type-display {
-    font-size: 0.8em;
-    color: #666;
-    margin-top: 4px;
-    white-space: nowrap; /* 防止牌型名称换行 */
+  color: #343a40;
+  display: block; /* Ensure it takes full width for text-align */
 }
 
+.dun-type-display-hpb {
+  font-size: 0.85em;
+  color: #6c757d; /* "空" or牌型名称 */
+  margin-top: 2px;
+}
 
-.dun-cards-area {
+.dun-cards-area-hpb {
   flex-grow: 1;
   display: flex;
-  flex-wrap: nowrap; /* 确保牌在一行 */
-  gap: 6px; /* 牌之间的间距 */
-  padding: 10px;
-  /* border-left: 1px solid #eee; */ /* 左侧分隔线 */
-  align-items: center; /* 垂直居中牌 */
-  cursor: pointer; /*提示可以点击放置*/
+  flex-wrap: wrap; /* Allow cards to wrap if many in one dun */
+  gap: 6px; /* Gap between cards */
+  padding: 8px;
+  border: 1px dashed #ced4da; /* Dashed border for card area */
+  border-radius: 4px;
+  background-color: #f8f9fa; /* Light background for card area */
+  min-height: 105px; /* Accommodate at least one row of cards */
+  cursor: pointer; /* Indicates clickable area */
 }
 
-.card-placeholder-slot {
-  width: 70px; /* 与Card组件宽度一致 */
-  height: 100px; /* 与Card组件高度一致 */
+/* Card placeholders if a dun is empty initially, as per image */
+.card-placeholder-slot-hpb {
+  width: 70px;    /* Match Card.js width */
+  height: 100px;  /* Match Card.js height */
   border: 2px dashed #d0d0d0;
   border-radius: 5px;
-  background-color: #f5f5f5;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 2em;
-  color: #ccc;
-}
-/* 可以用 ::before 或 ::after 添加加号或其他提示 */
-.card-placeholder-slot::before {
-  /* content: "+"; */
+  background-color: #e9ecef; /* Slightly different from cards area bg */
+  margin: 2px; /* Consistent with card margin if any */
 }
 
-/* Card.js 的选中样式在 App.js 中通过 style prop 动态设置 */
+/* Selected card style is now applied via inline style in HumanPlayerBoard.js */
+.dun-cards-area-hpb .card {
+  /* Default card style if any specific overrides needed here */
+}
