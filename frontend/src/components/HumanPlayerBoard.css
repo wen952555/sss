@@ -1,19 +1,19 @@
 /* frontend_react/src/components/HumanPlayerBoard.css */
-.human-player-board-container-v4 {
-  padding: 10px 5px 0; /* Reduced bottom padding as buttons will be close */
+.human-player-board-container-v4 { /* Using a consistent version name */
+  padding: 10px 5px 0; 
   background-color: transparent; 
   margin: 0;
-  flex-grow: 1; /* Allow this container to grow */
+  flex-grow: 0; /* Do not let this grow excessively, height defined by content */
   display: flex;
   flex-direction: column;
 }
 
 .hpb-instruction-text-v4 {
   font-size: 0.9em;
-  color: #C8E6C9; /* Lighter green text for dark theme */
+  color: #C8E6C9; 
   margin-bottom: 10px;
   padding: 8px 10px;
-  background-color: #388E3C; /* Slightly lighter green than main bg */
+  background-color: #388E3C; 
   border-radius: 4px;
   text-align: center;
   flex-shrink: 0;
@@ -22,26 +22,20 @@
 .duns-layout-v4 {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* Gap between duns */
-  flex-grow: 1; /* Allow duns layout to take available vertical space */
+  gap: 10px; /* Increased gap for better separation, as per image */
 }
 
-.dun-cards-area-hpb-v2 { /* Renamed and re-styled */
+.dun-cards-area-hpb-v2 { /* Let's use a consistent version for dun area styling */
   position: relative;
   display: block; 
   width: 100%;
-  /* Let height be more flexible or determined by card + padding */
-  height: 130px; /* Keep a base height, can adjust with card size */
-  padding: 5px; /* Padding INSIDE the dun area, around the cards */
-  border: 2px solid #A5D6A7; /* 高亮边框 (浅绿色) */
+  height: 120px; /* EXAMPLE: A fixed, reasonable height for duns */
+  padding: 5px; 
+  border: 2px solid #66BB6A; /* Brighter green border */
   border-radius: 4px;
-  background-color: #2E7D32; /* 与全局一致的深绿色 */
+  background-color: #2E7D32; /* Dun background matches main theme */
   cursor: pointer;
   overflow: hidden; 
-  flex-grow: 1; /* Allow each dun to take space in .duns-layout-v4 */
-  flex-basis: 0; /* For even distribution if .duns-layout-v4 is flex */
-  display: flex; /* To use align-items for card wrappers */
-  align-items: center; /* Vertically center card wrappers */
 }
 
 .dun-cards-area-hpb-v2.with-background-text-v2::before {
@@ -50,9 +44,9 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 3em; /* Larger background text */
+  font-size: 2.8em; 
   font-weight: bold;
-  color: rgba(200, 230, 201, 0.25); /* 浅绿色文字，非常半透明，用于深绿背景 */
+  color: rgba(165, 214, 167, 0.35); /* Light green, semi-transparent text */
   white-space: nowrap;
   z-index: 0;
   pointer-events: none;
@@ -62,12 +56,13 @@
 
 .card-wrapper-hpb {
   position: absolute; 
-  top: 2%; 
-  height: 96%; 
+  /* Center the card wrapper vertically if dun area is taller than card */
+  top: 50%;
+  transform: translateY(-50%);
+  height: 90%; /* Card wrapper takes 90% of dun area height, leaving some padding */
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  /* Width is determined by card's aspect ratio */
 }
 
 .card-wrapper-hpb .card {
@@ -75,35 +70,29 @@
   width: auto;   
   max-width: none; 
   object-fit: contain;
-  /* Selected card border is handled by inline style in JS */
 }
 
-/* Stacking for main board - cards are larger */
-/* Card height ~0.96 * 130px = 124.8px. Width ~ 124.8 * 0.7 (card aspect) = ~87px */
-/* Visible part ~30px. Next left = prev_left + 30px */
+/* Stacking: Based on dun height 120px, wrapper height ~108px. Card width ~ 108 * 0.7 = ~75px */
+/* Visible part ~25px. Next left = prev_left + 25px */
 .card-wrapper-hpb:nth-child(1) { left: 5px;   z-index: 1; }
-.card-wrapper-hpb:nth-child(2) { left: 35px;  z-index: 2; } 
-.card-wrapper-hpb:nth-child(3) { left: 65px;  z-index: 3; } 
-.card-wrapper-hpb:nth-child(4) { left: 95px;  z-index: 4; }
-.card-wrapper-hpb:nth-child(5) { left: 125px; z-index: 5; }
-
-.card-placeholder-visual-hpb-v2 { 
-  /* Placeholder style if needed */
-}
+.card-wrapper-hpb:nth-child(2) { left: 30px;  z-index: 2; } 
+.card-wrapper-hpb:nth-child(3) { left: 55px;  z-index: 3; } 
+.card-wrapper-hpb:nth-child(4) { left: 80px;  z-index: 4; }
+.card-wrapper-hpb:nth-child(5) { left: 105px; z-index: 5; }
 
 @media (min-width: 768px) {
   .dun-cards-area-hpb-v2 {
-    height: 170px; /* Taller dun area on wider screens for even larger cards */
+    height: 130px; /* Slightly taller on wider screens */
   }
-  /* Card height ~0.96 * 170px = ~163px. Width ~ 163 * 0.7 = ~114px */
-  /* Visible part ~40px. Next left = prev_left + 40px */
-  .card-wrapper-hpb:nth-child(1) { left: 8px; }
-  .card-wrapper-hpb:nth-child(2) { left: 48px; } /* 8 + 40 */
-  .card-wrapper-hpb:nth-child(3) { left: 88px; } /* 48 + 40 */
-  .card-wrapper-hpb:nth-child(4) { left: 128px; }
-  .card-wrapper-hpb:nth-child(5) { left: 168px; }
+  /* Card height ~0.9 * 130px = ~117px. Width ~ 117 * 0.7 = ~82px */
+  /* Visible part ~28px. Next left = prev_left + 28px */
+  .card-wrapper-hpb:nth-child(1) { left: 6px; }
+  .card-wrapper-hpb:nth-child(2) { left: 34px; } 
+  .card-wrapper-hpb:nth-child(3) { left: 62px; } 
+  .card-wrapper-hpb:nth-child(4) { left: 90px; }
+  .card-wrapper-hpb:nth-child(5) { left: 118px; }
 
   .dun-cards-area-hpb-v2.with-background-text-v2::before {
-    font-size: 3.8em; 
+    font-size: 3.2em; 
   }
 }
