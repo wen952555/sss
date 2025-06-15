@@ -1,83 +1,81 @@
 /* frontend_react/src/components/HumanPlayerBoard.css */
-.human-player-board-container-new { /* Renamed to avoid conflicts if old styles linger */
-  padding: 15px;
-  background-color: #ffffff; /* Main board area white */
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  margin: 10px; /* Margin from TopInfoBar and ActionButtons */
+
+.human-player-board-container-v3 {
+  padding: 10px; /* Reduced padding */
+  background-color: #ffffff;
+  border-radius: 6px; /* Slightly smaller radius */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  margin: 10px 5px; /* Adjust margin for tighter fit on mobile */
 }
 
-.hpb-instruction-text {
-  font-size: 0.95em;
-  color: #555;
-  margin-bottom: 15px;
-  padding: 8px;
-  background-color: #e9ecef;
+.hpb-instruction-text-v3 {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  background-color: #f0f2f5; /* Lighter instruction background */
   border-radius: 4px;
   text-align: center;
 }
 
-.duns-layout-hpb {
+.duns-layout-v3 {
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Vertical gap between dun rows */
+  gap: 10px; /* Gap between duns */
 }
 
-.dun-row-hpb {
-  display: flex;
-  align-items: flex-start; /* Align label to the top of card area */
-  border-bottom: 1px solid #e9ecef; /* Separator line like in image */
-  padding-bottom: 15px;
-}
-.dun-row-hpb:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.dun-label-container-hpb {
-  width: 70px; /* Width for "头道" and "空" text */
-  padding-right: 15px;
-  text-align: left; /* Label text aligned left */
-  flex-shrink: 0; /* Prevent label container from shrinking */
-}
-
-.dun-label-hpb {
-  font-size: 1.5em; /* Large "头道" etc. */
-  font-weight: bold;
-  color: #343a40;
-  display: block; /* Ensure it takes full width for text-align */
-}
-
-.dun-type-display-hpb {
-  font-size: 0.85em;
-  color: #6c757d; /* "空" or牌型名称 */
-  margin-top: 2px;
-}
-
-.dun-cards-area-hpb {
+/* This is now the primary container for each dun, combining label (as background) and cards */
+.dun-cards-area-hpb.with-background-text {
+  position: relative; /* For ::before pseudo-element positioning */
   flex-grow: 1;
   display: flex;
-  flex-wrap: wrap; /* Allow cards to wrap if many in one dun */
-  gap: 6px; /* Gap between cards */
-  padding: 8px;
-  border: 1px dashed #ced4da; /* Dashed border for card area */
-  border-radius: 4px;
-  background-color: #f8f9fa; /* Light background for card area */
-  min-height: 105px; /* Accommodate at least one row of cards */
-  cursor: pointer; /* Indicates clickable area */
+  flex-wrap: wrap; /* Allow cards to wrap to next line if needed */
+  gap: 5px; /* Gap between cards */
+  padding: 12px; /* Padding inside the card area */
+  border: 1px solid #e0e0e0; /* Border for the card area */
+  border-radius: 5px;
+  background-color: #f8f9fa;
+  min-height: 115px; /* Ensure enough height for cards + some padding */
+  align-items: center; /* Vertically center cards if they don't fill height */
+  justify-content: flex-start; /* Align cards to the start */
+  cursor: pointer;
+  overflow: hidden; /* Prevent background text from overflowing if it's too long */
 }
 
-/* Card placeholders if a dun is empty initially, as per image */
-.card-placeholder-slot-hpb {
+.dun-cards-area-hpb.with-background-text::before {
+  content: attr(data-background-text); /* Use the data attribute for text */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.8em; /* Adjust as needed */
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.10); /* Semi-transparent text */
+  white-space: nowrap; /* Prevent text from wrapping */
+  z-index: 0; /* Behind the cards */
+  pointer-events: none; /* Text should not interfere with clicks */
+  letter-spacing: 1px; /* Optional: for better readability */
+  text-transform: uppercase; /* Optional: for style */
+}
+
+/* Visual placeholders for empty duns, appear below cards if any */
+.card-placeholder-slot-visual-only {
   width: 70px;    /* Match Card.js width */
   height: 100px;  /* Match Card.js height */
-  border: 2px dashed #d0d0d0;
+  border: 2px dashed #e0e0e0; /* Lighter dashed border */
   border-radius: 5px;
-  background-color: #e9ecef; /* Slightly different from cards area bg */
-  margin: 2px; /* Consistent with card margin if any */
+  background-color: rgba(240, 242, 245, 0.5); /* Very light, almost transparent */
+  /* These placeholders are mostly for visual cue if the dun is empty and no bg text is desired */
+  /* If bg text is primary, these might be less prominent or removed */
 }
 
-/* Selected card style is now applied via inline style in HumanPlayerBoard.js */
+
+/* Ensure cards are displayed correctly over the background text */
 .dun-cards-area-hpb .card {
-  /* Default card style if any specific overrides needed here */
+  /* z-index and position:relative are set inline in JS for selected cards
+     but can be set here for all cards if needed */
 }
+
+/* Removed styles for .dun-row-hpb, .dun-label-container-hpb, .dun-label-hpb, .dun-type-display-hpb 
+   as their content is now integrated into the background text of .dun-cards-area-hpb
+*/
