@@ -4,52 +4,52 @@ import Card from './Card';
 import { evaluateHand as evaluateHandLogic } from '../logic/cardUtils';
 import './HumanPlayerBoard.css';
 
-const DunDisplay = ({ dunName, label, cardsInDun, expectedSize, onDunAreaClick, onCardClickInDun, selectedCardInfo }) => {
+const DunDisplay = ({ dunName, label, cardsInDun, expectedSize, onDunAreaClick, onCardClickInDun, selectedCardsInfo }) => {
   const handEvaluation = cardsInDun.length === expectedSize ? evaluateHandLogic(cardsInDun) : null;
   const cardTypeDisplay = handEvaluation ? handEvaluation.name : (cardsInDun.length > 0 ? "组合中..." : "空");
 
   return (
-    <div className="dun-row-hpb"> {/* Added -hpb suffix to avoid conflict with other .dun-row if any */}
+    <div className="dun-row-hpb">
       <div className="dun-label-container-hpb">
         <div className="dun-label-hpb">{label}</div>
         <div className="dun-type-display-hpb">{cardTypeDisplay}</div>
       </div>
       <div className="dun-cards-area-hpb" onClick={() => onDunAreaClick(dunName)}>
-        {cardsInDun.map((card) => (
-          <Card
-            key={card.id}
-            card={card}
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent dun area click when clicking a card
-              onCardClickInDun(card, dunName);
-            }}
-            style={{
-              border: selectedCardInfo?.card.id === card.id && selectedCardInfo?.fromDun === dunName ? '3px solid dodgerblue' : '1px solid #ccc',
-              transform: selectedCardInfo?.card.id === card.id && selectedCardInfo?.fromDun === dunName ? 'scale(1.05)' : 'none',
-            }}
-          />
-        ))}
-        {/* Placeholders are dynamic based on cards in dun, no fixed placeholders needed if cards just pile up */}
+        {cardsInDun.map((card) => {
+          const isSelected = selectedCardsInfo.some(info => info.card.id === card.id);
+          return (
+            <Card
+              key={card.id}
+              card={card}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCardClickInDun(card, dunName);
+              }}
+              style={{
+                border: isSelected ? '3px solid dodgerblue' : '1px solid #ccc',
+                transform: isSelected ? 'scale(1.05)' : 'none',
+                opacity: isSelected ? 0.7 : 1, // Optional: make selected cards slightly transparent
+              }}
+            />
+          );
+        })}
         {cardsInDun.length === 0 && Array(expectedSize).fill(null).map((_, i) => (
              <div key={`placeholder-${dunName}-${i}`} className="card-placeholder-slot-hpb"></div>
         ))}
-
       </div>
     </div>
   );
 };
 
 const HumanPlayerBoard = ({
-  arrangedHand, // { tou: Card[], zhong: Card[], wei: Card[] } - these contain ALL 13 cards
-  selectedCardInfo, // { card: CardObject, fromDun: string }
-  onCardClick,      // (card, dunName) => void
-  onDunClick        // (dunName) => void - when clicking the dun area itself
+  arrangedHand,
+  selectedCardsInfo, // Changed from selectedCardInfo
+  onCardClick,
+  onDunClick
 }) => {
-
-  // Initial instruction text (could be dynamic based on game state)
-  const instructionText = selectedCardInfo
-    ? `已选择 ${selectedCardInfo.card.name} (来自${selectedCardInfo.fromDun === 'tou' ? '头道' : selectedCardInfo.fromDun === 'zhong' ? '中道' : '尾道'})。请点击目标墩区放置。`
-    : "请点击牌进行选择，再点击目标墩区进行放置。";
+  const instructionText = selectedCardsInfo.length > 0
+    ? `已选择 ${selectedCardsInfo.length} 张牌。请点击目标墩区放置。`
+    : "请点击牌进行选择 (可多选)，再点击目标墩区进行放置。";
 
   return (
     <div className="human-player-board-container-new">
@@ -59,10 +59,10 @@ const HumanPlayerBoard = ({
           dunName="tou"
           label="头道"
           cardsInDun={arrangedHand.tou || []}
-          expectedSize={3} // Still useful for displaying牌型
+          expectedSize={3}
           onDunAreaClick={onDunClick}
           onCardClickInDun={onCardClick}
-          selectedCardInfo={selectedCardInfo}
+          selectedCardsInfo={selectedCardsInfo}
         />
         <DunDisplay
           dunName="zhong"
@@ -71,7 +71,7 @@ const HumanPlayerBoard = ({
           expectedSize={5}
           onDunAreaClick={onDunClick}
           onCardClickInDun={onCardClick}
-          selectedCardInfo={selectedCardInfo}
+          selectedCardsInfo={selectedCardsInfo}
         />
         <DunDisplay
           dunName="wei"
@@ -80,7 +80,7 @@ const HumanPlayerBoard = ({
           expectedSize={5}
           onDunAreaClick={onDunClick}
           onCardClickInDun={onCardClick}
-          selectedCardInfo={selectedCardInfo}
+          selectedCardsInfo={selectedCardsInfo}
         />
       </div>
     </div>
