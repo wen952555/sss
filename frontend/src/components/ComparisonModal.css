@@ -6,12 +6,13 @@
   padding: 0; box-sizing: border-box;
 }
 
-.comparison-modal-content-fullscreen-v9 { /* Versioned */
-  background-color: #e9ebee; /* Light grey background as per latest image */
+.comparison-modal-content-fullscreen-v9 { /* Using v9 from previous naming */
+  background-color: #2E7D32; /* 全局深绿色 */
   width: 100%; height: 100%;
   display: flex; flex-direction: column;
   justify-content: space-between; 
   box-sizing: border-box; overflow: hidden; 
+  color: #f0f0f0; 
 }
 
 /* No title bar */
@@ -19,104 +20,113 @@
 .players-comparison-area-v9 {
   display: flex; flex-direction: row; 
   flex-grow: 1; overflow-y: auto; 
-  padding: 8px; gap: 8px; 
+  padding: 6px; /* Minimal padding around columns */
+  gap: 6px; /* Minimal gap between columns */
 }
 
 .player-column-v9 {
-  flex: 1; display: flex; flex-direction: column; gap: 8px; 
+  flex: 1; display: flex; flex-direction: column; 
+  gap: 6px; /* Minimal gap between player cells in a column */
 }
 
 .player-result-cell-v9 {
-  background-color: #ffffff; 
-  border: 1px solid #d3d6db;
+  background-color: #388E3C; /* 中等绿色背景 for player cell */
+  border: 1px solid #4CAF50; 
   border-radius: 3px;
-  padding: 10px; 
-  box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-  display: flex; flex-direction: column; /* Header and all-duns will stack */
-  color: #1c1e21;
+  padding: 8px; /* Padding inside cell */
+  box-shadow: 0 1px 1px rgba(0,0,0,0.15);
+  display: flex; flex-direction: column; 
+  color: #e8f5e9; /* Light text on mid-green */
   flex-grow: 1; flex-basis: 0;
-  justify-content: flex-start; /* Align content to top */
+  justify-content: flex-start; 
 }
-.player-result-cell-v9.empty-player-cell-v9 { /* Styles for empty cell */ }
-.player-result-cell-v9.error-cell-v9 { /* Styles for error cell */ }
+.player-result-cell-v9.empty-player-cell-v9 {
+  background-color: rgba(0,0,0,0.05); /* Darker transparent for empty on dark theme */
+  border: 1px dashed #4CAF50;
+  min-height: 180px; /* Min height for empty cell to maintain grid structure */
+}
+/* Error cell styles unchanged */
 
-/* Player header (name + score) is now part of the tou dun section */
+.player-header-v9 { /* Name and score line */
+  display: flex;
+  justify-content: center; 
+  align-items: baseline; 
+  gap: 8px; /* Space between name and score */
+  margin-bottom: 6px; 
+  flex-shrink: 0; 
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(165, 214, 167, 0.2); /* Very subtle separator */
+}
 
-.all-duns-compact-v9 {
+.player-name-modal-v9 {
+  margin: 0;
+  font-size: 1em; 
+  font-weight: 500; 
+  color: #FFFFFF; 
+}
+
+.player-total-score-modal-v9 {
+  margin: 0;
+  font-size: 0.85em; 
+  color: #C8E6C9; 
+  font-weight: normal;
+}
+
+.all-duns-compact-v9 { /* Container for the three duns */
   display: flex;
   flex-direction: column;
-  gap: 6px; /* Gap between duns */
+  gap: 3px; /* VERY TIGHT or 0 gap between duns to remove red-circled space */
   flex-grow: 1; 
-  justify-content: space-around; /* Distribute duns vertically */
+  justify-content: space-around; /* Distribute the duns vertically */
 }
 
-.single-dun-container-v9 { /* Wrapper for each dun */
-  display: flex; /* Default for zhong and wei (cards only) */
-  align-items: center; /* Vertically center cards in their slot */
-  background-color: #f0f2f5; /* Lighter grey for dun background, as per image */
-  border-radius: 3px; 
-  padding: 6px;
-  min-height: 75px; /* Base height for a dun, adjust with card size */
-  border: 1px solid #e0e3e6; /* Subtle border for dun */
+.single-dun-container-v9 { /* Wrapper for each dun's cards and its (now removed) side text */
+  display: flex; 
+  align-items: center; /* Vertically center the card stack */
+  justify-content: center; /* Horizontally center the card stack */
+  background-color: #66BB6A; /* 浅绿色背景 for each dun's card area */
+  border-radius: 2px; 
+  padding: 4px; /* Minimal padding around the card stack */
+  min-height: 75px; /* Adjust based on card height */
+  border: 1px solid #81C784; /* Slightly lighter border for dun area */
+  flex-grow: 1; /* Allow each dun to take vertical space */
+  flex-basis: 0;
 }
 
-.single-dun-container-v9.tou-dun-special-layout {
-  /* display: flex; // Already flex by default from .single-dun-container-v9 */
-  justify-content: space-between; /* Cards on left, info on right */
-  align-items: center; /* Vertically align cards and info block */
-}
+/* No .tou-dun-special-layout specific flex properties if text is removed */
+/* .single-dun-container-v9.tou-dun-special-layout { ... } */
 
-.dun-cards-stacked-v9 {
-  display: flex; /* To allow cards to stack with relative/absolute inside */
-  position: relative; /* For absolute positioning of cards */
-  align-items: center; /* Vertically center the stack */
-  flex-shrink: 0; /* Prevent card area from shrinking excessively */
-  /* Width will be determined by stacked cards, height by parent or cards */
-  min-width: 90px;  /* (e.g. 2*15 + 60 for 3 cards) */
-  height: 100%; /* Try to make card stack take full height of its dun container */
+.dun-cards-stacked-v9 { /* The actual card stack container */
+  display: flex;
+  position: relative; 
+  align-items: center; 
+  /* Width and height determined by cards + stacking */
+  /* Example: if 5 cards of 55px width stacked with 18px offset: */
+  /* width = (5-1)*18 + 55 = 72 + 55 = 127px */
+  /* height = 80px (card height) */
+  width: 130px; /* Approx width to contain stack */
+  height: 85px; /* Approx height */
 }
 
 .dun-cards-stacked-v9 .card {
-  width: 60px;  /* Increased card width */
-  height: 88px; /* Increased card height */
-  border: 1px solid #adb5bd;
-  box-shadow: 0px 1px 2px rgba(0,0,0,0.2);
-  background-color: white;
+  width: 55px;  
+  height: 80px; 
+  border: 1px solid #757575; 
+  box-shadow: 0px 1px 2px rgba(0,0,0,0.4); 
+  background-color: white; 
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
 }
 
-/* Stacking logic (card width 60px). Visible part ~20px. Next left = prev_left + 20px */
 .dun-cards-stacked-v9 .card:nth-child(1) { left: 0px;   z-index: 1; }
-.dun-cards-stacked-v9 .card:nth-child(2) { left: 20px;  z-index: 2; }
-.dun-cards-stacked-v9 .card:nth-child(3) { left: 40px;  z-index: 3; }
-.dun-cards-stacked-v9 .card:nth-child(4) { left: 60px;  z-index: 4; }
-.dun-cards-stacked-v9 .card:nth-child(5) { left: 80px;  z-index: 5; }
+.dun-cards-stacked-v9 .card:nth-child(2) { left: 18px;  z-index: 2; }
+.dun-cards-stacked-v9 .card:nth-child(3) { left: 36px;  z-index: 3; }
+.dun-cards-stacked-v9 .card:nth-child(4) { left: 54px;  z-index: 4; }
+.dun-cards-stacked-v9 .card:nth-child(5) { left: 72px;  z-index: 5; }
 
-.player-info-beside-tou-v9 { /* For player name and score next to tou dun cards */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start; /* Align text to the left */
-  padding-left: 10px; /* Space from tou cards */
-  flex-grow: 1; /* Take remaining space in the tou-dun-special-layout */
-  text-align: left;
-}
-
-.player-name-modal-v9 { /* Now used inside player-info-beside-tou-v9 */
-  margin: 0;
-  font-size: 1.05em; 
-  font-weight: 600;
-  color: #333; /* Darker text for light background */
-}
-
-.player-total-score-modal-v9 { /* Now used inside player-info-beside-tou-v9 */
-  margin: 0;
-  font-size: 0.85em; 
-  color: #007bff; /* Blue score text */
-  font-weight: normal;
-}
+/* Player info (name/score) is now only in .player-header-v9, no longer .player-info-beside-tou-v9 */
+/* Removed .player-info-beside-tou-v9 and its child styles */
 
 
 .comparison-modal-footer-v9 { /* Styles for footer */ }
@@ -125,10 +135,7 @@
 /* --- Responsive: Media Queries for Wider Screens --- */
 @media (min-width: 768px) {
   .comparison-modal-overlay-fullscreen { padding: 10px; } 
-  .comparison-modal-content-fullscreen-v9 {
-    border-radius: 6px; 
-    max-height: 98vh; 
-  }
+  .comparison-modal-content-fullscreen-v9 { border-radius: 6px; max-height: 98vh; }
   .players-comparison-area-v9 {
     display: grid; 
     grid-template-columns: repeat(2, 1fr); 
@@ -136,22 +143,26 @@
     gap: 10px; 
   }
   .player-result-cell-v9 { padding: 12px; gap: 8px; }
-  
-  .single-dun-container-v9 { min-height: 95px; padding: 8px; }
-  .dun-cards-stacked-v9 { min-width: 110px; } /* (e.g. 2*22 + 65 for 3 cards) */
+  .player-header-v9 { margin-bottom: 10px; }
+  .player-name-modal-v9 { font-size: 1.1em; } 
+  .player-total-score-modal-v9 { font-size: 0.9em; }
+
+  .all-duns-compact-v9 { gap: 5px; } /* Maintain tight gap */
+
+  .single-dun-container-v9 { min-height: 95px; padding: 5px; } /* Dun container height */
+  .dun-cards-stacked-v9 { /* Card stack dimensions for wider screen */
+    width: 150px; /* Wider stack */
+    height: 93px; /* Taller cards */
+  }
   .dun-cards-stacked-v9 .card {
-    width: 65px;  
-    height: 95px; 
+    width: 60px;  
+    height: 88px; 
   }
   .dun-cards-stacked-v9 .card:nth-child(1) { left: 0px; }
-  .dun-cards-stacked-v9 .card:nth-child(2) { left: 22px; } 
-  .dun-cards-stacked-v9 .card:nth-child(3) { left: 44px; }
-  .dun-cards-stacked-v9 .card:nth-child(4) { left: 66px; }
-  .dun-cards-stacked-v9 .card:nth-child(5) { left: 88px; }
-
-  .player-info-beside-tou-v9 { padding-left: 15px; }
-  .player-name-modal-v9 { font-size: 1.1em; }
-  .player-total-score-modal-v9 { font-size: 0.9em; }
+  .dun-cards-stacked-v9 .card:nth-child(2) { left: 20px; } 
+  .dun-cards-stacked-v9 .card:nth-child(3) { left: 40px; }
+  .dun-cards-stacked-v9 .card:nth-child(4) { left: 60px; }
+  .dun-cards-stacked-v9 .card:nth-child(5) { left: 80px; }
 
   .continue-game-button-v9 { padding: 10px 22px; font-size: 1em; }
 }
