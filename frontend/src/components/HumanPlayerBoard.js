@@ -1,95 +1,86 @@
 // frontend_react/src/components/HumanPlayerBoard.js
 import React from 'react';
 import Card from './Card';
-import { evaluateHand } from '../logic/cardUtils'; // 用于显示墩牌牌型
+import { evaluateHand as evaluateHandLogic } from '../logic/cardUtils';
 import './HumanPlayerBoard.css';
 
-const DunSection = ({ dunName, label, cards, expectedSize, onDunClick, onCardClickInDun, arrangedHand }) => {
-  const currentDunCards = arrangedHand[dunName] || [];
-  const handEvaluation = currentDunCards.length === expectedSize ? evaluateHand(currentDunCards) : null;
-  // eslint-disable-next-line no-unused-vars
-  const cardTypeDisplay = handEvaluation ? handEvaluation.name : (currentDunCards.length > 0 ? "组合中..." : "空"); // 将中文变量名改为英文
+const DunDisplay = ({ dunName, label, cardsInDun, expectedSize, onDunAreaClick, onCardClickInDun, selectedCardInfo }) => {
+  const handEvaluation = cardsInDun.length === expectedSize ? evaluateHandLogic(cardsInDun) : null;
+  const cardTypeDisplay = handEvaluation ? handEvaluation.name : (cardsInDun.length > 0 ? "组合中..." : "空");
 
   return (
-    <div className="dun-row">
-      <div className="dun-label-container">
-        <div className="dun-label">{label}</div>
-        <div className="dun-type-display">{cardTypeDisplay}</div> {/* 使用修改后的变量名 */}
+    <div className="dun-row-hpb"> {/* Added -hpb suffix to avoid conflict with other .dun-row if any */}
+      <div className="dun-label-container-hpb">
+        <div className="dun-label-hpb">{label}</div>
+        <div className="dun-type-display-hpb">{cardTypeDisplay}</div>
       </div>
-      <div className="dun-cards-area" onClick={() => onDunClick(dunName)}>
-        {currentDunCards.map((card) => (
+      <div className="dun-cards-area-hpb" onClick={() => onDunAreaClick(dunName)}>
+        {cardsInDun.map((card) => (
           <Card
             key={card.id}
             card={card}
-            onClick={(e) => { e.stopPropagation(); onCardClickInDun(card, dunName); }}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent dun area click when clicking a card
+              onCardClickInDun(card, dunName);
+            }}
+            style={{
+              border: selectedCardInfo?.card.id === card.id && selectedCardInfo?.fromDun === dunName ? '3px solid dodgerblue' : '1px solid #ccc',
+              transform: selectedCardInfo?.card.id === card.id && selectedCardInfo?.fromDun === dunName ? 'scale(1.05)' : 'none',
+            }}
           />
         ))}
-        {Array(expectedSize - currentDunCards.length).fill(null).map((_, i) => (
-          <div key={`placeholder-${dunName}-${i}`} className="card-placeholder-slot">
-            {/* 点击这里放置选中的牌 */}
-          </div>
+        {/* Placeholders are dynamic based on cards in dun, no fixed placeholders needed if cards just pile up */}
+        {cardsInDun.length === 0 && Array(expectedSize).fill(null).map((_, i) => (
+             <div key={`placeholder-${dunName}-${i}`} className="card-placeholder-slot-hpb"></div>
         ))}
+
       </div>
     </div>
   );
 };
 
 const HumanPlayerBoard = ({
-  player, // 包含 .hand
-  unassignedCards,
-  arrangedHand, // { tou: [], zhong: [], wei: [] }
-  selectedCardId,
-  onSelectCardFromHand,
-  onPlaceCardInDun, // (dunName) => void
-  onRemoveCardFromDun // (card, dunName) => void
+  arrangedHand, // { tou: Card[], zhong: Card[], wei: Card[] } - these contain ALL 13 cards
+  selectedCardInfo, // { card: CardObject, fromDun: string }
+  onCardClick,      // (card, dunName) => void
+  onDunClick        // (dunName) => void - when clicking the dun area itself
 }) => {
-  if (!player) return null;
+
+  // Initial instruction text (could be dynamic based on game state)
+  const instructionText = selectedCardInfo
+    ? `已选择 ${selectedCardInfo.card.name} (来自${selectedCardInfo.fromDun === 'tou' ? '头道' : selectedCardInfo.fromDun === 'zhong' ? '中道' : '尾道'})。请点击目标墩区放置。`
+    : "请点击牌进行选择，再点击目标墩区进行放置。";
 
   return (
-    <div className="human-player-board-container">
-      <div className="unassigned-cards-header">你的手牌 (点击选择，再点击墩区放置):</div>
-      <div className="unassigned-cards-area">
-        {unassignedCards.length > 0 ? (
-          unassignedCards.map(card => (
-            <Card
-              key={card.id}
-              card={card}
-              onClick={() => onSelectCardFromHand(card)}
-              style={{
-                border: selectedCardId === card.id ? '3px solid dodgerblue' : '1px solid #ccc',
-                transform: selectedCardId === card.id ? 'scale(1.05)' : 'none',
-              }}
-            />
-          ))
-        ) : (
-          <p className="no-unassigned-cards">所有牌已分配到墩道。</p>
-        )}
-      </div>
-
-      <div className="duns-layout">
-        <DunSection
+    <div className="human-player-board-container-new">
+      <div className="hpb-instruction-text">{instructionText}</div>
+      <div className="duns-layout-hpb">
+        <DunDisplay
           dunName="tou"
           label="头道"
-          expectedSize={3}
-          onDunClick={onPlaceCardInDun}
-          onCardClickInDun={onRemoveCardFromDun}
-          arrangedHand={arrangedHand}
+          cardsInDun={arrangedHand.tou || []}
+          expectedSize={3} // Still useful for displaying牌型
+          onDunAreaClick={onDunClick}
+          onCardClickInDun={onCardClick}
+          selectedCardInfo={selectedCardInfo}
         />
-        <DunSection
+        <DunDisplay
           dunName="zhong"
           label="中道"
+          cardsInDun={arrangedHand.zhong || []}
           expectedSize={5}
-          onDunClick={onPlaceCardInDun}
-          onCardClickInDun={onRemoveCardFromDun}
-          arrangedHand={arrangedHand}
+          onDunAreaClick={onDunClick}
+          onCardClickInDun={onCardClick}
+          selectedCardInfo={selectedCardInfo}
         />
-        <DunSection
+        <DunDisplay
           dunName="wei"
           label="尾道"
+          cardsInDun={arrangedHand.wei || []}
           expectedSize={5}
-          onDunClick={onPlaceCardInDun}
-          onCardClickInDun={onRemoveCardFromDun}
-          arrangedHand={arrangedHand}
+          onDunAreaClick={onDunClick}
+          onCardClickInDun={onCardClick}
+          selectedCardInfo={selectedCardInfo}
         />
       </div>
     </div>
