@@ -1,74 +1,73 @@
 /* frontend_react/src/components/ActionButtons.css */
-.action-buttons-banner-v2 { /* Changed from -container to -banner */
+.action-buttons-banner-v2 {
   display: flex;
-  flex-direction: row; /* Arrange buttons horizontally */
-  justify-content: space-around; /* Distribute space around buttons */
-  align-items: center; /* Align buttons vertically */
-  padding: 12px 8px; /* Padding for the banner */
-  margin-top: 15px; /* Space above the banner (below HumanPlayerBoard) */
-  background-color: #4CAF50; /* Match the main dark green theme from image */
-  border-radius: 0; /* No radius, as it's a full-width banner look in image */
-  /* box-shadow: 0 -2px 5px rgba(0,0,0,0.1); // Optional top shadow */
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 8px; /* Reduced padding for tighter fit */
+  margin-top: 0; /* CRITICAL: Removed margin-top to stick below理牌区 */
+  background-color: #2E7D32; /* 全局深绿色 */
+  /* border-top: 1px solid #4CAF50; // Optional: lighter green separator */
+  flex-shrink: 0; /* Prevent banner from shrinking */
 }
 
 .action-button-v2 {
-  padding: 8px 12px; /* Adjust padding for potentially more buttons */
-  font-size: 0.9em; /* Slightly smaller font for more buttons */
+  padding: 8px 10px; /* Slightly smaller padding for buttons */
+  font-size: 0.85em; /* Smaller font for more buttons or narrow screens */
   border: none;
-  border-radius: 4px; /* Consistent button radius */
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
   font-weight: 500;
-  color: white; /* Default text color for buttons */
-  flex-grow: 1; /* Allow buttons to grow to fill space if fewer than max */
+  color: white;
+  flex-grow: 1;
   text-align: center;
-  margin: 0 4px; /* Small margin between buttons */
-  max-width: 150px; /* Prevent buttons from becoming too wide */
+  margin: 0 3px; /* Tighter margin between buttons */
+  max-width: 140px; 
 }
 .action-button-v2:active {
   transform: scale(0.97);
 }
 
-/* Specific button colors based on the image */
+/* Button colors from image (blue and light green) */
 .ai-helper-button-v2, 
-.profile-button-v2, /* Assuming similar style for new buttons */
+.profile-button-v2, 
 .ai-play-button-v2,
 .auto-match-button-v2 {
-  background-color: #2196F3; /* Blue like "AI智能分牌" */
+  background-color: #03A9F4; /* Blue */
 }
 .ai-helper-button-v2:hover, 
 .profile-button-v2:hover,
 .ai-play-button-v2:hover,
 .auto-match-button-v2:hover {
-  background-color: #1976D2;
+  background-color: #0288D1;
 }
 
 .submit-button-v2 {
-  background-color: #8BC34A; /* Green like "提交牌型" */
+  background-color: #8BC34A; /* Light Green */
 }
 .submit-button-v2:hover {
   background-color: #7CB342;
 }
 
 .action-button-v2:disabled {
-  background-color: #757575 !important; /* Ensure disabled style overrides */
-  color: #bdbdbd !important;
+  background-color: #4a5d2f !important; /* Darker, desaturated green for disabled */
+  color: #a5d6a7 !important; /* Lighter text for disabled */
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-/* Responsive adjustments for very narrow screens if buttons start to feel too cramped */
-@media (max-width: 400px) {
+@media (max-width: 420px) { /* Adjusted breakpoint for wrapping */
   .action-buttons-banner-v2 {
-    flex-wrap: wrap; /* Allow buttons to wrap onto next line */
-    justify-content: center; /* Center wrapped buttons */
-    gap: 8px; /* Gap when wrapped */
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px; /* Gap when wrapped */
+    padding: 8px;
   }
   .action-button-v2 {
-    flex-grow: 0; /* Don't grow when wrapped */
-    flex-basis: calc(50% - 8px); /* Two buttons per row, considering gap */
-    max-width: none; /* Allow them to take the basis width */
-    font-size: 0.85em;
-    padding: 8px 10px;
+    flex-grow: 0;
+    flex-basis: calc(50% - 6px); /* Two buttons per row, adjust gap calc */
+    max-width: none;
+    font-size: 0.8em;
   }
 }
