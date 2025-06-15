@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://wenge.cloudns.ch:10758/api';
+const API_BASE_URL = 'https://wenge.cloudns.ch/backend/api';
 
 export const startGameAPI = async () => {
   try {
