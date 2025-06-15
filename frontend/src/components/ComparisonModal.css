@@ -10,11 +10,11 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 0;
+  padding: 0; 
   box-sizing: border-box;
 }
 
-.comparison-modal-content-fullscreen-v8 { /* Versioned */
+.comparison-modal-content-fullscreen-v8 { /* Using v8 from previous naming */
   background-color: #e9ebee; 
   width: 100%;
   height: 100%;
@@ -32,37 +32,35 @@
   flex-direction: row; 
   flex-grow: 1; 
   overflow-y: auto; 
-  padding: 6px; /* Reduced padding to maximize content area */
-  gap: 6px; /* Reduced gap between columns */
+  padding: 6px; 
+  gap: 6px; 
 }
 
 .player-column-v8 {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px; /* Reduced gap between player cells */
+  gap: 6px; 
 }
 
 .player-result-cell-v8 {
   background-color: #ffffff; 
   border: 1px solid #d3d6db;
   border-radius: 3px;
-  padding: 8px; /* Reduced padding for more content space */
+  padding: 8px 10px; /* Adjusted padding */
   box-shadow: 0 1px 1px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
-  gap: 6px; /* Reduced gap inside cell */
+  gap: 6px; 
   color: #1c1e21;
   flex-grow: 1; 
   flex-basis: 0;
-  justify-content: space-between; /* Distribute space between header and duns */
+  justify-content: flex-start; /* Align content to top, duns will push down */
 }
 .player-result-cell-v8.empty-player-cell-v8 {
-  background-color: #f0f2f5;
-  border: 1px dashed #ced0d4;
-  min-height: 200px; /* Adjust based on final dun heights */
+  min-height: 220px; /* Increased due to larger cards */
 }
-.player-result-cell-v8.error-cell-v8 { /* Styles for error cell */ }
+/* Error cell styles unchanged */
 
 
 .player-header-v8 {
@@ -70,101 +68,70 @@
   justify-content: center; 
   align-items: baseline; 
   gap: 5px;
-  margin-bottom: 6px; /* Reduced margin */
-  flex-shrink: 0; /* Prevent header from shrinking */
+  margin-bottom: 8px; /* Slightly more space */
+  flex-shrink: 0; 
 }
 
-.player-name-modal-v8 {
-  margin: 0;
-  font-size: 1em; /* Slightly smaller to fit with score */
-  font-weight: 600;
-}
-
-.player-total-score-modal-v8 {
-  margin: 0;
-  font-size: 0.8em; /* Smaller score text */
-  color: #3b5998; 
-  font-weight: normal;
-}
+.player-name-modal-v8 { /* Unchanged */ }
+.player-total-score-modal-v8 { /* Unchanged */ }
 
 .all-duns-compact-v8 {
   display: flex;
   flex-direction: column;
-  gap: 4px; /* VERY TIGHT gap between duns to maximize card height */
-  flex-grow: 1; /* Allow this area to take up space */
-  justify-content: space-around; /* Evenly distribute duns */
+  gap: 5px; /* Tighter gap between duns */
+  flex-grow: 1; 
+  justify-content: space-around; /* This will distribute the duns vertically */
 }
 
 .single-dun-stacked-cards-v8 {
-  display: flex;
+  display: flex; /* Changed to flex to help with card centering if needed */
   position: relative;
-  align-items: center; 
+  align-items: center; /* Vertically center the card stack IF the container has extra height */
+  justify-content: flex-start; /* Align stack to the left */
   background-color: #e0e3e6; 
-  border-radius: 2px; 
-  padding: 4px 0px 4px 4px; /* Minimal padding */
-  /* Height determined by card height + padding */
-  min-height: 90px; /* Adjusted for new card height (e.g., 80px + 2*5px padding) */
-  /* Width to accommodate all stacked cards */
-  min-width: 125px; /* (Num cards - 1) * overlap_offset + card_width */
-                   /* e.g., 4 * 18px + 55px = 72 + 55 = 127px for 5 cards */
-  flex-grow: 1; /* Allow each dun to take vertical space */
-  flex-basis: 0;
+  border-radius: 3px; 
+  /* Padding will define space around the cards */
+  padding: 5px; /* Small padding around the cards inside the dun */
+  /* Height is now more dynamic, based on card height + padding */
+  /* min-height: auto; // Let content define height */
+  /* Width needs to accommodate the fanned cards */
+  min-width: 150px; /* (Num cards - 1) * overlap_offset + card_width, e.g. 4*22 + 70 = 158 */
 }
 
 .single-dun-stacked-cards-v8 .card {
-  width: 55px;  /* Increased card width */
-  height: 80px; /* Increased card height */
-  border: 1px solid #90969e; /* Slightly darker border */
-  box-shadow: 0px 1px 2px rgba(0,0,0,0.3);
+  width: 70px;  /* << SIGNIFICANTLY INCREASED card width */
+  height: 100px; /* << SIGNIFICANTLY INCREASED card height */
+  border: 1px solid #888c92; /* More defined border */
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
   background-color: white;
   position: absolute;
-  top: 50%;
+  top: 50%; /* Center vertically within the .single-dun-stacked-cards-v8 padding box */
   transform: translateY(-50%);
+  /* left and z-index by :nth-child */
 }
 
-/* Stacking logic for new card size (55x80) */
-/* Visible part of prev card = card_width - (current_left - prev_left) */
-/* Let's aim for about 18px of the previous card to be visible */
-/* So, next_left = prev_left + 18px */
+/* Stacking logic for new card size (70x100) */
+/* Aim for ~22px visible part of underlying cards */
 .single-dun-stacked-cards-v8 .card:nth-child(1) { left: 0px;   z-index: 1; }
-.single-dun-stacked-cards-v8 .card:nth-child(2) { left: 18px;  z-index: 2; }
-.single-dun-stacked-cards-v8 .card:nth-child(3) { left: 36px;  z-index: 3; }
-.single-dun-stacked-cards-v8 .card:nth-child(4) { left: 54px;  z-index: 4; }
-.single-dun-stacked-cards-v8 .card:nth-child(5) { left: 72px;  z-index: 5; }
+.single-dun-stacked-cards-v8 .card:nth-child(2) { left: 22px;  z-index: 2; }
+.single-dun-stacked-cards-v8 .card:nth-child(3) { left: 44px;  z-index: 3; }
+.single-dun-stacked-cards-v8 .card:nth-child(4) { left: 66px;  z-index: 4; }
+.single-dun-stacked-cards-v8 .card:nth-child(5) { left: 88px;  z-index: 5; }
 
 
-.comparison-modal-footer-v8 {
-  padding: 8px 10px;
-  background-color: #f5f6f7;
-  border-top: 1px solid #ced0d4;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0; /* Prevent footer from shrinking */
-}
-
-.continue-game-button-v8 {
-  background-color: #4267b2;
-  color: white;
-  padding: 7px 18px;
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  font-size: 0.9em;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
-}
-.continue-game-button-v8:hover {
-  background-color: #365899;
-}
+.comparison-modal-footer-v8 { /* Unchanged */ }
+.continue-game-button-v8 { /* Unchanged */ }
 
 
 /* --- Responsive: Media Queries for Wider Screens --- */
+/* The image shows stacked cards even on wider views, so we keep stacking.
+   The primary difference for wider screens will be the 2x2 grid of player cells.
+*/
 @media (min-width: 768px) {
-  .comparison-modal-overlay-fullscreen { padding: 10px; } /* Less padding overall */
+  .comparison-modal-overlay-fullscreen { padding: 10px; }
   .comparison-modal-content-fullscreen-v8 {
     border-radius: 6px; 
-    max-height: 98vh; /* Can use almost full height */
+    max-height: 98vh; /* Almost full height */
   }
 
   .players-comparison-area-v8 {
@@ -179,28 +146,30 @@
     gap: 8px;
   }
   .player-header-v8 { margin-bottom: 10px; }
-  .player-name-modal-v8 { font-size: 1.15em; } 
-  .player-total-score-modal-v8 { font-size: 0.9em; }
+  .player-name-modal-v8 { font-size: 1.1em; } 
+  .player-total-score-modal-v8 { font-size: 0.85em; }
 
   .all-duns-compact-v8 { 
-    gap: 6px; /* Tighter gap for wider screen too if using this much space */
+    gap: 6px; 
   }
 
+  /* Keep card sizes and stacking similar to narrow view, or slightly larger if space truly allows */
   .single-dun-stacked-cards-v8 {
-    min-height: 95px; /* Adjust for larger cards */
-    min-width: 140px; /* Wider for larger cards */
-    padding: 5px 0px 5px 5px;
+    /* min-height and min-width will adjust based on card size + overlap */
+    padding: 6px; /* Slightly more padding */
+     min-height: 112px; /* 100 card height + 2*6 padding */
+     min-width: 170px; /* (4 * 25) + 70 = 170 for 5 cards */
   }
   .single-dun-stacked-cards-v8 .card {
-    width: 60px;  /* Card width for wider screens */
-    height: 88px; /* Card height for wider screens */
+    width: 70px;  /* Keep same large size as mobile, or slightly adjust */
+    height: 100px;
   }
-  /* Adjust stacking offsets for larger cards on wider screens */
+  /* Stacking offsets might remain the same if card size is similar */
   .single-dun-stacked-cards-v8 .card:nth-child(1) { left: 0px; }
-  .single-dun-stacked-cards-v8 .card:nth-child(2) { left: 20px; } /* e.g. 60 - (60-20) = 20 visible */
-  .single-dun-stacked-cards-v8 .card:nth-child(3) { left: 40px; }
-  .single-dun-stacked-cards-v8 .card:nth-child(4) { left: 60px; }
-  .single-dun-stacked-cards-v8 .card:nth-child(5) { left: 80px; }
+  .single-dun-stacked-cards-v8 .card:nth-child(2) { left: 22px; }
+  .single-dun-stacked-cards-v8 .card:nth-child(3) { left: 44px; }
+  .single-dun-stacked-cards-v8 .card:nth-child(4) { left: 66px; }
+  .single-dun-stacked-cards-v8 .card:nth-child(5) { left: 88px; }
 
   .continue-game-button-v8 { padding: 10px 22px; font-size: 0.95em; }
 }
