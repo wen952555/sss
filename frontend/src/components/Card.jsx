@@ -1,21 +1,35 @@
-// 更新图片路径处理
-const getCardImage = () => {
-  const { suit, value } = card;
-  let valueName;
+import React from 'react';
+
+// 修改为默认导出组件
+const Card = ({ card, onClick, isSelected, isPlayed }) => {
+  if (!card) return null;
   
-  if (value === 1) valueName = 'ace';
-  else if (value === 11) valueName = 'jack';
-  else if (value === 12) valueName = 'queen';
-  else if (value === 13) valueName = 'king';
-  else valueName = value.toString();
-  
-  // 确保路径格式正确
-  return `${valueName}_of_${suit}`;
+  const getCardImage = () => {
+    const { suit, value } = card;
+    let valueName;
+    
+    if (value === 1) valueName = 'ace';
+    else if (value === 11) valueName = 'jack';
+    else if (value === 12) valueName = 'queen';
+    else if (value === 13) valueName = 'king';
+    else valueName = value.toString();
+    
+    return `${valueName}_of_${suit}`;
+  };
+
+  return (
+    <div 
+      className={`card ${isSelected ? 'selected' : ''} ${isPlayed ? 'played' : ''}`}
+      onClick={onClick}
+    >
+      <img 
+        src={`/images/cards/${getCardImage()}.svg`} 
+        alt={`${card.value} of ${card.suit}`}
+        className="card-image"
+      />
+    </div>
+  );
 };
 
-// 在img标签中使用
-<img 
-  src={`${process.env.PUBLIC_URL}/images/cards/${getCardImage()}.svg`}
-  alt={`${card.value} of ${card.suit}`}
-  className="card-image"
-/>
+// 确保使用 export default
+export default Card;
