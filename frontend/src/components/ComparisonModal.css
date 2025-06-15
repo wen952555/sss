@@ -10,7 +10,7 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 5px; /* Reduced padding for very narrow screens */
+  padding: 5px;
   box-sizing: border-box;
 }
 
@@ -19,12 +19,12 @@
   width: 100%;
   height: 100%;
   max-width: 1200px;
-  max-height: 98vh; /* Allow a tiny bit of screen edge */
+  max-height: 98vh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-sizing: border-box;
-  border-radius: 6px; /* Slightly smaller radius */
+  border-radius: 6px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.2);
   overflow: hidden;
 }
@@ -32,7 +32,7 @@
 .comparison-modal-title {
   text-align: center;
   color: #333;
-  font-size: 1.5em; /* Adjusted for potentially smaller screens */
+  font-size: 1.5em;
   padding: 12px 0;
   margin: 0;
   background-color: #ffffff;
@@ -42,8 +42,8 @@
 
 .players-grid-layout-modal {
   display: grid;
-  grid-template-columns: 1fr; /* Mobile first: 1 column (stacked player cells) */
-  gap: 10px; /* Reduced gap */
+  grid-template-columns: 1fr; /* Mobile first: 1 column */
+  gap: 10px;
   padding: 10px;
   flex-grow: 1;
   overflow-y: auto;
@@ -64,7 +64,7 @@
   background-color: transparent;
   border: 1px dashed #d9d9d9;
   box-shadow: none;
-  min-height: 100px; /* Reduced min-height */
+  min-height: 100px;
 }
 .player-result-cell.error-cell {
   align-items: center;
@@ -90,66 +90,58 @@
   margin-bottom: 10px;
 }
 
-.dun-evaluation-section-modal {
-  display: flex;
-  flex-direction: column; /* Stack card area and info vertically on narrow screens */
-  gap: 5px; /* Gap between card area and info area */
-  margin-bottom: 10px;
-  padding: 6px;
+/* Styles for each dun (tou, zhong, wei) section */
+.dun-section-modal-with-corner-text {
+  position: relative; /* Crucial for positioning the corner text */
+  padding: 8px;
   background-color: #f8f9fa;
-  border-radius: 3px;
+  border-radius: 4px;
+  margin-bottom: 10px; /* Space between dun sections */
 }
-.dun-evaluation-section-modal:last-child {
+.dun-section-modal-with-corner-text:last-child {
   margin-bottom: 0;
 }
 
-.dun-cards-display-modal { /* Holds the cards */
+.dun-cards-container-modal { /* Wrapper for the cards */
   display: flex;
-  /* flex-wrap: wrap; // No wrapping for stacking effect on narrow screens by default */
-  justify-content: flex-start; 
-  align-items: center;
-  position: relative; /* For absolute positioning of cards if needed, or for z-index context */
-  min-height: 65px; /* Adjust based on stacked card height */
-  padding-left: 5px; /* Start cards a bit indented */
+  flex-wrap: wrap; /* Default to wrap for wider screens, will be overridden for narrow */
+  gap: 5px; /* Gap between cards when flat */
+  justify-content: center; /* Center cards within their container */
+  min-height: 105px; /* Adjust based on new larger card height */
 }
 
-.dun-cards-display-modal .card {
-  width: 45px;  /* Card width for narrow/stacked view */
-  height: 65px; /* Card height for narrow/stacked view */
+.dun-cards-container-modal .card {
+  width: 65px;  /* Default larger card width */
+  height: 98px; /* Default larger card height */
   cursor: default;
-  border: 1px solid #bbb; /* Add border to distinguish stacked cards */
-  box-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Shadow for depth */
-  background-color: white; /* Ensure card background is opaque */
-  margin-left: -30px; /* << KEY FOR STACKING: Overlap cards. Adjust value as needed */
-  position: relative; /* Needed for z-index to work if cards are truly overlapping */
-  /* z-index can be set dynamically in JS if stacking order matters beyond DOM order */
+  border: 1px solid #ccc; /* Lighter border for individual cards */
+  background-color: white;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
-.dun-cards-display-modal .card:first-child {
-  margin-left: 0; /* First card doesn't overlap to the left */
+.dun-info-corner-modal { /* For "头道: 牌型" text */
+  position: absolute;
+  top: 5px;    /* Adjust for precise top positioning */
+  right: 8px;  /* Adjust for precise right positioning */
+  background-color: rgba(255, 255, 255, 0.85); /* Semi-transparent background for text */
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.8em; /* Smaller text for corner */
+  text-align: right;
+  z-index: 1; /* Ensure text is above cards if there's any overlap issue (unlikely here) */
 }
 
-
-.dun-info-modal {
-  display: flex; /* Keep label and type side-by-side or stack them if preferred */
-  justify-content: space-between; /* If side-by-side */
-  align-items: center;
-  padding: 3px 0; /* Reduced padding */
-  /* text-align: center; // If stacking label and type */
-}
-
-.dun-title-modal {
-  font-size: 0.85em;
+.dun-title-corner {
   font-weight: 500;
   color: #333;
+  margin-right: 4px; /* Space between title and type */
 }
 
-.dun-type-modal {
-  font-size: 0.85em;
+.dun-type-corner {
   color: #555;
   font-weight: normal;
-  margin-left: 5px; /* Space from dun title if side-by-side */
 }
+
 
 .comparison-modal-footer {
   padding: 10px 15px;
@@ -164,7 +156,7 @@
 .continue-game-button {
   background-color: #28a745;
   color: white;
-  padding: 8px 18px; /* Smaller button for mobile */
+  padding: 8px 18px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -178,8 +170,41 @@
 
 /* --- Responsive: Media Queries --- */
 
-/* For wider screens (e.g., > 600px or 768px) - Restore side-by-side info and non-stacked cards */
-@media (min-width: 768px) { /* Adjust this breakpoint as needed */
+/* Narrow screens: Stacked cards */
+@media (max-width: 767px) { /* Apply stacking for screens narrower than 768px */
+  .players-grid-layout-modal {
+    grid-template-columns: 1fr; /* Single column for player cells */
+  }
+
+  .dun-cards-container-modal {
+    justify-content: flex-start; /* Align stacked cards to the left */
+    padding-left: 5px; /* Indent for the first card in stack */
+    min-height: 72px; /* Adjust for stacked card height */
+  }
+
+  .dun-cards-container-modal .card {
+    width: 50px;  /* Smaller card width for stacking */
+    height: 72px; /* Smaller card height for stacking */
+    margin-left: -35px; /* Negative margin for stacking effect */
+    border: 1px solid #bbb;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .dun-cards-container-modal .card:first-child {
+    margin-left: 0; /* First card in stack has no negative left margin */
+  }
+
+  .dun-info-corner-modal { /* Adjust text for smaller space */
+    font-size: 0.75em;
+    padding: 1px 4px;
+    top: 3px;
+    right: 5px;
+  }
+}
+
+
+/* Wider screens (tablets and up): 2x2 grid for players, flat cards */
+@media (min-width: 768px) {
   .comparison-modal-overlay-fullscreen {
     padding: 20px;
   }
@@ -187,7 +212,7 @@
     max-height: 90vh;
   }
   .players-grid-layout-modal {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns for 2x2 */
+    grid-template-columns: repeat(2, 1fr);
     padding: 20px;
     gap: 20px;
   }
@@ -195,47 +220,22 @@
     font-size: 1.8em;
     padding: 20px 0;
   }
-
-  .dun-evaluation-section-modal {
-    flex-direction: row; /* Info next to cards */
-    align-items: flex-start;
-    gap: 10px;
-    padding: 8px;
-  }
   
-  .dun-cards-display-modal {
-    flex-wrap: wrap; /* Allow cards to wrap if dun is full, for flat display */
-    justify-content: flex-start;
-    min-height: 98px; /* Adjust for larger cards */
-    padding-left: 0; /* Reset indent */
-  }
-
-  .dun-cards-display-modal .card {
+  /* Cards are already larger by default, no negative margin needed for wider screens */
+  .dun-cards-container-modal .card {
     width: 65px; 
     height: 98px;
-    margin-left: 0; /* Remove stacking margin */
+    margin-left: 0; /* Ensure no stacking margin */
     margin-right: 4px; /* Add right margin for flat display */
-    box-shadow: none; /* Can remove shadow for flat display or keep it subtle */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
   }
-  .dun-cards-display-modal .card:last-child {
+   .dun-cards-container-modal .card:last-child {
     margin-right: 0;
   }
 
-
-  .dun-info-modal {
-    flex-direction: column; /* Stack label and type */
-    align-items: flex-start; /* Align text left */
-    justify-content: center;
-    padding-left: 5px;
-    min-width: 90px; /* Ensure space for text */
-  }
-  .dun-title-modal {
-    font-size: 0.95em;
-    margin-bottom: 3px;
-  }
-  .dun-type-modal {
-    font-size: 0.9em;
-    margin-left: 0; /* No left margin if stacked under title */
+   .dun-info-corner-modal {
+    font-size: 0.8em; /* Restore or adjust font size */
+    /* Position remains absolute top-right */
   }
 
    .continue-game-button {
