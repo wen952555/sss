@@ -24,29 +24,32 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
   : 'http://localhost:8000/api';
 
 const GameStateDisplayNames = {
-  [GameStates.INIT]: "准备开始",
+  [GameStates.INIT]: "正在准备游戏...",
   [GameStates.DEALING]: "发牌中...",
-  HUMAN_ARRANGING: "请您分牌",
-  [GameStates.COMPARING]: "比牌中...",
+  HUMAN_ARRANGING: "请您调整牌型", // Changed text
   [GameStates.RESULTS]: "查看结果",
 };
 
 function App() {
   const [gameState, setGameState] = useState(initialGameState);
+  // arrangedHumanHand will now be initialized with an AI suggestion
   const [arrangedHumanHand, setArrangedHumanHand] = useState({ tou: [], zhong: [], wei: [] });
   const [showComparisonModal, setShowComparisonModal] = useState(false);
-  const [selectedCardInfo, setSelectedCardInfo] = useState(null); // { card: CardObject, fromDun: string }
+  const [selectedCardInfo, setSelectedCardInfo] = useState(null);
 
-  const humanPlayer = gameState.players.find(p => p.isHuman);
+  const humanPlayerFromState = gameState.players.find(p => p.isHuman); // Renamed to avoid conflict
 
-  const handleStartGame = useCallback(() => {
+  const initializeNewGame = useCallback(() => {
     setShowComparisonModal(false);
     setSelectedCardInfo(null);
+    // arrangedHumanHand will be set after AI suggestion for human
 
-    let newState = startGameLogic(initialGameState);
+    let newState = startGameLogic(initialGameState); // Deals cards to all players
+
+    let humanHandForAISuggestion = [];
 
     newState.players = newState.players.map(player => {
-      if (!player.isHuman) {
+      if (!player.isHuman) { // For AI players
         const aiArrangement = arrangeCardsAILogic(player.hand);
         if (aiArrangement && isValidArrangementLogic(aiArrangement.tou, aiArrangement.zhong, aiArrangement.wei)) {
           const evalHands = {
@@ -56,7 +59,7 @@ function App() {
           };
           return { ...player, arranged: aiArrangement, evalHands, confirmed: true };
         } else {
-          console.error(`AI ${player.name} fallback arrangement.`);
+          console.error(`AI ${player.name} failed initial arrangement. Using fallback.`);
           const fallbackTou = player.hand.slice(0, 3);
           const fallbackZhong = player.hand.slice(3, 8);
           const fallbackWei = player.hand.slice(8, 13);
@@ -74,27 +77,46 @@ function App() {
           }
           return { ...player, arranged: { tou: [], zhong: [], wei: [] }, evalHands: null, confirmed: true };
         }
-      } else {
-        setArrangedHumanHand({
-            tou: [...player.hand],
-            zhong: [],
-            wei: []
-        });
+      } else { // For Human player
+        humanHandForAISuggestion = [...player.hand]; // Store human's hand to get an AI suggestion
+        return player; // Return human player object (hand dealt, not yet arranged in UI)
       }
-      return player;
     });
+
+    // Generate an initial AI arrangement for the human player
+    if (humanHandForAISuggestion.length === 13) {
+      const initialHumanAIArrangement = arrangeCardsAILogic(humanHandForAISuggestion);
+      if (initialHumanAIArrangement && isValidArrangementLogic(initialHumanAIArrangement.tou, initialHumanAIArrangement.zhong, initialHumanAIArrangement.wei)) {
+        setArrangedHumanHand(initialHumanAIArrangement);
+      } else {
+        // Fallback if AI can't arrange human's hand (should be rare)
+        console.error("AI failed to provide initial arrangement for human. Placing all in tou.");
+        setArrangedHumanHand({ tou: humanHandForAISuggestion, zhong: [], wei: [] });
+      }
+    } else {
+        // Should not happen if startGameLogic works correctly
+        setArrangedHumanHand({ tou: [], zhong: [], wei: [] });
+    }
+
     newState.gameState = "HUMAN_ARRANGING";
     setGameState(newState);
   }, []);
 
+  useEffect(() => {
+    if (gameState.gameState === GameStates.INIT) {
+      initializeNewGame();
+    }
+  }, [gameState.gameState, initializeNewGame]);
+
+
   const handleSubmitPlayerHand = useCallback(() => {
-    if (!humanPlayer) return;
+    if (!humanPlayerFromState) return;
     const { tou, zhong, wei } = arrangedHumanHand;
 
     const totalCardsInDuns = tou.length + zhong.length + wei.length;
     if (totalCardsInDuns !== 13) {
-        alert(`总牌数必须是13张，当前为 ${totalCardsInDuns} 张。请检查各墩牌数。`);
-        return;
+      alert(`总牌数必须是13张，当前为 ${totalCardsInDuns} 张。请检查各墩牌数。`);
+      return;
     }
     if (tou.length !== 3 || zhong.length !== 5 || wei.length !== 5) {
       alert(`墩牌数量不正确！\n头道需3张 (当前${tou.length}张)\n中道需5张 (当前${zhong.length}张)\n尾道需5张 (当前${wei.length}张)`);
@@ -105,24 +127,25 @@ function App() {
       return;
     }
 
-    let stateAfterHumanConfirm = confirmPlayerArrangementLogic(gameState, humanPlayer.id, arrangedHumanHand);
+    let stateAfterHumanConfirm = confirmPlayerArrangementLogic(gameState, humanPlayerFromState.id, arrangedHumanHand);
     const finalStateWithResults = compareAllHandsLogic(stateAfterHumanConfirm);
     setGameState(finalStateWithResults);
     setShowComparisonModal(true);
-  }, [humanPlayer, arrangedHumanHand, gameState]);
+  }, [humanPlayerFromState, arrangedHumanHand, gameState]);
 
 
   const handleAIHelperForHuman = useCallback(() => {
-    if (humanPlayer && humanPlayer.hand.length === 13) {
-      const suggestion = arrangeCardsAILogic(humanPlayer.hand);
+    const humanP = gameState.players.find(p => p.isHuman);
+    if (humanP && humanP.hand && humanP.hand.length === 13) {
+      const suggestion = arrangeCardsAILogic(humanP.hand);
       if (suggestion && isValidArrangementLogic(suggestion.tou, suggestion.zhong, suggestion.wei)) {
         setArrangedHumanHand(suggestion);
-        setSelectedCardInfo(null);
+        setSelectedCardInfo(null); // Clear any card selection
       } else {
-        alert("AI未能给出有效的分牌建议。");
+        alert("AI未能给出新的有效分牌建议。");
       }
     }
-  }, [humanPlayer]);
+  }, [gameState.players]);
 
 
   const handleCardClick = useCallback((cardClicked, currentDunOfCard) => {
@@ -130,19 +153,23 @@ function App() {
       setSelectedCardInfo({ card: cardClicked, fromDun: currentDunOfCard });
     } else {
       if (selectedCardInfo.card.id === cardClicked.id && selectedCardInfo.fromDun === currentDunOfCard) {
-        setSelectedCardInfo(null);
+        setSelectedCardInfo(null); // Clicked same selected card: deselect
       } else {
+        // A card is selected, and user clicks a DIFFERENT card in some dun.
+        // This action now means: "I want to select this NEW card instead."
         setSelectedCardInfo({ card: cardClicked, fromDun: currentDunOfCard });
       }
     }
   }, [selectedCardInfo]);
 
   const handleDunClick = useCallback((targetDunName) => {
-    if (selectedCardInfo) {
+    if (selectedCardInfo) { // If a card is selected, move it to this dun (targetDunName)
       const { card, fromDun } = selectedCardInfo;
 
+      // Prevent moving to the same dun if it's already there (no actual move)
+      // but if the card was selected from this dun, clicking the dun again should deselect.
       if (fromDun === targetDunName) {
-        setSelectedCardInfo(null);
+        setSelectedCardInfo(null); // Deselect if clicking the dun the card is already in
         return;
       }
 
@@ -153,33 +180,28 @@ function App() {
           wei: [...prev.wei],
         };
 
-        if (fromDun) {
+        // Remove card from its original dun (fromDun)
+        if (fromDun && newArrangement[fromDun]) { // Check if fromDun is valid key
           newArrangement[fromDun] = newArrangement[fromDun].filter(c => c.id !== card.id);
         }
         
-        if (!newArrangement[targetDunName].find(c => c.id === card.id)) {
+        // Add card to the target dun, ensuring no duplicates
+        if (newArrangement[targetDunName] && !newArrangement[targetDunName].find(c => c.id === card.id)) {
             newArrangement[targetDunName] = [...newArrangement[targetDunName], card];
+        } else if (!newArrangement[targetDunName]) { // Should not happen if duns are initialized
+            newArrangement[targetDunName] = [card];
         }
+
 
         return newArrangement;
       });
-      setSelectedCardInfo(null);
+      setSelectedCardInfo(null); // Clear selection after moving
     }
+    // If no card is selected, clicking a dun area does nothing.
   }, [selectedCardInfo]);
 
-
-  useEffect(() => {
-    if (gameState.gameState === GameStates.INIT) {
-      const human = gameState.players.find(p => p.isHuman);
-      if (!human || !human.hand || human.hand.length === 0) {
-         handleStartGame();
-      }
-    }
-  }, [gameState.gameState, gameState.players, handleStartGame]);
-
-
-  if (gameState.gameState === GameStates.INIT && !gameState.players.find(p=>p.isHuman)?.hand?.length) {
-     return <div className="app-loading">正在准备新一局...</div>;
+  if (gameState.gameState === GameStates.INIT) {
+     return <div className="app-loading">请稍候，游戏正在初始化...</div>;
   }
 
   const currentStatusText = GameStateDisplayNames[gameState.gameState] || "进行中...";
@@ -187,12 +209,12 @@ function App() {
 
   return (
     <div className="app-container">
-      {!showComparisonModal && humanPlayer && (
+      {!showComparisonModal && humanPlayerFromState && (
         <>
           <TopInfoBar statusText={currentStatusText} playerNames={playerNames} />
           <div className="game-content-area">
             <HumanPlayerBoard
-              arrangedHand={arrangedHumanHand}
+              arrangedHand={arrangedHumanHand} // This contains the human's current arrangement
               selectedCardInfo={selectedCardInfo}
               onCardClick={handleCardClick}
               onDunClick={handleDunClick}
@@ -231,8 +253,11 @@ function App() {
           }}
         />
       )}
+      {!showComparisonModal && !humanPlayerFromState && gameState.gameState === "HUMAN_ARRANGING" && (
+          <div className="app-loading">正在加载玩家数据...</div>
+      )}
     </div>
   );
-} // This closing curly brace was missing or misplaced, causing the syntax error.
+}
 
 export default App;
