@@ -1,11 +1,11 @@
 /* frontend_react/src/components/TopInfoBar.css */
 .top-info-bar {
-  background-color: #f0f0f0;
-  padding: 8px 15px;
+  background-color: rgba(0, 0, 0, 0.2); /* 半透明深色背景，叠加在主深绿上 */
+  padding: 10px 15px; /* Increased padding slightly */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9em;
-  color: #333;
-  border-bottom: 1px solid #ddd;
+  font-size: 0.95em; /* Slightly larger */
+  color: #e0e0e0; /* 浅灰色文字 */
+  /* border-bottom: 1px solid rgba(255, 255, 255, 0.1); // Optional subtle border */
 }
