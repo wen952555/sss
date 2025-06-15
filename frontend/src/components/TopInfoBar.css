@@ -1,0 +1,11 @@
+/* frontend_react/src/components/TopInfoBar.css */
+.top-info-bar {
+  background-color: #f0f0f0;
+  padding: 8px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9em;
+  color: #333;
+  border-bottom: 1px solid #ddd;
+}
