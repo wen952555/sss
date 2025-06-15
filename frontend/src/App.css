@@ -4,10 +4,10 @@
   margin: 0 auto;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #2E7D32; /* Using the dark green from previous theme */
+  background-color: transparent; /* Let body background show through */
   min-height: 100vh;
   display: flex;
-  flex-direction: column; /* Ensure children stack vertically */
+  flex-direction: column;
 }
 
 .app-loading {
@@ -20,14 +20,8 @@
 }
 
 .game-content-area {
-  flex-grow: 1; /* Allows HumanPlayerBoard to take available space */
-  overflow-y: auto; /* If HumanPlayerBoard itself becomes too tall */
-  padding: 5px; 
+  flex-grow: 1;
+  /* padding: 5px; // Padding can be handled by HumanPlayerBoard itself if needed */
+  display: flex; /* Allow HumanPlayerBoard to potentially grow */
+  flex-direction: column;
 }
-
-/* ActionButtons component will be a direct child of .app-container's main content section */
-/* It will have its own background and stick to the bottom of the HumanPlayerBoard area,
-   or to the bottom of the screen if App.js is structured for that.
-   Current App.js structure: TopInfoBar, game-content-area (with HumanPlayerBoard), ActionButtons
-   This means ActionButtons will naturally be below game-content-area.
-*/
