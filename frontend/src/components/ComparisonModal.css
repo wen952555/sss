@@ -5,17 +5,17 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.7); /* Darker overlay for more contrast */
+  background-color: rgba(0, 0, 0, 0.7); 
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 0; 
+  padding: 0;
   box-sizing: border-box;
 }
 
-.comparison-modal-content-fullscreen-v8 {
-  background-color: #2E7D32; /* 主深绿色背景 */
+.comparison-modal-content-fullscreen-v8 { 
+  background-color: #2E7D32; /* 深绿色主背景 */
   width: 100%;
   height: 100%;
   display: flex;
@@ -23,7 +23,7 @@
   justify-content: space-between; 
   box-sizing: border-box;
   overflow: hidden; 
-  color: #f0f0f0; /* Default light text for dark background */
+  color: #f0f0f0; 
 }
 
 /* Title is removed */
@@ -45,11 +45,11 @@
 }
 
 .player-result-cell-v8 {
-  background-color: #388E3C; /* 中等绿色，比主背景稍浅 */
+  background-color: #388E3C; /* 中等绿色 */
   border: 1px solid #4CAF50; /* 亮一点的绿色边框 */
-  border-radius: 4px; /* Consistent radius */
+  border-radius: 4px;
   padding: 10px; 
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2); /* Shadow for depth on dark theme */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
   gap: 6px; 
@@ -58,11 +58,11 @@
   justify-content: flex-start; 
 }
 .player-result-cell-v8.empty-player-cell-v8 {
-  background-color: rgba(0,0,0,0.1); /* Darker transparent for empty */
+  background-color: rgba(0,0,0,0.1); 
   border: 1px dashed #4CAF50;
-  min-height: 220px; 
+  min-height: 200px; 
 }
-.player-result-cell-v8.error-cell-v8 { color: #FFCDD2; }
+.player-result-cell-v8.error-cell-v8 { /* Styles for error cell */ }
 
 
 .player-header-v8 {
@@ -72,21 +72,21 @@
   gap: 5px;
   margin-bottom: 8px; 
   flex-shrink: 0; 
-  border-bottom: 1px solid rgba(255,255,255,0.1); /* Subtle separator */
+  border-bottom: 1px solid rgba(255,255,255,0.1); 
   padding-bottom: 5px;
 }
 
 .player-name-modal-v8 {
   margin: 0;
   font-size: 1.1em; 
-  font-weight: 500; /* Slightly less bold for better readability on dark */
-  color: #FFFFFF; /* Bright white name */
+  font-weight: 500; 
+  color: #FFFFFF; 
 }
 
 .player-total-score-modal-v8 {
   margin: 0;
   font-size: 0.9em; 
-  color: #C8E6C9; /*浅绿色分数 */
+  color: #C8E6C9; 
   font-weight: normal;
 }
 
@@ -102,9 +102,9 @@
   display: flex;
   position: relative;
   align-items: center; 
-  background-color: #66BB6A; /* 更浅的绿色作为牌的直接背景 */
+  background-color: #4CAF50; /* 稍浅的绿色作为牌的直接背景 */
   border-radius: 3px; 
-  padding: 5px; /* Padding around cards */
+  padding: 5px; 
   min-height: 90px; 
   min-width: 130px; 
   flex-grow: 1; 
@@ -115,9 +115,9 @@
 .single-dun-stacked-cards-v8 .card {
   width: 55px;  
   height: 80px; 
-  border: 1px solid #757575; /* Darker border for cards */
-  box-shadow: 0px 1px 2px rgba(0,0,0,0.4); /* Stronger shadow */
-  background-color: white; /* Cards remain white */
+  border: 1px solid #757575; 
+  box-shadow: 0px 1px 2px rgba(0,0,0,0.4); 
+  background-color: white; 
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -132,8 +132,8 @@
 
 .comparison-modal-footer-v8 {
   padding: 10px 15px;
-  background-color: #23272a; /* Dark footer */
-  border-top: 1px solid #4f545c; /* Separator */
+  background-color: #1B5E20; /* 更深的绿色页脚 */
+  border-top: 1px solid #4CAF50; 
   display: flex;
   justify-content: center;
   align-items: center;
@@ -141,8 +141,8 @@
 }
 
 .continue-game-button-v8 {
-  background-color: #81C784; /* Lighter green button */
-  color: #2E7D32; /* Dark green text on light green button */
+  background-color: #81C784; 
+  color: #1B5E20; /* 深绿色文字 */
   padding: 8px 20px; 
   border: none;
   border-radius: 3px;
@@ -161,47 +161,23 @@
   opacity: 0.7;
 }
 
-
 @media (min-width: 768px) {
+  /* ... (Wider screen styles for ComparisonModal remain largely the same as previous version,
+           just ensure color theme consistency) ... */
   .comparison-modal-overlay-fullscreen { padding: 10px; } 
-  .comparison-modal-content-fullscreen-v8 {
-    border-radius: 6px; 
-    max-height: 98vh; 
-  }
-
-  .players-comparison-area-v8 {
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    padding: 10px; 
-    gap: 10px; 
-  }
-
-  .player-result-cell-v8 {
-    padding: 12px; 
-    gap: 8px;
-  }
+  .comparison-modal-content-fullscreen-v8 { border-radius: 6px; max-height: 98vh; }
+  .players-comparison-area-v8 { display: grid; grid-template-columns: repeat(2, 1fr); padding: 10px; gap: 10px; }
+  .player-result-cell-v8 { padding: 12px; gap: 8px; }
   .player-header-v8 { margin-bottom: 10px; }
   .player-name-modal-v8 { font-size: 1.1em; } 
   .player-total-score-modal-v8 { font-size: 0.9em; }
-
-  .all-duns-compact-v8 { 
-    gap: 8px; 
-  }
-
-  .single-dun-stacked-cards-v8 {
-    min-height: 105px; 
-    min-width: 150px; 
-    padding: 6px;
-  }
-  .single-dun-stacked-cards-v8 .card {
-    width: 60px;  
-    height: 88px; 
-  }
+  .all-duns-compact-v8 { gap: 8px; }
+  .single-dun-stacked-cards-v8 { min-height: 105px; min-width: 150px; padding: 6px; }
+  .single-dun-stacked-cards-v8 .card { width: 60px; height: 88px; }
   .single-dun-stacked-cards-v8 .card:nth-child(1) { left: 0px; }
   .single-dun-stacked-cards-v8 .card:nth-child(2) { left: 20px; } 
   .single-dun-stacked-cards-v8 .card:nth-child(3) { left: 40px; }
   .single-dun-stacked-cards-v8 .card:nth-child(4) { left: 60px; }
   .single-dun-stacked-cards-v8 .card:nth-child(5) { left: 80px; }
-
   .continue-game-button-v8 { padding: 10px 22px; font-size: 1em; }
 }
