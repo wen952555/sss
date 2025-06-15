@@ -1,54 +1,26 @@
 /* frontend_react/src/App.css */
-.App {
-  text-align: center;
+.app-container {
+  max-width: 900px; /* 或根据您的设计调整 */
+  margin: 0 auto;
+  padding: 0px 15px 15px 15px; /* 顶部不需要padding，由TopInfoBar处理 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #e9ebee; /* 图片背景色偏白或淡灰 */
+  min-height: 100vh;
 }
 
-.App-header {
-  background-color: #282c34;
-  padding: 20px;
-  color: white;
-  margin-bottom: 20px;
+.app-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.5em;
+  color: #555;
 }
 
-.App-header h1 {
-  margin: 0;
-  display: inline-block;
-  margin-right: 20px;
+.game-content-area {
+  margin-top: 10px; /* 与TopInfoBar的间距 */
 }
 
-.App-header button {
-  padding: 10px 15px;
-  font-size: 1em;
-  cursor: pointer;
-  background-color: #61dafb;
-  border: none;
-  border-radius: 4px;
-}
-.App-header button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-
-.results-display {
-  margin-top: 20px;
-  padding: 15px;
-  border: 1px solid #4caf50;
-  background-color: #f0fff0;
-  text-align: left;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-}
-.results-display h3, .results-display h4 {
-  color: #388e3c;
-}
-.results-display ul {
-  list-style-type: none;
-  padding-left: 0;
-}
-.results-display li {
-  margin-bottom: 10px;
-  padding: 8px;
-  border-bottom: 1px dashed #ccc;
-}
+/* 之前App.js中定义的App-header可以移除或重构 */
+/* .App-header { ... } */
+/* .results-display { ... } */ /* 这部分逻辑移到ComparisonModal */
