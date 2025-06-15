@@ -6,7 +6,7 @@ import './ComparisonModal.css'; // Ensure this CSS is updated
 const PlayerResultDisplay = ({ player }) => {
   if (!player || !player.arranged || !player.evalHands) {
     return (
-      <div className="player-result-cell-v2 error-cell-v2"> {/* Updated class */}
+      <div className="player-result-cell-v3 error-cell-v3"> {/* Updated class */}
         <h4>{player?.name || '未知玩家'}</h4>
         <p>数据错误</p>
       </div>
@@ -17,31 +17,29 @@ const PlayerResultDisplay = ({ player }) => {
   const dunLabelMap = { tou: '头道', zhong: '中道', wei: '尾道' };
 
   return (
-    <div className="player-result-cell-v2"> {/* Updated class */}
-      <h4 className="player-name-modal-v2">{player.name}</h4> {/* Updated class */}
-      <p className="player-total-score-modal-v2">本局得分: {player.score}</p> {/* Updated class */}
+    <div className="player-result-cell-v3"> {/* Updated class */}
+      <h4 className="player-name-modal-v3">{player.name}</h4> {/* Updated class */}
+      <p className="player-total-score-modal-v3">本局得分: {player.score}</p> {/* Updated class */}
       
-      <div className="all-duns-container-v2"> {/* New container for all duns */}
+      <div className="all-duns-container-v3"> {/* Container for all duns of a player */}
         {dunOrder.map(dunKey => {
           const dunHand = player.arranged[dunKey] || [];
           const dunEval = player.evalHands[dunKey];
           const dunHandName = dunEval?.name || "未评估";
 
           return (
-            <div key={dunKey} className="single-dun-display-v2"> {/* Wrapper for each dun */}
-              <div className="dun-info-text-v2"> {/* Text above cards */}
-                <span className="dun-title-v2">{dunLabelMap[dunKey]}:</span>
-                <span className="dun-type-v2">{dunHandName}</span>
-              </div>
-              <div className="dun-cards-stacked-v2"> {/* Card container for stacking */}
-                {dunHand.map((card, index) => ( // Pass index for stacking style if needed by CSS
+            <div key={dunKey} className="single-dun-layout-v3"> {/* Main layout for one dun: cards + text info */}
+              <div className="dun-cards-stacked-v3"> {/* Card container for stacking */}
+                {dunHand.map((card) => (
                   <Card 
                     key={card.id} 
                     card={card} 
-                    // Inline style for stacking can be complex, prefer CSS :nth-child if possible
-                    // style={{ zIndex: index }} // Simple z-index for DOM order stacking
                   />
                 ))}
+              </div>
+              <div className="dun-text-info-v3"> {/* Text on the right of cards */}
+                <span className="dun-title-v3">{dunLabelMap[dunKey]}:</span>
+                <span className="dun-type-v3">{dunHandName}</span>
               </div>
             </div>
           );
@@ -54,23 +52,23 @@ const PlayerResultDisplay = ({ player }) => {
 const ComparisonModal = ({ players, onClose }) => {
   if (!players || players.length === 0) return null;
 
+  // Pad with nulls for 2x2 grid if less than 4 players
   const displayPlayers = [...players];
-  // Pad with nulls if less than 4 players, only if grid expects 4 children
-  // For stacked view, this padding might not be necessary if each player cell takes full width
-  // Let's assume for now the grid layout will handle it.
+  while (displayPlayers.length < 4 && displayPlayers.length > 0) {
+    displayPlayers.push(null); 
+  }
+
 
   return (
     <div className="comparison-modal-overlay-fullscreen">
       <div className="comparison-modal-content-fullscreen">
         <h2 className="comparison-modal-title">本局比牌结果</h2>
-        <div className="players-layout-modal-v2"> {/* Main layout for player cells */}
-          {displayPlayers.map((player, index) =>
+        <div className="players-grid-2x2-v3"> {/* Main 2x2 grid layout for player cells */}
+          {displayPlayers.slice(0, 4).map((player, index) => // Only take up to 4 for 2x2
             player ? (
               <PlayerResultDisplay key={player.id || `player-${index}`} player={player} />
             ) : (
-              // Only render empty cells if you absolutely need placeholders for a grid
-              // For a single column stacked view, you might not render empty cells
-              <div key={`empty-cell-${index}`} className="player-result-cell-v2 empty-player-cell-v2"></div>
+              <div key={`empty-cell-${index}`} className="player-result-cell-v3 empty-player-cell-v3"></div>
             )
           )}
         </div>
