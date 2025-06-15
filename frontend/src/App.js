@@ -2,13 +2,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import TopInfoBar from './components/TopInfoBar';
 import HumanPlayerBoard from './components/HumanPlayerBoard';
-import ActionButtons from './components/ActionButtons'; // Make sure this is imported
+import ActionButtons from './components/ActionButtons';
 import ComparisonModal from './components/ComparisonModal';
 import {
   initialGameState,
   startGame as startGameLogic,
-  confirmArrangement as confirmPlayerArrangementLogic,
-  compareAllHands as compareAllHandsLogic,
+  confirmArrangement as confirmArrangementLogicInternal, // Use internal name
+  compareAllHands as compareAllHandsLogicInternal,     // Use internal name
   GameStates
 } from './logic/gameLogic';
 import { arrangeCardsAI as arrangeCardsAILogic } from './logic/aiLogic';
@@ -38,7 +38,7 @@ function App() {
 
   const humanPlayerFromState = gameState.players.find(p => p.isHuman);
 
-  const initializeNewGame = useCallback(() => { /* ... (no change from previous) ... */ 
+  const initializeNewGame = useCallback(() => {
     console.time("initializeNewGameTotal");
     setSelectedCardsInfo([]);
     setArrangedHumanHand({ tou: [], zhong: [], wei: [] });
@@ -78,9 +78,9 @@ function App() {
     console.time("setInitialGameState"); setGameState(newState); console.timeEnd("setInitialGameState");
     setIsLoadingNewGame(false); 
     console.timeEnd("initializeNewGameTotal");
-  }, []); 
+  }, []); // Imported logic functions are stable, so they don't need to be dependencies of initializeNewGame
 
-  const handleCloseComparisonModalAndStartNewGame = useCallback(() => { /* ... (no change) ... */ 
+  const handleCloseComparisonModalAndStartNewGame = useCallback(() => {
     setShowComparisonModal(false); setIsLoadingNewGame(true); 
     setTimeout(() => {
       setGameState(prevOriginalState => {
@@ -89,24 +89,81 @@ function App() {
           return { ...initialGameState, players: newCleanPlayers, gameState: GameStates.INIT, };
       });
     }, 50); 
-  }, []);
+  }, []); // No external dependencies that change
 
-  useEffect(() => { /* ... (no change) ... */ 
+  useEffect(() => {
     if (gameState.gameState === GameStates.INIT) {
         if (isLoadingNewGame) { initializeNewGame(); } 
         else { setIsLoadingNewGame(true); setTimeout(() => initializeNewGame(), 0); }
     }
   }, [gameState.gameState, initializeNewGame, isLoadingNewGame]);
 
-  const handleSubmitPlayerHand = useCallback(() => { /* ... (no change) ... */ }, [humanPlayerFromState, arrangedHumanHand, gameState]);
-  const handleAIHelperForHuman = useCallback(() => { /* ... (no change) ... */ }, [gameState.players]);
-  const handleCardClick = useCallback((cardClicked, currentDunOfCard) => { /* ... (no change) ... */ }, []);
-  const handleDunClick = useCallback((targetDunName) => { /* ... (no change) ... */ }, [selectedCardsInfo]);
+
+  const handleSubmitPlayerHand = useCallback(() => {
+    if (!humanPlayerFromState) return;
+    const { tou, zhong, wei } = arrangedHumanHand;
+    const totalCardsInDuns = tou.length + zhong.length + wei.length;
+    if (totalCardsInDuns !== 13) { alert(`总牌数必须是13张，当前为 ${totalCardsInDuns} 张。请检查各墩牌数。`); return; }
+    if (tou.length !== 3 || zhong.length !== 5 || wei.length !== 5) { alert(`墩牌数量不正确！\n头道需3张 (当前${tou.length}张)\n中道需5张 (当前${zhong.length}张)\n尾道需5张 (当前${wei.length}张)`); return; }
+    if (!isValidArrangementLogic(tou, zhong, wei)) { alert("您的墩牌不合法！请确保头道 ≤ 中道 ≤ 尾道。"); return; }
+
+    // Use the imported functions directly
+    let stateAfterHumanConfirm = confirmArrangementLogicInternal(gameState, humanPlayerFromState.id, arrangedHumanHand);
+    const finalStateWithResults = compareAllHandsLogicInternal(stateAfterHumanConfirm);
+    setGameState(finalStateWithResults);
+    setShowComparisonModal(true);
+  }, [humanPlayerFromState, arrangedHumanHand, gameState]); // Dependencies: state values used directly
+
+  const handleAIHelperForHuman = useCallback(() => {
+    const humanP = gameState.players.find(p => p.isHuman);
+    if (humanP && humanP.hand && humanP.hand.length === 13) {
+      const suggestion = arrangeCardsAILogic(humanP.hand); // arrangeCardsAILogic is stable
+      if (suggestion && isValidArrangementLogic(suggestion.tou, suggestion.zhong, suggestion.wei)) { // isValidArrangementLogic is stable
+        setArrangedHumanHand(suggestion);
+        setSelectedCardsInfo([]);
+      } else {
+        alert("AI未能给出新的有效分牌建议。");
+      }
+    }
+  }, [gameState.players]); // Dependency: gameState.players is used
+
+  const handleCardClick = useCallback((cardClicked, currentDunOfCard) => {
+    setSelectedCardsInfo(prevSelected => {
+      const existingIndex = prevSelected.findIndex(info => info.card.id === cardClicked.id);
+      if (existingIndex > -1) {
+        return prevSelected.filter((_, index) => index !== existingIndex);
+      } else {
+        return [...prevSelected, { card: cardClicked, fromDun: currentDunOfCard }];
+      }
+    });
+  }, []); // No dependencies that change
+
+  const handleDunClick = useCallback((targetDunName) => {
+    if (selectedCardsInfo.length > 0) {
+      setArrangedHumanHand(prevArrangement => {
+        const newArrangement = { tou: [...prevArrangement.tou], zhong: [...prevArrangement.zhong], wei: [...prevArrangement.wei]};
+        const cardsToAddToTarget = [];
+        selectedCardsInfo.forEach(selectedInfo => {
+          const { card, fromDun } = selectedInfo;
+          if (fromDun && newArrangement[fromDun]) {
+            newArrangement[fromDun] = newArrangement[fromDun].filter(c => c.id !== card.id);
+          }
+          cardsToAddToTarget.push(card);
+        });
+        const existingTargetDunCardIds = new Set(newArrangement[targetDunName].map(c=>c.id));
+        const uniqueCardsToAdd = cardsToAddToTarget.filter(c => !existingTargetDunCardIds.has(c.id));
+        newArrangement[targetDunName] = [...newArrangement[targetDunName], ...uniqueCardsToAdd];
+        return newArrangement;
+      });
+      setSelectedCardsInfo([]);
+    }
+  }, [selectedCardsInfo]); // Dependency: selectedCardsInfo is used
+
 
   // Placeholder handlers for new buttons
-  const handleManageProfile = useCallback(() => { console.log("个人管理 Clicked"); /* TODO */ }, []);
-  const handleToggleAIPlay = useCallback(() => { console.log("AI托管 Clicked"); /* TODO */ }, []);
-  const handleAutoMatch = useCallback(() => { console.log("自动匹配 Clicked"); /* TODO */ }, []);
+  const handleManageProfile = useCallback(() => { console.log("个人管理 Clicked"); }, []);
+  const handleToggleAIPlay = useCallback(() => { console.log("AI托管 Clicked"); }, []);
+  const handleAutoMatch = useCallback(() => { console.log("自动匹配 Clicked"); }, []);
 
 
   if (isLoadingNewGame) {
@@ -121,7 +178,7 @@ function App() {
       {!showComparisonModal && humanPlayerFromState && gameState.gameState === "HUMAN_ARRANGING" && (
         <>
           <TopInfoBar statusText={currentStatusText} playerNames={playerNames} />
-          <div className="game-content-area"> {/* This will now be the main scrollable area if content overflows */}
+          <div className="game-content-area">
             <HumanPlayerBoard
               arrangedHand={arrangedHumanHand}
               selectedCardsInfo={selectedCardsInfo}
@@ -129,7 +186,6 @@ function App() {
               onDunClick={handleDunClick}
             />
           </div>
-          {/* ActionButtons are now a banner below HumanPlayerBoard */}
           <ActionButtons 
             onAIHelper={handleAIHelperForHuman}
             onSubmit={handleSubmitPlayerHand}
