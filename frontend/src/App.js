@@ -26,7 +26,7 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
 const GameStateDisplayNames = {
   [GameStates.INIT]: "正在准备游戏...",
   HUMAN_ARRANGING: "请您调整牌型",
-  [GameStates.RESULTS]: "查看结果",
+  [GameStates.RESULTS]: "查看结果", // This state is when modal is shown
 };
 
 function App() {
@@ -34,21 +34,22 @@ function App() {
   const [arrangedHumanHand, setArrangedHumanHand] = useState({ tou: [], zhong: [], wei: [] });
   const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [selectedCardsInfo, setSelectedCardsInfo] = useState([]);
+  const [isLoadingNewGame, setIsLoadingNewGame] = useState(false); // New state for loading
 
   const humanPlayerFromState = gameState.players.find(p => p.isHuman);
 
   const initializeNewGame = useCallback(() => {
+    // This function is now called after isLoadingNewGame is set to true
     console.time("initializeNewGameTotal");
-    setShowComparisonModal(false);
+    // setShowComparisonModal(false); // Modal is already closed by handleCloseComparisonModal
     setSelectedCardsInfo([]);
     setArrangedHumanHand({ tou: [], zhong: [], wei: [] });
 
     console.time("startGameLogic");
-    let newState = startGameLogic(initialGameState); // Deals cards
+    let newState = startGameLogic(initialGameState);
     console.timeEnd("startGameLogic");
 
     let humanHandForAISuggestion = [];
-
     console.time("aiAndHumanSetup");
     newState.players = newState.players.map(player => {
       if (!player.isHuman) {
@@ -56,27 +57,19 @@ function App() {
         const aiArrangement = arrangeCardsAILogic(player.hand);
         console.timeEnd(`aiArrange-${player.id}`);
         if (aiArrangement && isValidArrangementLogic(aiArrangement.tou, aiArrangement.zhong, aiArrangement.wei)) {
-          const evalHands = {
-            tou: evaluateHandLogic(aiArrangement.tou),
-            zhong: evaluateHandLogic(aiArrangement.zhong),
-            wei: evaluateHandLogic(aiArrangement.wei),
-          };
-          return { ...player, arranged: aiArrangement, evalHands, confirmed: true };
-        } else {
-          console.error(`AI ${player.name} failed initial arrangement. Using fallback.`);
-          const fallbackTou = player.hand.slice(0, 3);
-          const fallbackZhong = player.hand.slice(3, 8);
-          const fallbackWei = player.hand.slice(8, 13);
-          if (fallbackTou.length === 3 && fallbackZhong.length === 5 && fallbackWei.length === 5 && isValidArrangementLogic(fallbackTou, fallbackZhong, fallbackWei)) {
-            return {
-              ...player,
-              arranged: { tou: fallbackTou, zhong: fallbackZhong, wei: fallbackWei },
-              evalHands: { tou: evaluateHandLogic(fallbackTou), zhong: evaluateHandLogic(fallbackZhong), wei: evaluateHandLogic(fallbackWei) },
-              confirmed: true
-            };
-          }
-          const emptyArrangement = { tou: [], zhong: [], wei: [] };
-          return { ...player, arranged: emptyArrangement, evalHands: { tou: evaluateHandLogic([]), zhong: evaluateHandLogic([]), wei: evaluateHandLogic([]) }, confirmed: true };
+          const evalHands = { /* ... */ }; // evaluateHandLogic for each dun
+          return { ...player, arranged: aiArrangement, evalHands: {tou: evaluateHandLogic(aiArrangement.tou), zhong: evaluateHandLogic(aiArrangement.zhong), wei: evaluateHandLogic(aiArrangement.wei)}, confirmed: true };
+        } else { /* AI fallback */ 
+            const fallbackTou = player.hand.slice(0,3);
+            const fallbackZhong = player.hand.slice(3,8);
+            const fallbackWei = player.hand.slice(8,13);
+            const emptyArr = {tou: [], zhong: [], wei: []};
+            const fbEval = {tou: evaluateHandLogic(fallbackTou), zhong: evaluateHandLogic(fallbackZhong), wei: evaluateHandLogic(fallbackWei)};
+            const emptyEval = {tou: evaluateHandLogic([]), zhong: evaluateHandLogic([]), wei: evaluateHandLogic([])};
+            if(fallbackTou.length === 3 && fallbackZhong.length === 5 && fallbackWei.length === 5 && isValidArrangementLogic(fallbackTou, fallbackZhong, fallbackWei)) {
+                return { ...player, arranged: {tou: fallbackTou, zhong: fallbackZhong, wei: fallbackWei}, evalHands: fbEval, confirmed: true };
+            }
+            return { ...player, arranged: emptyArr, evalHands: emptyEval, confirmed: true };
         }
       } else {
         humanHandForAISuggestion = [...player.hand];
@@ -91,7 +84,6 @@ function App() {
       if (initialHumanAIArrangement && isValidArrangementLogic(initialHumanAIArrangement.tou, initialHumanAIArrangement.zhong, initialHumanAIArrangement.wei)) {
         setArrangedHumanHand(initialHumanAIArrangement);
       } else {
-        console.error("AI failed to provide initial arrangement for human. Defaulting to simple split.");
         setArrangedHumanHand({ tou: humanHandForAISuggestion.slice(0,3), zhong: humanHandForAISuggestion.slice(3,8), wei: humanHandForAISuggestion.slice(8,13) });
       }
     } else {
@@ -103,18 +95,40 @@ function App() {
     console.time("setInitialGameState");
     setGameState(newState);
     console.timeEnd("setInitialGameState");
+    
+    setIsLoadingNewGame(false); // Reset loading state
     console.timeEnd("initializeNewGameTotal");
-  }, []); // Dependencies are stable imported functions.
+  }, []); // Dependencies are stable
+
+  // Handles closing the modal and then triggering the new game initialization
+  const handleCloseComparisonModalAndStartNewGame = useCallback(() => {
+    setShowComparisonModal(false);
+    setIsLoadingNewGame(true); // Set loading state
+
+    // Use setTimeout to allow the UI to update and show the loading state
+    // before the potentially blocking initializeNewGame function runs.
+    setTimeout(() => {
+      initializeNewGame();
+    }, 50); // Small delay, e.g., 50ms
+  }, [initializeNewGame]);
+
 
   useEffect(() => {
-    if (gameState.gameState === GameStates.INIT) {
-      initializeNewGame();
+    // Only initialize if game is INIT and not already loading a new game
+    if (gameState.gameState === GameStates.INIT && !isLoadingNewGame) {
+        // Check if it's a genuine new game start or after a modal close
+        // This ensures initializeNewGame is called once when app loads with INIT state
+        // or when explicitly reset to INIT for a new game.
+        const humanP = gameState.players.find(p=>p.isHuman);
+        if (!humanP || !humanP.hand || humanP.hand.length === 0) {
+             setIsLoadingNewGame(true); // Set loading before first init
+             setTimeout(() => initializeNewGame(), 50);
+        }
     }
-  }, [gameState.gameState, initializeNewGame]);
+  }, [gameState.gameState, isLoadingNewGame, initializeNewGame, gameState.players]);
 
 
-  const handleSubmitPlayerHand = useCallback(() => {
-    // ... (rest of the function remains the same as previous version)
+  const handleSubmitPlayerHand = useCallback(() => { /* ... (no changes needed here) ... */ 
     if (!humanPlayerFromState) return;
     const { tou, zhong, wei } = arrangedHumanHand;
     const totalCardsInDuns = tou.length + zhong.length + wei.length;
@@ -124,12 +138,11 @@ function App() {
 
     let stateAfterHumanConfirm = confirmPlayerArrangementLogic(gameState, humanPlayerFromState.id, arrangedHumanHand);
     const finalStateWithResults = compareAllHandsLogic(stateAfterHumanConfirm);
-    setGameState(finalStateWithResults);
+    setGameState(finalStateWithResults); // This also changes gameState.gameState to RESULTS
     setShowComparisonModal(true);
   }, [humanPlayerFromState, arrangedHumanHand, gameState]);
 
-  const handleAIHelperForHuman = useCallback(() => {
-    // ... (rest of the function remains the same as previous version)
+  const handleAIHelperForHuman = useCallback(() => { /* ... (no changes needed here) ... */ 
     const humanP = gameState.players.find(p => p.isHuman);
     if (humanP && humanP.hand && humanP.hand.length === 13) {
       const suggestion = arrangeCardsAILogic(humanP.hand);
@@ -142,8 +155,7 @@ function App() {
     }
   }, [gameState.players]);
 
-  const handleCardClick = useCallback((cardClicked, currentDunOfCard) => {
-    // ... (rest of the function remains the same as previous version)
+  const handleCardClick = useCallback((cardClicked, currentDunOfCard) => { /* ... (no changes) ... */ 
     setSelectedCardsInfo(prevSelected => {
       const existingIndex = prevSelected.findIndex(info => info.card.id === cardClicked.id);
       if (existingIndex > -1) {
@@ -154,8 +166,7 @@ function App() {
     });
   }, []);
 
-  const handleDunClick = useCallback((targetDunName) => {
-    // ... (rest of the function remains the same as previous version)
+  const handleDunClick = useCallback((targetDunName) => { /* ... (no changes) ... */ 
     if (selectedCardsInfo.length > 0) {
       setArrangedHumanHand(prevArrangement => {
         const newArrangement = { tou: [...prevArrangement.tou], zhong: [...prevArrangement.zhong], wei: [...prevArrangement.wei]};
@@ -177,8 +188,8 @@ function App() {
   }, [selectedCardsInfo]);
 
 
-  if (gameState.gameState === GameStates.INIT) {
-     return <div className="app-loading">请稍候，游戏正在初始化...</div>;
+  if (isLoadingNewGame || (gameState.gameState === GameStates.INIT && !humanPlayerFromState?.hand?.length)) {
+     return <div className="app-loading">请稍候，正在准备新一局...</div>;
   }
 
   const currentStatusText = GameStateDisplayNames[gameState.gameState] || "进行中...";
@@ -210,25 +221,12 @@ function App() {
       {showComparisonModal && (
         <ComparisonModal
           players={gameState.players}
-          onClose={() => {
-            setShowComparisonModal(false);
-            // Simplified and more direct game state reset for a new game
-            setGameState(prevOriginalState => {
-                const preservedScores = new Map(prevOriginalState.players.map(p => [p.id, p.score]));
-                const newCleanPlayers = initialGameState.players.map(pInit => ({
-                    ...pInit,
-                    score: preservedScores.get(pInit.id) || 0, // Preserve score
-                }));
-                return {
-                    ...initialGameState, // Get all other defaults (deck, roundResults etc.)
-                    players: newCleanPlayers,
-                    gameState: GameStates.INIT, // Trigger initializeNewGame via useEffect
-                };
-            });
-          }}
+          onClose={handleCloseComparisonModalAndStartNewGame} // Use the new handler
+          // isLoadingNewGame can be passed to ComparisonModal if button is inside it
         />
       )}
-      {!showComparisonModal && !humanPlayerFromState && gameState.gameState === "HUMAN_ARRANGING" && (
+      {/* Loading state for initial load or if humanPlayer not ready */}
+      {!showComparisonModal && !humanPlayerFromState && gameState.gameState === "HUMAN_ARRANGING" && !isLoadingNewGame && (
           <div className="app-loading">正在加载玩家数据...</div>
       )}
     </div>
