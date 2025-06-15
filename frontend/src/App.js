@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import TopInfoBar from './components/TopInfoBar';
 import HumanPlayerBoard from './components/HumanPlayerBoard';
 import ActionButtons from './components/ActionButtons';
-import ComparisonModal from './components/ComparisonModal'; // 确保导入的是新版
+import ComparisonModal from './components/ComparisonModal';
 import {
   initialGameState,
   startGame as startGameLogic,
@@ -27,7 +27,7 @@ const GameStateDisplayNames = {
   [GameStates.INIT]: "准备开始",
   [GameStates.DEALING]: "发牌中...",
   HUMAN_ARRANGING: "请您分牌",
-  [GameStates.COMPARING]: "比牌中...", // This state might be very brief
+  [GameStates.COMPARING]: "比牌中...",
   [GameStates.RESULTS]: "查看结果",
 };
 
@@ -45,7 +45,6 @@ function App() {
 
     let newState = startGameLogic(initialGameState);
 
-    // AI auto-arranges and "confirms"
     newState.players = newState.players.map(player => {
       if (!player.isHuman) {
         const aiArrangement = arrangeCardsAILogic(player.hand);
@@ -75,10 +74,9 @@ function App() {
           }
           return { ...player, arranged: { tou: [], zhong: [], wei: [] }, evalHands: null, confirmed: true };
         }
-      } else { // For human player, initially place all cards into their hand for arrangement
-        // setArrangedHumanHand will be an empty object initially, player.hand has the cards
-        setArrangedHumanHand({ // Reset arrangement for human
-            tou: [...player.hand], // ALL cards initially in 'tou' for user to move
+      } else {
+        setArrangedHumanHand({
+            tou: [...player.hand],
             zhong: [],
             wei: []
         });
@@ -108,18 +106,17 @@ function App() {
     }
 
     let stateAfterHumanConfirm = confirmPlayerArrangementLogic(gameState, humanPlayer.id, arrangedHumanHand);
-    // Now all players are confirmed, proceed to compare
-    const finalStateWithResults = compareAllHandsLogic(stateAfterHumanConfirm); // This function should update player scores and add roundResults
-    setGameState(finalStateWithResults); // This state now contains scores and possibly roundResults details
+    const finalStateWithResults = compareAllHandsLogic(stateAfterHumanConfirm);
+    setGameState(finalStateWithResults);
     setShowComparisonModal(true);
   }, [humanPlayer, arrangedHumanHand, gameState]);
 
 
   const handleAIHelperForHuman = useCallback(() => {
     if (humanPlayer && humanPlayer.hand.length === 13) {
-      const suggestion = arrangeCardsAILogic(humanPlayer.hand); // AI uses the original hand
+      const suggestion = arrangeCardsAILogic(humanPlayer.hand);
       if (suggestion && isValidArrangementLogic(suggestion.tou, suggestion.zhong, suggestion.wei)) {
-        setArrangedHumanHand(suggestion); // Apply suggestion to the UI arrangement
+        setArrangedHumanHand(suggestion);
         setSelectedCardInfo(null);
       } else {
         alert("AI未能给出有效的分牌建议。");
@@ -130,29 +127,24 @@ function App() {
 
   const handleCardClick = useCallback((cardClicked, currentDunOfCard) => {
     if (!selectedCardInfo) {
-      // No card selected yet, so select the clicked card
       setSelectedCardInfo({ card: cardClicked, fromDun: currentDunOfCard });
     } else {
-      // A card is already selected
       if (selectedCardInfo.card.id === cardClicked.id && selectedCardInfo.fromDun === currentDunOfCard) {
-        // Clicked the same selected card again: deselect it
         setSelectedCardInfo(null);
       } else {
-        // A card is selected, and clicked on a DIFFERENT card.
-        // For simplicity with the "no restrictions" rule during arrangement,
-        // we'll treat this as "deselect current, then select the new one".
-        // Or, if the intent is to place the ALREADY selected card into the dun of the NEWLY clicked card,
-        // that's handled if the user clicks the dun area itself.
-        // So, if a card is selected and user clicks *another card*, we deselect.
-        setSelectedCardInfo({ card: cardClicked, fromDun: currentDunOfCard }); // Change selection to the new card
+        setSelectedCardInfo({ card: cardClicked, fromDun: currentDunOfCard });
       }
     }
   }, [selectedCardInfo]);
 
   const handleDunClick = useCallback((targetDunName) => {
     if (selectedCardInfo) {
-      // A card is selected, move it to targetDunName
       const { card, fromDun } = selectedCardInfo;
+
+      if (fromDun === targetDunName) {
+        setSelectedCardInfo(null);
+        return;
+      }
 
       setArrangedHumanHand(prev => {
         const newArrangement = {
@@ -161,28 +153,23 @@ function App() {
           wei: [...prev.wei],
         };
 
-        // 1. Remove card from its original dun
-        if (fromDun) { // 'fromDun' is where the card currently is
+        if (fromDun) {
           newArrangement[fromDun] = newArrangement[fromDun].filter(c => c.id !== card.id);
         }
         
-        // 2. Add card to the target dun
-        // Ensure not to add duplicates if already there (though filter above should handle it)
         if (!newArrangement[targetDunName].find(c => c.id === card.id)) {
             newArrangement[targetDunName] = [...newArrangement[targetDunName], card];
         }
 
         return newArrangement;
       });
-      setSelectedCardInfo(null); // Clear selection after moving
+      setSelectedCardInfo(null);
     }
-    // If no card is selected, clicking a dun area does nothing specific in this flow
   }, [selectedCardInfo]);
 
 
   useEffect(() => {
     if (gameState.gameState === GameStates.INIT) {
-      // Check if it's a genuine new game start (e.g., hands are empty)
       const human = gameState.players.find(p => p.isHuman);
       if (!human || !human.hand || human.hand.length === 0) {
          handleStartGame();
@@ -205,26 +192,25 @@ function App() {
           <TopInfoBar statusText={currentStatusText} playerNames={playerNames} />
           <div className="game-content-area">
             <HumanPlayerBoard
-              // player object no longer needed as arrangedHumanHand holds all cards for UI
-              arrangedHand={arrangedHumanHand} // This now contains all 13 cards distributed
+              arrangedHand={arrangedHumanHand}
               selectedCardInfo={selectedCardInfo}
-              onCardClick={handleCardClick} // General card click handler
-              onDunClick={handleDunClick}   // Click on a dun area to place selected card
+              onCardClick={handleCardClick}
+              onDunClick={handleDunClick}
             />
           </div>
           <ActionButtons
             onAIHelper={handleAIHelperForHuman}
             onSubmit={handleSubmitPlayerHand}
-            canSubmit={ // Basic check, more detailed check in handleSubmitPlayerHand
+            canSubmit={
                 (arrangedHumanHand.tou.length + arrangedHumanHand.zhong.length + arrangedHumanHand.wei.length) === 13
             }
           />
         </>
       )}
 
-      {showComparisonModal && ( // gameState.roundResults might not be directly used by the new modal if it just needs players
+      {showComparisonModal && (
         <ComparisonModal
-          players={gameState.players} // Pass the full player objects which include their final scores and arranged cards
+          players={gameState.players}
           onClose={() => {
             setShowComparisonModal(false);
             setGameState(prev => ({
@@ -247,6 +233,6 @@ function App() {
       )}
     </div>
   );
-}
+} // This closing curly brace was missing or misplaced, causing the syntax error.
 
 export default App;
