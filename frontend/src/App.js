@@ -104,8 +104,8 @@ function App() {
     const { tou, zhong, wei } = arrangedHumanHand;
     const totalCardsInDuns = (tou?.length || 0) + (zhong?.length || 0) + (wei?.length || 0);
     if (totalCardsInDuns !== 13) { alert(`总牌数必须是13张，当前为 ${totalCardsInDuns} 张。请检查各墩牌数。`); return; }
-    if ((tou?.length || 0) !== 3 || (zhong?.length || 0) !== 5 || (wei?.length || 0) !== 5) { alert(`墩牌数量不正确！\n头道需3张 (当前${tou?.length||0}张)\n中道需5张 (当前${zhong?.length||0}张)\n尾道需5张 (当前${wei?.length||0}张)`); return; }
-    if (!isValidArrangementLogic(tou, zhong, wei)) { alert("您的墩牌不合法！请确保头道 ≤ 中道 ≤ 尾道。"); return; }
+    if ((tou?.length || 0) !== 3 || (zhong?.length || 0) !== 5 || (wei?.length || 0) !== 5) { alert(`墩牌数量不正确！`); return; } // Simplified alert
+    if (!isValidArrangementLogic(tou, zhong, wei)) { alert("您的墩牌不合法！"); return; } // Simplified alert
     let stateAfterHumanConfirm = confirmArrangementLogicInternal(gameState, humanPlayerFromState.id, arrangedHumanHand);
     const finalStateWithResults = compareAllHandsLogicInternal(stateAfterHumanConfirm);
     setGameState(finalStateWithResults); setShowComparisonModal(true);
@@ -116,23 +116,45 @@ function App() {
     if (humanP && humanP.hand && humanP.hand.length === 13) {
       const suggestion = arrangeCardsAILogic(humanP.hand);
       if (suggestion && isValidArrangementLogic(suggestion.tou, suggestion.zhong, suggestion.wei)) { setArrangedHumanHand(suggestion); setSelectedCardsInfo([]); }
-      else { alert("AI未能给出新的有效分牌建议。"); }
+      else { alert("AI未能给出建议。"); } // Simplified
     }
   }, [gameState.players]);
 
   const handleCardClick = useCallback((cardClicked, currentDunOfCard) => {
-    setSelectedCardsInfo(prev => { const idx = prev.findIndex(i=>i.card.id===cardClicked.id); if(idx > -1) return prev.filter((_,i)=>i!==idx); else return [...prev, {card:cardClicked,fromDun:currentDunOfCard}];});
-  }, []);
+    // START OF SECTION TO SIMPLIFY (around line 130-140)
+    // Temporarily simplify this function to see if the error is here
+    console.log("handleCardClick called with:", cardClicked, currentDunOfCard);
+    // setSelectedCardsInfo(prev => { 
+    //   const idx = prev.findIndex(i=>i.card.id===cardClicked.id); 
+    //   if(idx > -1) return prev.filter((_,i)=>i!==idx); 
+    //   else return [...prev, {card:cardClicked,fromDun:currentDunOfCard}];
+    // });
+    // END OF SECTION TO SIMPLIFY
+  }, []); // Removed selectedCardsInfo from deps for this test
 
   const handleDunClick = useCallback((targetDunName) => {
-    if (selectedCardsInfo.length > 0) {
-      setArrangedHumanHand(prev => { const newA = {tou:[...prev.tou],zhong:[...prev.zhong],wei:[...prev.wei]}; const addTarget=[];
-        selectedCardsInfo.forEach(sI=>{ if(sI.fromDun&&newA[sI.fromDun]){newA[sI.fromDun]=newA[sI.fromDun].filter(c=>c.id!==sI.card.id);} addTarget.push(sI.card);});
-        const existIds=new Set(newA[targetDunName].map(c=>c.id)); const uniqueAdd=addTarget.filter(c=>!existIds.has(c.id));
-        newA[targetDunName]=[...newA[targetDunName],...uniqueAdd]; return newA;
-      }); setSelectedCardsInfo([]);
-    }
-  }, [selectedCardsInfo]);
+    // START OF SECTION TO SIMPLIFY (around line 140-150)
+    console.log("handleDunClick called with:", targetDunName);
+    // if (selectedCardsInfo.length > 0) {
+    //   setArrangedHumanHand(prev => { 
+    //     const newA = {tou:[...prev.tou],zhong:[...prev.zhong],wei:[...prev.wei]}; 
+    //     const addTarget=[];
+    //     selectedCardsInfo.forEach(sI=>{ 
+    //       if(sI.fromDun&&newA[sI.fromDun]){
+    //         newA[sI.fromDun]=newA[sI.fromDun].filter(c=>c.id!==sI.card.id);
+    //       } 
+    //       addTarget.push(sI.card);
+    //     });
+    //     const existIds=new Set(newA[targetDunName].map(c=>c.id)); 
+    //     const uniqueAdd=addTarget.filter(c=>!existIds.has(c.id));
+    //     newA[targetDunName]=[...newA[targetDunName],...uniqueAdd]; 
+    //     return newA;
+    //   }); 
+    //   setSelectedCardsInfo([]);
+    // }
+    // END OF SECTION TO SIMPLIFY
+  }, []); // Removed selectedCardsInfo from deps for this test
+
 
   const handleLoginSuccess = (userData, token) => { setCurrentUser({...userData,token}); localStorage.setItem('authToken',token); setShowAuthModal(false); setShowProfilePage(true); };
   const handleLogout = async () => { if(currentUser&¤tUser.token){try{await authService.logout(currentUser.token);}catch(e){console.error("Logout mock err:",e);}} setCurrentUser(null); localStorage.removeItem('authToken'); setShowProfilePage(false);};
