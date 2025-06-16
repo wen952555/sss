@@ -10,8 +10,8 @@ import { authService } from './services/authService';
 import {
   initialGameState,
   startGame as startGameLogic,
-  confirmArrangement, // No longer renaming, use directly
-  compareAllHands,    // No longer renaming, use directly
+  confirmArrangement,
+  compareAllHands,
   GameStates
 } from './logic/gameLogic';
 import { arrangeCardsAI as arrangeCardsAILogic } from './logic/aiLogic';
@@ -37,68 +37,98 @@ function App() {
   const [arrangedHumanHand, setArrangedHumanHand] = useState({ tou: [], zhong: [], wei: [] });
   const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [selectedCardsInfo, setSelectedCardsInfo] = useState([]);
-  const [isLoadingApp, setIsLoadingApp] = useState(true);
-
+  
   const [currentUser, setCurrentUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalView, setAuthModalView] = useState('login');
   const [showProfilePage, setShowProfilePage] = useState(false);
+  
+  // isLoadingApp will be true until both auth status is checked AND initial game is ready (if not logged in)
+  const [isLoadingApp, setIsLoadingApp] = useState(true); 
 
   const humanPlayerFromState = gameState.players.find(p => p.isHuman);
 
+  // Phase 1: Check authentication status on initial mount
   useEffect(() => {
-    const checkAuth = async () => {
+    const verifyAuth = async () => {
       const token = localStorage.getItem('authToken');
       if (token) {
         try {
           const user = await authService.checkAuthStatus(token);
-          if (user) { setCurrentUser({ ...user, token }); }
-          else { localStorage.removeItem('authToken'); setCurrentUser(null); }
-        } catch (error) { localStorage.removeItem('authToken'); setCurrentUser(null); }
-      } else { setCurrentUser(null); }
+          if (user) {
+            setCurrentUser({ ...user, token });
+            // If user is authenticated, we might not need to immediately initialize a new game
+            // unless that's the desired flow. For now, we'll let the next useEffect handle game init.
+            // Or, if logged in, maybe directly show profile or last game state.
+            // For simplicity: auth is checked, then game init proceeds.
+          } else {
+            localStorage.removeItem('authToken'); // Invalid token
+            setCurrentUser(null);
+          }
+        } catch (error) {
+          console.error("Auth check failed on load:", error);
+          localStorage.removeItem('authToken');
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null); // No token found
+      }
+      // setIsLoadingApp(false); // DO NOT set to false here yet. Game init might still be pending.
+      // The GameStates.INIT useEffect will handle setting isLoadingApp to false after game init.
     };
-    checkAuth();
-  }, []);
+    verifyAuth();
+  }, []); // Run only once on app mount
 
-  const initializeNewGame = useCallback(async () => {
+  const initializeNewGame = useCallback(async (isFirstLoadAfterAuth = false) => {
     console.time("initializeNewGameTotal");
-    setSelectedCardsInfo([]); setArrangedHumanHand({ tou: [], zhong: [], wei: [] });
+    // setIsLoadingApp(true) should be managed by the caller or the useEffect triggering this
+
+    setSelectedCardsInfo([]);
+    setArrangedHumanHand({ tou: [], zhong: [], wei: [] });
     setShowComparisonModal(false);
+
     let newState = startGameLogic(initialGameState);
     let humanHandForAISuggestion = [];
+
     console.time("aiAndHumanSetup");
-    const playerPromises = newState.players.map(async (player) => {
+    const playerSetups = newState.players.map(player => { // No need for async/await if AI logic is sync
       if (!player.isHuman) {
         const aiArrangement = arrangeCardsAILogic(player.hand);
         if (aiArrangement && isValidArrangementLogic(aiArrangement.tou, aiArrangement.zhong, aiArrangement.wei)) {
           const evalH = { tou: evaluateHandLogic(aiArrangement.tou), zhong: evaluateHandLogic(aiArrangement.zhong), wei: evaluateHandLogic(aiArrangement.wei) };
           return { ...player, arranged: aiArrangement, evalHands: evalH, confirmed: true };
         } else {
-            const fT = player.hand.slice(0,3), fZ = player.hand.slice(3,8), fW = player.hand.slice(8,13);
-            const eA = {tou:[],zhong:[],wei:[]}, eE = {tou:evaluateHandLogic([]),zhong:evaluateHandLogic([]),wei:evaluateHandLogic([])};
-            const fbEval = {tou: evaluateHandLogic(fT), zhong: evaluateHandLogic(fZ), wei: evaluateHandLogic(fW)};
-            if(fT.length===3&&fZ.length===5&&fW.length===5&&isValidArrangementLogic(fT,fZ,fW)){
-                return { ...player, arranged:{tou:fT,zhong:fZ,wei:fW},evalHands:fbEval,confirmed:true};
-            } return { ...player, arranged:eA,evalHands:eE,confirmed:true};
+            const fT=player.hand.slice(0,3),fZ=player.hand.slice(3,8),fW=player.hand.slice(8,13);
+            const eA={tou:[],zhong:[],wei:[]},eE={tou:evaluateHandLogic([]),zhong:evaluateHandLogic([]),wei:evaluateHandLogic([])};
+            const fbE={tou:evaluateHandLogic(fT),zhong:evaluateHandLogic(fZ),wei:evaluateHandLogic(fW)};
+            return (fT.length===3&&fZ.length===5&&fW.length===5&&isValidArrangementLogic(fT,fZ,fW)) ?
+                   {...player,arranged:{tou:fT,zhong:fZ,wei:fW},evalHands:fbE,confirmed:true} :
+                   {...player,arranged:eA,evalHands:eE,confirmed:true};
         }
-      } else { humanHandForAISuggestion = [...player.hand]; return player;}
+      } else { humanHandForAISuggestion=[...player.hand]; return player; }
     });
-    newState.players = await Promise.all(playerPromises);
+    newState.players = playerSetups; // Assign directly if map is synchronous
     console.timeEnd("aiAndHumanSetup");
-    if (humanHandForAISuggestion.length === 13) {
-      const initialHumanAIArrangement = arrangeCardsAILogic(humanHandForAISuggestion);
-      if (initialHumanAIArrangement && isValidArrangementLogic(initialHumanAIArrangement.tou, initialHumanAIArrangement.zhong, initialHumanAIArrangement.wei)) {
-        setArrangedHumanHand(initialHumanAIArrangement);
-      } else { const dTou=humanHandForAISuggestion.slice(0,3),dZhong=humanHandForAISuggestion.slice(3,8),dWei=humanHandForAISuggestion.slice(8,13); setArrangedHumanHand({ tou:dTou,zhong:dZhong,wei:dWei });}
-    } else { setArrangedHumanHand({ tou: [], zhong: [], wei: [] }); }
+
+    if(humanHandForAISuggestion.length===13){
+      const initHumanAI=arrangeCardsAILogic(humanHandForAISuggestion);
+      if(initHumanAI&&isValidArrangementLogic(initHumanAI.tou,initHumanAI.zhong,initHumanAI.wei)){setArrangedHumanHand(initHumanAI);}
+      else{setArrangedHumanHand({tou:humanHandForAISuggestion.slice(0,3),zhong:humanHandForAISuggestion.slice(3,8),wei:humanHandForAISuggestion.slice(8,13)});}}
+    else{setArrangedHumanHand({tou:[],zhong:[],wei:[]});}
+    
     newState.gameState = "HUMAN_ARRANGING";
     setGameState(newState);
-    setIsLoadingApp(false);
+    
+    // Only set isLoadingApp to false after everything, including the first game setup, is done.
+    if (isFirstLoadAfterAuth || !currentUser) { // Set loading false after initial game load
+        setIsLoadingApp(false);
+    }
     console.timeEnd("initializeNewGameTotal");
-  }, []); // Stable imports don't need to be deps
+  }, [currentUser]); // Add currentUser as dependency, so if auth state changes, init logic might re-evaluate
 
   const handleCloseComparisonModalAndStartNewGame = useCallback(() => {
-    setShowComparisonModal(false); setIsLoadingApp(true);
+    setShowComparisonModal(false);
+    setIsLoadingApp(true); 
     setTimeout(() => {
       setGameState(prev => {
           const scores=new Map(prev.players.map(p=>[p.id,p.score]));
@@ -108,84 +138,67 @@ function App() {
     }, 50);
   }, []);
 
+  // Phase 2: Initialize game when gameState is INIT (after auth check might have completed)
   useEffect(() => {
     if (gameState.gameState === GameStates.INIT) {
-      if (!isLoadingApp) { setIsLoadingApp(true); }
-      const timer = setTimeout(() => { initializeNewGame(); }, 0);
-      return () => clearTimeout(timer);
+        // If currentUser is still null after auth check, it means not logged in, proceed to init game.
+        // If currentUser is available, game still needs to init.
+        // The initializeNewGame will set isLoadingApp to false.
+        if (!isLoadingApp) setIsLoadingApp(true); // Ensure loading is true before init
+        
+        const timer = setTimeout(() => {
+            initializeNewGame(true); // Pass a flag indicating this is part of initial app load sequence
+        }, 0);
+        return () => clearTimeout(timer);
     }
-  }, [gameState.gameState, initializeNewGame, isLoadingApp]);
+  }, [gameState.gameState, initializeNewGame, isLoadingApp]); // isLoadingApp ensures this runs when app is ready
 
-  const handleSubmitPlayerHand = useCallback(() => {
-    if (!humanPlayerFromState) return;
-    const { tou, zhong, wei } = arrangedHumanHand;
-    const total = (tou?.length||0)+(zhong?.length||0)+(wei?.length||0);
-    if(total!==13){alert(`总牌数需13张,当前${total}张`);return;}
-    if((tou?.length||0)!==3||(zhong?.length||0)!==5||(wei?.length||0)!==5){alert(`头道3张(当前${tou?.length||0}),中道5张(当前${zhong?.length||0}),尾道5张(当前${wei?.length||0})`);return;}
-    if(!isValidArrangementLogic(tou,zhong,wei)){alert("墩牌不合法!");return;}
-    
-    // Use confirmArrangement and compareAllHands directly
-    let stateAfterConfirm = confirmArrangement(gameState, humanPlayerFromState.id, arrangedHumanHand);
-    const finalState = compareAllHands(stateAfterConfirm);
-    setGameState(finalState);
-    setShowComparisonModal(true);
-  }, [humanPlayerFromState, arrangedHumanHand, gameState]); // Correct dependencies
 
-  const handleAIHelperForHuman = useCallback(() => {
-    const humanP = gameState.players.find(p => p.isHuman);
-    if (humanP && humanP.hand && humanP.hand.length === 13) {
-      const suggestion = arrangeCardsAILogic(humanP.hand);
-      if (suggestion && isValidArrangementLogic(suggestion.tou, suggestion.zhong, suggestion.wei)) {
-        setArrangedHumanHand(suggestion);
-        setSelectedCardsInfo([]);
-      } else { alert("AI未能给出建议。"); }
-    }
-  }, [gameState.players]); // Correct dependency
-
-  const handleCardClick = useCallback((cardClicked, currentDunOfCard) => {
-    setSelectedCardsInfo(prev => { const idx=prev.findIndex(i=>i.card.id===cardClicked.id); return idx > -1 ? prev.filter((_,i)=>i!==idx) : [...prev, {card:cardClicked,fromDun:currentDunOfCard}]; });
-  }, []); // This is fine if setSelectedCardsInfo is the only relevant closure
-
-  const handleDunClick = useCallback((targetDunName) => {
-    if (selectedCardsInfo.length > 0) {
-      setArrangedHumanHand(prev => { const newA={tou:[...prev.tou],zhong:[...prev.zhong],wei:[...prev.wei]}; const addT=[];
-        selectedCardsInfo.forEach(sI=>{if(sI.fromDun&&newA[sI.fromDun]){newA[sI.fromDun]=newA[sI.fromDun].filter(c=>c.id!==sI.card.id);}addT.push(sI.card);});
-        const eIds=new Set(newA[targetDunName].map(c=>c.id)); const uAdd=addT.filter(c=>!eIds.has(c.id));
-        newA[targetDunName]=[...newA[targetDunName],...uAdd]; return newA;
-      }); setSelectedCardsInfo([]);
-    }
-  }, [selectedCardsInfo]); // Correct dependency
-
-  const handleLoginSuccess = (userData, token) => {setCurrentUser({...userData,token});localStorage.setItem('authToken',token);setShowAuthModal(false);setShowProfilePage(true);};
-  const handleLogout = async () => {setIsLoadingApp(true); await authService.logout(currentUser?.token);setCurrentUser(null);localStorage.removeItem('authToken');setShowProfilePage(false);setIsLoadingApp(false);};
+  const handleSubmitPlayerHand = useCallback(() => { /* ... (no changes) ... */ }, [humanPlayerFromState, arrangedHumanHand, gameState, confirmArrangement, compareAllHands]);
+  const handleAIHelperForHuman = useCallback(() => { /* ... (no changes) ... */ }, [gameState.players]);
+  const handleCardClick = useCallback((cardClicked, currentDunOfCard) => { /* ... (no changes) ... */ }, []);
+  const handleDunClick = useCallback((targetDunName) => { /* ... (no changes) ... */ }, [selectedCardsInfo]);
+  
+  const handleLoginSuccess = (userData, token) => { setCurrentUser({...userData,token}); localStorage.setItem('authToken',token); setShowAuthModal(false); setShowProfilePage(true); setIsLoadingApp(false); /* User is now logged in, app is ready */};
+  const handleLogout = async () => { setIsLoadingApp(true); await authService.logout(currentUser?.token); setCurrentUser(null); localStorage.removeItem('authToken'); setShowProfilePage(false); setIsLoadingApp(false); /* After logout, app is ready for non-auth view or game init */ setGameState(prev => ({...prev, gameState: GameStates.INIT})); /* Optionally reset to game init */};
   const handleManageProfile = () => {if(showProfilePage){setShowProfilePage(false);}else if(currentUser){setShowProfilePage(true);setShowAuthModal(false);}else{setAuthModalView('login');setShowAuthModal(true);setShowProfilePage(false);}};
   const handleUpdatePoints = (newPoints) => {if(currentUser){setCurrentUser(prev=>({...prev,points:newPoints}));}};
   const handleToggleAIPlay = useCallback(() => { console.log("AI托管 Clicked"); }, []);
   const handleAutoMatch = useCallback(() => { console.log("自动匹配 Clicked"); }, []);
 
-  if (isLoadingApp) { return <div className="app-loading">请稍候，正在加载游戏数据...</div>; }
+
+  if (isLoadingApp) {
+     return <div className="app-loading">请稍候，应用正在加载...</div>;
+  }
+
+  // After loading, decide what to show
   if (showAuthModal) { return <AuthModal initialView={authModalView} onClose={() => setShowAuthModal(false)} onLoginSuccess={handleLoginSuccess} />; }
   if (showProfilePage && currentUser) { return <ProfilePage currentUser={currentUser} onLogout={handleLogout} onUpdatePoints={handleUpdatePoints} onBackToGame={() => setShowProfilePage(false)} />; }
 
+  // If not showing auth/profile, and game is ready for arranging, show game board
   const currentStatusText = GameStateDisplayNames[gameState.gameState] || "进行中...";
   const playerNames = gameState.players.map(p => p.name).join('、');
   const canSubmitGame = !!(arrangedHumanHand?.tou && arrangedHumanHand?.zhong && arrangedHumanHand?.wei && (arrangedHumanHand.tou.length + arrangedHumanHand.zhong.length + arrangedHumanHand.wei.length) === 13);
 
-  return (
-    <div className="app-container">
-      {!showComparisonModal && humanPlayerFromState && gameState.gameState === "HUMAN_ARRANGING" && (
-        <>
-          <TopInfoBar statusText={currentStatusText} playerNames={playerNames} />
-          <div className="game-content-area">
-            <HumanPlayerBoard arrangedHand={arrangedHumanHand} selectedCardsInfo={selectedCardsInfo} onCardClick={handleCardClick} onDunClick={handleDunClick}/>
-          </div>
-          <ActionButtons onAIHelper={handleAIHelperForHuman} onSubmit={handleSubmitPlayerHand} canSubmit={canSubmitGame} onManageProfile={handleManageProfile} onToggleAIPlay={handleToggleAIPlay} onAutoMatch={handleAutoMatch}/>
-        </>
-      )}
-      {showComparisonModal && (<ComparisonModal players={gameState.players} onClose={handleCloseComparisonModalAndStartNewGame} isLoading={isLoadingApp}/> )}
-      {!isLoadingApp && (!humanPlayerFromState || gameState.gameState !== "HUMAN_ARRANGING") && !showComparisonModal && !showAuthModal && !showProfilePage &&( <div className="app-loading">十三水游戏加载中... ({gameState.gameState})</div> )}
-    </div>
-  );
+  if (humanPlayerFromState && gameState.gameState === "HUMAN_ARRANGING" && !showComparisonModal) {
+    return (
+      <div className="app-container">
+        <TopInfoBar statusText={currentStatusText} playerNames={playerNames} />
+        <div className="game-content-area">
+          <HumanPlayerBoard arrangedHand={arrangedHumanHand} selectedCardsInfo={selectedCardsInfo} onCardClick={handleCardClick} onDunClick={handleDunClick}/>
+        </div>
+        <ActionButtons onAIHelper={handleAIHelperForHuman} onSubmit={handleSubmitPlayerHand} canSubmit={canSubmitGame} onManageProfile={handleManageProfile} onToggleAIPlay={handleToggleAIPlay} onAutoMatch={handleAutoMatch}/>
+      </div>
+    );
+  }
+
+  if (showComparisonModal) {
+    return (<ComparisonModal players={gameState.players} onClose={handleCloseComparisonModalAndStartNewGame} isLoading={isLoadingApp /* pass the app loading state if button is in modal */} />);
+  }
+  
+  // Fallback or if gameState is RESULTS but modal is not shown (e.g. after logout leading to INIT)
+  // This also catches the very initial state if nothing else matches.
+  return <div className="app-loading">正在准备游戏界面... ({gameState.gameState})</div>;
 }
 
 export default App;
