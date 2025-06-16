@@ -1,0 +1,168 @@
+/* frontend_react/src/components/ProfilePage.css */
+.profile-page-container {
+  padding: 20px;
+  max-width: 600px;
+  margin: 20px auto;
+  background-color: transparent; /* Show App.js dark green background */
+  color: #f0f0f0; /* Light text for dark theme */
+  animation: profilePageFadeIn 0.4s ease-out;
+}
+
+@keyframes profilePageFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.profile-header h2 {
+  margin: 0;
+  font-size: 1.8em;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.back-to-game-btn {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s ease;
+}
+.back-to-game-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.profile-info-card,
+.transfer-points-card {
+  background-color: #388E3C; /* Slightly lighter green for cards */
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.profile-info-card p {
+  margin: 0 0 12px 0;
+  font-size: 1.05em;
+  line-height: 1.6;
+}
+.profile-info-card p strong {
+  color: #C8E6C9; /* Lighter green for labels */
+  margin-right: 8px;
+}
+.profile-points {
+  font-weight: bold;
+  font-size: 1.2em;
+  color: #FFEB3B; /* Yellow for points */
+}
+
+.logout-btn {
+  background-color: #F44336; /* Red for logout */
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95em;
+  margin-top: 10px;
+  transition: background-color 0.2s ease;
+}
+.logout-btn:hover {
+  background-color: #D32F2F;
+}
+
+.transfer-points-card h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.4em;
+  color: #FFFFFF;
+  font-weight: 500;
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-group-profile {
+  margin-bottom: 18px;
+}
+.form-group-profile label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9em;
+  color: #C8E6C9;
+}
+.form-group-profile input {
+  width: calc(100% - 22px); /* Account for padding */
+  padding: 10px;
+  border: 1px solid #4CAF50; /* Green border */
+  background-color: #2E7D32; /* Darker green input bg */
+  color: #FFFFFF; /* White input text */
+  border-radius: 4px;
+  font-size: 1em;
+  box-sizing: border-box;
+}
+.form-group-profile input::placeholder {
+    color: #A5D6A7;
+}
+.form-group-profile input:focus {
+  border-color: #81C784; /* Lighter green focus */
+  box-shadow: 0 0 0 2px rgba(129, 199, 132, 0.3);
+  outline: none;
+}
+
+.transfer-message {
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  text-align: center;
+}
+.transfer-message.success {
+  background-color: #E8F5E9; /* Light green for success */
+  color: #2E7D32;
+  border: 1px solid #A5D6A7;
+}
+.transfer-message.error {
+  background-color: #FFEBEE; /* Light red for error */
+  color: #C62828;
+  border: 1px solid #EF9A9A;
+}
+
+.transfer-submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #8BC34A; /* Light green submit button */
+  color: #2E7D32; /* Dark green text */
+  border: none;
+  border-radius: 4px;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.transfer-submit-btn:hover {
+  background-color: #7CB342;
+}
+.transfer-submit-btn:disabled {
+  background-color: #689F38;
+  color: #C8E6C9;
+  cursor: wait;
+}
+
+.profile-page-loading {
+  text-align: center;
+  font-size: 1.2em;
+  padding: 40px;
+  color: #f0f0f0;
+}
