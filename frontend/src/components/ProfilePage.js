@@ -1,5 +1,5 @@
 // frontend_react/src/components/ProfilePage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // Removed useEffect
 import { authService } from '../services/authService';
 import './ProfilePage.css';
 
@@ -7,10 +7,8 @@ const ProfilePage = ({ currentUser, onLogout, onUpdatePoints, onBackToGame }) =>
   const [toPhone, setToPhone] = useState('');
   const [toId, setToId] = useState('');
   const [amount, setAmount] = useState('');
-  const [transferMessage, setTransferMessage] = useState({ type: '', text: '' }); // type: 'success' or 'error'
+  const [transferMessage, setTransferMessage] = useState({ type: '', text: '' });
   const [isLoadingTransfer, setIsLoadingTransfer] = useState(false);
-
-  // If currentUser data changes (e.g. after points transfer), this component will re-render.
 
   const handleTransferPoints = async (e) => {
     e.preventDefault();
@@ -34,11 +32,11 @@ const ProfilePage = ({ currentUser, onLogout, onUpdatePoints, onBackToGame }) =>
         toPhone,
         toId,
         amount: transferAmount,
-        token: currentUser.token // Assuming token is stored in currentUser
+        token: currentUser.token
       });
       if (result.success) {
         setTransferMessage({ type: 'success', text: `成功赠送 ${transferAmount} 积分!` });
-        onUpdatePoints(result.newFromUserPoints); // Callback to update points in App.js state
+        onUpdatePoints(result.newFromUserPoints);
         setToPhone('');
         setToId('');
         setAmount('');
@@ -62,7 +60,7 @@ const ProfilePage = ({ currentUser, onLogout, onUpdatePoints, onBackToGame }) =>
 
       <div className="profile-info-card">
         <p><strong>手机号:</strong> {currentUser.phone}</p>
-        <p><strong>玩ID:</strong> {currentUser.id}</p>
+        <p><strong>玩家ID:</strong> {currentUser.id}</p> {/* Changed from 玩ID */}
         <p><strong>当前积分:</strong> <span className="profile-points">{currentUser.points}</span></p>
         <button onClick={onLogout} className="logout-btn">退出登录</button>
       </div>
@@ -89,7 +87,7 @@ const ProfilePage = ({ currentUser, onLogout, onUpdatePoints, onBackToGame }) =>
           <div className="form-group-profile">
             <label htmlFor="toId">接收方ID:</label>
             <input
-              type="text" // ID might not be purely numeric if generated differently later
+              type="text"
               id="toId"
               value={toId}
               onChange={(e) => setToId(e.target.value)}
