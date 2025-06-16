@@ -6,7 +6,7 @@ import ActionButtons from './components/ActionButtons';
 import ComparisonModal from './components/ComparisonModal';
 import AuthModal from './components/AuthModal';
 import ProfilePage from './components/ProfilePage';
-import { authService } from './services/authService';
+import { authService } from './services/authService'; // Corrected import path if needed
 import {
   initialGameState,
   startGame as startGameLogic,
@@ -46,58 +46,135 @@ function App() {
 
   const humanPlayerFromState = gameState.players.find(p => p.isHuman);
 
+  // Effect for checking auth status on initial load
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
+      setIsLoadingNewGame(true); // Show loading while checking auth
       authService.checkAuthStatus(token)
         .then(user => {
-          if (user) { setCurrentUser({ ...user, token });}
-          else { localStorage.removeItem('authToken'); }
+          if (user) {
+            setCurrentUser({ ...user, token });
+          } else {
+            localStorage.removeItem('authToken');
+          }
         })
-        .catch(() => localStorage.removeItem('authToken'));
+        .catch(() => {
+          localStorage.removeItem('authToken');
+        })
+        .finally(() => {
+          // setIsLoadingNewGame(false); // Decide if game init should wait for this
+          // For now, game init will proceed via gameState.INIT effect
+        });
     }
   }, []);
 
+
   const initializeNewGame = useCallback(() => {
-    console.time("initializeNewGameTotal"); setIsLoadingNewGame(true);
-    setSelectedCardsInfo([]); setArrangedHumanHand({ tou: [], zhong: [], wei: [] });
-    let newState = startGameLogic(initialGameState); let humanHandForAISuggestion = [];
+    // Ensure we are in a loading state or truly ready to init
+    if (!isLoadingNewGame && gameState.gameState !== GameStates.INIT) {
+        setIsLoadingNewGame(true); // Set loading if not already set by a previous step
+    }
+    console.time("initializeNewGameTotal");
+    
+    // Reset UI specific states
+    setSelectedCardsInfo([]);
+    setArrangedHumanHand({ tou: [], zhong: [], wei: [] });
+    setShowComparisonModal(false); // Ensure modal is hidden
+
+    console.time("startGameLogic");
+    let newState = startGameLogic(initialGameState); // This deals cards to all players
+    console.timeEnd("startGameLogic");
+
+    let humanHandForAISuggestion = [];
+
     console.time("aiAndHumanSetup");
     newState.players = newState.players.map(player => {
       if (!player.isHuman) {
-        console.time(`aiArrange-${player.id}`); const aiArrangement = arrangeCardsAILogic(player.hand); console.timeEnd(`aiArrange-${player.id}`);
+        console.time(`aiArrange-${player.id}`);
+        const aiArrangement = arrangeCardsAILogic(player.hand);
+        console.timeEnd(`aiArrange-${player.id}`);
         if (aiArrangement && isValidArrangementLogic(aiArrangement.tou, aiArrangement.zhong, aiArrangement.wei)) {
           const evalH = { tou: evaluateHandLogic(aiArrangement.tou), zhong: evaluateHandLogic(aiArrangement.zhong), wei: evaluateHandLogic(aiArrangement.wei) };
           return { ...player, arranged: aiArrangement, evalHands: evalH, confirmed: true };
         } else {
+            console.error(`AI ${player.name} failed initial arrangement. Using fallback.`);
             const fT = player.hand.slice(0,3), fZ = player.hand.slice(3,8), fW = player.hand.slice(8,13);
-            const eA = {tou:[],zhong:[],wei:[]}, eE = {tou:evaluateHandLogic([]),zhong:evaluateHandLogic([]),wei:evaluateHandLogic([])};
+            const eA = {tou:[],zhong:[],wei:[]};
+            const eE = {tou:evaluateHandLogic([]),zhong:evaluateHandLogic([]),wei:evaluateHandLogic([])}; // Eval for empty
             const fbEval = {tou: evaluateHandLogic(fT), zhong: evaluateHandLogic(fZ), wei: evaluateHandLogic(fW)};
             if(fT.length===3&&fZ.length===5&&fW.length===5&&isValidArrangementLogic(fT,fZ,fW)){
                 return { ...player, arranged:{tou:fT,zhong:fZ,wei:fW},evalHands:fbEval,confirmed:true};
-            } return { ...player, arranged:eA,evalHands:eE,confirmed:true};
+            }
+            return { ...player, arranged:eA,evalHands:eE,confirmed:true}; // Return with evaluated empty hands
         }
-      } else { humanHandForAISuggestion=[...player.hand]; return player; }
+      } else {
+        humanHandForAISuggestion=[...player.hand];
+        return player; // Return human player as is, arrangement set below
+      }
     });
-    if(humanHandForAISuggestion.length===13){ console.time("humanInitialAIArrange"); const initHumanAI=arrangeCardsAILogic(humanHandForAISuggestion); console.timeEnd("humanInitialAIArrange");
-      if(initHumanAI&&isValidArrangementLogic(initHumanAI.tou,initHumanAI.zhong,initHumanAI.wei)){setArrangedHumanHand(initHumanAI);}
-      else{setArrangedHumanHand({tou:humanHandForAISuggestion.slice(0,3),zhong:humanHandForAISuggestion.slice(3,8),wei:humanHandForAISuggestion.slice(8,13)});}}
-    else{setArrangedHumanHand({tou:[],zhong:[],wei:[]});}
+
+    if(humanHandForAISuggestion.length===13){
+      console.time("humanInitialAIArrange");
+      const initialHumanAIArrangement = arrangeCardsAILogic(humanHandForAISuggestion);
+      console.timeEnd("humanInitialAIArrange");
+      if(initHumanAI&&isValidArrangementLogic(initHumanAI.tou,initHumanAI.zhong,initHumanAI.wei)){
+        setArrangedHumanHand(initHumanAI);
+      } else {
+        console.error("AI failed to provide initial valid arrangement for human. Defaulting to simple split.");
+        // Ensure the fallback is also a valid 3-5-5 structure even if not optimal
+        const defaultTou = humanHandForAISuggestion.slice(0,3);
+        const defaultZhong = humanHandForAISuggestion.slice(3,8);
+        const defaultWei = humanHandForAISuggestion.slice(8,13);
+        setArrangedHumanHand({ tou: defaultTou, zhong: defaultZhong, wei: defaultWei });
+      }
+    } else if (humanHandForAISuggestion.length > 0) { // Handle cases where human might not have 13 cards (should not happen)
+        console.warn("Human player does not have 13 cards for initial AI arrangement.");
+        setArrangedHumanHand({ tou: humanHandForAISuggestion.slice(0,3), zhong: [], wei: [] }); // Or some other safe default
+    } else {
+        setArrangedHumanHand({tou:[],zhong:[],wei:[]});
+    }
     console.timeEnd("aiAndHumanSetup");
-    newState.gameState="HUMAN_ARRANGING"; console.time("setInitialGameState"); setGameState(newState); console.timeEnd("setInitialGameState");
-    setIsLoadingNewGame(false); console.timeEnd("initializeNewGameTotal");
-  }, []);
+
+    newState.gameState="HUMAN_ARRANGING";
+    console.time("setFinalInitialGameState");
+    setGameState(newState);
+    console.timeEnd("setFinalInitialGameState");
+
+    setIsLoadingNewGame(false);
+    console.timeEnd("initializeNewGameTotal");
+  }, [isLoadingNewGame]); // Added isLoadingNewGame to dependencies, re-evaluate this. Best to call setIsLoadingNewGame(true) before calling this.
 
   const handleCloseComparisonModalAndStartNewGame = useCallback(() => {
-    setShowComparisonModal(false); setIsLoadingNewGame(true);
+    setShowComparisonModal(false);
+    setIsLoadingNewGame(true);
+    // Use setTimeout to allow UI to update (show loading) before heavy logic
     setTimeout(() => {
-      setGameState(prev => { const scores=new Map(prev.players.map(p=>[p.id,p.score])); const cleanP=initialGameState.players.map(pI=>({...pI,score:scores.get(pI.id)||0,})); return {...initialGameState,players:cleanP,gameState:GameStates.INIT,};});
+      // This will trigger the useEffect below to call initializeNewGame
+      setGameState(prev => {
+          const scores=new Map(prev.players.map(p=>[p.id,p.score]));
+          const cleanP=initialGameState.players.map(pI=>({...pI,score:scores.get(pI.id)||0}));
+          return {...initialGameState,players:cleanP,gameState:GameStates.INIT};
+      });
     }, 50);
-  }, []);
+  }, []); // No deps that change frequently
 
+  // Effect for starting/restarting the game
   useEffect(() => {
-    if(gameState.gameState===GameStates.INIT){if(isLoadingNewGame){initializeNewGame();}else{setIsLoadingNewGame(true);setTimeout(()=>initializeNewGame(),0);}}
-  }, [gameState.gameState,initializeNewGame,isLoadingNewGame]);
+    if (gameState.gameState === GameStates.INIT) {
+      // If not already loading, set loading and initialize.
+      // This handles both initial app load and restart after modal.
+      if (!isLoadingNewGame) {
+        setIsLoadingNewGame(true);
+      }
+      // Use a timeout to ensure the loading state is rendered before heavy processing
+      const timer = setTimeout(() => {
+        initializeNewGame();
+      }, 0); // 0ms timeout is often enough for a render cycle
+      return () => clearTimeout(timer); // Cleanup timeout if component unmounts
+    }
+  }, [gameState.gameState, initializeNewGame, isLoadingNewGame]); // Added isLoadingNewGame here
+
 
   const handleSubmitPlayerHand = useCallback(() => {
     if (!humanPlayerFromState) return;
