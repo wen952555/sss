@@ -10,8 +10,8 @@ import { authService } from './services/authService';
 import {
   initialGameState,
   startGame as startGameLogic,
-  confirmArrangement as confirmArrangementLogicInternal,
-  compareAllHands as compareAllHandsLogicInternal,
+  confirmArrangement as confirmArrangementLogicInternal, // Renamed for clarity
+  compareAllHands as compareAllHandsLogicInternal,     // Renamed for clarity
   GameStates
 } from './logic/gameLogic';
 import { arrangeCardsAI as arrangeCardsAILogic } from './logic/aiLogic';
