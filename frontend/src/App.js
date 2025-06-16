@@ -10,8 +10,8 @@ import { authService } from './services/authService';
 import {
   initialGameState,
   startGame as startGameLogic,
-  confirmArrangement as confirmPlayerArrangementLogic,
-  compareAllHands as compareAllHandsLogic,
+  confirmArrangement as confirmArrangementLogicInternal,
+  compareAllHands as compareAllHandsLogicInternal,
   GameStates
 } from './logic/gameLogic';
 import { arrangeCardsAI as arrangeCardsAILogic } from './logic/aiLogic';
@@ -51,14 +51,14 @@ function App() {
     if (token) {
       authService.checkAuthStatus(token)
         .then(user => {
-          if (user) { setCurrentUser({ ...user, token });} 
+          if (user) { setCurrentUser({ ...user, token });}
           else { localStorage.removeItem('authToken'); }
         })
         .catch(() => localStorage.removeItem('authToken'));
     }
   }, []);
 
-  const initializeNewGame = useCallback(() => { 
+  const initializeNewGame = useCallback(() => {
     console.time("initializeNewGameTotal"); setIsLoadingNewGame(true);
     setSelectedCardsInfo([]); setArrangedHumanHand({ tou: [], zhong: [], wei: [] });
     let newState = startGameLogic(initialGameState); let humanHandForAISuggestion = [];
@@ -69,7 +69,7 @@ function App() {
         if (aiArrangement && isValidArrangementLogic(aiArrangement.tou, aiArrangement.zhong, aiArrangement.wei)) {
           const evalH = { tou: evaluateHandLogic(aiArrangement.tou), zhong: evaluateHandLogic(aiArrangement.zhong), wei: evaluateHandLogic(aiArrangement.wei) };
           return { ...player, arranged: aiArrangement, evalHands: evalH, confirmed: true };
-        } else { 
+        } else {
             const fT = player.hand.slice(0,3), fZ = player.hand.slice(3,8), fW = player.hand.slice(8,13);
             const eA = {tou:[],zhong:[],wei:[]}, eE = {tou:evaluateHandLogic([]),zhong:evaluateHandLogic([]),wei:evaluateHandLogic([])};
             const fbEval = {tou: evaluateHandLogic(fT), zhong: evaluateHandLogic(fZ), wei: evaluateHandLogic(fW)};
@@ -86,54 +86,54 @@ function App() {
     console.timeEnd("aiAndHumanSetup");
     newState.gameState="HUMAN_ARRANGING"; console.time("setInitialGameState"); setGameState(newState); console.timeEnd("setInitialGameState");
     setIsLoadingNewGame(false); console.timeEnd("initializeNewGameTotal");
-  }, []); 
-
-  const handleCloseComparisonModalAndStartNewGame = useCallback(() => { 
-    setShowComparisonModal(false); setIsLoadingNewGame(true); 
-    setTimeout(() => {
-      setGameState(prev => { const scores=new Map(prev.players.map(p=>[p.id,p.score])); const cleanP=initialGameState.players.map(pI=>({...pI,score:scores.get(pI.id)||0,})); return {...initialGameState,players:cleanP,gameState:GameStates.INIT,};});
-    }, 50); 
   }, []);
 
-  useEffect(() => { 
+  const handleCloseComparisonModalAndStartNewGame = useCallback(() => {
+    setShowComparisonModal(false); setIsLoadingNewGame(true);
+    setTimeout(() => {
+      setGameState(prev => { const scores=new Map(prev.players.map(p=>[p.id,p.score])); const cleanP=initialGameState.players.map(pI=>({...pI,score:scores.get(pI.id)||0,})); return {...initialGameState,players:cleanP,gameState:GameStates.INIT,};});
+    }, 50);
+  }, []);
+
+  useEffect(() => {
     if(gameState.gameState===GameStates.INIT){if(isLoadingNewGame){initializeNewGame();}else{setIsLoadingNewGame(true);setTimeout(()=>initializeNewGame(),0);}}
   }, [gameState.gameState,initializeNewGame,isLoadingNewGame]);
 
-  const handleSubmitPlayerHand = useCallback(() => { 
+  const handleSubmitPlayerHand = useCallback(() => {
     if (!humanPlayerFromState) return;
     const { tou, zhong, wei } = arrangedHumanHand;
-    const totalCardsInDuns = (tou?.length || 0) + (zhong?.length || 0) + (wei?.length || 0); // Safe access
+    const totalCardsInDuns = (tou?.length || 0) + (zhong?.length || 0) + (wei?.length || 0);
     if (totalCardsInDuns !== 13) { alert(`总牌数必须是13张，当前为 ${totalCardsInDuns} 张。请检查各墩牌数。`); return; }
     if ((tou?.length || 0) !== 3 || (zhong?.length || 0) !== 5 || (wei?.length || 0) !== 5) { alert(`墩牌数量不正确！\n头道需3张 (当前${tou?.length||0}张)\n中道需5张 (当前${zhong?.length||0}张)\n尾道需5张 (当前${wei?.length||0}张)`); return; }
     if (!isValidArrangementLogic(tou, zhong, wei)) { alert("您的墩牌不合法！请确保头道 ≤ 中道 ≤ 尾道。"); return; }
-    let stateAfterHumanConfirm = confirmPlayerArrangementLogicInternal(gameState, humanPlayerFromState.id, arrangedHumanHand);
+    let stateAfterHumanConfirm = confirmArrangementLogicInternal(gameState, humanPlayerFromState.id, arrangedHumanHand);
     const finalStateWithResults = compareAllHandsLogicInternal(stateAfterHumanConfirm);
     setGameState(finalStateWithResults); setShowComparisonModal(true);
   }, [humanPlayerFromState, arrangedHumanHand, gameState]);
 
-  const handleAIHelperForHuman = useCallback(() => { 
+  const handleAIHelperForHuman = useCallback(() => {
     const humanP = gameState.players.find(p => p.isHuman);
     if (humanP && humanP.hand && humanP.hand.length === 13) {
-      const suggestion = arrangeCardsAILogic(humanP.hand); 
-      if (suggestion && isValidArrangementLogic(suggestion.tou, suggestion.zhong, suggestion.wei)) { setArrangedHumanHand(suggestion); setSelectedCardsInfo([]); } 
+      const suggestion = arrangeCardsAILogic(humanP.hand);
+      if (suggestion && isValidArrangementLogic(suggestion.tou, suggestion.zhong, suggestion.wei)) { setArrangedHumanHand(suggestion); setSelectedCardsInfo([]); }
       else { alert("AI未能给出新的有效分牌建议。"); }
     }
   }, [gameState.players]);
 
-  const handleCardClick = useCallback((cardClicked, currentDunOfCard) => { 
+  const handleCardClick = useCallback((cardClicked, currentDunOfCard) => {
     setSelectedCardsInfo(prev => { const idx = prev.findIndex(i=>i.card.id===cardClicked.id); if(idx > -1) return prev.filter((_,i)=>i!==idx); else return [...prev, {card:cardClicked,fromDun:currentDunOfCard}];});
   }, []);
 
-  const handleDunClick = useCallback((targetDunName) => { 
+  const handleDunClick = useCallback((targetDunName) => {
     if (selectedCardsInfo.length > 0) {
-      setArrangedHumanHand(prev => { const newA = {tou:[...prev.tou],zhong:[...prev.zhong],wei:[...prev.wei]}; const addTarget=[]; 
+      setArrangedHumanHand(prev => { const newA = {tou:[...prev.tou],zhong:[...prev.zhong],wei:[...prev.wei]}; const addTarget=[];
         selectedCardsInfo.forEach(sI=>{ if(sI.fromDun&&newA[sI.fromDun]){newA[sI.fromDun]=newA[sI.fromDun].filter(c=>c.id!==sI.card.id);} addTarget.push(sI.card);});
         const existIds=new Set(newA[targetDunName].map(c=>c.id)); const uniqueAdd=addTarget.filter(c=>!existIds.has(c.id));
         newA[targetDunName]=[...newA[targetDunName],...uniqueAdd]; return newA;
       }); setSelectedCardsInfo([]);
     }
   }, [selectedCardsInfo]);
-  
+
   const handleLoginSuccess = (userData, token) => { setCurrentUser({...userData,token}); localStorage.setItem('authToken',token); setShowAuthModal(false); setShowProfilePage(true); };
   const handleLogout = async () => { if(currentUser&¤tUser.token){try{await authService.logout(currentUser.token);}catch(e){console.error("Logout mock err:",e);}} setCurrentUser(null); localStorage.removeItem('authToken'); setShowProfilePage(false);};
   const handleManageProfile = () => { if(showProfilePage){setShowProfilePage(false);}else if(currentUser){setShowProfilePage(true);setShowAuthModal(false);}else{setAuthModalView('login');setShowAuthModal(true);setShowProfilePage(false);}};
@@ -149,7 +149,6 @@ function App() {
   const currentStatusText = GameStateDisplayNames[gameState.gameState] || "进行中...";
   const playerNames = gameState.players.map(p => p.name).join('、');
 
-  // Define canSubmit logic here to ensure it's always a boolean
   const canSubmitGame = !!(
     arrangedHumanHand &&
     arrangedHumanHand.tou &&
@@ -171,10 +170,10 @@ function App() {
               onDunClick={handleDunClick}
             />
           </div>
-          <ActionButtons 
+          <ActionButtons
             onAIHelper={handleAIHelperForHuman}
             onSubmit={handleSubmitPlayerHand}
-            canSubmit={canSubmitGame} {/* Use the pre-calculated boolean */}
+            canSubmit={canSubmitGame}
             onManageProfile={handleManageProfile}
             onToggleAIPlay={handleToggleAIPlay}
             onAutoMatch={handleAutoMatch}
