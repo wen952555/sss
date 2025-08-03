@@ -1,12 +1,11 @@
 apply plugin: 'com.android.application'
 
-def keystorePropertiesFile = rootProject.file('keystore.properties')
-def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-
 android {
+    // 明确从根项目引用，确保在配置阶段就能获取到值
+    compileSdkVersion rootProject.ext.compileSdkVersion 
+    
     namespace "com.gamelobby.thirteen.wcn"
-    compileSdk 35 // 明确指定 compileSdkVersion
+    
     defaultConfig {
         applicationId "com.gamelobby.thirteen.wcn"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -20,11 +19,11 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
         }
     }
 
@@ -33,15 +32,25 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    // 签名配置需要动态加载，所以保持原样
     signingConfigs {
         release {
-            storeFile file(keystoreProperties['MYAPP_RELEASE_STORE_FILE'])
-            storePassword keystoreProperties['MYAPP_RELEASE_STORE_PASSWORD']
-            keyAlias keystoreProperties['MYAPP_RELEASE_KEY_ALIAS']
-            keyPassword keystoreProperties['MYAPP_RELEASE_KEY_PASSWORD']
-            storeType "PKCS12"
+            // 在CI/CD环境中，keystore.properties是动态创建的
+            def keystorePropertiesFile = rootProject.file('keystore.properties')
+            if (keystorePropertiesFile.exists()) {
+                def keystoreProperties = new Properties()
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                storeFile file(keystoreProperties['MYAPP_RELEASE_STORE_FILE'])
+                storePassword keystoreProperties['MYAPP_RELEASE_STORE_PASSWORD']
+                keyAlias keystoreProperties['MYAPP_RELEASE_KEY_ALIAS']
+                keyPassword keystoreProperties['MYAPP_RELEASE_KEY_PASSWORD']
+                storeType "PKCS12"
+            }
         }
     }
+    
+    // 在release构建类型中应用签名
+    buildTypes.release.signingConfig signingConfigs.release
 }
 
 repositories {
