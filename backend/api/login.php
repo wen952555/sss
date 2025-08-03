@@ -2,45 +2,68 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-$db_path = '../database/users.json';
+// 数据库文件路径
+$dbFile = '../database/users.json';
 
-// 读取数据库
-function getUsers($path) {
-    if (!file_exists($path)) return [];
-    return json_decode(file_get_contents($path), true);
+// --- 函数：读取用户数据 ---
+function getUsers($file) {
+    if (!file_exists($file)) {
+        return [];
+    }
+    $json = file_get_contents($file);
+    return json_decode($json, true);
 }
 
-// --- Main Logic ---
+// --- 主逻辑 ---
 
-$input = json_decode(file_get_contents('php://input'), true);
+// 1. 获取前端POST的数据
+$data = json_decode(file_get_contents("php://input"));
 
-if (!$input || !isset($input['phone'])) {
+// 2. 校验数据
+if (!isset($data->phone) || !isset($data->password)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => '无效的请求，需要提供手机号。']);
+    echo json_encode(['success' => false, 'message' => '手机号和密码均不能为空']);
     exit;
 }
 
-$phone = $input['phone'];
+$phone = $data->phone;
+$password = $data->password;
 
-$users = getUsers($db_path);
-
-// 查找用户
-foreach ($users as $id => $user) {
+// 3. 查找用户
+$users = getUsers($dbFile);
+$foundUser = null;
+foreach ($users as $user) {
     if ($user['phone'] === $phone) {
-        http_response_code(200);
-        echo json_encode([
-            'success' => true,
-            'message' => '登录成功！',
-            'userId' => $id,
-            'user' => $user
-        ]);
-        exit;
+        $foundUser = $user;
+        break;
     }
 }
 
-// 如果循环结束还没找到
-http_response_code(404); // 404 Not Found
-echo json_encode(['success' => false, 'message' => '该手机号未注册。']);
+// 4. 如果用户不存在
+if ($foundUser === null) {
+    http_response_code(404); // 404 Not Found
+    echo json_encode(['success' => false, 'message' => '用户不存在']);
+    exit;
+}
+
+// 5. 验证密码 (安全核心)
+// 使用 password_verify() 来检查用户输入的密码是否与存储的哈希匹配
+if (password_verify($password, $foundUser['passwordHash'])) {
+    // 密码正确
+    // 从返回的用户信息中移除敏感数据
+    unset($foundUser['passwordHash']);
+    
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
+        'userId' => $foundUser['id'],
+        'user' => $foundUser
+    ]);
+} else {
+    // 密码错误
+    http_response_code(401); // 401 Unauthorized
+    echo json_encode(['success' => false, 'message' => '密码错误']);
+}
 ?>

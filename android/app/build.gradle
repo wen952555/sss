@@ -20,19 +20,6 @@ android {
         }
     }
     
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-
-    // 签名配置需要动态加载，所以保持原样
     signingConfigs {
         release {
             // 在CI/CD环境中，keystore.properties是动态创建的
@@ -44,13 +31,25 @@ android {
                 storePassword keystoreProperties['MYAPP_RELEASE_STORE_PASSWORD']
                 keyAlias keystoreProperties['MYAPP_RELEASE_KEY_ALIAS']
                 keyPassword keystoreProperties['MYAPP_RELEASE_KEY_PASSWORD']
+                // --- 关键修复：明确指定storeType以解决兼容性问题 ---
                 storeType "PKCS12"
             }
         }
     }
     
-    // 在release构建类型中应用签名
-    buildTypes.release.signingConfig signingConfigs.release
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // 在release构建类型中应用签名
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 
 repositories {
@@ -65,6 +64,9 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // 增加 capacitor-app 和 capacitor-browser 依赖
+    implementation project(':capacitor-app')
+    implementation project(':capacitor-browser')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
