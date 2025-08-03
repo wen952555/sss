@@ -10,7 +10,6 @@ name: Build Android APK on Frontend Update
 
 # ------------------------------------------------------------------------------
 #  Triggers
-#  Defines when this workflow will run.
 # ------------------------------------------------------------------------------
 on:
   push:
@@ -22,7 +21,6 @@ on:
 
 # ------------------------------------------------------------------------------
 #  Jobs
-#  A workflow run is made up of one or more jobs.
 # ------------------------------------------------------------------------------
 jobs:
   build-android:
@@ -37,7 +35,7 @@ jobs:
       - name: 1.2 Set up Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # <-- FIXED: Use Node.js v20 to meet Capacitor CLI requirements
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
@@ -45,7 +43,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21' # <-- FIXED: Use JDK 21 to match Android build requirements
 
       - name: 1.4 Setup Android SDK
         uses: android-actions/setup-android@v3
