@@ -2,26 +2,31 @@ import React from 'react';
 import Card from './Card';
 import './Lane.css';
 
-const Lane = ({ title, cards, onLaneClick, onCardClick, expectedCount, handType }) => {
+// 检查两张牌是否相同
+const areCardsEqual = (card1, card2) => {
+  if (!card1 || !card2) return false;
+  return card1.rank === card2.rank && card1.suit === card2.suit;
+};
+
+const Lane = ({ title, cards, onCardClick, expectedCount, handType, selected }) => {
   const handleCardClick = onCardClick || (() => {});
-  
-  // 如果有牌型，则显示牌型名称，否则显示墩的计数
-  const displayTitle = handType ? `${title} - ${handType}` : `${title} (${cards.length}/${expectedCount})`;
 
   return (
-    <div className={`lane ${onLaneClick ? 'clickable' : ''}`} onClick={onLaneClick}>
-      <h4>{displayTitle}</h4>
-      <div className="card-container">
+    <div className="lane-container">
+      <div className="card-display-area">
         {cards.map((card, index) => (
           <Card 
             key={`${card.rank}-${card.suit}-${index}`} 
             card={card}
+            // 检查这张牌是否是当前选中的牌
+            isSelected={areCardsEqual(selected, card)}
             onClick={() => handleCardClick(card)}
           />
         ))}
-        {cards.length === 0 && onLaneClick && (
-          <div className="lane-placeholder">点击这里放置选中的牌</div>
-        )}
+      </div>
+      <div className="lane-info">
+        <span className="lane-title">{`${title} (${expectedCount})`}</span>
+        {handType && <span className="lane-hand-type">{handType}</span>}
       </div>
     </div>
   );
