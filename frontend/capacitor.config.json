@@ -1,7 +1,7 @@
 {
   "appId": "com.gamelobby.thirteen.wcn",
   "appName": "摆牌",
-  "webDir": "frontend/dist",
+  "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
     "url": "https://9522.ip-ddns.com",
@@ -10,6 +10,7 @@
     ]
   },
   "android": {
-    "allowMixedContent": true
+    "allowMixedContent": true,
+    "path": "../android"
   }
 }

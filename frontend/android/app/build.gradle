@@ -1,9 +1,5 @@
 apply plugin: 'com.android.application'
 
-def keystorePropertiesFile = rootProject.file('keystore.properties')
-def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-
 android {
     namespace "com.gamelobby.thirteen.wcn"
     compileSdk rootProject.ext.compileSdkVersion
@@ -11,13 +7,12 @@ android {
         applicationId "com.gamelobby.thirteen.wcn"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-
-        // (已修改) 动态版本号
-        versionCode project.hasProperty('appVersionCode') ? project.property('appVersionCode').toInteger() : 1
-        versionName project.hasProperty('appVersionName') ? project.property('appVersionName') : "1.0"
-        
+        versionCode 1
+        versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
@@ -25,29 +20,6 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
-        }
-    }
-
-    // ======================= 建议的额外修改 =======================
-    // 将Java编译级别与我们的构建环境(JDK 21)对齐，避免潜在的兼容性问题
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17 // 或者 JavaVersion.VERSION_21，但17通常更兼容
-        targetCompatibility JavaVersion.VERSION_17 // 保持与上面一致
-    }
-    // 如果你的项目中有Kotlin代码，也需要更新kotlinOptions
-    // kotlinOptions {
-    //     jvmTarget = '17'
-    // }
-    // ==========================================================
-
-    signingConfigs {
-        release {
-            storeFile file(keystoreProperties['MYAPP_RELEASE_STORE_FILE'])
-            storePassword keystoreProperties['MYAPP_RELEASE_STORE_PASSWORD']
-            keyAlias keystoreProperties['MYAPP_RELEASE_KEY_ALIAS']
-            keyPassword keystoreProperties['MYAPP_RELEASE_KEY_PASSWORD']
-            storeType "PKCS12"
         }
     }
 }

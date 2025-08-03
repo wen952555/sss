@@ -95,11 +95,22 @@ foreach ($suitsDeck as $suit) {
     }
 }
 $playerFullHand = array_merge($playerTop, $playerMiddle, $playerBottom);
-$aiDeck = array_udiff($fullDeck, $playerFullHand, function($a, $b) {
-    return ($a['rank'] === $b['rank'] && $a['suit'] === $b['suit']) ? 0 : -1;
+
+// Helper function to convert a card to a unique string identifier.
+function card_to_string($card) {
+    return "{$card['rank']}_of_{$card['suit']}";
+}
+
+// Create a lookup map of the player's cards for efficient filtering.
+$playerHandLookup = array_flip(array_map('card_to_string', $playerFullHand));
+
+// Filter the full deck to get the cards remaining for the AI.
+$aiDeck = array_filter($fullDeck, function($card) use ($playerHandLookup) {
+    return !isset($playerHandLookup[card_to_string($card)]);
 });
+
 shuffle($aiDeck);
-$aiHand = array_slice($aiDeck, 0, 13);
+$aiHand = array_slice(array_values($aiDeck), 0, 13);
 
 
 // 3. AI 自动理牌（简单策略）
