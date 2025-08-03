@@ -1,0 +1,43 @@
+/* Lane.css */
+
+.lane {
+  border: 2px dashed #ffffff50;
+  border-radius: 8px;
+  padding: 15px;
+  width: 100%;
+  margin: 0 10px;
+  min-height: 150px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.lane.clickable:hover {
+  background-color: #ffffff20;
+  border-style: solid;
+  cursor: pointer;
+}
+
+.lane h4 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #f0f0f0;
+}
+
+.lane-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 100px;
+  color: #ffffff80;
+  font-size: 14px;
+  text-align: center;
+}
+
+.lane .card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px; /* 卡牌之间的间距 */
+}

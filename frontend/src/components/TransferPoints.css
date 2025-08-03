@@ -1,0 +1,89 @@
+/* frontend/src/components/TransferPoints.css */
+
+.transfer-modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.transfer-modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #aaa;
+}
+.close-modal-btn:hover {
+    color: #333;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.step-content p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.step-content input {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.step-content button {
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #2196F3;
+  color: white;
+}
+
+.step-content button:disabled {
+  background-color: #9E9E9E;
+}
+
+.step-content button.back-btn {
+    background-color: #f44336;
+}
+
+.confirmation-box {
+    padding: 15px;
+    background-color: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.confirm-id {
+    font-weight: bold;
+    font-size: 1.5em;
+    color: #1976d2;
+    margin-left: 10px;
+}
+
+.modal-error {
+  color: #D32F2F;
+  margin-top: 15px;
+  font-weight: bold;
+}

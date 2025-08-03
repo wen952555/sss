@@ -1,0 +1,58 @@
+/* frontend/src/components/UserProfile.css */
+
+.user-profile-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #2c3e50;
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-id, .user-points {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.user-points {
+    color: #f1c40f;
+}
+
+.user-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.action-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.action-btn.transfer {
+  background-color: #3498db;
+  color: white;
+}
+.action-btn.transfer:hover {
+  background-color: #2980b9;
+}
+
+.action-btn.logout {
+  background-color: #e74c3c;
+  color: white;
+}
+.action-btn.logout:hover {
+  background-color: #c0392b;
+}
