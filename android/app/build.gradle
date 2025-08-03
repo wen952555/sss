@@ -1,7 +1,6 @@
 apply plugin: 'com.android.application'
 
 android {
-    // 明确从根项目引用，确保在配置阶段就能获取到值
     compileSdkVersion rootProject.ext.compileSdkVersion 
     
     namespace "com.gamelobby.thirteen.wcn"
@@ -10,29 +9,32 @@ android {
         applicationId "com.gamelobby.thirteen.wcn"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-
         versionCode 1
         versionName "1.0"
-        
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
     
+    // --- 加固签名配置 ---
     signingConfigs {
         release {
-            // 在CI/CD环境中，keystore.properties是动态创建的
             def keystorePropertiesFile = rootProject.file('keystore.properties')
             if (keystorePropertiesFile.exists()) {
                 def keystoreProperties = new Properties()
                 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                
                 storeFile file(keystoreProperties['MYAPP_RELEASE_STORE_FILE'])
                 storePassword keystoreProperties['MYAPP_RELEASE_STORE_PASSWORD']
                 keyAlias keystoreProperties['MYAPP_RELEASE_KEY_ALIAS']
                 keyPassword keystoreProperties['MYAPP_RELEASE_KEY_PASSWORD']
-                // --- 关键修复：明确指定storeType以解决兼容性问题 ---
+                // 明确指定storeType以解决Java版本兼容性问题
                 storeType "PKCS12"
+            } else {
+                // 在CI/CD环境中，如果keystore.properties不存在，这会打印一个警告
+                // 但由于构建脚本的早期阶段可能需要这些值，我们提供一个默认的空配置
+                println "Warning: keystore.properties not found. Using empty signing config."
             }
         }
     }
@@ -41,7 +43,6 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            // 在release构建类型中应用签名
             signingConfig signingConfigs.release
         }
     }
@@ -64,7 +65,6 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
-    // 增加 capacitor-app 和 capacitor-browser 依赖
     implementation project(':capacitor-app')
     implementation project(':capacitor-browser')
     testImplementation "junit:junit:$junitVersion"
