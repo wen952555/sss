@@ -22,9 +22,8 @@ const GameLobby = () => {
         setGameState({ gameType: null, hands: null, error: data.message });
       }
     } catch (err) {
-      setError('无法连接到后端API。请确保后端服务正在运行，并且API地址正确。');
-      setGameState({ gameType: null, hands: null, error: '无法连接到后端API。请确保后端服务正在运行，并且API地址正确。
-' + err.message });
+      // 修复：删除未转义的换行符，或者使用模板字符串
+      setGameState({ gameType: null, hands: null, error: `无法连接到后端API。请确保后端服务正在运行，并且API地址正确。${err.message}` });
     }
   };
 
