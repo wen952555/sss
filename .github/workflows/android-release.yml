@@ -1,0 +1,80 @@
+name: Build and Release Android APK
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # 仅当一个 'v' 开头的标签被推送时触发 (例如 v1.0.0)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18' # 使用一个稳定的 Node.js 版本
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17' # Capacitor/Android 通常需要 JDK 17
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+
+    - name: Install root dependencies
+      run: npm install
+
+    - name: Install frontend dependencies and build
+      run: |
+        cd frontend
+        npm install
+        npm run build
+
+    - name: Install Capacitor Android platform
+      # 在根目录运行，因为我们的原生项目在这里
+      run: npm install @capacitor/android
+
+    - name: Sync Capacitor project
+      run: npx cap sync android
+
+    - name: Decode Keystore and place it in the correct directory
+      # 将 GitHub Secret 解码并写回 .keystore 文件
+      run: |
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > ${{ github.workspace }}/android/app/my-release-key.keystore
+        
+    - name: Build Release APK with Gradle
+      # 使用 Gradle wrapper 进行构建，传入签名信息
+      working-directory: ./android
+      run: ./gradlew assembleRelease \
+        -Pandroid.injected.signing.store.file="${{ github.workspace }}/android/app/my-release-key.keystore" \
+        -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+        -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+        -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
+
+    - name: Get App Info
+      id: app-info
+      # 从 gradle.properties 或其他地方获取版本信息
+      # 这里我们简单地使用标签名作为版本号
+      run: echo "version_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+
+    - name: Rename APK
+      # 重命名 APK 文件，使其包含版本号
+      run: mv android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/Thirteen-Game-${{ steps.app-info.outputs.version_name }}.apk
+    
+    - name: Create GitHub Release and Upload APK
+      uses: softprops/action-gh-release@v1
+      with:
+        # 标签名将作为 Release 的标题
+        name: "Release ${{ steps.app-info.outputs.version_name }}"
+        # 自动生成 Release notes
+        generate_release_notes: true
+        # 上传签好名的 APK 文件
+        files: android/app/build/outputs/apk/release/Thirteen-Game-*.apk
