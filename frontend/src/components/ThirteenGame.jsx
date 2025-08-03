@@ -1,129 +1,84 @@
 import React, { useState, useEffect } from 'react';
-import { sortCards } from './Card'; // 导入排序函数
+import { sortCards } from './Card'; // 确保 sortCards 被导出和导入
 import Lane from './Lane';
-import Hand from './Hand';
 
-const ThirteenGame = ({ playerHand, otherPlayers }) => {
-  // 初始状态：所有牌都在未分配区域
-  const [unassignedCards, setUnassignedCards] = useState([]);
-  const [selectedCards, setSelectedCards] = useState([]);
-  
-  // 三个墩的状态
+const ThirteenGame = ({ playerHand, onBackToLobby }) => { // 增加一个返回大厅的函数
+  // 不再需要 unassignedCards, selectedCards
   const [topLane, setTopLane] = useState([]);
   const [middleLane, setMiddleLane] = useState([]);
   const [bottomLane, setBottomLane] = useState([]);
 
-  // 初始化和重置游戏
   useEffect(() => {
-    // 收到新的手牌时，自动排序并设置为未分配状态
-    resetGame();
+    // 当接收到新的手牌时，自动分配
+    if (playerHand && playerHand.length === 13) {
+      autoArrangeCards(playerHand);
+    }
   }, [playerHand]);
 
-  const resetGame = () => {
-    setUnassignedCards(sortCards(playerHand));
-    setSelectedCards([]);
-    setTopLane([]);
-    setMiddleLane([]);
-    setBottomLane([]);
-  };
+  /**
+   * 自动理牌函数
+   * @param {Array} hand - 13张牌的数组
+   */
+  const autoArrangeCards = (hand) => {
+    // 1. 先将所有手牌从大到小排序
+    const sortedHand = sortCards(hand).reverse(); // reverse() 使得最大的牌在最前面
 
-  // 点击手牌区的牌
-  const handleCardSelect = (clickedCard) => {
-    const isAlreadySelected = selectedCards.some(
-      c => c.rank === clickedCard.rank && c.suit === clickedCard.suit
-    );
+    // 2. 分配尾墩 (最大的5张)
+    const bottom = sortedHand.slice(0, 5);
+    setBottomLane(sortCards(bottom)); // 在墩内再次正向排序，方便查看
 
-    if (isAlreadySelected) {
-      // 如果已选中，则取消选中
-      setSelectedCards(selectedCards.filter(
-        c => !(c.rank === clickedCard.rank && c.suit === clickedCard.suit)
-      ));
-    } else {
-      // 如果未选中，则加入选中列表
-      setSelectedCards([...selectedCards, clickedCard]);
-    }
-  };
+    // 3. 分配中墩 (接下来的5张)
+    const middle = sortedHand.slice(5, 10);
+    setMiddleLane(sortCards(middle));
 
-  // 点击某个墩 (Lane)
-  const handlePlaceCards = (laneSetter, expectedCount, currentLaneCards) => {
-    if (selectedCards.length === 0) {
-      alert("请先从手牌区选择要放置的牌！");
-      return;
-    }
-    
-    const totalCards = selectedCards.length + currentLaneCards.length;
-    if (totalCards > expectedCount) {
-      alert(`这一墩最多只能放 ${expectedCount} 张牌！`);
-      return;
-    }
-
-    // 1. 将选中的牌放入目标墩
-    laneSetter(sortCards([...currentLaneCards, ...selectedCards]));
-
-    // 2. 从手牌区移除这些牌
-    setUnassignedCards(unassignedCards.filter(card => 
-      !selectedCards.some(sc => sc.rank === card.rank && sc.suit === card.suit)
-    ));
-
-    // 3. 清空选中列表
-    setSelectedCards([]);
+    // 4. 分配头墩 (最后的3张)
+    const top = sortedHand.slice(10, 13);
+    setTopLane(sortCards(top));
   };
   
-  // 检查是否所有牌都已放置
-  const isReady = unassignedCards.length === 0 && topLane.length === 3 && middleLane.length === 5 && bottomLane.length === 5;
-
   const handleConfirm = () => {
-      // 在这里添加比牌逻辑
-      // 简单规则校验：尾墩 > 中墩 > 头墩
-      // 此处暂时只做 alert
+      // 这里的比牌逻辑变得非常重要
+      // 后续会在这里实现比较 top, middle, bottom 三墩牌力
       alert("牌已确认！后续将添加比牌逻辑。");
   }
 
   return (
     <div className="thirteen-game">
-      <h2>十三张游戏</h2>
+      <h2>十三张游戏 - 自动理牌结果</h2>
 
-      {/* 墩区 */}
       <div className="lanes-area">
         <Lane 
           title="头墩"
           cards={topLane}
           expectedCount={3}
-          onLaneClick={() => handlePlaceCards(setTopLane, 3, topLane)}
         />
         <Lane 
           title="中墩" 
           cards={middleLane}
           expectedCount={5}
-          onLaneClick={() => handlePlaceCards(setMiddleLane, 5, middleLane)}
         />
         <Lane 
           title="尾墩" 
           cards={bottomLane}
           expectedCount={5}
-          onLaneClick={() => handlePlaceCards(setBottomLane, 5, bottomLane)}
         />
       </div>
 
-      {/* 控制按钮 */}
       <div className="game-actions">
-        <button onClick={() => setUnassignedCards(sortCards(unassignedCards))}>
-          手牌排序
+        {/* 重新发牌/返回大厅的按钮 */}
+        <button onClick={onBackToLobby} className="reset">
+          返回大厅
         </button>
-        <button onClick={resetGame} className="reset">
-          重置
-        </button>
-        <button onClick={handleConfirm} disabled={!isReady}>
-          确认出牌
+        <button onClick={handleConfirm}>
+          确认牌型
         </button>
       </div>
-
-      {/* 手牌区 */}
-      <Hand 
-        cards={unassignedCards}
-        selectedCards={selectedCards}
-        onCardClick={handleCardSelect}
-      />
+      
+      {/* 
+        由于是自动理牌，手动操作的UI（如手牌区、重置按钮）可以暂时移除
+        或保留下来用于后续的“手动微调”功能。
+        为了满足当前需求，我们先将其简化。
+      */}
     </div>
   );
 };
