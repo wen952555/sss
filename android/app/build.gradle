@@ -1,14 +1,7 @@
 apply plugin: 'com.android.application'
 
-// --- “防弹”配置：在脚本顶部提前加载签名属性 ---
-def keystorePropertiesFile = rootProject.file('keystore.properties')
-def keystoreProperties = new Properties()
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
-
 android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
+    compileSdkVersion rootProject.ext.compileSdkVersion 
     
     namespace "com.gamelobby.thirteen.wcn"
     
@@ -19,18 +12,29 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
     }
     
-    // --- 明确且独立的签名配置 ---
+    // --- 加固签名配置 ---
     signingConfigs {
         release {
+            def keystorePropertiesFile = rootProject.file('keystore.properties')
             if (keystorePropertiesFile.exists()) {
+                def keystoreProperties = new Properties()
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                
                 storeFile file(keystoreProperties['MYAPP_RELEASE_STORE_FILE'])
                 storePassword keystoreProperties['MYAPP_RELEASE_STORE_PASSWORD']
                 keyAlias keystoreProperties['MYAPP_RELEASE_KEY_ALIAS']
                 keyPassword keystoreProperties['MYAPP_RELEASE_KEY_PASSWORD']
-                // 明确指定 storeType，这是解决不兼容问题的核心
+                // 明确指定storeType以解决Java版本兼容性问题
                 storeType "PKCS12"
+            } else {
+                // 在CI/CD环境中，如果keystore.properties不存在，这会打印一个警告
+                // 但由于构建脚本的早期阶段可能需要这些值，我们提供一个默认的空配置
+                println "Warning: keystore.properties not found. Using empty signing config."
             }
         }
     }
@@ -39,7 +43,6 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            // 明确应用签名
             signingConfig signingConfigs.release
         }
     }
@@ -47,6 +50,12 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
 }
 
@@ -65,3 +74,12 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

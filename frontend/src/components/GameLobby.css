@@ -21,17 +21,18 @@
 .game-card {
   height: 400px;
   border-radius: 25px;
-  cursor: pointer;
   position: relative;
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   
-  /* 应用毛玻璃效果 */
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+
+  display: flex; /* 使用flex布局，方便内容和按钮区的排列 */
+  flex-direction: column;
 }
 
 .game-card:hover {
@@ -39,42 +40,34 @@
   box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.4);
 }
 
-/* 为不同的游戏卡片设置独特的背景（伪元素） */
-.thirteen-card::before {
+.thirteen-card::before, .eight-card::before {
   content: ' ';
   position: absolute;
   top: -50%;
   left: -50%;
   width: 200%;
   height: 200%;
+  transition: opacity 0.5s ease;
+  z-index: 0;
+}
+.thirteen-card::before {
   background-image: radial-gradient(circle, #ff6b6b 0%, transparent 50%);
   opacity: 0.2;
-  transition: opacity 0.5s ease;
 }
-
 .eight-card::before {
-  content: ' ';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
   background-image: radial-gradient(circle, #48dbfb 0%, transparent 50%);
   opacity: 0.2;
-  transition: opacity 0.5s ease;
 }
-
 .game-card:hover::before {
   opacity: 0.4;
 }
 
 .game-card-content {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+  flex-grow: 1; /* 让内容区占据大部分空间 */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* 将文字推到底部 */
   padding: 30px;
-  box-sizing: border-box;
   text-align: left;
   z-index: 1;
 }
@@ -89,4 +82,35 @@
   font-size: 1rem;
   line-height: 1.5;
   color: #e0e0e0;
+}
+
+/* --- 新增的操作按钮区域样式 --- */
+.game-card-actions {
+  display: flex;
+  padding: 0 30px 30px 30px;
+  gap: 15px;
+  z-index: 1;
+}
+
+.action-btn {
+  flex-grow: 1;
+  padding: 15px;
+  border-radius: 12px;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.action-btn:hover {
+  transform: translateY(-3px);
+}
+
+.action-btn.official {
+  background: linear-gradient(45deg, #5352ed, #2f2db9);
+  color: white;
+}
+.action-btn.trial {
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #333;
 }
