@@ -4,10 +4,11 @@ import Auth from './components/Auth';
 import UserProfile from './components/UserProfile';
 import TransferPoints from './components/TransferPoints';
 import './App.css';
+import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 
-// 新版本提示模态框组件
+// 新版本提示模态框组件 (代码不变)
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) {
     return null;
@@ -40,41 +41,43 @@ function App() {
   useEffect(() => {
     // 检查更新
     const checkVersion = async () => {
-      try {
-        const serverResponse = await fetch('/api/version_check.php');
-        const serverData = await serverResponse.json();
+      // --- 关键修复：只在原生平台 (安卓/iOS) 上运行这段代码 ---
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const serverResponse = await fetch('/api/version_check.php');
+          const serverData = await serverResponse.json();
 
-        if (serverData.success) {
-          const { getInfo } = CapacitorApp;
-          const appInfo = await getInfo();
-          
-          // 注意: appInfo.version 在Android上是versionName (e.g., "1.0"), 
-          // appInfo.build 是 versionCode (e.g., 1)
-          const currentVersionCode = parseInt(appInfo.build, 10);
+          if (serverData.success) {
+            const { getInfo } = CapacitorApp;
+            const appInfo = await getInfo();
+            
+            const currentVersionCode = parseInt(appInfo.build, 10);
 
-          if (serverData.latestVersionCode > currentVersionCode) {
-            setUpdateInfo({
-              show: true,
-              version: serverData.latestVersion,
-              notes: serverData.releaseNotes,
-              url: serverData.downloadUrl,
-            });
+            if (serverData.latestVersionCode > currentVersionCode) {
+              setUpdateInfo({
+                show: true,
+                version: serverData.latestVersion,
+                notes: serverData.releaseNotes,
+                url: serverData.downloadUrl,
+              });
+            }
           }
+        } catch (error) {
+          console.error("版本检查失败:", error);
         }
-      } catch (error) {
-        console.error("版本检查失败:", error);
       }
     };
     
     checkVersion();
     
-    // 尝试从localStorage获取用户信息
+    // 尝试从localStorage获取用户信息 (代码不变)
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
   }, []);
 
+  // --- 其他函数 (handleLoginSuccess, handleLogout, 等) 保持不变 ---
   const handleLoginSuccess = (userId, userData) => {
     const fullUserData = { id: userId, ...userData };
     localStorage.setItem('user', JSON.stringify(fullUserData));
