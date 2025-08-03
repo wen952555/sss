@@ -1,0 +1,27 @@
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px; /* 扑克牌之间的间距 */
+}
+
+.card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 5px;
+  width: 100px; /* 扑克牌宽度 */
+  height: 140px; /* 扑克牌高度 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+}
+
+.card img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.app {
+    text-align: center;
+}
