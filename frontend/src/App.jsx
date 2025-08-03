@@ -13,7 +13,8 @@ const GameLobby = () => {
   const fetchHands = async (players, cards, gameType) => {
     setGameState({ gameType: null, hands: null, error: null });
     try {
-      const response = await fetch(`https://wenxiuxiu.eu.org/api/deal_cards.php?players=${players}&cards=${cards}`);
+      // 更新 API URL，使其指向前端域名下的 /api/ 路径
+      const response = await fetch(`/api/deal_cards.php?players=${players}&cards=${cards}`);
       const data = await response.json();
       if (data.success) {
         setGameState({ gameType, hands: data.hands, error: null });
@@ -21,7 +22,9 @@ const GameLobby = () => {
         setGameState({ gameType: null, hands: null, error: data.message });
       }
     } catch (err) {
-      setGameState({ gameType: null, hands: null, error: '无法连接到后端API。请确保后端服务正在运行，并且API地址正确。' });
+      setError('无法连接到后端API。请确保后端服务正在运行，并且API地址正确。');
+      setGameState({ gameType: null, hands: null, error: '无法连接到后端API。请确保后端服务正在运行，并且API地址正确。
+' + err.message });
     }
   };
 
