@@ -1,78 +1,68 @@
-import React, { useState } from 'react';
-import ThirteenGame from './components/ThirteenGame';
-import Card, { sortCards } from './components/Card'; // 导入Card和排序函数
+import React, { useState, useEffect } from 'react';
+import GameLobby from './components/GameLobby';
+import Auth from './components/Auth';
+import UserProfile from './components/UserProfile';
+import TransferPoints from './components/TransferPoints';
 import './App.css';
 
-const GameLobby = () => {
-  const [gameState, setGameState] = useState({
-    gameType: null,
-    hands: null,
-    error: null,
-  });
+function App() {
+  const [user, setUser] = useState(null);
+  const [currentView, setCurrentView] = useState('lobby'); // 'lobby', 'profile', 'transfer'
 
-  const fetchHands = async (players, cards, gameType) => {
-    // ... (这部分代码保持不变)
-    setGameState({ gameType: null, hands: null, error: null });
-    try {
-      const response = await fetch(`/api/deal_cards.php?players=${players}&cards=${cards}`);
-      const data = await response.json();
-      if (data.success) {
-        setGameState({ gameType, hands: data.hands, error: null });
-      } else {
-        setGameState({ gameType: null, hands: null, error: data.message });
-      }
-    } catch (err) {
-      setGameState({ gameType: null, hands: null, error: `无法连接到后端API。请确保后端服务正在运行，并且API地址正确。${err.message}` });
+  useEffect(() => {
+    // 尝试从localStorage获取用户信息
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
+  }, []);
+
+  const handleLoginSuccess = (userId, userData) => {
+    const fullUserData = { id: userId, ...userData };
+    localStorage.setItem('user', JSON.stringify(fullUserData));
+    setUser(fullUserData);
+    setCurrentView('lobby'); // 登录成功后返回大厅
   };
 
-  // 返回大厅的函数
-  const handleBackToLobby = () => {
-    setGameState({ gameType: null, hands: null, error: null });
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
   };
   
-  // 当游戏类型是十三张时，渲染游戏组件
-  if (gameState.gameType === 'thirteen' && gameState.hands) {
-    const player1Hand = gameState.hands['玩家 1'];
-    const otherPlayers = Object.fromEntries(Object.entries(gameState.hands).filter(([key]) => key !== '玩家 1'));
-    
-    return <ThirteenGame 
-              playerHand={player1Hand} 
-              otherPlayers={otherPlayers} 
-              onBackToLobby={handleBackToLobby} // 传递返回函数
-           />;
+  const renderCurrentView = () => {
+      switch (currentView) {
+          case 'profile':
+              return <UserProfile user={user} />;
+          case 'transfer':
+              // 注意：确保TransferPoints组件能够接收并处理user和onBack属性
+              return <TransferPoints currentUser={user} onTransferSuccess={() => setCurrentView('lobby')} />;
+          case 'lobby':
+          default:
+              return <GameLobby />;
+      }
+  };
+
+  if (!user) {
+    return <Auth onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // 默认显示游戏大厅
   return (
     <div className="app">
-      <h1>游戏大厅</h1>
-      <div className="game-controls">
-        <button onClick={() => fetchHands(4, 13, 'thirteen')}>开始十三张 (4人)</button>
-        <button onClick={() => fetchHands(6, 8, 'eight')}>开始八张 (6人)</button>
-      </div>
-
-      {gameState.error && <p className="error-message">{gameState.error}</p>}
-      
-      {/* 八张游戏结果展示 (保持不变) */}
-      {gameState.gameType === 'eight' && gameState.hands && (
-         <div className="game-board">
-          <h2>八张游戏发牌结果:</h2>
-          {Object.entries(gameState.hands).map(([player, hand]) => (
-            <div key={player} className="player-hand">
-              <h3>{player}</h3>
-              <div className="card-container">
-                {/* 使用 sortCards 对八张的牌也进行排序显示 */}
-                {sortCards(hand).map((card, index) => (
-                  <Card key={index} card={card} />
-                ))}
-              </div>
-            </div>
-          ))}
+      <header className="app-header">
+        <h1>游戏大厅</h1>
+        <div className="user-actions">
+          <span>欢迎, {user.phone} (ID: {user.id})</span>
+          <button onClick={() => setCurrentView('lobby')}>主页</button>
+          <button onClick={() => setCurrentView('profile')}>我的资料</button>
+          <button onClick={() => setCurrentView('transfer')}>积分转移</button>
+          <button onClick={handleLogout}>退出登录</button>
         </div>
-      )}
+      </header>
+      <main className="app-main">
+        {renderCurrentView()}
+      </main>
     </div>
   );
-};
+}
 
-export default GameLobby;
+export default App;

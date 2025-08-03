@@ -1,14 +1,14 @@
-// frontend/src/components/GameLobby.jsx
 import React, { useState } from 'react';
 import ThirteenGame from './ThirteenGame';
-import UserProfile from './UserProfile';
-import TransferPoints from './TransferPoints'; // 准备好要引入的组件
-import Card, { sortCards } from './Card';
-import '../App.css'; // 使用根目录的App.css
+import Card, { sortCards } from './Card'; // 导入Card和排序函数
+import '../App.css'; // 使用App.css的样式
 
-const GameLobby = ({ userId, user, onLogout, updateUser }) => {
-  const [gameState, setGameState] = useState({ gameType: null, hands: null, error: null });
-  const [isTransferring, setIsTransferring] = useState(false); // 控制赠送弹窗的显示
+const GameLobby = () => {
+  const [gameState, setGameState] = useState({
+    gameType: null,
+    hands: null,
+    error: null,
+  });
 
   const fetchHands = async (players, cards, gameType) => {
     setGameState({ gameType: null, hands: null, error: null });
@@ -20,8 +20,8 @@ const GameLobby = ({ userId, user, onLogout, updateUser }) => {
       } else {
         setGameState({ gameType: null, hands: null, error: data.message });
       }
-    } catch (err) {
-      setGameState({ gameType: null, hands: null, error: `无法连接到后端API。${err.message}` });
+    } catch (err)      {
+      setGameState({ gameType: null, hands: null, error: `无法连接到后端API。请确保后端服务正在运行，并且API地址正确。${err.message}` });
     }
   };
 
@@ -29,76 +29,22 @@ const GameLobby = ({ userId, user, onLogout, updateUser }) => {
     setGameState({ gameType: null, hands: null, error: null });
   };
   
-  // 赠送积分成功后的回调
-  const handleTransferSuccess = (updatedUser) => {
-      updateUser(updatedUser); // 更新顶层App的user state
-      setIsTransferring(false); // 关闭弹窗
-  }
-
-  // --- 渲染逻辑 ---
-
   if (gameState.gameType === 'thirteen' && gameState.hands) {
     const player1Hand = gameState.hands['玩家 1'];
     return <ThirteenGame playerHand={player1Hand} onBackToLobby={handleBackToLobby} />;
   }
 
   return (
-    <div className="lobby-container">
-      {/* 用户信息和操作栏 */}
-      <UserProfile 
-        userId={userId} 
-        user={user} 
-        onLogout={onLogout}
-        onTransferClick={() => setIsTransferring(true)}
-      />
-
-      {/* 赠送积分弹窗 */}
-      {isTransferring && (
-        <TransferPoints 
-            fromId={userId}
-            onClose={() => setIsTransferring(false)}
-            onSuccess={handleTransferSuccess}
-        />
-      )}
-
-      <h1 className="lobby-title">游戏大厅</h1>
-      <p className="lobby-subtitle">选择你想玩的游戏</p>
-      
-      <div className="game-selection-container">
-        <div className="game-card" onClick={() => fetchHands(4, 13, 'thirteen')}>
-          <img src="/thirteen_game_banner.png" alt="十三张游戏" className="game-card-image" />
-          <div className="game-card-overlay">
-            <h2 className="game-card-title">十三张</h2>
-            <p className="game-card-description">经典策略，与AI对战。</p>
-          </div>
-        </div>
-        <div className="game-card" onClick={() => fetchHands(6, 8, 'eight')}>
-          <img src="/eight_game_banner.png" alt="八张游戏" className="game-card-image" />
-          <div className="game-card-overlay">
-            <h2 className="game-card-title">八张</h2>
-            <p className="game-card-description">快速对局，休闲首选。</p>
-          </div>
-        </div>
+    <div className="game-lobby">
+      <h2>选择一个游戏开始</h2>
+      <div className="game-controls">
+        <button onClick={() => fetchHands(4, 13, 'thirteen')}>开始十三张 (4人)</button>
+        {/* 如果有其他游戏，可以在这里添加 */}
       </div>
 
       {gameState.error && <p className="error-message">{gameState.error}</p>}
       
-      {gameState.gameType === 'eight' && gameState.hands && (
-         <div className="game-board-simple">
-          <h2>八张游戏发牌结果:</h2>
-          {Object.entries(gameState.hands).map(([player, hand]) => (
-            <div key={player} className="player-hand-simple">
-              <h3>{player}</h3>
-              <div className="card-container-simple">
-                {sortCards(hand).map((card, index) => (
-                  <Card key={index} card={card} />
-                ))}
-              </div>
-            </div>
-          ))}
-          <button onClick={handleBackToLobby} className="back-button">返回大厅</button>
-         </div>
-      )}
+      {/* 可以在这里为其他游戏类型添加结果展示 */}
     </div>
   );
 };
