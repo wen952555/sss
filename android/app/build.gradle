@@ -17,11 +17,33 @@ android {
         }
     }
     
+    // --- 加固签名配置 ---
+    signingConfigs {
+        release {
+            def keystorePropertiesFile = rootProject.file('keystore.properties')
+            if (keystorePropertiesFile.exists()) {
+                def keystoreProperties = new Properties()
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                
+                storeFile file(keystoreProperties['MYAPP_RELEASE_STORE_FILE'])
+                storePassword keystoreProperties['MYAPP_RELEASE_STORE_PASSWORD']
+                keyAlias keystoreProperties['MYAPP_RELEASE_KEY_ALIAS']
+                keyPassword keystoreProperties['MYAPP_RELEASE_KEY_PASSWORD']
+                // 明确指定storeType以解决Java版本兼容性问题
+                storeType "PKCS12"
+            } else {
+                // 在CI/CD环境中，如果keystore.properties不存在，这会打印一个警告
+                // 但由于构建脚本的早期阶段可能需要这些值，我们提供一个默认的空配置
+                println "Warning: keystore.properties not found. Using empty signing config."
+            }
+        }
+    }
+    
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            // 签名配置已在根build.gradle中全局应用
+            signingConfig signingConfigs.release
         }
     }
 

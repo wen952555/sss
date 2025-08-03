@@ -1,89 +1,93 @@
-/* frontend/src/components/TransferPoints.css */
-
-.transfer-modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 400px;
-  position: relative;
-  text-align: center;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-.transfer-modal-content h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-}
-
-.close-modal-btn {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 28px;
-  cursor: pointer;
-  color: #aaa;
-}
-.close-modal-btn:hover {
-    color: #333;
-}
-
-.step-content {
+.transfer-points-container {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
-.step-content p {
-  font-size: 14px;
-  color: #666;
-  margin: 0;
+.transfer-points-form {
+  /* 应用毛玻璃效果 */
+  background: rgba(30, 30, 45, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  width: 100%;
+  max-width: 450px;
+  padding: 40px;
+  color: #fff;
 }
 
-.step-content input {
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.transfer-points-form h2 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 30px;
+  font-size: 2rem;
+  color: #48dbfb;
 }
 
-.step-content button {
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #c0c0c0;
+}
+
+.input-group input {
+  width: 100%;
   padding: 12px;
-  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  color: #fff;
+  font-size: 1rem;
+  box-sizing: border-box; /* 确保padding不会撑大输入框 */
+}
+
+.input-group input::placeholder {
+  color: #888;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 15px;
+  border-radius: 10px;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  background-color: #2196F3;
+  background: linear-gradient(90deg, #2ecc71, #27ae60);
   color: white;
-}
-
-.step-content button:disabled {
-  background-color: #9E9E9E;
-}
-
-.step-content button.back-btn {
-    background-color: #f44336;
-}
-
-.confirmation-box {
-    padding: 15px;
-    background-color: #e3f2fd;
-    border: 1px solid #90caf9;
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-
-.confirm-id {
-    font-weight: bold;
-    font-size: 1.5em;
-    color: #1976d2;
-    margin-left: 10px;
-}
-
-.modal-error {
-  color: #D32F2F;
-  margin-top: 15px;
+  font-size: 1.2rem;
   font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 10px;
+}
+
+.submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(46, 204, 113, 0.4);
+}
+
+.submit-button:disabled {
+  background: #576574;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.message {
+    text-align: center;
+    margin-top: 20px;
+    font-weight: bold;
+}
+.message.success {
+    color: #2ecc71;
+}
+.message.error {
+    color: #ff8a80;
 }

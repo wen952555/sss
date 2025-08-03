@@ -1,18 +1,24 @@
 body {
   margin: 0;
-  font-family: 'Noto Sans SC', sans-serif; /* 使用更美观的中文字体 */
-  background-color: #3a506b; /* 深蓝色背景 */
-  background-image: linear-gradient(to top, #3a506b, #1c2541);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  font-family: 'Noto Sans SC', sans-serif;
   color: white;
+  
+  /* --- 全新的背景 --- */
+  background-color: #1a1a2e;
+  background-image: 
+    radial-gradient(at 20% 20%, hsla(212, 50%, 40%, 0.3) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, hsla(280, 50%, 40%, 0.3) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, hsla(340, 50%, 40%, 0.3) 0px, transparent 50%),
+    radial-gradient(at 80% 80%, hsla(60, 50%, 40%, 0.3) 0px, transparent 50%);
+  
+  min-height: 100vh;
+  /* 确保 #root 能正确继承高度 */
+  height: 100vh; 
 }
 
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }

@@ -1,120 +1,40 @@
-/* Global styles to disable scrolling and fit to screen */
-html, body, #root {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: fixed; /* More robust for preventing scrolling */
-  font-family: 'Noto Sans SC', sans-serif;
+/* --- 毛玻璃效果核心 --- */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
-/* Update Modal Styles */
-.update-modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.update-modal-content {
-  background-color: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  width: 80%;
-  max-width: 400px;
-  text-align: left;
-}
-
-.update-modal-content h3 {
-  margin-top: 0;
-  color: #333;
-  font-size: 1.5rem;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.release-notes p {
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-.release-notes ul {
-  list-style-type: disc;
-  padding-left: 20px;
-  margin-bottom: 1.5rem;
-}
-
-.release-notes li {
-  margin-bottom: 0.5rem;
-  line-height: 1.4;
-  color: #555;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.modal-actions button {
-  flex-grow: 1;
-  padding: 0.8rem 1rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: opacity 0.2s;
-}
-
-.modal-actions button:hover {
-  opacity: 0.8;
-}
-
-.cancel-btn {
-  background-color: #f0f2f5;
-  color: #555;
-  border: 1px solid #ddd;
-}
-
-.update-btn {
-  background-color: #007bff;
-  color: white;
-}
-
-
-/* src/App.css */
+/* 全局布局调整 */
 .app {
   display: flex;
   flex-direction: column;
-  height: 100%; /* Changed from min-height to ensure it fills the container */
-  background-color: #f0f2f5;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .app-header {
+  background: rgba(40, 40, 60, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px 20px 15px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background-color: #fff;
-  border-bottom: 1px solid #ddd;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  flex-shrink: 0; /* Prevent header from shrinking */
+  padding: 1rem 1.5rem;
+  flex-shrink: 0;
 }
 
 .app-header h1 {
   margin: 0;
   font-size: 1.5rem;
-  color: #333;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(0,0,0,0.5);
 }
 
 .user-actions {
@@ -125,55 +45,134 @@ html, body, #root {
 
 .user-actions span {
   font-weight: bold;
-  color: #555;
+  color: #f0f0f0;
 }
 
 .user-actions button {
-  padding: 0.5rem 1rem;
-  border: 1px solid #007bff;
-  background-color: #007bff;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
 .user-actions button:hover {
-  background-color: #0056b3;
-}
-
-.user-actions button:last-child {
-  background-color: #dc3545;
-  border-color: #dc3545;
-}
-
-.user-actions button:last-child:hover {
-  background-color: #c82333;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .app-main {
   flex-grow: 1;
-  padding: 2rem;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  overflow-y: auto; /* Allow scrolling ONLY within the main content area if needed */
-}
-
-.game-lobby {
-    width: 100%;
-    max-width: 800px;
-    text-align: center;
-}
-
-.game-controls button {
-    margin: 10px;
-    padding: 15px 30px;
-    font-size: 1.2rem;
-    cursor: pointer;
+  align-items: center;
+  overflow: hidden;
+  padding-top: 20px;
 }
 
 .error-message {
-    color: #dc3545;
+    color: #ff8a80;
     margin-top: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* --- 更新弹窗样式 --- */
+.update-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 毛玻璃背景 */
+  background-color: rgba(10, 10, 20, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.update-modal-content {
+  /* 应用毛玻璃面板样式 */
+  background: rgba(40, 40, 60, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+  width: 80%;
+  max-width: 400px;
+  padding: 30px;
+  text-align: left;
+}
+
+.update-modal-content h3 {
+  margin-top: 0;
+  color: #fff;
+  font-size: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.release-notes p {
+  font-weight: bold;
+  color: #f0f0f0;
+  margin-bottom: 10px;
+}
+
+.release-notes ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-bottom: 25px;
+}
+
+.release-notes li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+  color: #d0d0d0;
+  padding-left: 20px;
+  position: relative;
+}
+.release-notes li::before {
+  content: '✨';
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.modal-actions button {
+  flex-grow: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+
+.modal-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.cancel-btn {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #f0f0f0;
+}
+
+.update-btn {
+  background: linear-gradient(90deg, #48dbfb, #0abde3);
+  color: white;
 }
