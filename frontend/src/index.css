@@ -1,9 +1,13 @@
 body {
   margin: 0;
+  font-family: 'Noto Sans SC', sans-serif; /* 使用更美观的中文字体 */
+  background-color: #3a506b; /* 深蓝色背景 */
+  background-image: linear-gradient(to top, #3a506b, #1c2541);
   display: flex;
-  place-items: center;
-  min-width: 320px;
+  justify-content: center;
+  align-items: center;
   min-height: 100vh;
+  color: white;
 }
 
 #root {
