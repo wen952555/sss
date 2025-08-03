@@ -1,0 +1,106 @@
+# ==============================================================================
+#  GitHub Action: Build All APKs on Main Branch Update
+#
+#  This workflow triggers on EVERY push to the 'main' branch and does the following:
+#  1. Builds a DEBUG APK and uploads it as an artifact.
+#  2. Builds a SIGNED RELEASE APK and also uploads it as an artifact.
+# ==============================================================================
+
+name: Build All APKs on Main Update
+
+# ------------------------------------------------------------------------------
+#  Triggers
+#  Runs on any push to the 'main' branch, regardless of which files changed.
+# ------------------------------------------------------------------------------
+on:
+  push:
+    branches:
+      - main
+
+# ------------------------------------------------------------------------------
+#  Jobs
+# ------------------------------------------------------------------------------
+jobs:
+  build-apks:
+    runs-on: ubuntu-latest
+    steps:
+      # --- 1. SETUP ENVIRONMENT ---
+      - name: 1.1 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 1.2 Set up Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: 1.3 Set up Java Development Kit (JDK)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: 1.4 Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # --- 2. PREPARE BUILD (Common steps) ---
+      - name: 2.1 Install Dependencies and Build Web App
+        run: |
+          npm install
+          cd frontend
+          npm install
+          npm run build
+          cd ..
+      
+      - name: 2.2 Install Capacitor Android and Sync
+        run: |
+          npm install @capacitor/android
+          npx cap sync android
+          
+      - name: 2.3 Grant execute permission for gradlew
+        run: chmod +x android/gradlew
+        
+      - name: 2.4 Get Versioning Info
+        id: versioning
+        run: |
+          echo "version_name=dev-$(date +'%Y%m%d')-${{ github.sha_short }}" >> $GITHUB_OUTPUT
+          echo "version_code=${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      # --- 3. BUILD DEBUG APK ---
+      - name: 3.1 Build Debug APK
+        working-directory: ./android
+        run: ./gradlew assembleDebug
+
+      - name: 3.2 Upload Debug APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Thirteen-Game-Debug-Build-${{ steps.versioning.outputs.version_name }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+      # --- 4. BUILD SIGNED RELEASE APK ---
+      - name: 4.1 Decode and Place Keystore for Release
+        # Places the keystore in the root of the workspace for easy access
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > my-release-key.keystore
+
+      - name: 4.2 Build Signed Release APK with Versioning
+        working-directory: ./android
+        run: |
+          ./gradlew assembleRelease \
+            -PappVersionCode=${{ steps.versioning.outputs.version_code }} \
+            -PappVersionName=${{ steps.versioning.outputs.version_name }} \
+            -Pandroid.injected.signing.store.file="${{ github.workspace }}/my-release-key.keystore" \
+            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
+      
+      - name: 4.3 Rename Release APK
+        run: mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/Thirteen-Game-Release-${{ steps.versioning.outputs.version_name }}.apk
+        
+      - name: 4.4 Upload Release APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Thirteen-Game-Release-Build-${{ steps.versioning.outputs.version_name }}
+          path: android/app/build/outputs/apk/release/Thirteen-Game-Release-${{ steps.versioning.outputs.version_name }}.apk
+          retention-days: 30
