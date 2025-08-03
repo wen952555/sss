@@ -1,8 +1,18 @@
+/* Global styles to disable scrolling and fit to screen */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: fixed; /* More robust for preventing scrolling */
+}
+
 /* src/App.css */
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%; /* Changed from min-height to ensure it fills the container */
   background-color: #f0f2f5;
 }
 
@@ -14,6 +24,7 @@
   background-color: #fff;
   border-bottom: 1px solid #ddd;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .app-header h1 {
@@ -62,6 +73,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  overflow-y: auto; /* Allow scrolling ONLY within the main content area if needed */
 }
 
 .game-lobby {
