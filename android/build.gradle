@@ -26,7 +26,8 @@ ext {
     junitVersion = '4.13.2'
     androidxJunitVersion = '1.2.1'
     androidxEspressoCoreVersion = '3.6.1'
-    cordovaAndroidVersion = '1.0.1'
+    // --- 关键修复：纠正版本号错误 ---
+    cordovaAndroidVersion = '10.1.1'
 }
 
 allprojects {
