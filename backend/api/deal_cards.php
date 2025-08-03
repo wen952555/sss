@@ -15,19 +15,26 @@ foreach ($suits as $suit) {
     }
 }
 
+// 添加大小王
+$deck[] = ['rank' => 'red_joker', 'suit' => 'joker'];
+$deck[] = ['rank' => 'black_joker', 'suit' => 'joker'];
+
 // 洗牌
 shuffle($deck);
 
-// 从URL参数获取玩家数量和每位玩家的牌数，如果未提供则使用默认值
-$numPlayers = isset($_GET['players']) ? (int)$_GET['players'] : 4; // 默认4个玩家
-$cardsPerPlayer = isset($_GET['cards']) ? (int)$_GET['cards'] : 13; // 默认每个玩家13张牌
+// 根据游戏类型获取玩家数量和每位玩家的牌数
+$numPlayers = isset($_GET['players']) ? (int)$_GET['players'] : 4;
+$cardsPerPlayer = isset($_GET['cards']) ? (int)$_GET['cards'] : 13;
 
 $hands = [];
-for ($i = 0; $i < $numPlayers; $i++) {
-    // 从牌堆中为每个玩家发指定数量的牌
-    $hand = array_slice($deck, $i * $cardsPerPlayer, $cardsPerPlayer);
-    $hands["player" . ($i + 1)] = $hand;
+// 确保不会因发牌数量超过牌堆总数而报错
+if ($numPlayers * $cardsPerPlayer <= count($deck)) {
+    for ($i = 0; $i < $numPlayers; $i++) {
+        // 从牌堆中为每个玩家发指定数量的牌
+        $hand = array_slice($deck, $i * $cardsPerPlayer, $cardsPerPlayer);
+        $hands["玩家 " . ($i + 1)] = $hand;
+    }
+    echo json_encode(['success' => true, 'hands' => $hands]);
+} else {
+    echo json_encode(['success' => false, 'message' => '牌堆中的牌不足以满足游戏要求。']);
 }
-
-// 以JSON格式返回发牌结果
-echo json_encode(['success' => true, 'hands' => $hands]);

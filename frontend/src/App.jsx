@@ -1,38 +1,67 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ThirteenGame from './components/ThirteenGame';
+import Card from './components/Card'; // Import Card
 import './App.css';
 
-function App() {
-  // 定义扑克牌的花色和点数
-  const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
-  const ranks = ['ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king'];
+const GameLobby = () => {
+  const [gameState, setGameState] = useState({
+    gameType: null,
+    hands: null,
+    error: null,
+  });
 
-  // 生成一副52张的扑克牌
-  const deck = [];
-  for (const suit of suits) {
-    for (const rank of ranks) {
-      deck.push({ suit, rank });
+  const fetchHands = async (players, cards, gameType) => {
+    setGameState({ gameType: null, hands: null, error: null });
+    try {
+      const response = await fetch(`https://wenxiuxiu.eu.org/api/deal_cards.php?players=${players}&cards=${cards}`);
+      const data = await response.json();
+      if (data.success) {
+        setGameState({ gameType, hands: data.hands, error: null });
+      } else {
+        setGameState({ gameType: null, hands: null, error: data.message });
+      }
+    } catch (err) {
+      setGameState({ gameType: null, hands: null, error: '无法连接到后端API。请确保后端服务正在运行，并且API地址正确。' });
     }
+  };
+
+  if (gameState.gameType === 'thirteen' && gameState.hands) {
+    const player1Hand = gameState.hands['玩家 1'];
+    // In a real game, you wouldn't see other players' hands until showdown.
+    // We pass them in case we want to display placeholders.
+    const otherPlayers = Object.fromEntries(Object.entries(gameState.hands).filter(([key]) => key !== '玩家 1'));
+    
+    return <ThirteenGame playerHand={player1Hand} otherPlayers={otherPlayers} />;
   }
 
   return (
     <div className="app">
-      <h1>扑克牌展示</h1>
-      <div className="card-container">
-        {deck.map((card, index) => {
-          // 根据规则生成图片文件名，例如: ace_of_spades.svg
-          const imageName = `${card.rank}_of_${card.suit}.svg`;
-          // 图片路径指向 /public/cards/ 目录
-          const imagePath = `/cards/${imageName}`;
-          
-          return (
-            <div key={index} className="card">
-              <img src={imagePath} alt={`${card.rank} of ${card.suit}`} />
-            </div>
-          );
-        })}
+      <h1>游戏大厅</h1>
+      <div className="game-controls">
+        <button onClick={() => fetchHands(4, 13, 'thirteen')}>开始十三张 (4人, 每人13张)</button>
+        <button onClick={() => fetchHands(6, 8, 'eight')}>开始八张 (6人, 每人8张)</button>
       </div>
+
+      {gameState.error && <p className="error-message">{gameState.error}</p>}
+      
+      {/* Fallback for "Eight" game - just display cards like before */}
+      {gameState.gameType === 'eight' && gameState.hands && (
+         <div className="game-board">
+          <h2>八张游戏发牌结果:</h2>
+          {Object.entries(gameState.hands).map(([player, hand]) => (
+            <div key={player} className="player-hand">
+              <h3>{player}</h3>
+              <div className="card-container">
+                {hand.map((card, index) => (
+                  <Card key={index} card={card} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+};
 
-export default App;
+export default GameLobby;
