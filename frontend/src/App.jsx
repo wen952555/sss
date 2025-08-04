@@ -10,7 +10,7 @@ import './App.css';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { Http } from '@capacitor/http';
+// 删除了 import { Http } from '@capacitor/http';
 
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) return null;
@@ -64,13 +64,14 @@ function App() {
     const apiUrl = `https://9522.ip-ddns.com/api/deal_cards.php?${params}`;
 
     try {
-      const response = await Http.get({
-        url: apiUrl,
+      // 使用 fetch 替代 Http.get
+      const response = await fetch(apiUrl, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       });
-      const data = response.data;
+      const data = await response.json();
 
       if (data.success) {
         const player1Hand = data.hands['玩家 1'];
@@ -82,7 +83,7 @@ function App() {
         setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message });
       }
     } catch (err) {
-      console.error('Capacitor HTTP request failed:', err);
+      console.error('网络请求失败:', err);
       setGameState({ gameType: null, hand: null, otherPlayers: {}, error: `网络请求失败，请检查网络连接或稍后再试。(${err.message})` });
     }
   };
