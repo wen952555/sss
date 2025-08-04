@@ -39,22 +39,22 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
     setIsLoading(true);
     setError('');
     try {
-        const response = await fetch('/api/transfer_points.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fromId, toId: foundUserId, amount: parseInt(amount) }),
-        });
-        const data = await response.json();
-        if (data.success) {
-            alert('赠送成功！');
-            onSuccess(data.updatedUser); // 调用回调，更新上层组件的state
-        } else {
-            setError(data.message);
-        }
+      const response = await fetch('/api/transfer_points.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fromId, toId: foundUserId, amount: parseInt(amount) }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('赠送成功！');
+        onSuccess(data.updatedUser); // 回调，刷新用户
+      } else {
+        setError(data.message);
+      }
     } catch (err) {
-        setError('操作失败，请检查网络。');
+      setError('操作失败，请检查网络。');
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -63,7 +63,6 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
       <div className="transfer-modal-content">
         <button onClick={onClose} className="close-modal-btn">&times;</button>
         <h3>赠送积分</h3>
-
         {step === 1 && (
           <div className="step-content">
             <p>第一步：输入好友的手机号</p>
@@ -78,12 +77,11 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
             </button>
           </div>
         )}
-
         {step === 2 && (
           <div className="step-content">
             <div className="confirmation-box">
-                请确认接收方ID的最后两位是否为：
-                <span className="confirm-id">{foundUserId.slice(-2)}</span>
+              请确认接收方ID的最后两位是否为：
+              <span className="confirm-id">{foundUserId.slice(-2)}</span>
             </div>
             <p>第二步：输入赠送的积分数量</p>
             <input
@@ -98,7 +96,6 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
             <button onClick={() => setStep(1)} className="back-btn">返回上一步</button>
           </div>
         )}
-        
         {error && <p className="modal-error">{error}</p>}
       </div>
     </div>
