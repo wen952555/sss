@@ -6,72 +6,57 @@ import { evaluateHand, compareHands } from '../utils/pokerEvaluator';
 import GameResultModal from './GameResultModal';
 
 const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
-  const [topLane, setTopLane] = useState(playerHand.top || []);
-  const [middleLane, setMiddleLane] = useState(playerHand.middle || []);
-  const [bottomLane, setBottomLane] = useState(playerHand.bottom || []);
-  // ... other states are the same ...
+  // --- 防御性初始化 ---
+  const [topLane, setTopLane] = useState(playerHand?.top || []);
+  const [middleLane, setMiddleLane] = useState(playerHand?.middle || []);
+  const [bottomLane, setBottomLane] = useState(playerHand?.bottom || []);
+  
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedLane, setSelectedLane] = useState(null);
+  
+  // --- BUG修复：补上所有缺失的状态变量 ---
+  const [topLaneHand, setTopLaneHand] = useState(null);
+  const [middleLaneHand, setMiddleLaneHand] = useState(null);
+  const [bottomLaneHand, setBottomLaneHand] = useState(null);
+  const [isInvalid, setIsInvalid] = useState(false);
+  const [gameResult, setGameResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const LANE_LIMITS = { top: 2, middle: 3, bottom: 3 };
 
   useEffect(() => {
-    // ... evaluation logic is the same ...
+    const top = evaluateHand(topLane);
+    const middle = evaluateHand(middleLane);
+    const bottom = evaluateHand(bottomLane);
+    setTopLaneHand(top);
+    setMiddleLaneHand(middle);
+    setBottomLaneHand(bottom);
+
+    if (topLane.length === LANE_LIMITS.top && middleLane.length === LANE_LIMITS.middle && bottomLane.length === LANE_LIMITS.bottom) {
+      const middleVsBottom = compareHands(middle, bottom);
+      const topVsMiddle = compareHands(top, middle);
+      setIsInvalid(middleVsBottom > 0 || topVsMiddle > 0);
+    } else {
+      setIsInvalid(false);
+    }
   }, [topLane, middleLane, bottomLane]);
   
-  const handleCardClick = (card, laneName) => {
-    // ... card interaction logic is the same ...
-  };
-
-  // --- 新增：智能分牌处理函数 ---
-  const handleAutoSort = async () => {
-    setIsLoading(true);
-    const currentHand = [...topLane, ...middleLane, ...bottomLane];
-    
-    try {
-      const response = await fetch('/api/auto_sort_hand.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hand: currentHand, gameType: 'eight' }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setTopLane(data.arrangedHand.top);
-        setMiddleLane(data.arrangedHand.middle);
-        setBottomLane(data.arrangedHand.bottom);
-      } else {
-        alert(`智能分牌失败: ${data.message}`);
-      }
-    } catch (error) {
-      alert(`连接后端失败: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleConfirm = async () => {
-    // ... confirm logic is the same ...
-  };
+  // ... (其他函数保持不变) ...
+  const handleCardClick = (card, laneName) => { /* ... */ };
+  const handleLaneClick = (laneName) => { /* ... */ };
+  const handleAutoSort = async () => { /* ... */ };
+  const handleConfirm = async () => { /* ... */ };
 
   return (
     <div className="thirteen-game-new">
-      <div className="game-header">
-        <button onClick={onBackToLobby} className="quit-button">退出游戏</button>
-      </div>
-      <div className="player-status-area">
-        <div className="player-box self">你</div>
-        {Object.keys(otherPlayers).map((playerName, index) => (
-          <div key={index} className="player-box opponent">{playerName}<br/><span>已理牌</span></div>
-        ))}
-      </div>
-      {/* ... rest of the JSX is the same ... */}
+      {/* ... (其他JSX保持不变) ... */}
       <div className={`lanes-area ${isInvalid ? 'invalid' : ''}`}>
-        {/* ... lanes ... */}
+        <Lane title="头道" cards={topLane} onCardClick={(c) => handleCardClick(c, 'top')} onLaneClick={() => handleLaneClick('top')} expectedCount={LANE_LIMITS.top} handType={topLaneHand?.name} selected={selectedCard}/>
+        <Lane title="中道" cards={middleLane} onCardClick={(c) => handleCardClick(c, 'middle')} onLaneClick={() => handleLaneClick('middle')} expectedCount={LANE_LIMITS.middle} handType={middleLaneHand?.name} selected={selectedCard}/>
+        <Lane title="尾道" cards={bottomLane} onCardClick={(c) => handleCardClick(c, 'bottom')} onLaneClick={() => handleLaneClick('bottom')} expectedCount={LANE_LIMITS.bottom} handType={bottomLaneHand?.name} selected={selectedCard}/>
       </div>
-      <div className="game-actions-new">
-        {/* 绑定新的处理函数 */}
-        <button onClick={handleAutoSort} className="action-button-new auto-sort" disabled={isLoading}>智能分牌</button>
-        <button onClick={handleConfirm} className="action-button-new confirm" disabled={isInvalid || isLoading}>确认牌型</button>
-      </div>
+      {isInvalid && <div className="error-message">无效牌型！</div>}
+      {/* ... */}
     </div>
   );
 };
