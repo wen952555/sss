@@ -32,11 +32,11 @@ const Card = ({ card, onClick, isSelected }) => {
   return (
     <div className={cardClassName} onClick={() => onClick && onClick(card)}
       style={{
-        width: 'min(9vw,55px)',
+        width: 'min(13vw,85px)',      // 卡牌宽度提升
         height: 'auto',
-        minWidth: '32px',
-        maxWidth: '55px',
-        maxHeight: '80px',
+        minWidth: '40px',
+        maxWidth: '85px',
+        maxHeight: '120px',           // 卡牌最大高度提升
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -47,7 +47,7 @@ const Card = ({ card, onClick, isSelected }) => {
         alt={`${card.suit} ${card.rank}`}
         style={{
           maxWidth: '100%',
-          maxHeight: '75px',
+          maxHeight: '115px',         // 图片最大高度提升
           width: 'auto',
           height: 'auto',
           display: 'block',
