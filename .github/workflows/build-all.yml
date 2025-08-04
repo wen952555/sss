@@ -1,111 +1,128 @@
 # ==============================================================================
-# 构建并发布 Release APK（确保调用 android/gradlew）
+# 构建并发布 Release APK Workflow
+#
+# 触发条件：push 到 main 分支
+# 功能：
+#   1. 检出代码
+#   2. 安装 JDK / Node.js
+#   3. 安装 Android SDK（多行 packages）
+#   4. 安装前端依赖并构建
+#   5. 同步 Capacitor
+#   6. 解码并校验 Keystore
+#   7. 切换到 android，调用项目内 gradlew 打包签名
+#   8. 重命名 APK，自动创建 GitHub Release
 # ==============================================================================
 
 name: Build & Release APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 permissions:
   contents: write
 
 env:
-  # Android SDK 根目录
   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-  # Keystore 相关 Secrets
-  KEYSTORE_B64:       ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-  KEYSTORE_PASSWORD:  ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-  KEY_ALIAS:          ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
-  KEY_PASSWORD:       ${{ secrets.ANDROID_KEY_PASSWORD }}
+  KEYSTORE_B64:     ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+  KEYSTORE_PASSWORD:${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+  KEY_ALIAS:        ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+  KEY_PASSWORD:     ${{ secrets.ANDROID_KEY_PASSWORD }}
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout 代码
+      - name: 1. Checkout 仓库
         uses: actions/checkout@v4
 
-      - name: 安装 JDK（Temurin 21）
+      - name: 2. 安装 JDK (Temurin 21)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: 安装 Node.js (v20) 并启用缓存
+      - name: 安装 Node.js (v20) 并启用 npm 缓存
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: '**/package-lock.json'
 
-      - name: 安装 Android SDK
+      - name: 3. 安装 Android SDK
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 'latest'
           accept-android-sdk-licenses: true
-          # 逗号分隔，不可换行
-          packages: "platform-tools,build-tools;33.0.0,platforms;android-33,cmdline-tools;latest"
+          log-accepted-android-sdk-licenses: true
+          packages: |
+            platform-tools
+            build-tools;33.0.0
+            platforms;android-33
 
-      - name: 安装前端依赖
+      - name: 4. 安装前端依赖
         run: |
           npm install
           cd frontend && npm install
 
-      - name: 构建前端 Web 应用
+      - name: 5. 构建前端资源
         run: npm run build -w frontend
 
-      - name: 同步 Capacitor 到 Android
+      - name: 6. 同步 Capacitor 到 Android
         run: npx cap sync android
 
-      - name: 解码并校验 Keystore
+      - name: 7. 解码并校验 Keystore
         run: |
-          echo "$KEYSTORE_B64" | base64 --decode > my-release-key.keystore
-          ls -lh my-release-key.keystore
+          # 解码 keystore
+          echo "$KEYSTORE_B64" | base64 --decode > android/my-release-key.keystore
+          # 小规模检查文件是否为空
+          ls -lh android/my-release-key.keystore
+          head -c 80 android/my-release-key.keystore | xxd
+          # 验证 alias & 密码
           keytool -list -v \
-            -keystore my-release-key.keystore \
+            -keystore android/my-release-key.keystore \
             -storepass "$KEYSTORE_PASSWORD" \
             -alias "$KEY_ALIAS"
-          # 写入 sdk.dir 避免 SDK 找不到
+          # 避免 sdk.dir 警告
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-      - name: 为 Gradle Wrapper 授权
+      - name: 8. 授权 Gradle Wrapper
         run: chmod +x android/gradlew
 
-      - name: 生成版本号信息
+      - name: 9. 生成版本号
         id: versioning
         run: |
-          echo "version_name=dev-$(date +'%Y%m%d')-${{ github.sha_short }}" >> $GITHUB_OUTPUT
-          echo "version_code=${{ github.run_number }}"            >> $GITHUB_OUTPUT
+          echo "versionName=dev-$(date +'%Y%m%d')-${{ github.sha_short }}" >> $GITHUB_OUTPUT
+          echo "versionCode=${{ github.run_number }}"            >> $GITHUB_OUTPUT
 
-      - name: 切换到 android 并打包签名 Release APK
+      - name: 10. 切换到 android 并签名打包 Release APK
         run: |
           cd android
           ./gradlew clean assembleRelease \
-            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/my-release-key.keystore" \
+            -Pandroid.injected.signing.store.file="$PWD/my-release-key.keystore" \
             -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
-            -PappVersionCode=${{ steps.versioning.outputs.version_code }} \
-            -PappVersionName=${{ steps.versioning.outputs.version_name }}
+            -PversionName=${{ steps.versioning.outputs.versionName }} \
+            -PversionCode=${{ steps.versioning.outputs.versionCode }}
 
-      - name: 重命名 APK 便于识别
+      - name: 11. 重命名 APK 便于识别
         run: |
           mv android/app/build/outputs/apk/release/app-release.apk \
-             android/app/build/outputs/apk/release/摆牌-${{ steps.versioning.outputs.version_name }}.apk
+             android/app/build/outputs/apk/release/摆牌-${{ steps.versioning.outputs.versionName }}.apk
 
-      - name: 创建 GitHub Release
+      - name: 12. 创建 GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: release-${{ github.sha }}
-          name: 自动发布-${{ steps.versioning.outputs.version_name }}
+          name: 自动发布-${{ steps.versioning.outputs.versionName }}
           artifacts: android/app/build/outputs/apk/release/*.apk
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           body: |
-            **自动构建发布**  
-            • Commit: `${{ github.sha }}`  
-            • 版本名: `${{ steps.versioning.outputs.version_name }}`  
-            • 版本码: `${{ steps.versioning.outputs.version_code }}`
+            自动构建并签名的版本  
+            Commit: ${{ github.sha }}  
+            版本名: ${{ steps.versioning.outputs.versionName }}  
+            版本码: ${{ steps.versioning.outputs.versionCode }}  
