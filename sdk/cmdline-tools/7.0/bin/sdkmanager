@@ -1,0 +1,8 @@
+#! /nix/store/mjhcjikhxps97mq5z54j4gjjfzgmsir5-bash-5.2p37/bin/bash -e
+PATH=${PATH:+':'$PATH':'}
+PATH=${PATH/':''/nix/store/x0a3pj8nmg4ijssmi8wyyd30v4fhycp7-openjdk-17.0.15+6/bin'':'/':'}
+PATH='/nix/store/x0a3pj8nmg4ijssmi8wyyd30v4fhycp7-openjdk-17.0.15+6/bin'$PATH
+PATH=${PATH#':'}
+PATH=${PATH%':'}
+export PATH
+exec -a "$0" "/nix/store/sdry1w45ghp2qp6qzr6i90nzs505wnaj-androidsdk/libexec/android-sdk/cmdline-tools/7.0/bin/.sdkmanager-wrapped_"  --sdk_root=/nix/store/sdry1w45ghp2qp6qzr6i90nzs505wnaj-androidsdk/libexec/android-sdk "$@" 
