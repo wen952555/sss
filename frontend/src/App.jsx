@@ -7,11 +7,10 @@ import ThirteenGame from './components/ThirteenGame';
 import EightCardGame from './components/EightCardGame';
 import './App.css';
 
-// --- 核心修正：导入 Capacitor 核心库和插件 ---
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { Http } from '@capacitor/http'; // 导入 HTTP 插件
+import { Http } from '@capacitor/http';
 
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) return null;
@@ -31,6 +30,7 @@ function App() {
   const [gameState, setGameState] = useState({ gameType: null, hand: null, otherPlayers: {}, error: null });
   const [currentView, setCurrentView] = useState('lobby');
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
+  const [showTransfer, setShowTransfer] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -38,6 +38,12 @@ function App() {
       setUser(JSON.parse(storedUser));
     }
   }, []);
+
+  // 用于更新本地 user 数据（如积分变化）
+  const updateUserData = (newUser) => {
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
+  };
 
   const handleLoginSuccess = (userId, userData) => {
     const fullUserData = { id: userId, ...userData };
@@ -50,32 +56,25 @@ function App() {
     setUser(null);
     setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null });
   };
-  
-  // --- 核心逻辑更新：使用 Capacitor HTTP 插件 ---
+
   const handleSelectGame = async (gameType, isTrial) => {
     const playerCount = isTrial ? 4 : 1;
     const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
     const params = `players=${playerCount}&cards=${cardsPerPlayer}&game=${gameType}`;
-    
-    // 1. 定义完整的 API URL，这是原生请求所必需的
     const apiUrl = `https://9522.ip-ddns.com/api/deal_cards.php?${params}`;
 
     try {
-      // 2. 使用 Http.get 发出原生网络请求
       const response = await Http.get({
         url: apiUrl,
-        // (可选)可以添加 headers
         headers: {
           'Content-Type': 'application/json'
         }
       });
-      
-      // 3. Http 插件返回的数据直接就是 JSON 对象，存储在 response.data 中
       const data = response.data;
 
       if (data.success) {
         const player1Hand = data.hands['玩家 1'];
-        delete data.hands['玩家 1']; 
+        delete data.hands['玩家 1'];
         const aiPlayers = data.hands;
 
         setGameState({ gameType, hand: player1Hand, otherPlayers: aiPlayers, error: null });
@@ -84,7 +83,6 @@ function App() {
       }
     } catch (err) {
       console.error('Capacitor HTTP request failed:', err);
-      // 提供更详细的错误信息给用户
       setGameState({ gameType: null, hand: null, otherPlayers: {}, error: `网络请求失败，请检查网络连接或稍后再试。(${err.message})` });
     }
   };
@@ -92,14 +90,20 @@ function App() {
   const handleBackToLobby = () => {
     setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null });
   };
-  
+
   const handleUpdate = async () => {
-      await Browser.open({ url: updateInfo.url });
-      setUpdateInfo({ ...updateInfo, show: false });
+    await Browser.open({ url: updateInfo.url });
+    setUpdateInfo({ ...updateInfo, show: false });
+  };
+
+  // 赠送积分后回调，刷新用户积分
+  const handleTransferSuccess = (updatedUser) => {
+    updateUserData(updatedUser);
+    setShowTransfer(false);
+    setCurrentView('profile');
   };
 
   const renderMainContent = () => {
-    // ... (这部分逻辑保持不变)
     if (gameState.gameType && gameState.hand) {
       const gameProps = {
         playerHand: gameState.hand,
@@ -113,16 +117,42 @@ function App() {
         return <EightCardGame {...gameProps} />;
       }
     }
-    
+
+    if (showTransfer && user) {
+      return (
+        <TransferPoints
+          fromId={user.id}
+          onClose={() => setShowTransfer(false)}
+          onSuccess={handleTransferSuccess}
+        />
+      );
+    }
+
     switch (currentView) {
-      case 'profile': return <UserProfile user={user} />;
-      case 'transfer': return <TransferPoints currentUser={user} onTransferSuccess={() => setCurrentView('lobby')} />;
-      case 'lobby': default: return <GameLobby onSelectGame={handleSelectGame} />;
+      case 'profile':
+        return (
+          <UserProfile
+            userId={user.id}
+            user={user}
+            onLogout={handleLogout}
+            onTransferClick={() => setShowTransfer(true)}
+          />
+        );
+      case 'transfer':
+        return (
+          <TransferPoints
+            fromId={user.id}
+            onClose={() => setCurrentView('profile')}
+            onSuccess={handleTransferSuccess}
+          />
+        );
+      case 'lobby':
+      default:
+        return <GameLobby onSelectGame={handleSelectGame} />;
     }
   };
 
   if (!user) {
-    // ... (这部分逻辑保持不变)
     return (
       <>
         <Auth onLoginSuccess={handleLoginSuccess} />
@@ -132,7 +162,6 @@ function App() {
   }
 
   return (
-    // ... (这部分逻辑保持不变)
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
       <header className="app-header">
@@ -146,7 +175,7 @@ function App() {
       </header>
       <main className="app-main">
         {renderMainContent()}
-      </main> 
+      </main>
     </div>
   );
 }
