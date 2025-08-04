@@ -146,7 +146,7 @@ function App() {
       </header>
       <main className="app-main">
         {renderMainContent()}
-      main>
+      </main> 
     </div>
   );
 }
