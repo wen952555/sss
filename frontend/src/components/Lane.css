@@ -2,22 +2,25 @@
   display: flex;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.2);
-  padding: 15px;
-  border-radius: 15px;
+  padding: 10px;
+  border-radius: 12px;
   border: 2px solid transparent;
   transition: border-color 0.3s;
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .card-display-area {
   flex-grow: 1;
   display: flex;
-  /* 让牌稍微重叠 */
-  padding-left: 30px; /* Give some space for the overlap */
+  min-width: 0;
+  overflow-x: auto;
+  padding-left: 15px;
 }
 
-/* 使用负边距来实现卡牌重叠效果 */
+/* 卡牌重叠 */
 .card-display-area > .card {
-  margin-left: -30px; 
+  margin-left: -25px;
 }
 
 /* 第一个卡牌不需要负边距 */
@@ -29,19 +32,34 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-left: 20px;
-  min-width: 100px; /* 保证有足够空间显示文字 */
+  margin-left: 16px;
+  min-width: 68px;
   text-align: left;
 }
 
 .lane-title {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: bold;
   color: #fff;
 }
 
 .lane-hand-type {
-  font-size: 1rem;
-  color: #f1c40f; /* 金色，用于高亮牌型 */
-  margin-top: 5px;
+  font-size: 0.95rem;
+  color: #f1c40f;
+  margin-top: 4px;
+}
+
+/* 响应式适配 */
+@media (max-width: 600px) {
+  .lane-container {
+    padding: 5px;
+    border-radius: 7px;
+  }
+  .lane-info {
+    margin-left: 7px;
+    min-width: 44px;
+  }
+  .card-display-area > .card {
+    margin-left: -15px;
+  }
 }
