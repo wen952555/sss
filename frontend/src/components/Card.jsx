@@ -17,12 +17,11 @@ export const sortCards = (cards) => {
   });
 };
 
-
 const Card = ({ card, onClick, isSelected }) => {
   // 大小王暂不处理，十三张一般不用
   if (card.suit === 'joker') {
     return null; // 或者显示一个牌背
-  n}
+  }
 
   const imageName = `${card.rank}_of_${card.suit}.svg`;
   const imagePath = `/cards/${imageName}`;
@@ -31,8 +30,30 @@ const Card = ({ card, onClick, isSelected }) => {
   const cardClassName = `card ${isSelected ? 'selected' : ''} ${onClick ? 'clickable' : ''}`;
 
   return (
-    <div className={cardClassName} onClick={() => onClick && onClick(card)}>
-      <img src={imagePath} alt={`${card.suit} ${card.rank}`} />
+    <div className={cardClassName} onClick={() => onClick && onClick(card)}
+      style={{
+        width: 'min(9vw,55px)',
+        height: 'auto',
+        minWidth: '32px',
+        maxWidth: '55px',
+        maxHeight: '80px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+      }}>
+      <img
+        src={imagePath}
+        alt={`${card.suit} ${card.rank}`}
+        style={{
+          maxWidth: '100%',
+          maxHeight: '75px',
+          width: 'auto',
+          height: 'auto',
+          display: 'block',
+        }}
+        draggable={false}
+      />
     </div>
   );
 };
