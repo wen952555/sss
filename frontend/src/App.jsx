@@ -10,7 +10,7 @@ import './App.css';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-// 删除 import { Http } from '@capacitor/http';
+// 已移除 import { Http } from '@capacitor/http';
 
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) return null;
@@ -57,14 +57,15 @@ function App() {
     setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null });
   };
 
+  // 只做了fetch和路径的替换
   const handleSelectGame = async (gameType, isTrial) => {
     const playerCount = isTrial ? 4 : 1;
     const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
     const params = `players=${playerCount}&cards=${cardsPerPlayer}&game=${gameType}`;
-    const apiUrl = `https://9522.ip-ddns.com/api/deal_cards.php?${params}`;
+    // 使用相对路径给worker代理
+    const apiUrl = `/api/deal_cards.php?${params}`;
 
     try {
-      // 用 fetch 替代 Http.get
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
