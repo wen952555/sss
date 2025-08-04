@@ -1,32 +1,28 @@
-# ==============================================================================
-#  GitHub Action: Build and Create Release on Main Branch Update
-#
-#  This workflow is based on your provided structure. It triggers on every push
-#  to 'main', builds a signed release APK, and uses ncipollo/release-action
-#  to create a new GitHub Release.
-# ==============================================================================
-
-name: Build and Create Release on Main Update
+name: 构建并发布 Release
 
 on:
   push:
-    branches:
-      - main 
+    branches: [ main ]
+
+permissions:
+  contents: write
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
 
-    # [保留] 授予 'write' 权限，这对 ncipollo/release-action 至关重要
-    permissions:
-      contents: write
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      KEYSTORE_B64:     ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      KEY_ALIAS:        ${{ secrets.ANDROID_KEY_ALIAS }}
+      KEY_PASSWORD:     ${{ secrets.ANDROID_KEY_PASSWORD }}
 
     steps:
-      - name: 1. Checkout Repository
-        uses: actions/checkout@v4 # 建议使用最新版 v4
+      - name: Checkout 仓库
+        uses: actions/checkout@v4
 
-      - name: 2. Set up JDK and Node.js
-        # 将环境设置步骤合并，更清晰
+      - name: 安装 JDK 和 Node.js
         uses: actions/setup-java@v4
         with:
           java-version: '21'
@@ -34,76 +30,63 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm' # [优化] 增加 npm 缓存，加快后续构建速度
+          cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
-      - name: 3. Set up Android SDK
-        uses: android-actions/setup-android@v3 # [修正] 使用正确的 action 路径
+      - name: 安装 Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: 4. Install All Dependencies
-        # [优化] 将所有 npm install 步骤合并，先在根目录安装，再进入 frontend 安装
+      - name: 安装前端依赖
         run: |
           npm install
-          cd frontend
-          npm install
-          cd ..
+          cd frontend && npm install
 
-      - name: 5. Build Frontend Web App
-        # [优化] 从根目录执行，避免切换工作目录
+      - name: 构建前端项目
         run: npm run build -w frontend
-      
-      - name: 6. Capacitor Sync
-        # [优化] 从根目录执行，不再需要安装 CLI，因为它已在步骤4中安装
+
+      - name: Capacitor 同步 Android
         run: npx cap sync android
 
-      - name: 7. Decode and Place Keystore
-        # [修正] 将 keystore 放在根目录，并使用绝对路径引用，更可靠
-        # 请确保你的 Secret 名称是 ANDROID_KEYSTORE_BASE64
-        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > my-release-key.keystore
-      
-      - name: 8. Grant execute permission for gradlew
+      - name: 解码并生成 keystore
+        run: |
+          echo "$KEYSTORE_B64" | base64 --decode > my-release-key.keystore
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+
+      - name: 授予 gradlew 可执行权限
         run: chmod +x android/gradlew
 
-      - name: 9. Generate Versioning Info
-        # [新增] 为 APK 和 Release 提供动态、唯一的版本号
+      - name: 生成版本信息
         id: versioning
         run: |
           echo "version_name=dev-$(date +'%Y%m%d')-${{ github.sha_short }}" >> $GITHUB_OUTPUT
           echo "version_code=${{ github.run_number }}" >> $GITHUB_OUTPUT
 
-      - name: 10. Build Signed Release APK
-        working-directory: ./android
-        # [修正] 改用 -P 参数注入签名信息，这是最可靠的方式，不依赖对 build.gradle 的修改
-        # 你的 env 方式无法被默认的 build.gradle 读取
+      - name: 打包签名 Release APK
+        working-directory: android
         run: |
           ./gradlew assembleRelease \
             -PappVersionCode=${{ steps.versioning.outputs.version_code }} \
             -PappVersionName=${{ steps.versioning.outputs.version_name }} \
             -Pandroid.injected.signing.store.file="${{ github.workspace }}/my-release-key.keystore" \
-            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-            -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
-            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
 
-      - name: 11. Rename APK for better identification
-        # [新增] 重命名 APK 文件，方便在 Release 中识别
-        run: mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/摆牌-${{ steps.versioning.outputs.version_name }}.apk
+      - name: 重命名 APK
+        run: |
+          mv android/app/build/outputs/apk/release/app-release.apk \
+             android/app/build/outputs/apk/release/摆牌-${{ steps.versioning.outputs.version_name }}.apk
 
-      - name: 12. Create GitHub Release
-        # [保留并优化] 使用你选择的 ncipollo/release-action
+      - name: 创建 GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          # [修正] tag 必须唯一，使用 run_number 或 sha
           tag: release-${{ github.sha }}
-          # [优化] Release 名称可以更具描述性
           name: "自动构建 - ${{ github.event.head_commit.message }}"
-          # [修正] artifacts 路径需要匹配重命名后的文件名，或使用通配符
           artifacts: "android/app/build/outputs/apk/release/*.apk"
           token: ${{ secrets.GITHUB_TOKEN }}
-          allowUpdates: true
-          # [优化] 将自动构建标记为预发布版本
           prerelease: true
           body: |
-            这是由 GitHub Actions 自动构建和发布的版本。
-            **Commit**: `${{ github.sha }}`
-            **版本名**: `${{ steps.versioning.outputs.version_name }}`
-            **版本代码**: `${{ steps.versioning.outputs.version_code }}`
+            此版由 CI 自动生成  
+            Commit: `${{ github.sha }}`  
+            版本名: `${{ steps.versioning.outputs.version_name }}`  
+            版本码: `${{ steps.versioning.outputs.version_code }}`
