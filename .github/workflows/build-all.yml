@@ -1,9 +1,9 @@
 # ==============================================================================
 #  GitHub Action: Build and Create Release on Main Branch Update
 #
-#  This workflow is based on your provided structure. It triggers on every push
-#  to 'main', builds a signed release APK, and uses ncipollo/release-action
-#  to create a new GitHub Release.
+#  This workflow triggers on every push to 'main', builds a signed release APK,
+#  and uses ncipollo/release-action to create a new GitHub Pre-Release.
+#  It is the final, consolidated version based on all discussions.
 # ==============================================================================
 
 name: Build and Create Release on Main Update
@@ -17,6 +17,8 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
 
+    # Granting 'write' permission to the contents of the repository.
+    # This is required by the release-action to create tags and releases.
     permissions:
       contents: write
 
@@ -39,6 +41,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: 4. Install All Dependencies
+        # This approach (using cd) is more robust and doesn't rely on npm workspaces.
         run: |
           npm install
           cd frontend
@@ -46,18 +49,16 @@ jobs:
           cd ..
 
       - name: 5. Build Frontend Web App
-        # ======================= 核心修正 =======================
-        # 移除了 -w frontend 参数，改用 cd 命令进入目录执行，避免 "No workspaces found" 错误。
         run: |
           cd frontend
           npm run build
           cd ..
-        # ===================== 修改结束 =====================
       
       - name: 6. Capacitor Sync
         run: npx cap sync android
 
       - name: 7. Decode and Place Keystore
+        # This step now correctly uses your new secret name.
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > my-release-key.keystore
       
       - name: 8. Grant execute permission for gradlew
@@ -71,6 +72,7 @@ jobs:
 
       - name: 10. Build Signed Release APK
         working-directory: ./android
+        # This step now correctly uses your new secret names.
         run: |
           ./gradlew assembleRelease \
             -PappVersionCode=${{ steps.versioning.outputs.version_code }} \
