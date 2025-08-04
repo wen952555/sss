@@ -7,10 +7,12 @@
     "@capacitor/app": "6.0.0",
     "@capacitor/browser": "6.0.0",
     "@capacitor/core": "6.0.0",
-    "@capacitor/http": "1.0.8"
+    "@capacitor/http": "1.0.4"
   },
   "devDependencies": {
     "@capacitor/cli": "6.0.0"
   },
-  "scripts": { "test": "echo \"ok\"" }
+  "scripts": {
+    "test": "echo \"ok\""
+  }
 }
