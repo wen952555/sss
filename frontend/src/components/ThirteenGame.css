@@ -8,7 +8,6 @@
 }
 
 .game-header, .player-status-area, .game-actions-new {
-  /* 为这些区域统一应用毛玻璃效果 */
   background: rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -35,7 +34,7 @@
   display: flex;
   justify-content: center;
   gap: 20px;
-  margin-top: auto; /* 将操作区推到底部 */
+  margin-top: auto;
   padding: 20px;
 }
 
@@ -79,7 +78,6 @@
     transform: none;
 }
 
-
 /* 玩家状态框 */
 .player-box {
   width: 80px;
@@ -108,9 +106,11 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
   margin-bottom: 20px;
   justify-content: center;
+  overflow-x: auto;
+  max-width: 100vw;
 }
 .lanes-area.invalid .lane-container {
     border-color: #e74c3c !important;
@@ -122,12 +122,17 @@
   padding: 10px;
 }
 
-/* loading 和 结果弹窗的样式也需要适配 */
 .loading-overlay {
-    /* 复用毛玻璃效果 */
     background: rgba(10, 10, 20, 0.7);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     color: white;
     font-size: 1.5rem;
+}
+
+/* 响应式适配：移动端卡牌和牌墩整体缩小 */
+@media (max-width: 600px) {
+  .lanes-area {
+    gap: 6px;
+  }
 }
