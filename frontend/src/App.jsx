@@ -6,9 +6,12 @@ import TransferPoints from './components/TransferPoints';
 import ThirteenGame from './components/ThirteenGame';
 import EightCardGame from './components/EightCardGame';
 import './App.css';
+
+// --- 核心修正：导入 Capacitor 核心库和插件 ---
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
+import { Http } from '@capacitor/http'; // 导入 HTTP 插件
 
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) return null;
@@ -25,13 +28,11 @@ const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
 
 function App() {
   const [user, setUser] = useState(null);
-  // 更新游戏状态结构以包含AI玩家
   const [gameState, setGameState] = useState({ gameType: null, hand: null, otherPlayers: {}, error: null });
   const [currentView, setCurrentView] = useState('lobby');
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
 
   useEffect(() => {
-    // ... (其他useEffect逻辑不变)
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -50,18 +51,30 @@ function App() {
     setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null });
   };
   
-  // --- 核心逻辑更新 ---
+  // --- 核心逻辑更新：使用 Capacitor HTTP 插件 ---
   const handleSelectGame = async (gameType, isTrial) => {
     const playerCount = isTrial ? 4 : 1;
     const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
     const params = `players=${playerCount}&cards=${cardsPerPlayer}&game=${gameType}`;
+    
+    // 1. 定义完整的 API URL，这是原生请求所必需的
+    const apiUrl = `https://9522.ip-ddns.com/api/deal_cards.php?${params}`;
 
     try {
-      const response = await fetch(`/api/deal_cards.php?${params}`);
-      const data = await response.json();
+      // 2. 使用 Http.get 发出原生网络请求
+      const response = await Http.get({
+        url: apiUrl,
+        // (可选)可以添加 headers
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // 3. Http 插件返回的数据直接就是 JSON 对象，存储在 response.data 中
+      const data = response.data;
+
       if (data.success) {
         const player1Hand = data.hands['玩家 1'];
-        // 从返回的数据中移除玩家1，剩下的就是AI
         delete data.hands['玩家 1']; 
         const aiPlayers = data.hands;
 
@@ -70,7 +83,9 @@ function App() {
         setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message });
       }
     } catch (err) {
-      setGameState({ gameType: null, hand: null, otherPlayers: {}, error: `无法连接到API: ${err.message}` });
+      console.error('Capacitor HTTP request failed:', err);
+      // 提供更详细的错误信息给用户
+      setGameState({ gameType: null, hand: null, otherPlayers: {}, error: `网络请求失败，请检查网络连接或稍后再试。(${err.message})` });
     }
   };
 
@@ -84,6 +99,7 @@ function App() {
   };
 
   const renderMainContent = () => {
+    // ... (这部分逻辑保持不变)
     if (gameState.gameType && gameState.hand) {
       const gameProps = {
         playerHand: gameState.hand,
@@ -106,6 +122,7 @@ function App() {
   };
 
   if (!user) {
+    // ... (这部分逻辑保持不变)
     return (
       <>
         <Auth onLoginSuccess={handleLoginSuccess} />
@@ -115,6 +132,7 @@ function App() {
   }
 
   return (
+    // ... (这部分逻辑保持不变)
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
       <header className="app-header">
@@ -128,7 +146,7 @@ function App() {
       </header>
       <main className="app-main">
         {renderMainContent()}
-      </main>
+      main>
     </div>
   );
 }
