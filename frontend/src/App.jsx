@@ -10,7 +10,7 @@ import './App.css';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-// 删除了 import { Http } from '@capacitor/http';
+// 删除 import { Http } from '@capacitor/http';
 
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) return null;
@@ -64,7 +64,7 @@ function App() {
     const apiUrl = `https://9522.ip-ddns.com/api/deal_cards.php?${params}`;
 
     try {
-      // 使用 fetch 替代 Http.get
+      // 用 fetch 替代 Http.get
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
