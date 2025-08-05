@@ -12,12 +12,15 @@ const areCardsEqual = (card1, card2) => {
 };
 
 const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
-  // --- 核心修正 1：牌的初始状态 ---
-  // 游戏开始时，所有牌都默认放在“尾道”，方便玩家操作
-  const [topLane, setTopLane] = useState([]);
-  const [middleLane, setMiddleLane] = useState([]);
-  const [bottomLane, setBottomLane] = useState(sortCards(playerHand || []));
-  
+  const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
+
+  // --- 核心修正 1：恢复您期望的初始发牌逻辑 ---
+  // 将拿到的13张牌进行一次默认排序和分配
+  const initialSortedHand = sortCards(playerHand || []);
+  const [topLane, setTopLane] = useState(initialSortedHand.slice(0, LANE_LIMITS.top));
+  const [middleLane, setMiddleLane] = useState(initialSortedHand.slice(LANE_LIMITS.top, LANE_LIMITS.top + LANE_LIMITS.middle));
+  const [bottomLane, setBottomLane] = useState(initialSortedHand.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
+
   const [selectedCards, setSelectedCards] = useState([]);
   const [topLaneHand, setTopLaneHand] = useState(null);
   const [middleLaneHand, setMiddleLaneHand] = useState(null);
@@ -26,17 +29,13 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [gameResult, setGameResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
-
-  // --- 核心修正 2：更严谨的按钮禁用逻辑 ---
   // 检查是否所有牌道都已填满
   const allLanesFilled = topLane.length === LANE_LIMITS.top &&
                          middleLane.length === LANE_LIMITS.middle &&
                          bottomLane.length === LANE_LIMITS.bottom;
 
-  // 确认按钮的最终禁用状态
+  // “确认牌型”按钮的禁用状态
   const isConfirmDisabled = isLoading || !allLanesFilled || isInvalid;
-
 
   useEffect(() => {
     // 只有当所有牌道都放满牌时，才进行合法性校验
@@ -51,21 +50,18 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
 
       const middleVsTop = compareHands(middleEval, topEval);
       const bottomVsMiddle = compareHands(bottomEval, middleEval);
-
-      if (middleVsTop < 0 || bottomVsMiddle < 0) {
-        setIsInvalid(true);
-      } else {
-        setIsInvalid(false);
-      }
+      // 如果牌型大小不符合规则，则标记为不合法
+      setIsInvalid(middleVsTop < 0 || bottomVsMiddle < 0);
     } else {
-      // 只要牌没放完，就不算“不合法”
+      // 只要牌没放完，就不算“不合法”，并清空牌型显示
       setIsInvalid(false);
       setTopLaneHand(null);
       setMiddleLaneHand(null);
       setBottomLaneHand(null);
     }
   }, [topLane, middleLane, bottomLane, allLanesFilled]);
-
+  
+  // 点击扑克牌，支持多选
   const handleCardClick = (card) => {
     setSelectedCards(prevSelected => {
       const isAlreadySelected = prevSelected.some(selectedCard => areCardsEqual(selectedCard, card));
@@ -77,35 +73,35 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     });
   };
 
+  // 点击牌道，移动选中的牌
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
 
-    // --- 核心修正 3：修正移动牌的逻辑 ---
-    // 从所有牌墩中移除选中的牌
+    // 1. 从所有牌道中“拿出”选中的牌
     const removeSelected = (lane) => lane.filter(card => !selectedCards.some(selected => areCardsEqual(selected, card)));
-    const newTop = removeSelected(topLane);
-    const newMiddle = removeSelected(middleLane);
-    const newBottom = removeSelected(bottomLane);
+    let newTop = removeSelected(topLane);
+    let newMiddle = removeSelected(middleLane);
+    let newBottom = removeSelected(bottomLane);
 
-    const lanes = { top: newTop, middle: newMiddle, bottom: newBottom };
-
-    if (lanes[targetLaneName].length + selectedCards.length > LANE_LIMITS[targetLaneName]) {
-      alert('空间不足，无法放入所选的牌！');
-      return;
+    // 2. 将选中的牌“放入”目标牌道
+    if (targetLaneName === 'top') {
+      newTop = [...newTop, ...selectedCards];
+    } else if (targetLaneName === 'middle') {
+      newMiddle = [...newMiddle, ...selectedCards];
+    } else if (targetLaneName === 'bottom') {
+      newBottom = [...newBottom, ...selectedCards];
+    }
+    
+    // 3. 检查移动后目标牌道是否会超出容量
+    if (newTop.length > LANE_LIMITS.top || newMiddle.length > LANE_LIMITS.middle || newBottom.length > LANE_LIMITS.bottom) {
+        alert('空间不足，无法放入所选的牌！');
+        return; // 取消本次移动
     }
 
-    // 将选中的牌加入目标牌墩并排序
-    const updatedTargetLane = sortCards([...lanes[targetLaneName], ...selectedCards]);
-
-    if (targetLaneName === 'top') setTopLane(updatedTargetLane);
-    if (targetLaneName === 'middle') setMiddleLane(updatedTargetLane);
-    if (targetLaneName === 'bottom') setBottomLane(updatedTargetLane);
-    
-    // 更新其他牌道
-    if (targetLaneName !== 'top') setTopLane(newTop);
-    if (targetLaneName !== 'middle') setMiddleLane(newMiddle);
-    if (targetLaneName !== 'bottom') setBottomLane(newBottom);
-    
+    // 4. 确认移动，更新所有牌道状态并排序，清空选择
+    setTopLane(sortCards(newTop));
+    setMiddleLane(sortCards(newMiddle));
+    setBottomLane(sortCards(newBottom));
     setSelectedCards([]);
   };
 
@@ -117,24 +113,20 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   };
 
   const handleConfirm = async () => {
-    // 按钮本身被禁用时，此函数不会被触发，但保留此校验作为双重保险
     if (isConfirmDisabled) return;
 
     setIsLoading(true);
     setTimeout(() => {
-      // 模拟AI的比牌结果
       const aiHand = {
-        top: otherPlayers['玩家 2']?.slice(0, 3),
-        middle: otherPlayers['玩家 2']?.slice(3, 8),
-        bottom: otherPlayers['玩家 2']?.slice(8, 13),
+        top: otherPlayers['玩家 2']?.slice(0, 3) || [],
+        middle: otherPlayers['玩家 2']?.slice(3, 8) || [],
+        bottom: otherPlayers['玩家 2']?.slice(8, 13) || [],
       };
-      
       const result = {
         playerHand: { top: topLane, middle: middleLane, bottom: bottomLane },
         aiHand: aiHand,
         score: Math.floor(Math.random() * 21) - 10,
       };
-
       setGameResult(result);
       setIsLoading(false);
     }, 1500);
@@ -150,7 +142,7 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
       <div className="table-panel">
         <div className="table-top-bar">
           <button onClick={onBackToLobby} className="table-quit-btn">退出游戏</button>
-          <div className="table-score-box">积分: {playerHand?.points || 1000}</div>
+          <div className="table-score-box">积分: 1000</div>
         </div>
         
         <div className="players-status-bar">
@@ -170,7 +162,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
 
         <div className="table-actions-bar">
           <button onClick={handleAutoSort} className="action-btn orange">自动理牌</button>
-          {/* --- 核心修正 4：使用新的禁用逻辑 --- */}
           <button onClick={handleConfirm} disabled={isConfirmDisabled} className="action-btn green">确认牌型</button>
         </div>
 
