@@ -84,9 +84,9 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     newMiddleLane = removeSelected(newMiddleLane);
     newBottomLane = removeSelected(newBottomLane);
     
-    const allCards = [...newTopLane, ...newMiddleLane, ...newBottomLane, ...lanes[targetLaneName]];
+    // 将选中的牌加入目标牌墩
     const updatedTargetLane = [...lanes[targetLaneName], ...selectedCards]
-        .filter(c => !allCards.includes(c)) // 先移除旧位置的牌
+        .filter(card => !selectedCards.some(selected => areCardsEqual(selected, card)))
         .concat(selectedCards);
 
     if (targetLaneName === 'top') setTopLane(sortCards(updatedTargetLane));
@@ -96,15 +96,13 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setSelectedCards([]);
   };
 
-  // --- 添加的功能函数 ---
   const handleAutoSort = () => {
     // 这是一个简化的自动理牌逻辑，仅按大小排序
-    // 实际游戏需要更复杂的AI来寻找最优组合
     const allCards = sortCards([...topLane, ...middleLane, ...bottomLane]);
     setTopLane(allCards.slice(0, 3));
     setMiddleLane(allCards.slice(3, 8));
     setBottomLane(allCards.slice(8, 13));
-    alert('已为您进行基础排序，请检查牌型是否最优！');
+    // --- ↓↓↓ 已删除这里的 alert 语句 ↓↓↓ ---
   };
 
   const handleConfirm = async () => {
@@ -141,7 +139,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setGameResult(null);
     onBackToLobby();
   };
-  // --- 功能函数添加完毕 ---
 
   return (
     <div className="table-root">
@@ -179,14 +176,12 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
             />
         </div>
         
-        {/* --- 恢复的JSX代码 --- */}
         {isInvalid && <p className="error-message">牌型不符合规则！(尾道 ≥ 中道 ≥ 头道)</p>}
 
         <div className="table-actions-bar">
           <button onClick={handleAutoSort} className="action-btn orange">自动理牌</button>
           <button onClick={handleConfirm} disabled={isInvalid || isLoading} className="action-btn green">确认牌型</button>
         </div>
-        {/* --- JSX恢复完毕 --- */}
 
         {isLoading && <div className="loading-overlay">正在比牌...</div>}
       </div>
