@@ -1,20 +1,9 @@
 import React from 'react';
 
-const RANK_ORDER = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
-
-export const sortCards = (cards) => {
-  return [...cards].sort((a, b) => {
-    const rankComparison = RANK_ORDER.indexOf(a.rank) - RANK_ORDER.indexOf(b.rank);
-    if (rankComparison !== 0) {
-      return rankComparison;
-    }
-    const suitOrder = ['diamonds', 'clubs', 'hearts', 'spades'];
-    return suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit);
-  });
-};
+// --- 已将 sortCards 函数和 RANK_ORDER 移动到 pokerEvaluator.js ---
 
 const Card = ({ card, onClick, isSelected }) => {
-  if (card.suit === 'joker') {
+  if (!card || card.suit === 'joker') {
     return null;
   }
 
