@@ -1,88 +1,62 @@
 .auth-container {
+  width: 100vw;
+  min-height: 100vh;
   display: flex;
+  align-items: flex-start;
   justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 20px;
-  box-sizing: border-box;
+  padding-top: 48px;
+  background: none;
 }
 
 .auth-form {
-  /* 应用毛玻璃效果 */
-  background: rgba(30, 30, 45, 0.6);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  
-  width: 100%;
-  max-width: 400px;
-  padding: 40px;
-  text-align: center;
+  background: rgba(30, 30, 45, 0.95);
+  border-radius: 23px;
+  box-shadow: 0 5px 28px rgba(0,0,0,.14);
+  width: 94vw;
+  max-width: 420px;
+  padding: 36px 20px 28px 20px;
   color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .auth-form h2 {
-  margin-bottom: 30px;
   font-size: 2rem;
+  margin: 0 0 30px 0;
 }
 
-.input-group {
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-.input-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #c0c0c0;
-}
-
+.input-group { width: 100%; margin-bottom: 22px; }
+.input-group label { display: block; margin-bottom: 10px; color: #b8e0fc; font-size: 1.03rem; }
 .input-group input {
   width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(0, 0, 0, 0.2);
+  padding: 13px;
+  border-radius: 10px;
+  border: 1.5px solid #2e436e;
+  font-size: 1.08rem;
+  background: rgba(255,255,255,0.09);
   color: #fff;
-  font-size: 1rem;
 }
-
-.input-group input::placeholder {
-  color: #888;
-}
+.input-group input:focus { outline: 2px solid #48dbfb; }
 
 .submit-button {
   width: 100%;
-  padding: 15px;
-  border-radius: 10px;
+  padding: 17px 0;
+  border-radius: 13px;
   border: none;
-  background: linear-gradient(90deg, #48dbfb, #0abde3);
+  background: linear-gradient(90deg, #24c6dc 0%, #5433ff 100%);
   color: white;
-  font-size: 1.2rem;
+  font-size: 1.23rem;
   font-weight: bold;
+  margin-top: 8px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: background .19s, transform .13s;
 }
+.submit-button:active { transform: scale(0.97); }
+.submit-button:disabled { background: #576574; cursor: not-allowed; }
 
-.submit-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(72, 219, 251, 0.4);
-}
+.toggle-mode { margin-top: 30px; color: #b8e0fc; font-size: 0.97rem; }
+.toggle-mode span { color: #24c6dc; cursor: pointer; font-weight: bold; }
 
-.submit-button:disabled {
-  background: #576574;
-  cursor: not-allowed;
-}
-
-.toggle-mode {
-  margin-top: 25px;
-  color: #c0c0c0;
-}
-
-.toggle-mode span {
-  color: #48dbfb;
-  cursor: pointer;
-  font-weight: bold;
-}
+.error-message { color: #ff6b6b; font-size: 1.05rem; }
+.success-message { color: #2ecc71; font-size: 1.05rem; }

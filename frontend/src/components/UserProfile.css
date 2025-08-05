@@ -1,45 +1,50 @@
 .user-profile-container {
-  width: 100%;
-  max-width: 500px;
+  width: 100vw;
+  padding: 0;
+  display: flex;
+  justify-content: center;
 }
 
 .user-profile-panel {
-  /* 应用毛玻璃效果 */
-  background: rgba(40, 40, 60, 0.7);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  
-  padding: 40px;
+  background: rgba(33, 45, 77, 0.98);
+  border-radius: 22px;
+  box-shadow: 0 5px 28px rgba(0,0,0,.15);
+  width: 95vw;
+  max-width: 420px;
+  padding: 34px 18px 28px 18px;
   color: #fff;
 }
 
 .user-profile-panel h2 {
   text-align: center;
-  margin-top: 0;
-  margin-bottom: 30px;
-  font-size: 2rem;
-  color: #48dbfb;
+  font-size: 1.6rem;
+  margin: 0 0 32px 0;
+  color: #24c6dc;
 }
 
 .profile-item {
   display: flex;
   justify-content: space-between;
-  padding: 15px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
+.profile-item:last-child { border-bottom: none; }
+.profile-item-label { font-weight: bold; color: #b8e0fc; }
+.profile-item-value { font-weight: normal; color: #fff; }
 
-.profile-item:last-child {
-  border-bottom: none;
+.user-profile-btns {
+  margin-top: 36px;
+  display: flex;
+  gap: 13px;
 }
-
-.profile-item-label {
+.user-profile-btns button {
+  flex: 1;
+  min-height: 46px;
+  border-radius: 12px;
+  border: none;
+  font-size: 1.1rem;
   font-weight: bold;
-  color: #c0c0c0;
+  cursor: pointer;
 }
-
-.profile-item-value {
-  font-weight: normal;
-}
+.user-profile-btns .transfer { background: #24c6dc; color: #fff; }
+.user-profile-btns .logout { background: #e74c3c; color: #fff; }

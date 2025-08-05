@@ -7,23 +7,34 @@ import ThirteenGame from './components/ThirteenGame';
 import EightCardGame from './components/EightCardGame';
 import './App.css';
 
-import { Capacitor } from '@capacitor/core';
-import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-// 已移除 import { Http } from '@capacitor/http';
 
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) return null;
   return (
     <div className="update-modal-backdrop">
       <div className="update-modal-content">
-        <h3>发现新版本: {version}</h3>
+        <h3 style={{color:'#fff',fontWeight:'bold'}}>发现新版本: {version}</h3>
         <div className="release-notes"><p>更新内容:</p><ul>{notes.map((note, index) => <li key={index}>{note}</li>)}</ul></div>
         <div className="modal-actions"><button onClick={onCancel} className="cancel-btn">稍后提醒</button><button onClick={onUpdate} className="update-btn">立即更新</button></div>
       </div>
     </div>
   );
 };
+
+function TopBanner({ user, onLobby, onProfile, onLogout }) {
+  return (
+    <div className="top-banner">
+      <div className="banner-title">游戏中心</div>
+      <div className="banner-welcome">欢迎, {user.phone}</div>
+      <div className="banner-actions">
+        <button className="banner-btn" onClick={onLobby}>游戏大厅</button>
+        <button className="banner-btn" onClick={onProfile}>我的资料</button>
+        <button className="banner-btn" onClick={onLogout}>退出登录</button>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -39,7 +50,6 @@ function App() {
     }
   }, []);
 
-  // 用于更新本地 user 数据（如积分变化）
   const updateUserData = (newUser) => {
     setUser(newUser);
     localStorage.setItem('user', JSON.stringify(newUser));
@@ -57,20 +67,16 @@ function App() {
     setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null });
   };
 
-  // 只做了fetch和路径的替换
   const handleSelectGame = async (gameType, isTrial) => {
     const playerCount = isTrial ? 4 : 1;
     const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
     const params = `players=${playerCount}&cards=${cardsPerPlayer}&game=${gameType}`;
-    // 使用相对路径给worker代理
     const apiUrl = `/api/deal_cards.php?${params}`;
 
     try {
       const response = await fetch(apiUrl, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
 
@@ -84,13 +90,13 @@ function App() {
         setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message });
       }
     } catch (err) {
-      console.error('网络请求失败:', err);
       setGameState({ gameType: null, hand: null, otherPlayers: {}, error: `网络请求失败，请检查网络连接或稍后再试。(${err.message})` });
     }
   };
 
   const handleBackToLobby = () => {
     setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null });
+    setCurrentView('lobby');
   };
 
   const handleUpdate = async () => {
@@ -98,15 +104,17 @@ function App() {
     setUpdateInfo({ ...updateInfo, show: false });
   };
 
-  // 赠送积分后回调，刷新用户积分
   const handleTransferSuccess = (updatedUser) => {
     updateUserData(updatedUser);
     setShowTransfer(false);
     setCurrentView('profile');
   };
 
+  // 判断是否处于对局
+  const isInGame = gameState.gameType && gameState.hand;
+
   const renderMainContent = () => {
-    if (gameState.gameType && gameState.hand) {
+    if (isInGame) {
       const gameProps = {
         playerHand: gameState.hand,
         otherPlayers: gameState.otherPlayers,
@@ -119,7 +127,6 @@ function App() {
         return <EightCardGame {...gameProps} />;
       }
     }
-
     if (showTransfer && user) {
       return (
         <TransferPoints
@@ -129,7 +136,6 @@ function App() {
         />
       );
     }
-
     switch (currentView) {
       case 'profile':
         return (
@@ -163,18 +169,18 @@ function App() {
     );
   }
 
+  // 只在非对局页面显示顶部横幅
   return (
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
-      <header className="app-header">
-        <h1>游戏中心</h1>
-        <div className="user-actions">
-          <span>欢迎, {user.phone}</span>
-          <button onClick={() => { setCurrentView('lobby'); handleBackToLobby(); }}>游戏大厅</button>
-          <button onClick={() => setCurrentView('profile')}>我的资料</button>
-          <button onClick={handleLogout}>退出登录</button>
-        </div>
-      </header>
+      {!isInGame && (
+        <TopBanner
+          user={user}
+          onLobby={() => { setCurrentView('lobby'); handleBackToLobby(); }}
+          onProfile={() => setCurrentView('profile')}
+          onLogout={handleLogout}
+        />
+      )}
       <main className="app-main">
         {renderMainContent()}
       </main>
