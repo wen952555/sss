@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './ThirteenGame.css';
-import { evaluateHand, compareHands } from '../utils/pokerEvaluator';
+import { evaluateHand, compareHands, sortCards } from '../utils/pokerEvaluator';
 import GameResultModal from './GameResultModal';
 
 // 辅助函数：比较两张卡牌是否相同
@@ -14,8 +14,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [topLane, setTopLane] = useState(playerHand?.top || []);
   const [middleLane, setMiddleLane] = useState(playerHand?.middle || []);
   const [bottomLane, setBottomLane] = useState(playerHand?.bottom || []);
-  
-  // --- 核心修改：selectedCards 状态现在是一个数组 ---
   const [selectedCards, setSelectedCards] = useState([]);
 
   const [topLaneHand, setTopLaneHand] = useState(null);
@@ -28,24 +26,41 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
 
   useEffect(() => {
-    // ... (此 useEffect 逻辑不变)
+    // 评估每道牌的牌型
+    const topEval = evaluateHand(topLane);
+    const middleEval = evaluateHand(middleLane);
+    const bottomEval = evaluateHand(bottomLane);
+
+    setTopLaneHand(topEval);
+    setMiddleLaneHand(middleEval);
+    setBottomLaneHand(bottomEval);
+
+    // 检查是否满足牌型大小规则（尾道 > 中道 > 头道）
+    const allCardsPlaced = topLane.length + middleLane.length + bottomLane.length === 13;
+    if (allCardsPlaced) {
+      const middleVsTop = compareHands(middleEval, topEval);
+      const bottomVsMiddle = compareHands(bottomEval, middleEval);
+      if (middleVsTop < 0 || bottomVsMiddle < 0) {
+        setIsInvalid(true);
+      } else {
+        setIsInvalid(false);
+      }
+    } else {
+      setIsInvalid(false); // 牌没放完时不提示错误
+    }
   }, [topLane, middleLane, bottomLane]);
 
-  // --- 核心修改：重写卡牌点击逻辑以支持多选 ---
   const handleCardClick = (card) => {
     setSelectedCards(prevSelected => {
       const isAlreadySelected = prevSelected.some(selectedCard => areCardsEqual(selectedCard, card));
       if (isAlreadySelected) {
-        // 如果已选中，则取消选中
         return prevSelected.filter(selectedCard => !areCardsEqual(selectedCard, card));
       } else {
-        // 如果未选中，则加入选中列表
         return [...prevSelected, card];
       }
     });
   };
 
-  // --- 核心修改：重写牌墩点击逻辑以移动多张牌 ---
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
 
@@ -59,62 +74,123 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
       bottom: newBottomLane,
     };
 
-    // 检查目标牌墩是否有足够空间
     if (lanes[targetLaneName].length + selectedCards.length > LANE_LIMITS[targetLaneName]) {
       alert('空间不足，无法放入所选的牌！');
       return;
     }
 
-    // 从所有牌墩中移除选中的牌
     const removeSelected = (lane) => lane.filter(card => !selectedCards.some(selected => areCardsEqual(selected, card)));
     newTopLane = removeSelected(newTopLane);
     newMiddleLane = removeSelected(newMiddleLane);
     newBottomLane = removeSelected(newBottomLane);
     
-    // 将选中的牌加入目标牌墩
+    const allCards = [...newTopLane, ...newMiddleLane, ...newBottomLane, ...lanes[targetLaneName]];
     const updatedTargetLane = [...lanes[targetLaneName], ...selectedCards]
-      .filter(card => !selectedCards.some(selected => areCardsEqual(selected, card))) // 先移除旧位置的牌
-      .concat(selectedCards); // 再添加
+        .filter(c => !allCards.includes(c)) // 先移除旧位置的牌
+        .concat(selectedCards);
 
-    if (targetLaneName === 'top') setTopLane(updatedTargetLane);
-    if (targetLaneName === 'middle') setMiddleLane(updatedTargetLane);
-    if (targetLaneName === 'bottom') setBottomLane(updatedTargetLane);
+    if (targetLaneName === 'top') setTopLane(sortCards(updatedTargetLane));
+    if (targetLaneName === 'middle') setMiddleLane(sortCards(updatedTargetLane));
+    if (targetLaneName === 'bottom') setBottomLane(sortCards(updatedTargetLane));
     
-    // 移动后清空选择
     setSelectedCards([]);
   };
 
-  // ... (handleAutoSort, handleConfirm, handleCloseResult 逻辑不变)
+  // --- 添加的功能函数 ---
+  const handleAutoSort = () => {
+    // 这是一个简化的自动理牌逻辑，仅按大小排序
+    // 实际游戏需要更复杂的AI来寻找最优组合
+    const allCards = sortCards([...topLane, ...middleLane, ...bottomLane]);
+    setTopLane(allCards.slice(0, 3));
+    setMiddleLane(allCards.slice(3, 8));
+    setBottomLane(allCards.slice(8, 13));
+    alert('已为您进行基础排序，请检查牌型是否最优！');
+  };
+
+  const handleConfirm = async () => {
+    if (topLane.length + middleLane.length + bottomLane.length !== 13) {
+      alert('请将所有13张牌都摆放到牌道中！');
+      return;
+    }
+    if (isInvalid) {
+      alert('当前牌型不符合规则，无法确认！');
+      return;
+    }
+
+    setIsLoading(true);
+    // 模拟API调用和AI比牌
+    setTimeout(() => {
+      const aiHand = {
+        top: otherPlayers['玩家 2']?.slice(0, 3),
+        middle: otherPlayers['玩家 2']?.slice(3, 8),
+        bottom: otherPlayers['玩家 2']?.slice(8, 13),
+      };
+      
+      const result = {
+        playerHand: { top: topLane, middle: middleLane, bottom: bottomLane },
+        aiHand: aiHand,
+        score: Math.floor(Math.random() * 21) - 10, // 模拟得分
+      };
+
+      setGameResult(result);
+      setIsLoading(false);
+    }, 1500);
+  };
+  
+  const handleCloseResult = () => {
+    setGameResult(null);
+    onBackToLobby();
+  };
+  // --- 功能函数添加完毕 ---
 
   return (
     <div className="table-root">
       <div className="table-panel">
-        {/* ... (顶部栏和玩家状态栏 JSX 不变) */}
+        <div className="table-top-bar">
+          <button onClick={onBackToLobby} className="table-quit-btn">退出游戏</button>
+          <div className="table-score-box">积分: {playerHand?.points || 1000}</div>
+        </div>
+        
+        <div className="players-status-bar">
+            <div className="player-status-item you"><span className="player-name">你</span><span className="status-text">理牌中...</span></div>
+            {Object.keys(otherPlayers).map(name => (
+                <div key={name} className="player-status-item ready"><span className="player-name">{name}</span><span className="status-text">已准备</span></div>
+            ))}
+        </div>
 
         <div className="table-lanes-area">
           <Lane
               title="头道" cards={topLane}
               onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('top')}
-              selectedCards={selectedCards} // --- 传递多选数组
+              selectedCards={selectedCards}
               expectedCount={LANE_LIMITS.top} handType={topLaneHand?.name}
             />
           <Lane
               title="中道" cards={middleLane}
               onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')}
-              selectedCards={selectedCards} // --- 传递多选数组
+              selectedCards={selectedCards}
               expectedCount={LANE_LIMITS.middle} handType={middleLaneHand?.name}
             />
           <Lane
               title="尾道" cards={bottomLane}
               onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('bottom')}
-              selectedCards={selectedCards} // --- 传递多选数组
+              selectedCards={selectedCards}
               expectedCount={LANE_LIMITS.bottom} handType={bottomLaneHand?.name}
             />
         </div>
         
-        {/* ... (错误信息和操作按钮 JSX 不变) */}
+        {/* --- 恢复的JSX代码 --- */}
+        {isInvalid && <p className="error-message">牌型不符合规则！(尾道 ≥ 中道 ≥ 头道)</p>}
+
+        <div className="table-actions-bar">
+          <button onClick={handleAutoSort} className="action-btn orange">自动理牌</button>
+          <button onClick={handleConfirm} disabled={isInvalid || isLoading} className="action-btn green">确认牌型</button>
+        </div>
+        {/* --- JSX恢复完毕 --- */}
+
+        {isLoading && <div className="loading-overlay">正在比牌...</div>}
       </div>
-      {/* ... (加载和结果弹窗 JSX 不变) */}
+      {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
     </div>
   );
 };
