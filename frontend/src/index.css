@@ -1,10 +1,16 @@
-/* --- 全新的宇宙星云背景 --- */
+/* --- 全局防滚动和基础设置 --- */
+html, body {
+  overscroll-behavior: none; /* 防止在边缘滚动时的“拉动”效果 */
+  overflow: hidden; /* 核心：禁止页面滚动条 */
+  height: 100%;
+}
+
 body {
   margin: 0;
   font-family: 'Noto Sans SC', sans-serif;
-  color: #e0e0e0; /* 默认文字颜色调整为柔和的白色 */
+  color: #e0e0e0;
   
-  background-color: #0d0f1a; /* 深邃的宇宙背景色 */
+  background-color: #0d0f1a;
   background-image: 
     radial-gradient(at 15% 20%, hsla(212, 90%, 50%, 0.2) 0px, transparent 50%),
     radial-gradient(at 80% 25%, hsla(280, 80%, 45%, 0.25) 0px, transparent 50%),
@@ -12,31 +18,34 @@ body {
     radial-gradient(at 85% 80%, hsla(190, 90%, 50%, 0.25) 0px, transparent 50%);
   
   min-height: 100vh;
+  max-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden; /* 再次确保根容器不滚动 */
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* 统一滚动条样式 (可选，但能提升整体感) */
+/* 统一滚动条样式 (用于弹窗内部等局部滚动) */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(72, 219, 251, 0.5);
+  background: rgba(72, 219, 251, 0.4);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(72, 219, 251, 0.8);
+  background: rgba(72, 219, 251, 0.7);
 }

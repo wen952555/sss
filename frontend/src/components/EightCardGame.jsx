@@ -1,57 +1,61 @@
+// ... imports
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
-import './EightCardGame.css'; // <<<--- 引入新的CSS文件
+import './EightCardGame.css';
 import { evaluateHand, compareHands } from '../utils/pokerEvaluator';
 import GameResultModal from './GameResultModal';
 
 const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
-  // ... (内部逻辑不变)
+  // ... all hooks and logic remain the same
   const [topLane, setTopLane] = useState(playerHand?.top || []);
-  // ...
+  // ... etc.
 
-  // ... (所有 hooks 和函数不变)
+  // 判断是否为多人试玩模式
+  const isMultiplayerTrial = Object.keys(otherPlayers).length > 1;
 
   return (
-    // <<<--- 修改根元素和内部结构以匹配新CSS
     <div className="eight-game-container">
       <div className="eight-game-panel">
         <div className="game-header">
-          <button className="quit-button" onClick={onBackToLobby}>
-            返回大厅
-          </button>
-          <h2>八张牌 - 三道分牌</h2>
+          <button className="quit-button" onClick={onBackToLobby}>退出</button>
+          <h2>八张牌</h2>
         </div>
+        
+        {/* 条件渲染玩家布局 */}
+        {isMultiplayerTrial && (
+          <div className="players-grid">
+            <div className="player-box you">
+              <div className="player-name">你</div>
+              <div className="player-status">理牌中...</div>
+            </div>
+            {Object.keys(otherPlayers).slice(0, 3).map((playerName, index) => (
+              <div key={index} className="player-box ready">
+                <div className="player-name">{playerName}</div>
+                <div className="player-status">已理牌</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {isLoading && <div className="loading-overlay">处理中...</div>}
         
         <div className="lanes-area">
-          <Lane
-            title="头道"
-            cards={topLane}
-            onCardClick={(c) => handleCardClick(c, 'top')}
-            onLaneClick={() => handleLaneClick('top')}
-            expectedCount={LANE_LIMITS.top}
-            handType={topLaneHand?.name}
-            selected={selectedCard}
+          {/* Lane components remain the same */}
+           <Lane
+            title="头道" cards={topLane} onCardClick={(c) => handleCardClick(c, 'top')}
+            onLaneClick={() => handleLaneClick('top')} expectedCount={LANE_LIMITS.top}
+            handType={topLaneHand?.name} selected={selectedCard}
           />
           <Lane
-            title="中道"
-            cards={middleLane}
-            onCardClick={(c) => handleCardClick(c, 'middle')}
-            onLaneClick={() => handleLaneClick('middle')}
-            expectedCount={LANE_LIMITS.middle}
-            handType={middleLaneHand?.name}
-            selected={selectedCard}
+            title="中道" cards={middleLane} onCardClick={(c) => handleCardClick(c, 'middle')}
+            onLaneClick={() => handleLaneClick('middle')} expectedCount={LANE_LIMITS.middle}
+            handType={middleLaneHand?.name} selected={selectedCard}
           />
           <Lane
-            title="尾道"
-            cards={bottomLane}
-            onCardClick={(c) => handleCardClick(c, 'bottom')}
-            onLaneClick={() => handleLaneClick('bottom')}
-            expectedCount={LANE_LIMITS.bottom}
-            handType={bottomLaneHand?.name}
-            selected={selectedCard}
+            title="尾道" cards={bottomLane} onCardClick={(c) => handleCardClick(c, 'bottom')}
+            onLaneClick={() => handleLaneClick('bottom')} expectedCount={LANE_LIMITS.bottom}
+            handType={bottomLaneHand?.name} selected={selectedCard}
           />
         </div>
 
@@ -65,13 +69,8 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
             className="action-button-new confirm"
             onClick={handleConfirm}
             disabled={
-              isLoading ||
-              isInvalid ||
-              topLane.length !== LANE_LIMITS.top ||
-              middleLane.length !== LANE_LIMITS.middle ||
-              bottomLane.length !== LANE_LIMITS.bottom
-            }
-          >
+              isLoading || isInvalid || topLane.length !== 2 || middleLane.length !== 3 || bottomLane.length !== 3
+            }>
             确认出牌
           </button>
         </div>

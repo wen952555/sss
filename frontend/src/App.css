@@ -6,32 +6,35 @@
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  padding: 28px;
+  padding: 25px; /* 减小内边距 */
   box-sizing: border-box;
 }
 
-/* --- 主应用布局 --- */
+/* --- 主应用布局 (核心修改) --- */
 .app {
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   background: none;
-  padding: 0 10px;
+  padding: 10px;
   box-sizing: border-box;
+  overflow: hidden; /* 防止子元素溢出 */
 }
 
 .app-main {
-  flex: 1;
+  flex: 1; /* 占据剩余所有空间 */
   width: 100%;
-  max-width: 500px; /* 稍微增大最大宽度 */
-  min-height: 0;
+  max-width: 500px;
+  min-height: 0; /* flexbox 子项必须 */
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow-x: hidden;
-  padding: 20px 0;
+  justify-content: center; /* 内容区内容垂直居中 */
+  overflow: hidden;
+  padding: 15px 0; /* 调整内边距 */
 }
 
 
@@ -39,27 +42,27 @@
 .top-banner {
   width: 100%;
   max-width: 500px;
-  margin-bottom: 25px;
-  padding: 20px;
+  margin-bottom: 15px; /* 减小间距 */
+  padding: 15px;
   border-radius: 18px;
-  background: rgba(30, 35, 60, 0.5); /* 半透明背景 */
+  background: rgba(30, 35, 60, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
 }
 
 .banner-title {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: #fff;
   letter-spacing: 2px;
-  text-shadow: 0 0 10px rgba(72, 219, 251, 0.5); /* 霓虹光晕 */
+  text-shadow: 0 0 10px rgba(72, 219, 251, 0.5);
 }
 
 .banner-welcome {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #b0c4de;
 }
 
@@ -67,14 +70,14 @@
   width: 100%;
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 /* --- 通用操作按钮样式 --- */
 .action-button, .banner-btn {
   flex: 1;
-  padding: 12px 20px;
-  font-size: 1rem;
+  padding: 10px 15px; /* 减小按钮 padding */
+  font-size: 0.95rem; /* 减小字体 */
   font-weight: 500;
   border-radius: 10px;
   border: 1px solid transparent;
@@ -120,25 +123,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 15px; /* 调整内边距 */
 }
 
 .modal-content {
   width: 100%;
   max-width: 400px;
+  max-height: 90vh; /* 弹窗最大高度 */
+  overflow-y: auto; /* 内容超长时，弹窗内部允许滚动 */
   border-radius: 18px;
   background: rgba(35, 40, 70, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 10px 40px rgba(0,0,0,.4);
-  padding: 28px;
+  padding: 25px;
   color: #e0e0e0;
 }
 
 .modal-content h3 {
   margin-top: 0;
   margin-bottom: 15px;
-  font-size: 1.4rem;
-  color: #48dbfb; /* 青色标题 */
+  font-size: 1.3rem;
+  color: #48dbfb;
   text-align: center;
 }
 
@@ -149,17 +154,18 @@
 .release-notes li {
   margin-bottom: 8px;
   color: #c0d0ff;
+  font-size: 0.9rem;
 }
 
 .modal-actions {
-  margin-top: 25px;
+  margin-top: 20px;
   display: flex;
   gap: 15px;
 }
 
 .modal-actions button {
   flex: 1;
-  padding: 13px 0;
+  padding: 12px 0;
   border: none;
   border-radius: 10px;
   font-size: 1rem;
