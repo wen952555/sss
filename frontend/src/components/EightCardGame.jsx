@@ -13,8 +13,10 @@ const areCardsEqual = (card1, card2) => {
 const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const LANE_LIMITS = { top: 2, middle: 3, bottom: 3 };
 
-  // --- 核心修正 1：恢复您期望的初始发牌逻辑 ---
-  const initialSortedHand = sortCards(playerHand || []);
+  // --- 核心修正：增加组件内部防御，确保 playerHand 是数组 ---
+  const initialHandArray = Array.isArray(playerHand) ? playerHand : [];
+  const initialSortedHand = sortCards(initialHandArray);
+
   const [topLane, setTopLane] = useState(initialSortedHand.slice(0, LANE_LIMITS.top));
   const [middleLane, setMiddleLane] = useState(initialSortedHand.slice(LANE_LIMITS.top, LANE_LIMITS.top + LANE_LIMITS.middle));
   const [bottomLane, setBottomLane] = useState(initialSortedHand.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
