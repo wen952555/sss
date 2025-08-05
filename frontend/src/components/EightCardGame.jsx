@@ -13,13 +13,10 @@ const areCardsEqual = (card1, card2) => {
 const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const LANE_LIMITS = { top: 2, middle: 3, bottom: 3 };
 
-  // --- 核心修正：增加组件内部防御，确保 playerHand 是数组 ---
-  const initialHandArray = Array.isArray(playerHand) ? playerHand : [];
-  const initialSortedHand = sortCards(initialHandArray);
-
-  const [topLane, setTopLane] = useState(initialSortedHand.slice(0, LANE_LIMITS.top));
-  const [middleLane, setMiddleLane] = useState(initialSortedHand.slice(LANE_LIMITS.top, LANE_LIMITS.top + LANE_LIMITS.middle));
-  const [bottomLane, setBottomLane] = useState(initialSortedHand.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
+  // --- 核心修正：恢复您原始的、正确的状态初始化方式 ---
+  const [topLane, setTopLane] = useState(playerHand?.top || []);
+  const [middleLane, setMiddleLane] = useState(playerHand?.middle || []);
+  const [bottomLane, setBottomLane] = useState(playerHand?.bottom || []);
 
   const [selectedCards, setSelectedCards] = useState([]);
   const [topLaneHand, setTopLaneHand] = useState(null);
@@ -32,7 +29,6 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const allLanesFilled = topLane.length === LANE_LIMITS.top &&
                          middleLane.length === LANE_LIMITS.middle &&
                          bottomLane.length === LANE_LIMITS.bottom;
-
   const isConfirmDisabled = isLoading || !allLanesFilled || isInvalid;
 
   useEffect(() => {
@@ -55,31 +51,24 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   }, [topLane, middleLane, bottomLane, allLanesFilled]);
 
   const handleCardClick = (card) => {
-    setSelectedCards(prevSelected => {
-      const isAlreadySelected = prevSelected.some(selectedCard => areCardsEqual(selectedCard, card));
-      if (isAlreadySelected) {
-        return prevSelected.filter(selectedCard => !areCardsEqual(selectedCard, card));
-      } else {
-        return [...prevSelected, card];
-      }
-    });
+    setSelectedCards(prev => prev.some(c => areCardsEqual(c, card)) ? prev.filter(c => !areCardsEqual(c, card)) : [...prev, card]);
   };
 
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
     
-    const removeSelected = (lane) => lane.filter(card => !selectedCards.some(selected => areCardsEqual(selected, card)));
+    const removeSelected = (lane) => lane.filter(c => !selectedCards.some(s => areCardsEqual(s, c)));
     let newTop = removeSelected(topLane);
     let newMiddle = removeSelected(middleLane);
     let newBottom = removeSelected(bottomLane);
 
-    if (targetLaneName === 'top') newTop = [...newTop, ...selectedCards];
-    else if (targetLaneName === 'middle') newMiddle = [...newMiddle, ...selectedCards];
-    else if (targetLaneName === 'bottom') newBottom = [...newBottom, ...selectedCards];
+    if (targetLaneName === 'top') newTop.push(...selectedCards);
+    else if (targetLaneName === 'middle') newMiddle.push(...selectedCards);
+    else if (targetLaneName === 'bottom') newBottom.push(...selectedCards);
 
     if (newTop.length > LANE_LIMITS.top || newMiddle.length > LANE_LIMITS.middle || newBottom.length > LANE_LIMITS.bottom) {
-        alert('空间不足，无法放入所选的牌！');
-        return;
+      alert('空间不足，无法放入所选的牌！');
+      return;
     }
 
     setTopLane(sortCards(newTop));
@@ -90,26 +79,17 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
 
   const handleAutoSort = () => {
     const allCards = sortCards([...topLane, ...middleLane, ...bottomLane]);
-    setTopLane(allCards.slice(0, 2));
-    setMiddleLane(allCards.slice(2, 5));
-    setBottomLane(allCards.slice(5, 8));
+    setTopLane(allCards.slice(0, LANE_LIMITS.top));
+    setMiddleLane(allCards.slice(LANE_LIMITS.top, LANE_LIMITS.top + LANE_LIMITS.middle));
+    setBottomLane(allCards.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
   };
 
   const handleConfirm = async () => {
     if (isConfirmDisabled) return;
-
     setIsLoading(true);
     setTimeout(() => {
-      const aiHand = {
-        top: otherPlayers['玩家 2']?.slice(0, 2) || [],
-        middle: otherPlayers['玩家 2']?.slice(2, 5) || [],
-        bottom: otherPlayers['玩家 2']?.slice(5, 8) || [],
-      };
-      const result = {
-        playerHand: { top: topLane, middle: middleLane, bottom: bottomLane },
-        aiHand: aiHand,
-        score: Math.floor(Math.random() * 11) - 5,
-      };
+      const aiHand = Object.values(otherPlayers)[0] || { top: [], middle: [], bottom: [] };
+      const result = { playerHand, aiHand, score: Math.floor(Math.random() * 11) - 5 };
       setGameResult(result);
       setIsLoading(false);
     }, 1500);
@@ -130,9 +110,7 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
         <div className="eight-game-players">
           <div className="player-group">
             <div className="player-status-item you"><span className="player-name">你</span><span className="status-text">理牌中...</span></div>
-            {Object.keys(otherPlayers).map(name => (
-              <div key={name} className="player-status-item ready"><span className="player-name">{name}</span><span className="status-text">已准备</span></div>
-            ))}
+            {Object.keys(otherPlayers).map(name => (<div key={name} className="player-status-item ready"><span className="player-name">{name}</span><span className="status-text">已准备</span></div>))}
           </div>
         </div>
         <div className="lanes-area">
