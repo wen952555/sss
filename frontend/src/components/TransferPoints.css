@@ -1,93 +1,108 @@
-.transfer-points-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+/* 这个组件现在使用通用的弹窗样式，但可以添加一些特定样式 */
+
+.transfer-modal-content {
+  /* 继承 .modal-content 样式 */
+  position: relative;
 }
 
-.transfer-points-form {
-  /* 应用毛玻璃效果 */
-  background: rgba(30, 30, 45, 0.6);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  
-  width: 100%;
-  max-width: 450px;
-  padding: 40px;
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.close-modal-btn:hover {
   color: #fff;
 }
 
-.transfer-points-form h2 {
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.step-content p {
   text-align: center;
-  margin-top: 0;
-  margin-bottom: 30px;
-  font-size: 2rem;
-  color: #48dbfb;
+  margin: 0 0 5px 0;
+  color: #a0b4d4;
 }
 
-.input-group {
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-.input-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #c0c0c0;
-}
-
-.input-group input {
+.step-content input {
   width: 100%;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 14px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1rem;
   background: rgba(0, 0, 0, 0.2);
   color: #fff;
-  font-size: 1rem;
-  box-sizing: border-box; /* 确保padding不会撑大输入框 */
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+  text-align: center;
+}
+.step-content input:focus { 
+  outline: none;
+  border-color: #48dbfb;
+  box-shadow: 0 0 10px rgba(72, 219, 251, 0.5);
 }
 
-.input-group input::placeholder {
-  color: #888;
-}
-
-.submit-button {
-  width: 100%;
-  padding: 15px;
-  border-radius: 10px;
+.step-content button {
+  padding: 13px 0;
   border: none;
-  background: linear-gradient(90deg, #2ecc71, #27ae60);
-  color: white;
-  font-size: 1.2rem;
+  border-radius: 10px;
+  font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  margin-top: 10px;
+  transition: all 0.2s ease;
+  background: #48dbfb;
+  color: #111;
 }
-
-.submit-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(46, 204, 113, 0.4);
+.step-content button:hover {
+  background: #6efbff;
+  box-shadow: 0 0 12px rgba(72, 219, 251, 0.6);
 }
-
-.submit-button:disabled {
-  background: #576574;
+.step-content button:disabled {
+  background-color: #555;
+  color: #999;
   cursor: not-allowed;
-  transform: none;
   box-shadow: none;
 }
+.step-content .back-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.step-content .back-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
 
-.message {
-    text-align: center;
-    margin-top: 20px;
-    font-weight: bold;
+.confirmation-box {
+  background: rgba(0,0,0,0.2);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 10px;
 }
-.message.success {
-    color: #2ecc71;
+
+.confirm-id {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #f1c40f; /* 金色，醒目 */
+  letter-spacing: 2px;
 }
-.message.error {
-    color: #ff8a80;
+
+.modal-error {
+  text-align: center;
+  margin-top: 15px;
+  color: #ff8a80;
+  background: rgba(255, 138, 128, 0.15);
+  padding: 10px;
+  border-radius: 8px;
 }

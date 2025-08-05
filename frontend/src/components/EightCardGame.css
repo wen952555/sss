@@ -1,0 +1,128 @@
+/* EightCardGame.css - 新建此文件 */
+
+.eight-game-container {
+    width: 100vw;
+    max-width: 500px;
+    min-height: 100vh;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  
+  .eight-game-panel {
+    width: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    background: rgba(20, 22, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  
+  .game-header h2 {
+    flex-grow: 1;
+    text-align: center;
+    margin: 0;
+    font-size: 1.5rem;
+    color: #fff;
+    text-shadow: 0 0 8px rgba(228, 90, 232, 0.5);
+  }
+  
+  .quit-button {
+    background: rgba(231, 76, 60, 0.7);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .quit-button:hover {
+    background: rgba(231, 76, 60, 1);
+  }
+  
+  .lanes-area {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .game-actions-new {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+  }
+  
+  .action-button-new {
+    flex: 1;
+    padding: 14px 0;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .action-button-new:active { 
+    transform: scale(0.97);
+  }
+  .action-button-new:disabled {
+    background: #555 !important;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  
+  .action-button-new.auto-sort {
+    background: linear-gradient(45deg, #f39c12, #f1c40f);
+    color: #333;
+  }
+  .action-button-new.auto-sort:hover {
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.6);
+  }
+  
+  .action-button-new.confirm {
+    background: linear-gradient(45deg, #2ecc71, #27ae60);
+    color: #fff;
+  }
+  .action-button-new.confirm:hover {
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.6);
+  }
+  
+  
+  .error-message { 
+    text-align: center; 
+    color: #ff8a80; 
+    font-weight: bold; 
+    padding: 10px;
+    background: rgba(255, 138, 128, 0.15);
+    border-radius: 8px;
+  }
+  
+  .loading-overlay { 
+    position: absolute;
+    inset: 0;
+    background:rgba(0,0,0,0.5); 
+    color:#fff; 
+    font-size:1.2rem; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    z-index: 10;
+  }

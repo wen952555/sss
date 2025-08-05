@@ -1,128 +1,98 @@
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
+/* 使用通用的 .modal-backdrop 样式 */
+.result-modal-content {
+  /* 继承通用 .modal-content */
   width: 100%;
-  height: 100%;
-  /* 毛玻璃背景 */
-  background-color: rgba(10, 10, 20, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  max-width: 500px;
+  padding: 20px;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  color: #fff;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.modal-content {
-  /* 应用毛玻璃面板样式 */
-  background: rgba(30, 30, 45, 0.8);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  
-  width: 90%;
-  max-width: 600px;
-  padding: 30px;
-}
-
-.modal-header {
-  text-align: center;
-  margin-bottom: 25px;
-}
-
-.modal-header h2 {
-  font-size: 2rem;
+.result-modal-content h2 {
+  font-size: 1.8rem;
   margin: 0;
-  color: #48dbfb; /* 亮蓝色标题 */
-}
-
-.modal-header .score {
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.score.win {
-    color: #2ecc71; /* 绿色 */
-}
-.score.loss {
-    color: #e74c3c; /* 红色 */
-}
-.score.tie {
-    color: #f1c40f; /* 黄色 */
-}
-
-
-.comparison-area {
-  display: flex;
-  justify-content: space-around;
   text-align: center;
-  margin-bottom: 30px;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(72, 219, 251, 0.5);
 }
 
-.player-column h3 {
-  margin-bottom: 15px;
-}
-
-.result-lane {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 15px;
-    padding: 10px;
-    border-radius: 10px;
-    min-height: 80px;
-}
-
-.result-lane .lane-title {
-    font-weight: bold;
-    margin-bottom: 10px;
-}
-
-.result-lane .lane-cards {
-    display: flex;
-    justify-content: center;
-    transform: scale(0.8); /* 缩小卡片以适应空间 */
-}
-
-.vs-column {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-
-.vs-column .result-tag {
-    padding: 5px 10px;
-    border-radius: 5px;
-    color: white;
-}
-.vs-column .result-tag.win { background-color: #27ae60; }
-.vs-column .result-tag.loss { background-color: #c0392b; }
-.vs-column .result-tag.tie { background-color: #f39c12; }
-
-
-.modal-footer {
+.total-score {
   text-align: center;
-}
-
-.modal-footer button {
-  background: linear-gradient(90deg, #48dbfb, #0abde3);
-  color: white;
-  border: none;
-  padding: 15px 40px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 2.5rem;
   font-weight: bold;
-  transition: transform 0.2s, box-shadow 0.2s;
+  padding: 10px;
+  border-radius: 12px;
+}
+.total-score.win {
+  color: #2ecc71;
+  text-shadow: 0 0 15px rgba(46, 204, 113, 0.7);
+}
+.total-score.loss {
+  color: #e74c3c;
+  text-shadow: 0 0 15px rgba(231, 76, 60, 0.7);
+}
+.total-score.tie {
+  color: #f1c40f;
+  text-shadow: 0 0 15px rgba(241, 196, 15, 0.7);
 }
 
-.modal-footer button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(72, 219, 251, 0.4);
+.player-section {
+  background: rgba(0,0,0,0.2);
+  border-radius: 15px;
+  padding: 15px;
+}
+.player-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.2rem;
+  color: #a0b4d4;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 10px;
+}
+
+.lanes-area-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transform: scale(0.95); /* 稍微缩小以适应弹窗 */
+}
+
+.comparison-section {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  font-weight: bold;
+}
+.lane-result {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  width: 100px;
+  text-align: center;
+}
+.lane-result-label {
+  color: #c0d0ff;
+}
+.lane-result.win { background: rgba(46, 204, 113, 0.3); color: #b9f6ca; }
+.lane-result.loss { background: rgba(231, 76, 60, 0.3); color: #ffcdd2; }
+.lane-result.tie { background: rgba(241, 196, 15, 0.3); color: #fff59d; }
+
+.close-button {
+  padding: 15px 0;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #48dbfb;
+  color: #111;
+  margin-top: 10px;
+}
+.close-button:hover {
+  background: #6efbff;
+  box-shadow: 0 0 15px rgba(72, 219, 251, 0.6);
 }

@@ -1,39 +1,72 @@
 .lane-container {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.07);
-  border-radius: 13px;
-  min-height: 85px;
-  padding: 8px 5px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 15px;
+  min-height: 90px; /* 增加最小高度 */
+  padding: 10px;
+  gap: 10px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s;
 }
+
+.lane-container:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 .card-display-area {
   flex-grow: 1;
   display: flex;
+  align-items: center;
   min-width: 0;
-  overflow-x: auto;
-  gap: 0;
+  overflow-x: auto; /* 允许横向滚动 */
+  overflow-y: hidden;
+  padding: 5px 0;
 }
-.card-display-area > .card {
-  margin-left: -20px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+/* 隐藏滚动条 */
+.card-display-area::-webkit-scrollbar {
+    display: none;
 }
-.card-display-area > .card:first-child { margin-left: 0; }
+
+/* 改进的卡牌层叠效果 */
+.card-display-area > div { /* 直接选择 Card 组件的 div */
+  margin-left: -35px; /* 调整负边距以控制重叠 */
+  transition: transform 0.2s ease;
+  z-index: 1;
+}
+.card-display-area > div:first-child { 
+  margin-left: 0; 
+}
+.card-display-area > div:hover {
+  transform: translateY(-8px) scale(1.05);
+  z-index: 10;
+}
+.card-display-area > div.selected {
+  transform: translateY(-12px) scale(1.08);
+  box-shadow: 0 0 20px rgba(72, 219, 251, 0.8);
+  border-radius: 8px; /* 给选中发光的卡牌加个圆角 */
+  z-index: 20;
+}
+
+
 .lane-info {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-left: 12px;
-  min-width: 60px;
+  justify-content: center;
+  text-align: right;
+  min-width: 80px; /* 增加宽度 */
 }
+
 .lane-title {
-  font-size: 1.06rem;
-  font-weight: bold;
-  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #e0e0e0;
 }
+
 .lane-hand-type {
-  font-size: 0.93rem;
-  color: #f1c40f;
-  margin-top: 2px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #f1c40f; /* 醒目的金色 */
+  margin-top: 4px;
 }

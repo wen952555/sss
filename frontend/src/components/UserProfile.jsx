@@ -23,9 +23,10 @@ const UserProfile = ({ userId, user, onLogout, onTransferClick }) => {
           <span className="profile-item-label">注册时间</span>
           <span className="profile-item-value">{user.created_at}</span>
         </div>
-        <div style={{ marginTop: 30, display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <button onClick={onTransferClick} className="action-btn transfer">赠送积分</button>
-          <button onClick={onLogout} className="action-btn logout" style={{ background: '#e74c3c', color: '#fff' }}>退出登录</button>
+        {/* 使用新的按钮容器和样式类 */}
+        <div className="user-profile-btns">
+          <button onClick={onTransferClick} className="transfer">赠送积分</button>
+          <button onClick={onLogout} className="logout">退出登录</button>
         </div>
       </div>
     </div>
