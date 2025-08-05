@@ -1,109 +1,106 @@
-/* GameResultModal.css (四牌组网格布局最终版) */
+/* GameResultModal.css (金字塔堆叠修正版) */
 
-.fullscreen-modal {
-  padding: 0;
-  align-items: stretch;
-  justify-content: stretch;
-}
-
-.result-modal-panel {
+.result-modal-content {
   width: 100%;
-  max-width: none;
-  height: 100%;
-  max-height: none;
-  border-radius: 0;
+  max-width: 450px; /* 稍微增大宽度以容纳牌组 */
   padding: 15px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background: rgba(230, 240, 255, 0.85);
-  backdrop-filter: blur(25px) saturate(150%);
-  -webkit-backdrop-filter: blur(25px) saturate(150%);
-  border: none;
-  box-shadow: none;
-  overflow-y: auto; /* 当内容超高时允许滚动 */
+  gap: 12px; /* 减小间距 */
 }
 
+/* 模拟游戏顶栏 */
 .modal-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 5px;
-  flex-shrink: 0;
 }
 .modal-title {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #1a2a6c;
 }
+.modal-quit-btn, .modal-score-box {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #2c3e50;
+  border: none;
+  cursor: pointer;
+}
+
+/* 模拟玩家状态栏 */
+.modal-players-status-bar {
+  display: flex;
+  justify-content: space-around;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 8px;
+  gap: 8px;
+}
+.modal-player-status-item {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  color: #3b3b8e;
+}
+.modal-player-status-item.you {
+  background: rgba(52, 152, 219, 0.2);
+  color: #1a2a6c;
+  border-radius: 8px;
+  padding: 4px 0;
+}
+
 
 .total-score {
-  font-size: 2rem;
+  text-align: center;
+  font-size: 2.5rem;
   font-weight: bold;
+  margin: 5px 0;
 }
 .total-score.win { color: #27ae60; }
 .total-score.loss { color: #c0392b; }
 .total-score.tie { color: #f39c12; }
 
-/* --- 核心修改：所有玩家牌组的网格布局 --- */
-.all-players-hands-grid {
-  flex-grow: 1; /* 占据主要空间 */
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2x2 网格 */
-  grid-template-rows: repeat(2, 1fr);
-  gap: 10px;
-  padding: 5px 0;
+/* 牌组展示区 */
+.player-hand-display-area {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 单个玩家的牌组包裹器 */
-.result-player-hand-wrapper {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  display: flex;
-  flex-direction: column;
-}
-.result-player-hand-wrapper.you {
-  border-color: #3498db;
-  box-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
-}
-
-.result-player-name {
-  text-align: center;
-  font-weight: 600;
+.hand-title {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
   color: #3b3b8e;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-}
-.result-player-hand-wrapper.you .result-player-name {
-  color: #1a2a6c;
-  font-weight: 700;
+  text-align: center;
 }
 
-
-/* 金字塔布局容器 */
+/* --- 核心修正：金字塔布局容器 --- */
 .result-hand-container {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px; /* 减小行间距 */
-  flex-grow: 1;
-  justify-content: center;
+  flex-direction: column; /* 垂直排列每一行 */
+  align-items: flex-start; /* **所有行向左对齐** */
+  gap: 4px; /* 行间距 */
 }
 
 .result-cards-row {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-start; /* 行内卡牌向左对齐 */
   width: 100%;
 }
 
-/* 缩小卡牌以适应网格空间 */
+/* 缩小卡牌以适应弹窗空间 */
 .result-cards-row .card {
-  transform: scale(0.65); /* 显著缩小卡牌 */
+  transform: scale(0.8);
   transform-origin: top left;
-  margin-right: -25px; /* 调整卡牌间距 */
+  margin-right: -15px; /* 卡牌间距 */
 }
+
 
 .close-button {
   padding: 14px 0;
@@ -117,7 +114,6 @@
   color: white;
   box-shadow: 0 4px 15px rgba(106, 130, 251, 0.3);
   margin-top: 5px;
-  flex-shrink: 0;
 }
 .close-button:hover {
   transform: translateY(-2px);
