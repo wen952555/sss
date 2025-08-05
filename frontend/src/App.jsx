@@ -71,6 +71,9 @@ function App() {
   };
 
   const handleSelectGame = async (gameType, isTrial) => {
+    // 清除上一次可能存在的错误信息
+    setGameState(prev => ({ ...prev, error: null }));
+    
     const playerCount = isTrial ? 4 : 1;
     const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
     const params = `players=${playerCount}&cards=${cardsPerPlayer}&game=${gameType}`;
@@ -84,21 +87,35 @@ function App() {
       const data = await response.json();
 
       if (data.success && data.hands && typeof data.hands === 'object' && Object.keys(data.hands).length > 0) {
-        // --- 核心修正：不再依赖写死的 '玩家 1' 键名 ---
-        const handKeys = Object.keys(data.hands);
-        const playerHandKey = handKeys[0]; // 默认取第一个作为玩家手牌
-        
-        const playerHand = data.hands[playerHandKey];
+        // --- 核心修正：使用稳定可靠的逻辑获取玩家手牌 ---
+        let playerHand;
+        let playerHandKey;
+
+        if (data.hands['玩家 1']) {
+          // 优先使用 '玩家 1'，和您原始逻辑一致，最稳定
+          playerHandKey = '玩家 1';
+        } else {
+          // 如果 '玩家 1' 不存在（作为备用方案），则取返回的第一个手牌
+          playerHandKey = Object.keys(data.hands)[0];
+        }
+
+        playerHand = data.hands[playerHandKey];
         delete data.hands[playerHandKey]; // 从牌堆中移除玩家手牌
         const aiPlayers = data.hands; // 剩下的都是AI手牌
 
         setGameState({ gameType, hand: playerHand, otherPlayers: aiPlayers, error: null });
         // --- 修正结束 ---
+
       } else {
         setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message || '获取牌局数据失败，或返回数据为空。' });
       }
     } catch (err) {
-      setGameState({ gameType: null, hand: null, otherPlayers: {}, error: `网络请求失败，请检查网络连接或稍后再试。(${err.message})` });
+      // 对 JSON 解析错误进行特殊处理
+      if (err instanceof SyntaxError) {
+        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: '服务器响应格式错误，不是有效的JSON。请检查后端API或部署配置。' });
+      } else {
+        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: `网络请求失败，请检查网络连接。(${err.message})` });
+      }
     }
   };
 
@@ -121,6 +138,7 @@ function App() {
   const isInGame = gameState.gameType && Array.isArray(gameState.hand);
 
   const renderMainContent = () => {
+    // 优先渲染游戏组件
     if (isInGame) {
       const gameProps = {
         playerHand: gameState.hand,
@@ -134,39 +152,23 @@ function App() {
         return <EightCardGame {...gameProps} />;
       }
     }
+
+    // 如果有错误信息，则在主内容区显示错误
+    if (gameState.error) {
+        return <p className="error-message" style={{ margin: '20px', padding: '15px', textAlign: 'center' }}>{gameState.error}</p>;
+    }
+    
+    // 根据视图渲染其他组件
     if (showTransfer && user) {
-      return (
-        <TransferPoints
-          fromId={user.id}
-          onClose={() => setShowTransfer(false)}
-          onSuccess={handleTransferSuccess}
-        />
-      );
+      return <TransferPoints fromId={user.id} onClose={() => setShowTransfer(false)} onSuccess={handleTransferSuccess} />;
     }
     switch (currentView) {
       case 'profile':
-        return (
-          <UserProfile
-            userId={user.id}
-            user={user}
-            onLogout={handleLogout}
-            onTransferClick={() => setShowTransfer(true)}
-          />
-        );
+        return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} />;
       case 'transfer':
-        return (
-          <TransferPoints
-            fromId={user.id}
-            onClose={() => setCurrentView('profile')}
-            onSuccess={handleTransferSuccess}
-          />
-        );
+        return <TransferPoints fromId={user.id} onClose={() => setCurrentView('profile')} onSuccess={handleTransferSuccess} />;
       case 'lobby':
       default:
-        // 如果有错误信息，则在主内容区显示
-        if (gameState.error) {
-            return <p className="error-message">{gameState.error}</p>;
-        }
         return <GameLobby onSelectGame={handleSelectGame} />;
     }
   };
