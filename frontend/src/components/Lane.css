@@ -6,9 +6,13 @@
   min-height: 100px;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
   flex-grow: 1;
   min-height: 0;
+  
+  /* --- 核心修改：为弹起的卡牌留出空间 --- */
+  overflow: visible; 
+  padding-top: 20px;
+  margin-top: -10px;
 }
 
 .card-display-area {
@@ -18,17 +22,18 @@
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 5px 0;
+  padding-bottom: 5px; /* 防止滚动条遮挡阴影 */
 }
 .card-display-area::-webkit-scrollbar {
-    display: none;
+    height: 5px;
 }
 
 .card-display-area > div {
   margin-left: -40px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  z-index: 1;
+  z-index: 1; /* 未选中卡牌的 z-index */
   flex-shrink: 0;
+  position: relative; /* 确保 z-index 生效 */
 }
 
 .card-display-area > div:first-child { 
@@ -37,14 +42,14 @@
 
 .card-display-area > div:hover {
   transform: translateY(-10px) scale(1.05);
-  z-index: 10;
+  z-index: 10; /* 悬浮卡牌的 z-index */
 }
 
 .card-display-area > div.selected {
-  transform: translateY(-15px) scale(1.08);
-  box-shadow: 0 0 25px rgba(255, 71, 87, 0.8);
+  transform: translateY(-20px) scale(1.08); /* 弹起更高 */
+  box-shadow: 0 0 25px rgba(255, 71, 87, 0.8), 0 5px 15px rgba(0,0,0,0.2);
   border-radius: 8px;
-  z-index: 20;
+  z-index: 20; /* --- 核心修改：选中卡牌拥有最高的 z-index --- */
 }
 
 .lane-info {
