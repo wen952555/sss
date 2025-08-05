@@ -1,17 +1,32 @@
 .lobby-container {
-  width: 100%; text-align: center;
-  display: flex; flex-direction: column;
-  align-items: center; gap: 30px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px; /* 减小间距 */
+  padding: 0 5px; /* 增加左右内边距防止粘边 */
+  box-sizing: border-box;
 }
 
 .lobby-title {
-  font-size: 2.5rem; font-weight: 700;
+  font-size: 2.2rem;
+  font-weight: 700;
   color: #1a2a6c;
-  text-shadow: 0 2px 5px rgba(255,255,255,0.5);
+  text-shadow: 0 2px 5px rgba(255, 255, 255, 0.5);
+}
+
+.game-selection-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* 减小卡片间距 */
+  align-items: center;
 }
 
 .game-card {
-  width: 100%; max-width: 440px;
+  width: 100%; /* 确保卡片宽度不超过父容器 */
+  max-width: 440px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(12px) saturate(120%);
@@ -20,6 +35,7 @@
   box-shadow: 0 6px 30px 0 rgba(31, 38, 135, 0.15);
   padding: 25px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box; /* 关键：确保 padding 不会导致溢出 */
 }
 
 .game-card:hover {
@@ -28,18 +44,40 @@
 }
 
 .game-card h2 {
-  font-size: 1.5rem; color: #1a2a6c;
+  font-size: 1.5rem;
+  color: #1a2a6c;
+  margin: 0 0 10px 0;
 }
 .game-card p {
-  font-size: 1rem; color: #3b3b8e; line-height: 1.5;
+  font-size: 1rem;
+  color: #3b3b8e;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .game-card-actions {
-  margin-top: 25px; display: flex; gap: 15px;
+  margin-top: 25px;
+  display: flex;
+  gap: 15px;
+}
+.action-btn {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 12px;
+  border: none;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all .2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.action-btn:active { 
+  transform: scale(0.97);
 }
 
 .action-btn.official {
-  background: linear-gradient(45deg, #ff4e50, #f9d423); /* 橙红渐变 */
+  background: linear-gradient(45deg, #ff4e50, #f9d423);
   color: #fff;
   box-shadow: 0 4px 15px rgba(255, 78, 80, 0.3);
 }

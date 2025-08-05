@@ -4,18 +4,22 @@ import './GameResultModal.css';
 
 // 辅助组件：渲染一个玩家的完整牌组（金字塔堆叠）
 const PlayerHandDisplay = ({ hand }) => {
-  // 将手牌按头、中、尾道分组
+  if (!hand || !hand.top || !hand.middle || !hand.bottom) {
+    return null; // 防止数据不完整时报错
+  }
+
   const lanes = [hand.top, hand.middle, hand.bottom];
 
-  // 计算每行牌需要的左内边距，以实现居中对齐的金字塔效果
-  // 我们假设最长的一行（尾道）是基准
-  const baseCardWidth = 70; // 估算的卡牌在结果弹窗中的宽度
-  const baseLaneWidth = (hand.bottom.length * baseCardWidth);
-  
+  // 基础卡牌宽度估算（可根据实际效果微调）
+  const baseCardWidth = 65;
+  const baseLaneWidth = hand.bottom.length * baseCardWidth;
+
   return (
     <div className="result-hand-container">
       {lanes.map((laneCards, index) => {
-        // 计算当前行与最长行的卡牌数量差，以确定缩进
+        if (!laneCards) return null; // 再次检查，防止某一道为空
+        
+        // 动态计算内边距以实现金字塔效果
         const cardCountDifference = hand.bottom.length - laneCards.length;
         const paddingLeft = (cardCountDifference / 2) * baseCardWidth;
 
@@ -26,7 +30,7 @@ const PlayerHandDisplay = ({ hand }) => {
             style={{ paddingLeft: `${paddingLeft}px` }}
           >
             {laneCards.map((card, cardIndex) => (
-              <Card key={cardIndex} card={card} />
+              <Card key={`${card.suit}-${card.rank}-${cardIndex}`} card={card} />
             ))}
           </div>
         );
@@ -35,57 +39,63 @@ const PlayerHandDisplay = ({ hand }) => {
   );
 };
 
-const GameResultModal = ({ result, onClose }) => {
-  if (!result) return null;
-  
-  const totalScoreText = result.score > 0 ? `总分: +${result.score}` : `总分: ${result.score}`;
-  const totalScoreClass = result.score > 0 ? 'win' : (result.score < 0 ? 'loss' : 'tie');
-
-  // 渲染顶部玩家状态栏（与游戏界面一致）
-  const renderPlayerStatus = () => {
-    // 假设 '玩家 2', '玩家 3' 是AI
-    const aiPlayers = result.aiHand ? ['AI 玩家'] : [];
-    if (Object.keys(result.aiEval || {}).length > 1) { // 简易判断是否多人
-        aiPlayers.push('AI 玩家 2', 'AI 玩家 3');
-    }
-
+// 辅助组件：动态渲染玩家状态布局
+const PlayerStatusDisplay = ({ gameType }) => {
+  // 根据游戏类型决定布局
+  if (gameType === 'thirteen') {
+    // 十三张：2x2 田字格布局
     return (
-      <div className="modal-players-status-bar">
-        <div className="modal-player-status-item you">
-          <span>你</span>
-        </div>
-        {aiPlayers.map(name => (
-          <div key={name} className="modal-player-status-item">
-            <span>{name}</span>
-          </div>
-        ))}
+      <div className="players-grid-modal">
+        <div className="player-box-modal you"><span>你</span></div>
+        <div className="player-box-modal"><span>玩家 2</span></div>
+        <div className="player-box-modal"><span>玩家 3</span></div>
+        <div className="player-box-modal"><span>玩家 4</span></div>
       </div>
     );
-  };
+  } else if (gameType === 'eight') {
+    // 八张：2+2+2 紧凑布局
+    return (
+      <div className="eight-game-players-modal">
+        <div className="player-group-modal">
+          <div className="player-status-item-modal you"><span>你</span></div>
+          <div className="player-status-item-modal"><span>玩家 2</span></div>
+        </div>
+        <div className="player-group-modal">
+          <div className="player-status-item-modal"><span>玩家 3</span></div>
+          <div className="player-status-item-modal"><span>玩家 4</span></div>
+        </div>
+      </div>
+    );
+  }
+  return null; // 默认不显示
+};
+
+
+const GameResultModal = ({ result, onClose }) => {
+  if (!result || !result.playerHand) return null;
+
+  const totalScoreText = result.score > 0 ? `总分: +${result.score}` : `总分: ${result.score}`;
+  const totalScoreClass = result.score > 0 ? 'win' : (result.score < 0 ? 'loss' : 'tie');
+  
+  // 从牌组数量判断游戏类型
+  const gameType = result.playerHand.top.length === 3 ? 'thirteen' : 'eight';
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content result-modal-content">
-        {/* 模拟顶部的玩家状态栏和积分 */}
+    <div className="modal-backdrop fullscreen-modal">
+      <div className="modal-content result-modal-panel">
         <div className="modal-top-bar">
            <button className="modal-quit-btn" onClick={onClose}>退出</button>
            <div className="modal-title">比牌结果</div>
            <div className="modal-score-box">积分: 100</div>
         </div>
         
-        {renderPlayerStatus()}
+        {/* 动态渲染玩家布局 */}
+        <PlayerStatusDisplay gameType={gameType} />
 
         <div className={`total-score ${totalScoreClass}`}>{totalScoreText}</div>
 
-        {/* 你的牌 */}
-        <div className="player-hand-display-area">
-          <h3 className="hand-title">你的牌</h3>
+        <div className="result-hand-wrapper">
           <PlayerHandDisplay hand={result.playerHand} />
-        </div>
-        
-        {/* AI的牌 */}
-        <div className="player-hand-display-area">
-          <h3 className="hand-title">AI的牌</h3>
           <PlayerHandDisplay hand={result.aiHand} />
         </div>
         
