@@ -1,97 +1,57 @@
 .lobby-container {
-  width: 100%;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 30px;
+  width: 100%; text-align: center;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 30px;
 }
 
 .lobby-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 0 15px rgba(72, 219, 251, 0.6);
-}
-
-.game-selection-grid {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  align-items: center;
+  font-size: 2.5rem; font-weight: 700;
+  color: #1a2a6c;
+  text-shadow: 0 2px 5px rgba(255,255,255,0.5);
 }
 
 .game-card {
-  width: 100%;
-  max-width: 440px;
-  min-height: 200px; /* 增加高度 */
-  border-radius: 18px;
-  background: rgba(32, 38, 61, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 6px 30px 0 rgba(0,0,0,0.25);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  width: 100%; max-width: 440px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 30px 0 rgba(31, 38, 135, 0.15);
   padding: 25px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  overflow: hidden; /* 用于伪元素背景 */
-  position: relative;
 }
 
 .game-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 40px 0 rgba(0,0,0,0.3);
+  box-shadow: 0 10px 40px 0 rgba(31, 38, 135, 0.2);
 }
 
-.game-card h2 { 
-  margin: 0 0 10px 0; 
-  font-size: 1.5rem; 
-  color: #fff;
-  font-weight: 700;
+.game-card h2 {
+  font-size: 1.5rem; color: #1a2a6c;
 }
-.game-card p { 
-  margin: 0; 
-  font-size: 1rem; 
-  color: #b0c4de; 
-  line-height: 1.5;
+.game-card p {
+  font-size: 1rem; color: #3b3b8e; line-height: 1.5;
 }
 
 .game-card-actions {
-  margin-top: 25px;
-  display: flex;
-  gap: 15px;
-}
-
-.action-btn {
-  flex: 1;
-  min-height: 50px;
-  border-radius: 12px;
-  border: none;
-  font-size: 1.05rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all .2s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.action-btn:active { 
-  transform: scale(0.97);
+  margin-top: 25px; display: flex; gap: 15px;
 }
 
 .action-btn.official {
-  background: linear-gradient(45deg, #e45ae8, #7a72f8);
+  background: linear-gradient(45deg, #ff4e50, #f9d423); /* 橙红渐变 */
   color: #fff;
+  box-shadow: 0 4px 15px rgba(255, 78, 80, 0.3);
 }
 .action-btn.official:hover {
-  box-shadow: 0 0 20px rgba(228, 90, 232, 0.6);
+  box-shadow: 0 6px 20px rgba(255, 78, 80, 0.4);
 }
 
 .action-btn.trial {
   background: rgba(255, 255, 255, 0.9);
-  color: #1a1a2e;
+  color: #333;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 .action-btn.trial:hover {
-  background: #fff;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }

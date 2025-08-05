@@ -1,195 +1,144 @@
-/* --- 通用毛玻璃面板样式 (Glassmorphism Panel) --- */
+/* --- 全局毛玻璃面板样式 (Crystal Panel) --- */
 .glass-panel {
-  background: rgba(25, 28, 48, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  padding: 25px; /* 减小内边距 */
+  background: rgba(255, 255, 255, 0.5); /* --- 核心修改：使用白色半透明背景 --- */
+  backdrop-filter: blur(15px) saturate(150%);
+  -webkit-backdrop-filter: blur(15px) saturate(150%);
+  border-radius: 24px; /* 增大圆角 */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2); /* 柔和的阴影 */
+  padding: 25px;
   box-sizing: border-box;
 }
 
-/* --- 主应用布局 (核心修改) --- */
+/* --- 主应用布局 --- */
 .app {
-  height: 100vh;
-  max-height: 100vh;
+  height: 100vh; max-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: none;
   padding: 10px;
   box-sizing: border-box;
-  overflow: hidden; /* 防止子元素溢出 */
+  overflow: hidden;
 }
 
 .app-main {
-  flex: 1; /* 占据剩余所有空间 */
-  width: 100%;
+  flex: 1; width: 100%;
   max-width: 500px;
-  min-height: 0; /* flexbox 子项必须 */
-  display: flex;
-  flex-direction: column;
+  min-height: 0;
+  display: flex; flex-direction: column;
   align-items: center;
-  justify-content: center; /* 内容区内容垂直居中 */
+  justify-content: center;
   overflow: hidden;
-  padding: 15px 0; /* 调整内边距 */
+  padding: 15px 0;
 }
 
 
 /* --- 顶部横幅 --- */
 .top-banner {
-  width: 100%;
-  max-width: 500px;
-  margin-bottom: 15px; /* 减小间距 */
-  padding: 15px;
-  border-radius: 18px;
-  background: rgba(30, 35, 60, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  width: 100%; max-width: 500px;
+  margin-bottom: 15px; padding: 15px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 12px;
 }
 
 .banner-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px rgba(72, 219, 251, 0.5);
+  font-size: 1.5rem; font-weight: 700;
+  color: #1a2a6c; /* 深蓝色标题 */
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 .banner-welcome {
-  font-size: 0.95rem;
-  color: #b0c4de;
+  font-size: 1rem;
+  color: #3b3b8e;
 }
 
 .banner-actions {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
+  width: 100%; display: flex;
+  justify-content: center; gap: 10px;
 }
 
-/* --- 通用操作按钮样式 --- */
+/* --- 全局明亮按钮 --- */
 .action-button, .banner-btn {
-  flex: 1;
-  padding: 10px 15px; /* 减小按钮 padding */
-  font-size: 0.95rem; /* 减小字体 */
-  font-weight: 500;
-  border-radius: 10px;
-  border: 1px solid transparent;
+  flex: 1; padding: 12px 15px;
+  font-size: 0.95rem; font-weight: 600; /* 加粗 */
+  border-radius: 12px;
+  border: none;
   cursor: pointer;
   transition: all 0.25s ease;
   text-align: center;
-}
-
-.action-button.primary, .banner-btn {
-  background: rgba(72, 219, 251, 0.15);
-  border-color: rgba(72, 219, 251, 0.7);
   color: #fff;
+  background: linear-gradient(45deg, #2980b9, #2c3e50); /* 深蓝渐变 */
+  box-shadow: 0 4px 15px rgba(44, 62, 80, 0.2);
 }
 
-.action-button.primary:hover, .banner-btn:hover {
-  background: rgba(72, 219, 251, 0.3);
-  box-shadow: 0 0 15px rgba(72, 219, 251, 0.5);
-  transform: translateY(-2px);
+.action-button:hover, .banner-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(44, 62, 80, 0.3);
 }
-.action-button.primary:active, .banner-btn:active {
+.action-button:active, .banner-btn:active {
   transform: scale(0.96);
 }
 
-.action-button.secondary {
-  background: rgba(228, 90, 232, 0.15);
-  border-color: rgba(228, 90, 232, 0.7);
-  color: #fff;
-}
-.action-button.secondary:hover {
-  background: rgba(228, 90, 232, 0.3);
-  box-shadow: 0 0 15px rgba(228, 90, 232, 0.5);
-  transform: translateY(-2px);
-}
-
-/* --- 通用弹窗 (Modal) 样式 --- */
+/* --- 全局弹窗 --- */
 .modal-backdrop {
-  position: fixed;
-  z-index: 1100;
-  inset: 0;
-  background: rgba(10, 12, 20, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 15px; /* 调整内边距 */
+  position: fixed; z-index: 1100; inset: 0;
+  background: rgba(255, 255, 255, 0.2); /* 浅色遮罩 */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 15px;
 }
 
 .modal-content {
-  width: 100%;
-  max-width: 400px;
-  max-height: 90vh; /* 弹窗最大高度 */
-  overflow-y: auto; /* 内容超长时，弹窗内部允许滚动 */
-  border-radius: 18px;
-  background: rgba(35, 40, 70, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 40px rgba(0,0,0,.4);
+  width: 100%; max-width: 400px;
+  max-height: 90vh; overflow-y: auto;
+  /* 应用全局毛玻璃效果 */
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
   padding: 25px;
-  color: #e0e0e0;
+  color: #2c3e50; /* 深色文字 */
 }
 
 .modal-content h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 1.3rem;
-  color: #48dbfb;
+  margin: 0 0 15px 0; font-size: 1.4rem; font-weight: 700;
+  color: #1a2a6c;
   text-align: center;
 }
 
-.release-notes ul {
-  padding-left: 20px;
-  margin: 10px 0;
-}
 .release-notes li {
-  margin-bottom: 8px;
-  color: #c0d0ff;
-  font-size: 0.9rem;
+  margin-bottom: 8px; color: #3b3b8e; font-size: 0.95rem;
 }
 
 .modal-actions {
-  margin-top: 20px;
-  display: flex;
-  gap: 15px;
+  margin-top: 20px; display: flex; gap: 15px;
 }
 
 .modal-actions button {
-  flex: 1;
-  padding: 12px 0;
-  border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  flex: 1; padding: 13px 0; border: none;
+  border-radius: 12px; font-size: 1rem; font-weight: bold;
+  cursor: pointer; transition: all 0.2s ease;
 }
-.modal-actions button:active {
-  transform: scale(0.97);
-}
+.modal-actions button:active { transform: scale(0.97); }
 
 .cancel-btn {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
 }
-.cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
+.cancel-btn:hover { background: rgba(0, 0, 0, 0.15); }
 
 .update-btn {
-  background: #48dbfb;
-  color: #111;
+  background: #ff4757; /* 鲜艳的红色 */
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
 }
-.update-btn:hover {
-  background: #6efbff;
-  box-shadow: 0 0 12px rgba(72, 219, 251, 0.6);
-}
+.update-btn:hover { box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4); transform: translateY(-2px); }

@@ -1,70 +1,19 @@
 .lane-container {
-  display: flex;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 12px; /* 稍微减小圆角 */
-  min-height: 80px; /* 减小最小高度 */
-  padding: 8px;
-  gap: 8px;
-  border: 1px solid transparent;
-  transition: border-color 0.2s;
+  background: rgba(255, 255, 255, 0.2); /* 浅色半透明 */
+  border-radius: 16px; min-height: 85px;
+  padding: 10px; border: 1px solid rgba(255,255,255,0.1);
 }
 
-.lane-container:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.card-display-area {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 5px 0;
-}
-.card-display-area::-webkit-scrollbar {
-    display: none;
-}
-
-/* 调整卡牌层叠效果 */
-.card-display-area > div {
-  margin-left: -45px; /* ---核心修改：增加负边距，让牌叠得更紧凑--- */
-  transition: transform 0.2s ease;
-  z-index: 1;
-}
-.card-display-area > div:first-child { 
-  margin-left: 0; 
-}
-.card-display-area > div:hover {
-  transform: translateY(-8px) scale(1.05);
-  z-index: 10;
-}
 .card-display-area > div.selected {
-  transform: translateY(-12px) scale(1.08);
-  box-shadow: 0 0 20px rgba(72, 219, 251, 0.8);
-  border-radius: 8px;
-  z-index: 20;
+  box-shadow: 0 0 25px rgba(255, 71, 87, 0.8); /* 鲜艳的粉红色辉光 */
 }
 
-.lane-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end; /* 右对齐 */
-  justify-content: center;
-  text-align: right;
-  min-width: 70px;
-}
+.lane-info { min-width: 75px; }
 
 .lane-title {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #e0e0e0;
+  color: #2c3e50; font-weight: 600;
 }
 
 .lane-hand-type {
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: #f1c40f;
-  margin-top: 4px;
+  color: #e74c3c; font-weight: 700; /* 鲜红色牌型 */
 }

@@ -1,127 +1,77 @@
-/* 样式与 ThirteenGame.css 非常相似，但为分离关注点而独立 */
-.eight-game-container {
-  width: 100%;
-  height: 100%;
-  padding: 5px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+/* --- 替换 ThirteenGame.css 和 EightCardGame.css --- */
+.table-root, .eight-game-container {
+  width: 100%; height: 100%;
+  padding: 10px; /* 稍微增大边距 */
+  display: flex; flex-direction: column;
+  justify-content: center; box-sizing: border-box;
+}
+
+.table-panel, .eight-game-panel {
+  width: 100%; padding: 20px;
+  /* 应用水晶毛玻璃效果 */
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  display: flex; flex-direction: column;
+  gap: 15px; position: relative;
   box-sizing: border-box;
 }
 
-.eight-game-panel {
-  width: 100%;
-  padding: 15px;
-  border-radius: 20px;
-  background: rgba(20, 22, 40, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: relative;
+.table-top-bar, .game-header {
+  display: flex; justify-content: space-between; align-items: center;
 }
-
-.game-header {
-  display: flex;
-  align-items: center;
+.eight-game-panel .game-header {
   justify-content: space-between;
 }
 
-.game-header h2 {
-  flex-grow: 1;
-  text-align: center;
-  margin: 0;
-  font-size: 1.4rem;
-  color: #fff;
-  text-shadow: 0 0 8px rgba(228, 90, 232, 0.5);
+.table-quit-btn, .quit-button {
+  background: rgba(231, 76, 60, 0.8);
+  color: #fff; border: none;
+  border-radius: 10px; padding: 8px 16px;
+  font-size: 0.9rem; font-weight: bold; cursor: pointer;
+  box-shadow: 0 2px 10px rgba(231, 76, 60, 0.3);
+}
+.table-quit-btn:hover, .quit-button:hover {
+  background: #e74c3c;
 }
 
-.quit-button {
-  background: rgba(231, 76, 60, 0.7);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  cursor: pointer;
+.table-score-box {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px 16px; border-radius: 10px;
+  color: #2c3e50; font-weight: bold;
 }
 
-/* --- 2x2 玩家网格 (与ThirteenGame共享样式) --- */
-.players-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+/* 玩家网格 */
+.players-grid, .player-box {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px; padding: 10px;
+  color: #3b3b8e;
 }
-.player-box {
-  background: rgba(0,0,0,0.2);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  padding: 8px;
-  text-align: center;
-  color: #a0b4d4;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 50px;
-}
-.player-name { font-size: 0.9rem; font-weight: 500; }
-.player-box.you { border-color: #48dbfb; color: #fff; }
-.player-box.you .player-name { font-weight: bold; }
-.player-status { margin-top: 4px; font-size: 0.75rem; }
-.player-box.ready .player-status { color: #2ecc71; }
-.player-box.you .player-status { color: #f1c40f; }
-
-.lanes-area {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.player-box.you {
+  border-color: #3498db; background: rgba(52, 152, 219, 0.2);
+  color: #1a2a6c;
 }
 
-.game-actions-new {
-  display: flex;
-  gap: 12px;
-  margin-top: 5px;
-}
+/* 牌道 */
+.table-lanes-area { gap: 12px; }
 
-.action-button-new {
-  flex: 1;
-  padding: 12px 0;
-  border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.action-button-new:active { 
-  transform: scale(0.97);
-}
-.action-button-new:disabled {
-  background: #555 !important;
-  color: #999;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.action-button-new.auto-sort {
-  background: linear-gradient(45deg, #f39c12, #f1c40f);
-  color: #333;
-}
-.action-button-new.confirm {
-  background: linear-gradient(45deg, #2ecc71, #27ae60);
+/* 按钮 */
+.action-btn.orange, .action-button-new.auto-sort {
+  background: linear-gradient(45deg, #f39c12, #fd79a8); /* 黄色到粉色 */
   color: #fff;
 }
-
-.error-message { 
-  text-align: center; color: #ff8a80; font-weight: bold; padding: 8px;
-  background: rgba(255, 138, 128, 0.15); border-radius: 8px; font-size: 0.9rem;
+.action-btn.green, .action-button-new.confirm {
+  background: linear-gradient(45deg, #00b894, #00cec9); /* 鲜绿色 */
+  color: #fff;
 }
-.loading-overlay { 
-  position: absolute; inset: 0; background:rgba(0,0,0,0.6); color:#fff;
-  font-size:1.2rem; display: flex; align-items: center; justify-content: center;
-  border-radius: 20px; z-index: 10;
+.action-btn:disabled, .action-button-new:disabled {
+  background: #bdc3c7 !important; color: #7f8c8d !important;
+}
+
+.error-message {
+  color: #c0392b; background: rgba(231, 76, 60, 0.1);
 }

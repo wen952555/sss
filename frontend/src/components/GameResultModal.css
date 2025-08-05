@@ -1,96 +1,22 @@
-/* GameResultModal.css */
-.modal-backdrop {
-  /* ... (继承自 App.css) */
-}
-
 .result-modal-content {
-  width: 100%;
-  max-width: 420px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px; /* 减小间距 */
+  gap: 20px; /* 增大间距 */
 }
 
-.result-modal-content h2 {
-  font-size: 1.6rem;
-  margin: 0;
-  text-align: center;
-  color: #fff;
-  text-shadow: 0 0 10px rgba(72, 219, 251, 0.5);
-}
+.total-score.win { color: #27ae60; }
+.total-score.loss { color: #c0392b; }
+.total-score.tie { color: #f39c12; }
 
-.total-score {
-  text-align: center;
-  font-size: 2.2rem;
-  font-weight: bold;
-  padding: 5px;
-}
-.total-score.win {
-  color: #2ecc71; text-shadow: 0 0 15px rgba(46, 204, 113, 0.7);
-}
-.total-score.loss {
-  color: #e74c3c; text-shadow: 0 0 15px rgba(231, 76, 60, 0.7);
-}
-.total-score.tie {
-  color: #f1c40f; text-shadow: 0 0 15px rgba(241, 196, 15, 0.7);
-}
-
-/* --- 核心修改：堆叠牌组样式 --- */
 .player-hand-stack {
-  background: rgba(0,0,0,0.2);
-  border-radius: 15px;
-  padding: 15px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 15px; border: 1px solid rgba(255,255,255,0.1);
 }
-
 .player-hand-stack h3 {
-  margin: 0 0 10px 0;
-  font-size: 1.1rem;
-  color: #a0b4d4;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  padding-bottom: 8px;
+  color: #3b3b8e; border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
-
-.stacked-cards-container {
-  position: relative;
-  min-height: 120px; /* 给予足够空间防止塌陷 */
-}
-
-.stacked-cards-row {
-  display: flex;
-  position: absolute;
-  left: 0; /* 所有行都向左对齐 */
-}
-
-/* 每一行卡牌的垂直位置 */
-.stacked-cards-row:nth-child(1) { top: 0; z-index: 3; }
-.stacked-cards-row:nth-child(2) { top: 25px; z-index: 2; } /* 核心：垂直偏移 */
-.stacked-cards-row:nth-child(3) { top: 50px; z-index: 1; }
-
-/* 堆叠的卡牌样式 */
-.stacked-cards-row .card {
-  margin-left: -48px; /* 核心：水平负边距，实现堆叠 */
-  transform: scale(0.85); /* 缩小卡牌以适应空间 */
-  transform-origin: top left;
-}
-.stacked-cards-row .card:first-child {
-  margin-left: 0;
-}
-
 
 .close-button {
-  padding: 14px 0;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: #48dbfb;
-  color: #111;
-  margin-top: 10px;
-}
-.close-button:hover {
-  background: #6efbff;
-  box-shadow: 0 0 15px rgba(72, 219, 251, 0.6);
+  background: linear-gradient(45deg, #6a82fb, #fc5c7d); /* 蓝到粉渐变 */
+  color: white;
+  box-shadow: 0 4px 15px rgba(106, 130, 251, 0.3);
 }

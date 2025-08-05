@@ -7,6 +7,8 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // --- 核心修正：确保这一行代码存在 ---
   const [step, setStep] = useState(1); // 1: 查找, 2: 确认赠送
 
   const handleFindUser = async () => {
@@ -77,7 +79,7 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
             </button>
           </div>
         )}
-        {step === 2 && foundUserId && ( // 增加 foundUserId 的检查
+        {step === 2 && foundUserId && (
           <div className="step-content">
             <div className="confirmation-box">
               请确认接收方ID的最后两位是否为：
@@ -102,5 +104,4 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
   );
 };
 
-// --- 核心修正：移除了错误的 ` (反引号) ---
 export default TransferPoints;
