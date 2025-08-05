@@ -7,8 +7,6 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  // --- 核心修正：重新添加 step 状态的定义 ---
   const [step, setStep] = useState(1); // 1: 查找, 2: 确认赠送
 
   const handleFindUser = async () => {
@@ -36,14 +34,15 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
   };
 
   const handleTransfer = async () => {
-    if (amount <= 0) return setError('请输入有效的积分数量。');
+    const parsedAmount = parseInt(amount, 10);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) return setError('请输入有效的积分数量。');
     setIsLoading(true);
     setError('');
     try {
       const response = await fetch('/api/transfer_points.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromId, toId: foundUserId, amount: parseInt(amount) }),
+        body: JSON.stringify({ fromId, toId: foundUserId, amount: parsedAmount }),
       });
       const data = await response.json();
       if (data.success) {
@@ -78,7 +77,7 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
             </button>
           </div>
         )}
-        {step === 2 && (
+        {step === 2 && foundUserId && ( // 增加 foundUserId 的检查
           <div className="step-content">
             <div className="confirmation-box">
               请确认接收方ID的最后两位是否为：
@@ -103,4 +102,5 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
   );
 };
 
-export `default` TransferPoints;
+// --- 核心修正：移除了错误的 ` (反引号) ---
+export default TransferPoints;
