@@ -84,9 +84,9 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     newMiddleLane = removeSelected(newMiddleLane);
     newBottomLane = removeSelected(newBottomLane);
     
-    const allCards = [...newTopLane, ...newMiddleLane, ...newBottomLane, ...lanes[targetLaneName]];
+    // 将选中的牌加入目标牌墩
     const updatedTargetLane = [...lanes[targetLaneName], ...selectedCards]
-        .filter(c => !allCards.includes(c))
+        .filter(card => !selectedCards.some(selected => areCardsEqual(selected, card)))
         .concat(selectedCards);
 
     if (targetLaneName === 'top') setTopLane(sortCards(updatedTargetLane));
@@ -96,13 +96,12 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setSelectedCards([]);
   };
 
-  // --- 添加的功能函数 ---
   const handleAutoSort = () => {
     const allCards = sortCards([...topLane, ...middleLane, ...bottomLane]);
     setTopLane(allCards.slice(0, 2));
     setMiddleLane(allCards.slice(2, 5));
     setBottomLane(allCards.slice(5, 8));
-    alert('已为您进行基础排序，请检查牌型是否最优！');
+    // --- ↓↓↓ 已删除这里的 alert 语句 ↓↓↓ ---
   };
 
   const handleConfirm = async () => {
@@ -136,7 +135,6 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setGameResult(null);
     onBackToLobby();
   };
-  // --- 功能函数添加完毕 ---
 
   return (
     <div className="eight-game-container">
@@ -176,14 +174,12 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
           />
         </div>
 
-        {/* --- 恢复的JSX代码 --- */}
         {isInvalid && <p className="error-message">牌型不符合规则！(尾道 ≥ 中道 ≥ 头道)</p>}
 
         <div className="game-actions-new">
           <button onClick={handleAutoSort} className="action-button-new auto-sort">自动理牌</button>
           <button onClick={handleConfirm} disabled={isInvalid || isLoading} className="action-button-new confirm">确认牌型</button>
         </div>
-        {/* --- JSX恢复完毕 --- */}
       </div>
       {isLoading && <div className="loading-overlay">正在比牌...</div>}
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
