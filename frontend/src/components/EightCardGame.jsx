@@ -11,10 +11,13 @@ const areCardsEqual = (card1, card2) => {
 };
 
 const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
-  // --- 核心修正 1：牌的初始状态 ---
-  const [topLane, setTopLane] = useState([]);
-  const [middleLane, setMiddleLane] = useState([]);
-  const [bottomLane, setBottomLane] = useState(sortCards(playerHand || []));
+  const LANE_LIMITS = { top: 2, middle: 3, bottom: 3 };
+
+  // --- 核心修正 1：恢复您期望的初始发牌逻辑 ---
+  const initialSortedHand = sortCards(playerHand || []);
+  const [topLane, setTopLane] = useState(initialSortedHand.slice(0, LANE_LIMITS.top));
+  const [middleLane, setMiddleLane] = useState(initialSortedHand.slice(LANE_LIMITS.top, LANE_LIMITS.top + LANE_LIMITS.middle));
+  const [bottomLane, setBottomLane] = useState(initialSortedHand.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
 
   const [selectedCards, setSelectedCards] = useState([]);
   const [topLaneHand, setTopLaneHand] = useState(null);
@@ -24,12 +27,10 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [gameResult, setGameResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const LANE_LIMITS = { top: 2, middle: 3, bottom: 3 };
-
-  // --- 核心修正 2：更严谨的按钮禁用逻辑 ---
   const allLanesFilled = topLane.length === LANE_LIMITS.top &&
                          middleLane.length === LANE_LIMITS.middle &&
                          bottomLane.length === LANE_LIMITS.bottom;
+
   const isConfirmDisabled = isLoading || !allLanesFilled || isInvalid;
 
   useEffect(() => {
@@ -37,18 +38,12 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
       const topEval = evaluateHand(topLane);
       const middleEval = evaluateHand(middleLane);
       const bottomEval = evaluateHand(bottomLane);
-
       setTopLaneHand(topEval);
       setMiddleLaneHand(middleEval);
       setBottomLaneHand(bottomEval);
-
       const middleVsTop = compareHands(middleEval, topEval);
       const bottomVsMiddle = compareHands(bottomEval, middleEval);
-      if (middleVsTop < 0 || bottomVsMiddle < 0) {
-        setIsInvalid(true);
-      } else {
-        setIsInvalid(false);
-      }
+      setIsInvalid(middleVsTop < 0 || bottomVsMiddle < 0);
     } else {
       setIsInvalid(false);
       setTopLaneHand(null);
@@ -70,29 +65,24 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
 
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
-
+    
     const removeSelected = (lane) => lane.filter(card => !selectedCards.some(selected => areCardsEqual(selected, card)));
-    const newTop = removeSelected(topLane);
-    const newMiddle = removeSelected(middleLane);
-    const newBottom = removeSelected(bottomLane);
+    let newTop = removeSelected(topLane);
+    let newMiddle = removeSelected(middleLane);
+    let newBottom = removeSelected(bottomLane);
 
-    const lanes = { top: newTop, middle: newMiddle, bottom: newBottom };
+    if (targetLaneName === 'top') newTop = [...newTop, ...selectedCards];
+    else if (targetLaneName === 'middle') newMiddle = [...newMiddle, ...selectedCards];
+    else if (targetLaneName === 'bottom') newBottom = [...newBottom, ...selectedCards];
 
-    if (lanes[targetLaneName].length + selectedCards.length > LANE_LIMITS[targetLaneName]) {
-      alert('空间不足，无法放入所选的牌！');
-      return;
+    if (newTop.length > LANE_LIMITS.top || newMiddle.length > LANE_LIMITS.middle || newBottom.length > LANE_LIMITS.bottom) {
+        alert('空间不足，无法放入所选的牌！');
+        return;
     }
-    
-    const updatedTargetLane = sortCards([...lanes[targetLaneName], ...selectedCards]);
 
-    if (targetLaneName === 'top') setTopLane(updatedTargetLane);
-    if (targetLaneName === 'middle') setMiddleLane(updatedTargetLane);
-    if (targetLaneName === 'bottom') setBottomLane(updatedTargetLane);
-    
-    if (targetLaneName !== 'top') setTopLane(newTop);
-    if (targetLaneName !== 'middle') setMiddleLane(newMiddle);
-    if (targetLaneName !== 'bottom') setBottomLane(newBottom);
-    
+    setTopLane(sortCards(newTop));
+    setMiddleLane(sortCards(newMiddle));
+    setBottomLane(sortCards(newBottom));
     setSelectedCards([]);
   };
 
@@ -108,18 +98,18 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
 
     setIsLoading(true);
     setTimeout(() => {
-        const aiHand = {
-            top: otherPlayers['玩家 2']?.slice(0, 2),
-            middle: otherPlayers['玩家 2']?.slice(2, 5),
-            bottom: otherPlayers['玩家 2']?.slice(5, 8),
-        };
-        const result = {
-            playerHand: { top: topLane, middle: middleLane, bottom: bottomLane },
-            aiHand: aiHand,
-            score: Math.floor(Math.random() * 11) - 5,
-        };
-        setGameResult(result);
-        setIsLoading(false);
+      const aiHand = {
+        top: otherPlayers['玩家 2']?.slice(0, 2) || [],
+        middle: otherPlayers['玩家 2']?.slice(2, 5) || [],
+        bottom: otherPlayers['玩家 2']?.slice(5, 8) || [],
+      };
+      const result = {
+        playerHand: { top: topLane, middle: middleLane, bottom: bottomLane },
+        aiHand: aiHand,
+        score: Math.floor(Math.random() * 11) - 5,
+      };
+      setGameResult(result);
+      setIsLoading(false);
     }, 1500);
   };
   
@@ -135,27 +125,22 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
           <button onClick={onBackToLobby} className="quit-button">退出游戏</button>
           <h2>急速八张</h2>
         </div>
-
         <div className="eight-game-players">
           <div className="player-group">
             <div className="player-status-item you"><span className="player-name">你</span><span className="status-text">理牌中...</span></div>
             {Object.keys(otherPlayers).map(name => (
-                <div key={name} className="player-status-item ready"><span className="player-name">{name}</span><span className="status-text">已准备</span></div>
+              <div key={name} className="player-status-item ready"><span className="player-name">{name}</span><span className="status-text">已准备</span></div>
             ))}
           </div>
         </div>
-
         <div className="lanes-area">
           <Lane title="头道" cards={topLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} handType={topLaneHand?.name} />
           <Lane title="中道" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} handType={middleLaneHand?.name} />
           <Lane title="尾道" cards={bottomLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('bottom')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} handType={bottomLaneHand?.name} />
         </div>
-
         {isInvalid && <p className="error-message">牌型不符合规则！(尾道 ≥ 中道 ≥ 头道)</p>}
-
         <div className="game-actions-new">
           <button onClick={handleAutoSort} className="action-button-new auto-sort">自动理牌</button>
-          {/* --- 核心修正 3：使用新的禁用逻辑 --- */}
           <button onClick={handleConfirm} disabled={isConfirmDisabled} className="action-button-new confirm">确认牌型</button>
         </div>
       </div>
