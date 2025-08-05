@@ -1,14 +1,12 @@
 .lane-container {
   display: flex;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.2);
-  padding: 24px 10px;          /* 高度提升，padding变大 */
-  border-radius: 16px;
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 8px;
   min-width: 0;
   overflow-x: auto;
-  min-height: 135px;           /* 新增，提升牌墩容器高度 */
+  min-height: 60px;
 }
 
 .card-display-area {
@@ -16,15 +14,17 @@
   display: flex;
   min-width: 0;
   overflow-x: auto;
-  padding-left: 18px;
+  padding-left: 0;
 }
 
-/* 卡牌重叠 */
 .card-display-area > .card {
-  margin-left: -38px;          /* 卡大了，重叠更宽松 */
+  margin-left: -32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.14);
+  border-radius: 10px;
+  background: #fff;
+  border: 2px solid #f8b400;
 }
 
-/* 第一个卡牌不需要负边距 */
 .card-display-area > .card:first-child {
   margin-left: 0;
 }
@@ -39,29 +39,24 @@
 }
 
 .lane-title {
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: bold;
   color: #fff;
+  opacity: 0.6;
 }
 
 .lane-hand-type {
-  font-size: 1rem;
+  font-size: 0.97rem;
   color: #f1c40f;
   margin-top: 4px;
 }
 
-/* 响应式适配 */
-@media (max-width: 600px) {
-  .lane-container {
-    padding: 10px 5px;
-    border-radius: 10px;
-    min-height: 80px;
-  }
+@media (max-width: 650px) {
   .lane-info {
     margin-left: 7px;
     min-width: 34px;
   }
   .card-display-area > .card {
-    margin-left: -23px;
+    margin-left: -18px;
   }
 }

@@ -18,10 +18,8 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [gameResult, setGameResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 牌墩数量限制
   const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
 
-  // 计算牌型、倒水
   useEffect(() => {
     const top = evaluateHand(topLane);
     const middle = evaluateHand(middleLane);
@@ -43,7 +41,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     }
   }, [topLane, middleLane, bottomLane]);
 
-  // 卡牌点击
   const handleCardClick = (card, laneName) => {
     if (!selectedCard) {
       setSelectedCard(card);
@@ -60,7 +57,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setSelectedLane(null);
   };
 
-  // 点击牌墩空白区
   const handleLaneClick = (laneName) => {
     if (!selectedCard || !selectedLane) return;
     if (laneName === selectedLane) return;
@@ -69,7 +65,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setSelectedLane(null);
   };
 
-  // 移动卡牌
   const moveCard = (card, fromLane, toLane) => {
     if (fromLane === toLane) return;
     const lanes = { top: [...topLane], middle: [...middleLane], bottom: [...bottomLane] };
@@ -83,7 +78,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setBottomLane(lanes.bottom);
   };
 
-  // 一键理牌
   const handleAutoSort = async () => {
     setIsLoading(true);
     setSelectedCard(null);
@@ -107,7 +101,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setIsLoading(false);
   };
 
-  // 确认出牌
   const handleConfirm = async () => {
     if (
       topLane.length !== LANE_LIMITS.top ||
@@ -147,61 +140,64 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   };
 
   return (
-    <div className="thirteen-game-new">
-      <div className="game-header">
-        <button className="quit-button" onClick={onBackToLobby}>
-          返回大厅
-        </button>
-        <h2>十三张 - 三道分牌</h2>
-      </div>
-      {isLoading && <div className="loading-overlay">处理中...</div>}
-      <div className="lanes-area" style={{ marginBottom: 30 }}>
-        <Lane
-          title="头道"
-          cards={topLane}
-          onCardClick={(c) => handleCardClick(c, 'top')}
-          onLaneClick={() => handleLaneClick('top')}
-          expectedCount={LANE_LIMITS.top}
-          handType={topLaneHand?.name}
-          selected={selectedCard}
-        />
-        <Lane
-          title="中道"
-          cards={middleLane}
-          onCardClick={(c) => handleCardClick(c, 'middle')}
-          onLaneClick={() => handleLaneClick('middle')}
-          expectedCount={LANE_LIMITS.middle}
-          handType={middleLaneHand?.name}
-          selected={selectedCard}
-        />
-        <Lane
-          title="后道"
-          cards={bottomLane}
-          onCardClick={(c) => handleCardClick(c, 'bottom')}
-          onLaneClick={() => handleLaneClick('bottom')}
-          expectedCount={LANE_LIMITS.bottom}
-          handType={bottomLaneHand?.name}
-          selected={selectedCard}
-        />
-      </div>
-      {isInvalid && <div className="error-message">无效牌型组合（倒水）</div>}
-      <div className="game-actions-new">
-        <button className="action-button-new auto-sort" onClick={handleAutoSort} disabled={isLoading}>
-          智能理牌
-        </button>
-        <button
-          className="action-button-new confirm"
-          onClick={handleConfirm}
-          disabled={
-            isLoading ||
-            isInvalid ||
-            topLane.length !== LANE_LIMITS.top ||
-            middleLane.length !== LANE_LIMITS.middle ||
-            bottomLane.length !== LANE_LIMITS.bottom
-          }
-        >
-          确认出牌
-        </button>
+    <div className="table-root">
+      <div className="table-panel">
+        {/* 顶部栏 */}
+        <div className="table-top-bar">
+          <button className="table-quit-btn" onClick={onBackToLobby}>退出游戏</button>
+          <div className="table-score-box">积分: 100</div>
+        </div>
+
+        {/* 玩家区 */}
+        <div className="table-players-row">
+          <div className="player-box you">
+            <div className="player-you">你</div>
+            <div className="player-status">独头</div>
+          </div>
+          <div className="player-box ready">小明<br/>已理牌</div>
+          <div className="player-box ready">小红<br/>已理牌</div>
+          <div className="player-box ready">小刚<br/>已理牌</div>
+        </div>
+
+        {/* 牌墩区 */}
+        <div className="table-lanes-area">
+          <div className="lane-block">
+            <Lane
+              title="头道"
+              cards={topLane}
+              onCardClick={(c) => handleCardClick(c, 'top')}
+              expectedCount={LANE_LIMITS.top}
+              handType={topLaneHand?.name}
+              selected={selectedCard}
+            />
+          </div>
+          <div className="lane-block">
+            <Lane
+              title="中道"
+              cards={middleLane}
+              onCardClick={(c) => handleCardClick(c, 'middle')}
+              expectedCount={LANE_LIMITS.middle}
+              handType={middleLaneHand?.name}
+              selected={selectedCard}
+            />
+          </div>
+          <div className="lane-block">
+            <Lane
+              title="后道"
+              cards={bottomLane}
+              onCardClick={(c) => handleCardClick(c, 'bottom')}
+              expectedCount={LANE_LIMITS.bottom}
+              handType={bottomLaneHand?.name}
+              selected={selectedCard}
+            />
+          </div>
+        </div>
+
+        {/* 操作按钮区 */}
+        <div className="table-actions-bar">
+          <button className="action-btn orange" onClick={handleAutoSort}>智能分牌</button>
+          <button className="action-btn green" onClick={handleConfirm}>开始比牌</button>
+        </div>
       </div>
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
     </div>

@@ -2,42 +2,45 @@
   width: 100%;
   max-width: 900px;
   text-align: center;
-  padding: 20px;
+  padding: 12px;
 }
 
 .lobby-title {
-  font-size: 2.5rem;
-  margin-bottom: 40px;
+  font-size: 2.1rem;
+  margin-bottom: 22px;
   color: #fff;
   text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
 }
 
+/* 卡片横向并自动收敛为竖排（小屏） */
 .game-selection-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
+  gap: 30px;
+}
+@media (max-width: 600px) {
+  .game-selection-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .game-card {
-  height: 400px;
-  border-radius: 25px;
+  min-height: 230px;
+  border-radius: 22px;
   position: relative;
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  
-  background: rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  background: rgba(255, 255, 255, 0.13);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-
-  display: flex; /* 使用flex布局，方便内容和按钮区的排列 */
+  border: 1.5px solid rgba(255,255,255,0.21);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.19);
+  display: flex;
   flex-direction: column;
 }
-
 .game-card:hover {
-  transform: translateY(-10px) scale(1.02);
-  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.4);
+  transform: translateY(-7px) scale(1.01);
+  box-shadow: 0 12px 32px 0 rgba(0,0,0,0.16);
 }
 
 .thirteen-card::before, .eight-card::before {
@@ -47,70 +50,89 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  transition: opacity 0.5s ease;
   z-index: 0;
 }
 .thirteen-card::before {
-  background-image: radial-gradient(circle, #ff6b6b 0%, transparent 50%);
-  opacity: 0.2;
+  background-image: radial-gradient(circle, #ff6b6b 0%, transparent 55%);
+  opacity: 0.13;
 }
 .eight-card::before {
-  background-image: radial-gradient(circle, #48dbfb 0%, transparent 50%);
-  opacity: 0.2;
+  background-image: radial-gradient(circle, #48dbfb 0%, transparent 55%);
+  opacity: 0.13;
 }
 .game-card:hover::before {
-  opacity: 0.4;
+  opacity: 0.23;
 }
 
 .game-card-content {
-  flex-grow: 1; /* 让内容区占据大部分空间 */
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end; /* 将文字推到底部 */
-  padding: 30px;
+  justify-content: flex-end;
+  padding: 26px 18px 18px 18px;
   text-align: left;
   z-index: 1;
 }
 
 .game-card-content h2 {
-  margin: 0 0 10px 0;
-  font-size: 2rem;
+  margin: 0 0 7px 0;
+  font-size: 1.25rem;
 }
 
 .game-card-content p {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.99rem;
   line-height: 1.5;
   color: #e0e0e0;
 }
 
-/* --- 新增的操作按钮区域样式 --- */
+/* 操作按钮区域样式，按钮更大且分明 */
 .game-card-actions {
   display: flex;
-  padding: 0 30px 30px 30px;
-  gap: 15px;
+  padding: 0 20px 20px 20px;
+  gap: 10px;
   z-index: 1;
+}
+@media (max-width: 600px) {
+  .game-card-actions {
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 8px 18px 8px;
+  }
 }
 
 .action-btn {
-  flex-grow: 1;
-  padding: 15px;
-  border-radius: 12px;
+  flex: 1;
+  padding: 16px;
+  border-radius: 15px;
   border: none;
-  font-size: 1.1rem;
+  font-size: 1.13rem;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.16s, box-shadow 0.16s;
+  margin: 0;
 }
-.action-btn:hover {
-  transform: translateY(-3px);
+.action-btn:active {
+  transform: scale(0.97);
 }
-
 .action-btn.official {
   background: linear-gradient(45deg, #5352ed, #2f2db9);
   color: white;
 }
 .action-btn.trial {
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.88);
   color: #333;
+}
+
+@media (max-width: 600px) {
+  .lobby-title {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+  }
+  .game-card-content h2 {
+    font-size: 1.12rem;
+  }
+  .game-card-content p {
+    font-size: 0.96rem;
+  }
 }
