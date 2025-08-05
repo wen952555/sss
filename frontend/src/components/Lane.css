@@ -1,61 +1,56 @@
-/* Lane.css (修正版 - 恢复水平平铺) */
-
 .lane-container {
-  display: flex; /* 确保是 flex 布局 */
+  display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  min-height: 85px;
+  min-height: 100px;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden; /* 防止内部元素溢出 */
+  overflow: hidden;
+  flex-grow: 1;
+  min-height: 0;
 }
 
 .card-display-area {
   flex-grow: 1;
-  display: flex; /* 核心：确保卡牌容器是 flex 布局，使其子项水平排列 */
+  display: flex;
   align-items: center;
   min-width: 0;
-  overflow-x: auto; /* 内容超长时允许横向滚动 */
+  overflow-x: auto;
   overflow-y: hidden;
   padding: 5px 0;
 }
-/* 隐藏滚动条 */
 .card-display-area::-webkit-scrollbar {
     display: none;
 }
 
-/* --- 核心修正：恢复并优化水平堆叠效果 --- */
-.card-display-area > div { /* 直接选择 Card 组件的 div */
-  margin-left: -40px; /* 负边距控制水平重叠度，数值越大重叠越多 */
+.card-display-area > div {
+  margin-left: -40px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   z-index: 1;
-  flex-shrink: 0; /* 防止卡牌在空间不足时被压缩变形 */
+  flex-shrink: 0;
 }
 
 .card-display-area > div:first-child { 
-  margin-left: 0; /* 第一张牌没有左边距 */
+  margin-left: 0;
 }
 
-/* 鼠标悬浮时，卡牌向上浮动并放大 */
 .card-display-area > div:hover {
   transform: translateY(-10px) scale(1.05);
   z-index: 10;
 }
 
-/* 选中的卡牌效果 */
 .card-display-area > div.selected {
-  transform: translateY(-15px) scale(1.08); /* 浮动更高 */
-  box-shadow: 0 0 25px rgba(255, 71, 87, 0.8); /* 鲜艳的粉红色辉光 */
+  transform: translateY(-15px) scale(1.08);
+  box-shadow: 0 0 25px rgba(255, 71, 87, 0.8);
   border-radius: 8px;
   z-index: 20;
 }
 
-
 .lane-info {
   display: flex;
   flex-direction: column;
-  align-items: flex-end; /* 右对齐 */
+  align-items: flex-end;
   justify-content: center;
   text-align: right;
   min-width: 75px;
@@ -70,6 +65,6 @@
 .lane-hand-type {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #e74c3c; /* 鲜红色牌型 */
+  color: #e74c3c;
   margin-top: 4px;
 }

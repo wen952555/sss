@@ -1,14 +1,14 @@
-// frontend/src/components/GameResultModal.jsx
 import React from 'react';
-import Card from './Card'; // 引入 Card 组件
+import Card from './Card';
 import './GameResultModal.css';
 
-// 渲染堆叠卡牌的辅助组件
 const StackedCards = ({ cards }) => {
   return (
     <div className="stacked-cards-row">
       {cards.map((card, index) => (
-        <Card key={`${card.suit}-${card.rank}-${index}`} card={card} />
+        <div key={`${card.suit}-${card.rank}-${index}`} className="card-container">
+          <Card card={card} />
+        </div>
       ))}
     </div>
   );
@@ -27,7 +27,6 @@ const GameResultModal = ({ result, onClose }) => {
 
         <div className={`total-score ${totalScoreClass}`}>{totalScoreText}</div>
 
-        {/* 玩家牌组 - 按图示堆叠 */}
         <div className="player-hand-stack">
           <h3>你的牌</h3>
           <div className="stacked-cards-container">
@@ -37,7 +36,6 @@ const GameResultModal = ({ result, onClose }) => {
           </div>
         </div>
         
-        {/* AI 牌组 - 按图示堆叠 */}
         <div className="player-hand-stack">
           <h3>AI 的牌</h3>
           <div className="stacked-cards-container">

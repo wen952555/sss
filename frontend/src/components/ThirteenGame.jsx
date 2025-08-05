@@ -18,7 +18,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [gameResult, setGameResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- 修正：重新添加 LANE_LIMITS 的定义 ---
   const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
 
   useEffect(() => {
@@ -148,15 +147,15 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
           <div className="table-score-box">积分: 100</div>
         </div>
 
-        <div className="players-grid">
-          <div className="player-box you">
-            <div className="player-name">你</div>
-            <div className="player-status">理牌中...</div>
+        <div className="players-status-bar">
+          <div className="player-status-item you">
+            <span className="player-name">你</span>
+            <span className="status-text">理牌中...</span>
           </div>
           {Object.keys(otherPlayers).slice(0, 3).map((playerName, index) => (
-            <div key={index} className="player-box ready">
-              <div className="player-name">{playerName}</div>
-              <div className="player-status">已理牌</div>
+            <div key={index} className="player-status-item ready">
+              <span className="player-name">{playerName}</span>
+              <span className="status-text">已理牌</span>
             </div>
           ))}
         </div>
@@ -180,7 +179,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
 
         <div className="table-actions-bar">
           <button className="action-btn orange" onClick={handleAutoSort} disabled={isLoading}>智能理牌</button>
-          {/* --- 修正：使用 LANE_LIMITS 进行判断 --- */}
           <button 
             className="action-btn green" 
             onClick={handleConfirm} 

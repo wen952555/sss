@@ -18,10 +18,8 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [gameResult, setGameResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- 修正：重新添加 LANE_LIMITS 的定义 ---
   const LANE_LIMITS = { top: 2, middle: 3, bottom: 3 };
-  
-  const isMultiplayerTrial = Object.keys(otherPlayers).length > 1;
+  const isMultiplayerTrial = Object.keys(otherPlayers).length > 0;
 
   useEffect(() => {
     const top = evaluateHand(topLane);
@@ -151,38 +149,34 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
         </div>
         
         {isMultiplayerTrial && (
-          <div className="players-grid">
-            <div className="player-box you">
-              <div className="player-name">你</div>
-              <div className="player-status">理牌中...</div>
-            </div>
-            {Object.keys(otherPlayers).slice(0, 3).map((playerName, index) => (
-              <div key={index} className="player-box ready">
-                <div className="player-name">{playerName}</div>
-                <div className="player-status">已理牌</div>
+          <div className="eight-game-players">
+            <div className="player-group">
+              <div className="player-status-item you">
+                <span className="player-name">你</span>
+                <span className="status-text">理牌中...</span>
               </div>
-            ))}
+              {Object.keys(otherPlayers).slice(0, 1).map((name) => (
+                <div key={name} className="player-status-item ready">
+                  <span className="player-name">{name}</span><span className="status-text">已理牌</span>
+                </div>
+              ))}
+            </div>
+             {Object.keys(otherPlayers).length > 1 && (
+                <div className="player-group">
+                  {Object.keys(otherPlayers).slice(1, 3).map((name) => (
+                    <div key={name} className="player-status-item ready">
+                      <span className="player-name">{name}</span><span className="status-text">已理牌</span>
+                    </div>
+                  ))}
+                </div>
+             )}
           </div>
         )}
 
-        {isLoading && <div className="loading-overlay">处理中...</div>}
-        
         <div className="lanes-area">
-           <Lane
-            title="头道" cards={topLane} onCardClick={(c) => handleCardClick(c, 'top')}
-            onLaneClick={() => handleLaneClick('top')} expectedCount={LANE_LIMITS.top}
-            handType={topLaneHand?.name} selected={selectedCard}
-          />
-          <Lane
-            title="中道" cards={middleLane} onCardClick={(c) => handleCardClick(c, 'middle')}
-            onLaneClick={() => handleLaneClick('middle')} expectedCount={LANE_LIMITS.middle}
-            handType={middleLaneHand?.name} selected={selectedCard}
-          />
-          <Lane
-            title="尾道" cards={bottomLane} onCardClick={(c) => handleCardClick(c, 'bottom')}
-            onLaneClick={() => handleLaneClick('bottom')} expectedCount={LANE_LIMITS.bottom}
-            handType={bottomLaneHand?.name} selected={selectedCard}
-          />
+          <Lane title="头道" cards={topLane} onCardClick={(c) => handleCardClick(c, 'top')} onLaneClick={() => handleLaneClick('top')} expectedCount={LANE_LIMITS.top} handType={topLaneHand?.name} selected={selectedCard} />
+          <Lane title="中道" cards={middleLane} onCardClick={(c) => handleCardClick(c, 'middle')} onLaneClick={() => handleLaneClick('middle')} expectedCount={LANE_LIMITS.middle} handType={middleLaneHand?.name} selected={selectedCard} />
+          <Lane title="尾道" cards={bottomLane} onCardClick={(c) => handleCardClick(c, 'bottom')} onLaneClick={() => handleLaneClick('bottom')} expectedCount={LANE_LIMITS.bottom} handType={bottomLaneHand?.name} selected={selectedCard} />
         </div>
 
         {isInvalid && <div className="error-message">无效牌型组合（倒水）</div>}
@@ -191,7 +185,6 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
           <button className="action-button-new auto-sort" onClick={handleAutoSort} disabled={isLoading}>
             智能理牌
           </button>
-          {/* --- 修正：使用 LANE_LIMITS 进行判断 --- */}
           <button
             className="action-button-new confirm"
             onClick={handleConfirm}
@@ -205,6 +198,7 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
           </button>
         </div>
       </div>
+      {isLoading && <div className="loading-overlay">处理中...</div>}
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
     </div>
   );
