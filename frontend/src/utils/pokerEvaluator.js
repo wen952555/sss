@@ -21,6 +21,26 @@ export const HAND_TYPES = {
   STRAIGHT_FLUSH: { rank: 8, name: '同花顺' },
 };
 
+// --- ↓↓↓ 这是新添加并导出的函数 ↓↓↓ ---
+/**
+ * 对一组卡牌进行排序
+ * @param {Array} cards - 卡牌对象的数组
+ * @returns {Array} 排序后的新数组
+ */
+export const sortCards = (cards) => {
+  if (!cards) return [];
+  return [...cards].sort((a, b) => {
+    const rankComparison = RANK_ORDER.indexOf(a.rank) - RANK_ORDER.indexOf(b.rank);
+    if (rankComparison !== 0) {
+      return rankComparison;
+    }
+    const suitOrder = ['diamonds', 'clubs', 'hearts', 'spades'];
+    return suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit);
+  });
+};
+// --- ↑↑↑ 添加结束 ↑↑↑ ---
+
+
 /**
  * 评估一手牌（3张或5张）的牌型和大小
  * @param {Array} cards - 卡牌对象的数组
