@@ -31,7 +31,6 @@ function TopBanner({ user, onLobby, onProfile, onLogout }) {
       <div className="banner-title">游戏中心</div>
       <div className="banner-welcome">欢迎, {user.phone}</div>
       <div className="banner-actions">
-        {/* 这里应用了新的样式类名 */}
         <button className="banner-btn" onClick={onLobby}>游戏大厅</button>
         <button className="banner-btn" onClick={onProfile}>我的资料</button>
         <button className="banner-btn" onClick={onLogout}>退出登录</button>
@@ -84,14 +83,14 @@ function App() {
       });
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && data.hands) {
         const player1Hand = data.hands['玩家 1'];
         delete data.hands['玩家 1'];
         const aiPlayers = data.hands;
 
         setGameState({ gameType, hand: player1Hand, otherPlayers: aiPlayers, error: null });
       } else {
-        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message });
+        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message || '获取牌局数据失败' });
       }
     } catch (err) {
       setGameState({ gameType: null, hand: null, otherPlayers: {}, error: `网络请求失败，请检查网络连接或稍后再试。(${err.message})` });
@@ -114,8 +113,9 @@ function App() {
     setCurrentView('profile');
   };
 
-  // 判断是否处于对局
-  const isInGame = gameState.gameType && gameState.hand;
+  // --- 核心修正：加强判断条件 ---
+  // 确保 gameState.hand 是一个数组才进入游戏
+  const isInGame = gameState.gameType && Array.isArray(gameState.hand);
 
   const renderMainContent = () => {
     if (isInGame) {
@@ -173,7 +173,6 @@ function App() {
     );
   }
 
-  // 只在非对局页面显示顶部横幅
   return (
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
@@ -186,11 +185,11 @@ function App() {
         />
       )}
       <main className="app-main">
+        {gameState.error && <div className="error-message">{gameState.error}</div>}
         {renderMainContent()}
       </main>
     </div>
   );
 }
 
-// 确保 App 组件被默认导出
 export default App;
