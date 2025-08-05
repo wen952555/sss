@@ -5,7 +5,6 @@ import './ThirteenGame.css';
 import { evaluateHand, compareHands, sortCards } from '../utils/pokerEvaluator';
 import GameResultModal from './GameResultModal';
 
-// 辅助函数：比较两张卡牌是否相同
 const areCardsEqual = (card1, card2) => {
   if (!card1 || !card2) return false;
   return card1.rank === card2.rank && card1.suit === card2.suit;
@@ -14,9 +13,10 @@ const areCardsEqual = (card1, card2) => {
 const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
 
-  // --- 核心修正 1：恢复您期望的初始发牌逻辑 ---
-  // 将拿到的13张牌进行一次默认排序和分配
-  const initialSortedHand = sortCards(playerHand || []);
+  // --- 核心修正：增加组件内部防御，确保 playerHand 是数组 ---
+  const initialHandArray = Array.isArray(playerHand) ? playerHand : [];
+  const initialSortedHand = sortCards(initialHandArray);
+  
   const [topLane, setTopLane] = useState(initialSortedHand.slice(0, LANE_LIMITS.top));
   const [middleLane, setMiddleLane] = useState(initialSortedHand.slice(LANE_LIMITS.top, LANE_LIMITS.top + LANE_LIMITS.middle));
   const [bottomLane, setBottomLane] = useState(initialSortedHand.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
@@ -29,31 +29,24 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [gameResult, setGameResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 检查是否所有牌道都已填满
   const allLanesFilled = topLane.length === LANE_LIMITS.top &&
                          middleLane.length === LANE_LIMITS.middle &&
                          bottomLane.length === LANE_LIMITS.bottom;
 
-  // “确认牌型”按钮的禁用状态
   const isConfirmDisabled = isLoading || !allLanesFilled || isInvalid;
 
   useEffect(() => {
-    // 只有当所有牌道都放满牌时，才进行合法性校验
     if (allLanesFilled) {
       const topEval = evaluateHand(topLane);
       const middleEval = evaluateHand(middleLane);
       const bottomEval = evaluateHand(bottomLane);
-
       setTopLaneHand(topEval);
       setMiddleLaneHand(middleEval);
       setBottomLaneHand(bottomEval);
-
       const middleVsTop = compareHands(middleEval, topEval);
       const bottomVsMiddle = compareHands(bottomEval, middleEval);
-      // 如果牌型大小不符合规则，则标记为不合法
       setIsInvalid(middleVsTop < 0 || bottomVsMiddle < 0);
     } else {
-      // 只要牌没放完，就不算“不合法”，并清空牌型显示
       setIsInvalid(false);
       setTopLaneHand(null);
       setMiddleLaneHand(null);
@@ -61,7 +54,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     }
   }, [topLane, middleLane, bottomLane, allLanesFilled]);
   
-  // 点击扑克牌，支持多选
   const handleCardClick = (card) => {
     setSelectedCards(prevSelected => {
       const isAlreadySelected = prevSelected.some(selectedCard => areCardsEqual(selectedCard, card));
@@ -73,32 +65,23 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     });
   };
 
-  // 点击牌道，移动选中的牌
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
 
-    // 1. 从所有牌道中“拿出”选中的牌
     const removeSelected = (lane) => lane.filter(card => !selectedCards.some(selected => areCardsEqual(selected, card)));
     let newTop = removeSelected(topLane);
     let newMiddle = removeSelected(middleLane);
     let newBottom = removeSelected(bottomLane);
 
-    // 2. 将选中的牌“放入”目标牌道
-    if (targetLaneName === 'top') {
-      newTop = [...newTop, ...selectedCards];
-    } else if (targetLaneName === 'middle') {
-      newMiddle = [...newMiddle, ...selectedCards];
-    } else if (targetLaneName === 'bottom') {
-      newBottom = [...newBottom, ...selectedCards];
-    }
+    if (targetLaneName === 'top') newTop = [...newTop, ...selectedCards];
+    else if (targetLaneName === 'middle') newMiddle = [...newMiddle, ...selectedCards];
+    else if (targetLaneName === 'bottom') newBottom = [...newBottom, ...selectedCards];
     
-    // 3. 检查移动后目标牌道是否会超出容量
     if (newTop.length > LANE_LIMITS.top || newMiddle.length > LANE_LIMITS.middle || newBottom.length > LANE_LIMITS.bottom) {
         alert('空间不足，无法放入所选的牌！');
-        return; // 取消本次移动
+        return;
     }
 
-    // 4. 确认移动，更新所有牌道状态并排序，清空选择
     setTopLane(sortCards(newTop));
     setMiddleLane(sortCards(newMiddle));
     setBottomLane(sortCards(newBottom));
