@@ -83,14 +83,19 @@ function App() {
       });
       const data = await response.json();
 
-      if (data.success && data.hands) {
-        const player1Hand = data.hands['玩家 1'];
-        delete data.hands['玩家 1'];
-        const aiPlayers = data.hands;
+      if (data.success && data.hands && typeof data.hands === 'object' && Object.keys(data.hands).length > 0) {
+        // --- 核心修正：不再依赖写死的 '玩家 1' 键名 ---
+        const handKeys = Object.keys(data.hands);
+        const playerHandKey = handKeys[0]; // 默认取第一个作为玩家手牌
+        
+        const playerHand = data.hands[playerHandKey];
+        delete data.hands[playerHandKey]; // 从牌堆中移除玩家手牌
+        const aiPlayers = data.hands; // 剩下的都是AI手牌
 
-        setGameState({ gameType, hand: player1Hand, otherPlayers: aiPlayers, error: null });
+        setGameState({ gameType, hand: playerHand, otherPlayers: aiPlayers, error: null });
+        // --- 修正结束 ---
       } else {
-        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message || '获取牌局数据失败' });
+        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message || '获取牌局数据失败，或返回数据为空。' });
       }
     } catch (err) {
       setGameState({ gameType: null, hand: null, otherPlayers: {}, error: `网络请求失败，请检查网络连接或稍后再试。(${err.message})` });
@@ -113,8 +118,6 @@ function App() {
     setCurrentView('profile');
   };
 
-  // --- 核心修正：加强判断条件 ---
-  // 确保 gameState.hand 是一个数组才进入游戏
   const isInGame = gameState.gameType && Array.isArray(gameState.hand);
 
   const renderMainContent = () => {
@@ -160,6 +163,10 @@ function App() {
         );
       case 'lobby':
       default:
+        // 如果有错误信息，则在主内容区显示
+        if (gameState.error) {
+            return <p className="error-message">{gameState.error}</p>;
+        }
         return <GameLobby onSelectGame={handleSelectGame} />;
     }
   };
@@ -185,7 +192,6 @@ function App() {
         />
       )}
       <main className="app-main">
-        {gameState.error && <div className="error-message">{gameState.error}</div>}
         {renderMainContent()}
       </main>
     </div>
