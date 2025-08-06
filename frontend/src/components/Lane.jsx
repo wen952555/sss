@@ -11,7 +11,7 @@ const Lane = ({
   title, cards, onCardClick, onLaneClick,
   expectedCount, handType, selectedCards = [],
 }) => {
-  // 支持牌墩点击（无论点到卡牌还是空白），都能移动选中的牌
+  // 允许点击整个牌墩区域触发移动，无论点到哪个区域
   const handleAreaClick = () => {
     if (selectedCards.length > 0 && onLaneClick) onLaneClick();
   };
@@ -19,11 +19,11 @@ const Lane = ({
   return (
     <div className="lane-container">
       <div className="card-display-area" onClick={handleAreaClick}>
-        {cards.map((card, index) => (
+        {cards.map((card, idx) => (
           <Card
-            key={`${card.rank}-${card.suit}-${index}`}
+            key={`${card.rank}-${card.suit}-${idx}`}
             card={card}
-            isSelected={selectedCards.some(selected => areCardsEqual(selected, card))}
+            isSelected={selectedCards.some(sel => areCardsEqual(sel, card))}
             onClick={onCardClick ? () => onCardClick(card) : undefined}
           />
         ))}
