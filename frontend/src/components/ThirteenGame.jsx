@@ -1,3 +1,5 @@
+// --- START OF FILE ThirteenGame.jsx ---
+
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
@@ -9,6 +11,54 @@ const areCardsEqual = (card1, card2) => {
   if (!card1 || !card2) return false;
   return card1.rank === card2.rank && card1.suit === card2.suit;
 };
+
+// --- ↓↓↓ 新增的智能理牌辅助函数 ↓↓↓ ---
+
+/**
+ * 辅助函数：从一个数组中获取所有指定大小的组合
+ * @param {Array} array - 原始数组 (例如：所有卡牌)
+ * @param {number} size - 组合的大小 (例如：5张牌)
+ * @returns {Array<Array>} 所有可能的组合
+ */
+const getCombinations = (array, size) => {
+  if (size === 0) return [[]];
+  if (!array || array.length < size) return [];
+
+  const first = array[0];
+  const rest = array.slice(1);
+
+  const combsWithFirst = getCombinations(rest, size - 1).map(comb => [first, ...comb]);
+  const combsWithoutFirst = getCombinations(rest, size);
+
+  return [...combsWithFirst, ...combsWithoutFirst];
+};
+
+/**
+ * 辅助函数：在一组牌中找到能组成的最佳牌型
+ * @param {Array} cards - 卡牌数组
+ * @param {number} handSize - 需要几张牌组成一手 (例如 3 或 5)
+ * @returns {{hand: Object, combination: Array}|null} 返回最佳牌型评估结果和对应的卡牌组合
+ */
+const findBestHand = (cards, handSize) => {
+  const allCombinations = getCombinations(cards, handSize);
+  if (allCombinations.length === 0) return null;
+
+  let bestHand = null;
+  let bestCombination = [];
+
+  for (const combination of allCombinations) {
+    const currentHand = evaluateHand(combination);
+    if (!bestHand || compareHands(currentHand, bestHand) > 0) {
+      bestHand = currentHand;
+      bestCombination = combination;
+    }
+  }
+
+  return { hand: bestHand, combination: bestCombination };
+};
+
+// --- ↑↑↑ 新增辅助函数结束 ↑↑↑ ---
+
 
 const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
@@ -49,7 +99,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     }
   }, [topLane, middleLane, bottomLane, allLanesFilled]);
 
-  // 多选/反选
   const handleCardClick = (card) => {
     setSelectedCards(prev =>
       prev.some(c => areCardsEqual(c, card))
@@ -58,11 +107,8 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     );
   };
 
-  // 移动所有选中的牌到目标牌墩，先移除再加
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
-
-    // 移除所有选中牌
     const removeSelected = (lane) =>
       lane.filter(c => !selectedCards.some(s => areCardsEqual(s, c)));
 
@@ -70,12 +116,10 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     let newMiddle = removeSelected(middleLane);
     let newBottom = removeSelected(bottomLane);
 
-    // 加入目标牌墩
     if (targetLaneName === 'top') newTop = sortCards([...newTop, ...selectedCards]);
     if (targetLaneName === 'middle') newMiddle = sortCards([...newMiddle, ...selectedCards]);
     if (targetLaneName === 'bottom') newBottom = sortCards([...newBottom, ...selectedCards]);
 
-    // 检查容量
     if (newTop.length > LANE_LIMITS.top ||
       newMiddle.length > LANE_LIMITS.middle ||
       newBottom.length > LANE_LIMITS.bottom) {
@@ -86,22 +130,66 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setTopLane(newTop);
     setMiddleLane(newMiddle);
     setBottomLane(newBottom);
-    setSelectedCards([]); // 清空选中
+    setSelectedCards([]);
   };
 
+  // --- ↓↓↓ 全新的、智能的自动理牌函数 ↓↓↓ ---
   const handleAutoSort = () => {
-    const allCards = sortCards([...topLane, ...middleLane, ...bottomLane]);
-    setTopLane(allCards.slice(0, LANE_LIMITS.top));
-    setMiddleLane(allCards.slice(LANE_LIMITS.top, LANE_LIMITS.top + LANE_LIMITS.middle));
-    setBottomLane(allCards.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
+    const allCards = [...topLane, ...middleLane, ...bottomLane];
+    if (allCards.length !== 13) return; // 仅为13张时执行
+
+    // 1. 找出最佳的尾道
+    const bottomResult = findBestHand(allCards, 5);
+    if (!bottomResult) return; // 无法组成5张牌
+
+    const newBottomLane = bottomResult.combination;
+    const remainingCardsAfterBottom = allCards.filter(c => !newBottomLane.includes(c));
+
+    // 2. 从剩下的牌中找出最佳的中道
+    const middleResult = findBestHand(remainingCardsAfterBottom, 5);
+    if (!middleResult) return; // 无法组成5张牌
+
+    // 3. 检查中道和尾道的合法性 (尾道必须大于等于中道)
+    if (compareHands(bottomResult.hand, middleResult.hand) < 0) {
+      // 这是一个简化处理：如果最优组合不合法，就退回旧的简单排序法。
+      // 一个更完美的算法会在这里回溯，尝试次优组合。
+      const sortedCards = sortCards(allCards);
+      setTopLane(sortedCards.slice(0, 3));
+      setMiddleLane(sortedCards.slice(3, 8));
+      setBottomLane(sortedCards.slice(8, 13));
+      alert("智能理牌未能找到必胜组合，已为您进行基础排序。");
+      return;
+    }
+    
+    const newMiddleLane = middleResult.combination;
+    const newTopLane = remainingCardsAfterBottom.filter(c => !newMiddleLane.includes(c));
+    
+    // 4. 设置所有牌道
+    setBottomLane(sortCards(newBottomLane));
+    setMiddleLane(sortCards(newMiddleLane));
+    setTopLane(sortCards(newTopLane));
   };
+  // --- ↑↑↑ 智能理牌函数结束 ↑↑↑ ---
+
 
   const handleConfirm = async () => {
     if (isConfirmDisabled) return;
     setIsLoading(true);
+    // 待办事项：这里应该调用API将牌型发送到后端
     setTimeout(() => {
-      const aiHand = Object.values(otherPlayers)[0] || { top: [], middle: [], bottom: [] };
-      const result = { playerHand, aiHand, score: Math.floor(Math.random() * 21) - 10 };
+      // 修复了之前指出的 GameResultModal 数据结构不匹配的BUG
+      const playerHandData = { top: topLane, middle: middleLane, bottom: bottomLane };
+      const aiPlayersData = Object.entries(otherPlayers).map(([name, hand]) => ({ name, hand }));
+      
+      const result = {
+        players: [
+          { name: "你", hand: playerHandData },
+          ...aiPlayersData
+        ],
+        // 模拟得分，实际应由后端计算
+        scores: [Math.floor(Math.random() * 21) - 10, ...aiPlayersData.map(() => Math.floor(Math.random() * 21) - 10)]
+      };
+
       setGameResult(result);
       setIsLoading(false);
     }, 1500);
@@ -141,3 +229,4 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
 };
 
 export default ThirteenGame;
+// --- END OF FILE ThirteenGame.jsx ---
