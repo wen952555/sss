@@ -7,36 +7,37 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center; /* 水平居中 */
+  align-items: center;
   box-sizing: border-box;
-  overflow: hidden; /* 防止内部元素溢出 */
+  overflow: hidden;
 }
 
 .table-panel {
   width: 100%;
-  max-width: 550px; /* 设置一个最大宽度，防止在大屏上过宽 */
-  height: auto; /* 高度由内容决定 */
-  max-height: 100%; /* 最大高度不超过父容器 */
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  max-width: 550px;
+  height: auto;
+  max-height: 100%;
+  padding: 20px; /* 稍微增加内边距 */
+  background: rgba(255, 255, 255, 0.3); /* 稍微降低透明度，让内容更清晰 */
+  backdrop-filter: blur(25px) saturate(150%);
+  -webkit-backdrop-filter: blur(25px) saturate(150%);
+  border-radius: 28px; /* 增大圆角 */
+  /* --- 核心修改：移除边框 --- */
+  /* border: 1px solid rgba(255, 255, 255, 0.2); */
+  box-shadow: 0 10px 40px rgba(8, 22, 90, 0.2); /* 增强阴影以提供层次感 */
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 18px; /* 增大间距 */
   position: relative;
   box-sizing: border-box;
-  overflow-y: auto; /* 当内容超高时，面板内部滚动 */
+  overflow-y: auto;
 }
 
-/* 媒体查询：针对非常窄的屏幕，进一步减小内边距 */
-@media (max-width: 360px) {
+@media (max-width: 380px) {
   .table-panel {
-    padding: 10px;
-    gap: 10px;
+    padding: 15px;
+    gap: 12px;
+    border-radius: 24px;
   }
 }
 
@@ -44,7 +45,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0; /* 防止被压缩 */
+  flex-shrink: 0;
 }
 
 .table-quit-btn {
@@ -93,7 +94,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: #3b3b8e;
-  white-space: nowrap; /* 防止名字换行 */
+  white-space: nowrap;
 }
 
 .status-text {
@@ -116,7 +117,7 @@
   flex-direction: column;
   gap: 12px;
   flex-grow: 1;
-  min-height: 0; /* 允许在flex布局中收缩 */
+  min-height: 0;
 }
 
 .table-actions-bar {
@@ -178,4 +179,5 @@
   border-radius: 24px;
   z-index: 100;
 }
+
 // --- END OF FILE frontend/src/components/ThirteenGame.css ---

@@ -1,18 +1,21 @@
+// --- START OF FILE frontend/src/components/App.css ---
+
 /* --- 全局毛玻璃面板样式 (Crystal Panel) --- */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.5); /* --- 核心修改：使用白色半透明背景 --- */
+  background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(15px) saturate(150%);
   -webkit-backdrop-filter: blur(15px) saturate(150%);
-  border-radius: 24px; /* 增大圆角 */
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2); /* 柔和的阴影 */
+  border-radius: 24px;
+  /* border: 1px solid rgba(255, 255, 255, 0.2); */ /* 可选移除 */
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
   padding: 25px;
   box-sizing: border-box;
 }
 
 /* --- 主应用布局 --- */
 .app {
-  height: 100vh; max-height: 100vh;
+  height: 100vh;
+  max-height: 100svh; /* 使用 svh 适配移动端浏览器UI */
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -23,10 +26,12 @@
 }
 
 .app-main {
-  flex: 1; width: 100%;
-  max-width: 500px;
+  flex: 1;
+  width: 100%;
+  max-width: 550px; /* 与牌桌最大宽度保持一致 */
   min-height: 0;
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -36,20 +41,27 @@
 
 /* --- 顶部横幅 --- */
 .top-banner {
-  width: 100%; max-width: 500px;
-  margin-bottom: 15px; padding: 15px;
+  width: 100%;
+  max-width: 550px;
+  margin-bottom: 15px;
+  padding: 15px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  display: flex; flex-direction: column;
-  align-items: center; gap: 12px;
+  /* --- 核心修改：移除边框 --- */
+  /* border: 1px solid rgba(255, 255, 255, 0.18); */
+  box-shadow: 0 6px 25px rgba(8, 22, 90, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .banner-title {
-  font-size: 1.5rem; font-weight: 700;
-  color: #1a2a6c; /* 深蓝色标题 */
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2a6c;
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
@@ -59,21 +71,25 @@
 }
 
 .banner-actions {
-  width: 100%; display: flex;
-  justify-content: center; gap: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 
 /* --- 全局明亮按钮 --- */
 .action-button, .banner-btn {
-  flex: 1; padding: 12px 15px;
-  font-size: 0.95rem; font-weight: 600; /* 加粗 */
+  flex: 1;
+  padding: 12px 15px;
+  font-size: 0.95rem;
+  font-weight: 600;
   border-radius: 12px;
   border: none;
   cursor: pointer;
   transition: all 0.25s ease;
   text-align: center;
   color: #fff;
-  background: linear-gradient(45deg, #2980b9, #2c3e50); /* 深蓝渐变 */
+  background: linear-gradient(45deg, #2980b9, #2c3e50);
   box-shadow: 0 4px 15px rgba(44, 62, 80, 0.2);
 }
 
@@ -87,58 +103,84 @@
 
 /* --- 全局弹窗 --- */
 .modal-backdrop {
-  position: fixed; z-index: 1100; inset: 0;
-  background: rgba(255, 255, 255, 0.2); /* 浅色遮罩 */
+  position: fixed;
+  z-index: 1100;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 15px;
 }
 
 .modal-content {
-  width: 100%; max-width: 400px;
-  max-height: 90vh; overflow-y: auto;
-  /* 应用全局毛玻璃效果 */
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  /* --- 核心修改：移除边框 --- */
+  /* border: 1px solid rgba(255, 255, 255, 0.3); */
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
   padding: 25px;
-  color: #2c3e50; /* 深色文字 */
+  color: #2c3e50;
 }
 
 .modal-content h3 {
-  margin: 0 0 15px 0; font-size: 1.4rem; font-weight: 700;
+  margin: 0 0 15px 0;
+  font-size: 1.4rem;
+  font-weight: 700;
   color: #1a2a6c;
   text-align: center;
 }
 
 .release-notes li {
-  margin-bottom: 8px; color: #3b3b8e; font-size: 0.95rem;
+  margin-bottom: 8px;
+  color: #3b3b8e;
+  font-size: 0.95rem;
 }
 
 .modal-actions {
-  margin-top: 20px; display: flex; gap: 15px;
+  margin-top: 20px;
+  display: flex;
+  gap: 15px;
 }
 
 .modal-actions button {
-  flex: 1; padding: 13px 0; border: none;
-  border-radius: 12px; font-size: 1rem; font-weight: bold;
-  cursor: pointer; transition: all 0.2s ease;
+  flex: 1;
+  padding: 13px 0;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-.modal-actions button:active { transform: scale(0.97); }
+.modal-actions button:active {
+  transform: scale(0.97);
+}
 
 .cancel-btn {
   background: rgba(0, 0, 0, 0.1);
   color: #333;
 }
-.cancel-btn:hover { background: rgba(0, 0, 0, 0.15); }
+.cancel-btn:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
 
 .update-btn {
-  background: #ff4757; /* 鲜艳的红色 */
+  background: #ff4757;
   color: #fff;
   box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
 }
-.update-btn:hover { box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4); transform: translateY(-2px); }
+.update-btn:hover {
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+  transform: translateY(-2px);
+}
+
+// --- END OF FILE frontend/src/components/App.css ---
