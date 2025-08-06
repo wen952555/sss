@@ -26,10 +26,11 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [gameResult, setGameResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // 只要所有牌分配完毕，确认按钮就可点击
   const allLanesFilled = topLane.length === LANE_LIMITS.top &&
                          middleLane.length === LANE_LIMITS.middle &&
                          bottomLane.length === LANE_LIMITS.bottom;
-  const isConfirmDisabled = isLoading || !allLanesFilled || isInvalid;
+  const isConfirmDisabled = isLoading || !allLanesFilled;
 
   useEffect(() => {
     if (allLanesFilled) {
@@ -54,9 +55,9 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setSelectedCards(prev => prev.some(c => areCardsEqual(c, card)) ? prev.filter(c => !areCardsEqual(c, card)) : [...prev, card]);
   };
 
+  // 移动卡牌时不限制牌数量
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
-    
     const removeSelected = (lane) => lane.filter(c => !selectedCards.some(s => areCardsEqual(s, c)));
     let newTop = removeSelected(topLane);
     let newMiddle = removeSelected(middleLane);
@@ -66,11 +67,7 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     else if (targetLaneName === 'middle') newMiddle.push(...selectedCards);
     else if (targetLaneName === 'bottom') newBottom.push(...selectedCards);
 
-    if (newTop.length > LANE_LIMITS.top || newMiddle.length > LANE_LIMITS.middle || newBottom.length > LANE_LIMITS.bottom) {
-        alert('空间不足，无法放入所选的牌！');
-        return;
-    }
-
+    // 移动不限制数量，直到用户点确认时才校验
     setTopLane(sortCards(newTop));
     setMiddleLane(sortCards(newMiddle));
     setBottomLane(sortCards(newBottom));
@@ -84,8 +81,22 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setBottomLane(allCards.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
   };
 
+  // 点击确认牌型时校验数量和规则
   const handleConfirm = async () => {
-    if (isConfirmDisabled) return;
+    if (!allLanesFilled) {
+      alert('请将所有牌分配到 3/5/5 的牌墩！');
+      return;
+    }
+    // 检查规则
+    const topEval = evaluateHand(topLane);
+    const middleEval = evaluateHand(middleLane);
+    const bottomEval = evaluateHand(bottomLane);
+    const middleVsTop = compareHands(middleEval, topEval);
+    const bottomVsMiddle = compareHands(bottomEval, middleEval);
+    if (middleVsTop < 0 || bottomVsMiddle < 0) {
+      alert('牌型不符合规则！（尾道 ≥ 中道 ≥ 头道）');
+      return;
+    }
     setIsLoading(true);
     setTimeout(() => {
       const aiHand = Object.values(otherPlayers)[0] || { top: [], middle: [], bottom: [] };
