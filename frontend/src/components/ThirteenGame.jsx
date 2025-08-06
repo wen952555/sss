@@ -13,7 +13,6 @@ const areCardsEqual = (card1, card2) => {
 const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
 
-  // --- 核心修正：恢复您原始的、正确的状态初始化方式 ---
   const [topLane, setTopLane] = useState(playerHand?.top || []);
   const [middleLane, setMiddleLane] = useState(playerHand?.middle || []);
   const [bottomLane, setBottomLane] = useState(playerHand?.bottom || []);
@@ -26,11 +25,10 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [gameResult, setGameResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 只要所有牌分配完毕，确认按钮就可点击
   const allLanesFilled = topLane.length === LANE_LIMITS.top &&
                          middleLane.length === LANE_LIMITS.middle &&
                          bottomLane.length === LANE_LIMITS.bottom;
-  const isConfirmDisabled = isLoading || !allLanesFilled;
+  const isConfirmDisabled = isLoading || !allLanesFilled || isInvalid;
 
   useEffect(() => {
     if (allLanesFilled) {
@@ -51,11 +49,16 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     }
   }, [topLane, middleLane, bottomLane, allLanesFilled]);
   
+  // 多选逻辑：点一张选中，再点其他也能选
   const handleCardClick = (card) => {
-    setSelectedCards(prev => prev.some(c => areCardsEqual(c, card)) ? prev.filter(c => !areCardsEqual(c, card)) : [...prev, card]);
+    setSelectedCards(prev =>
+      prev.some(c => areCardsEqual(c, card))
+        ? prev.filter(c => !areCardsEqual(c, card))
+        : [...prev, card]
+    );
   };
 
-  // 移动卡牌时不限制牌数量
+  // 点击牌墩区域移动所有选中牌
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
     const removeSelected = (lane) => lane.filter(c => !selectedCards.some(s => areCardsEqual(s, c)));
@@ -67,7 +70,11 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     else if (targetLaneName === 'middle') newMiddle.push(...selectedCards);
     else if (targetLaneName === 'bottom') newBottom.push(...selectedCards);
 
-    // 移动不限制数量，直到用户点确认时才校验
+    if (newTop.length > LANE_LIMITS.top || newMiddle.length > LANE_LIMITS.middle || newBottom.length > LANE_LIMITS.bottom) {
+        alert('空间不足，无法放入所选的牌！');
+        return;
+    }
+
     setTopLane(sortCards(newTop));
     setMiddleLane(sortCards(newMiddle));
     setBottomLane(sortCards(newBottom));
@@ -81,27 +88,27 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setBottomLane(allCards.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
   };
 
-  // 点击确认牌型时校验数量和规则
+  // 比牌，生成所有玩家的结果
   const handleConfirm = async () => {
-    if (!allLanesFilled) {
-      alert('请将所有牌分配到 3/5/5 的牌墩！');
-      return;
-    }
-    // 检查规则
-    const topEval = evaluateHand(topLane);
-    const middleEval = evaluateHand(middleLane);
-    const bottomEval = evaluateHand(bottomLane);
-    const middleVsTop = compareHands(middleEval, topEval);
-    const bottomVsMiddle = compareHands(bottomEval, middleEval);
-    if (middleVsTop < 0 || bottomVsMiddle < 0) {
-      alert('牌型不符合规则！（尾道 ≥ 中道 ≥ 头道）');
-      return;
-    }
+    if (isConfirmDisabled) return;
     setIsLoading(true);
+
     setTimeout(() => {
-      const aiHand = Object.values(otherPlayers)[0] || { top: [], middle: [], bottom: [] };
-      const result = { playerHand, aiHand, score: Math.floor(Math.random() * 21) - 10 };
-      setGameResult(result);
+      // 构造4个玩家的结果
+      const allPlayers = [
+        { name: '你', hand: { top: topLane, middle: middleLane, bottom: bottomLane } },
+        ...Object.keys(otherPlayers).map((name, idx) => ({
+          name,
+          hand: otherPlayers[name]
+        }))
+      ];
+      // 假设score都随机生成
+      const scores = allPlayers.map(() => Math.floor(Math.random() * 21) - 10);
+
+      setGameResult({
+        players: allPlayers,
+        scores
+      });
       setIsLoading(false);
     }, 1500);
   };
@@ -134,6 +141,7 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
         </div>
         {isLoading && <div className="loading-overlay">正在比牌...</div>}
       </div>
+      {/* 田字型比牌弹窗 */}
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
     </div>
   );
