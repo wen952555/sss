@@ -8,8 +8,8 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   flex-grow: 1;
   min-height: 0;
-  overflow: visible; 
-  padding-top: 40px; /* 增大顶部空间，弹起牌不会被裁切 */
+  overflow: visible;
+  padding-top: 40px; /* 增大顶部空间 */
   margin-bottom: 24px;
 }
 
@@ -30,7 +30,7 @@
   transition: transform 0.2s, box-shadow 0.2s;
   z-index: 1;
   flex-shrink: 0;
-  position: relative; 
+  position: relative;
 }
 .card-display-area > div.selected {
   position: relative;
