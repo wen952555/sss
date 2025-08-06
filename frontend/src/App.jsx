@@ -1,3 +1,5 @@
+// --- START OF FILE App.jsx ---
+
 import React, { useState, useEffect } from 'react';
 import GameLobby from './components/GameLobby';
 import Auth from './components/Auth';
@@ -8,6 +10,44 @@ import EightCardGame from './components/EightCardGame';
 import './App.css';
 
 import { Browser } from '@capacitor/browser';
+
+// --- 工具函数：在前端生成并分发牌局 (用于离线试玩模式) ---
+const createOfflineGame = (gameType) => {
+  const ranksDeck = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
+  const suitsDeck = ['spades', 'hearts', 'clubs', 'diamonds'];
+  let fullDeck = [];
+  for (const suit of suitsDeck) {
+    for (const rank of ranksDeck) {
+      fullDeck.push({ rank, suit });
+    }
+  }
+
+  // 洗牌 (Fisher-Yates shuffle)
+  for (let i = fullDeck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [fullDeck[i], fullDeck[j]] = [fullDeck[j], fullDeck[i]];
+  }
+
+  const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
+  const playerCount = 4; // 试玩模式总是4人
+
+  const playerHand = fullDeck.slice(0, cardsPerPlayer);
+  const ai1Hand = fullDeck.slice(cardsPerPlayer, cardsPerPlayer * 2);
+  const ai2Hand = fullDeck.slice(cardsPerPlayer * 2, cardsPerPlayer * 3);
+  const ai3Hand = fullDeck.slice(cardsPerPlayer * 3, cardsPerPlayer * 4);
+
+  // 模拟后端返回的数据结构
+  return {
+    success: true,
+    hands: {
+      '你': { top: playerHand.slice(0,3), middle: playerHand.slice(3,8), bottom: playerHand.slice(8,13) }, // 粗略分牌
+      '电脑 2': { top: ai1Hand.slice(0,3), middle: ai1Hand.slice(3,8), bottom: ai1Hand.slice(8,13) },
+      '电脑 3': { top: ai2Hand.slice(0,3), middle: ai2Hand.slice(3,8), bottom: ai2Hand.slice(8,13) },
+      '电脑 4': { top: ai3Hand.slice(0,3), middle: ai3Hand.slice(3,8), bottom: ai3Hand.slice(8,13) },
+    }
+  };
+};
+
 
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) return null;
@@ -41,7 +81,8 @@ function TopBanner({ user, onLobby, onProfile, onLogout }) {
 
 function App() {
   const [user, setUser] = useState(null);
-  const [gameState, setGameState] = useState({ gameType: null, hand: null, otherPlayers: {}, error: null });
+  // 新增 isTrial 状态，传递给游戏组件
+  const [gameState, setGameState] = useState({ gameType: null, hand: null, otherPlayers: {}, error: null, isTrial: false });
   const [currentView, setCurrentView] = useState('lobby');
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
@@ -67,48 +108,57 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null });
+    setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null, isTrial: false });
   };
 
+  // --- 核心修改：handleSelectGame 函数 ---
   const handleSelectGame = async (gameType, isTrial) => {
     setGameState(prev => ({ ...prev, error: null }));
-    
-    const playerCount = isTrial ? 4 : 1;
-    const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
-    const params = `players=${playerCount}&cards=${cardsPerPlayer}&game=${gameType}`;
-    const apiUrl = `/api/deal_cards.php?${params}`;
+    let data;
 
-    try {
-      const response = await fetch(apiUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-      const data = await response.json();
+    if (isTrial) {
+      // --- 人机试玩（离线模式） ---
+      data = createOfflineGame(gameType);
+    } else {
+      // --- 正式对战（在线模式） ---
+      const playerCount = 1; // 正式对战总是请求自己的牌
+      const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
+      const params = `players=${playerCount}&cards=${cardsPerPlayer}&game=${gameType}`;
+      const apiUrl = `/api/deal_cards.php?${params}`;
 
-      if (data.success && data.hands && typeof data.hands === 'object' && Object.keys(data.hands).length > 0) {
-        let playerHand;
-        let playerHandKey;
-
-        // 优先寻找 '玩家 1'，如果不存在则取第一个，确保两种模式都兼容
-        if (data.hands['玩家 1']) {
-          playerHandKey = '玩家 1';
-        } else {
-          playerHandKey = Object.keys(data.hands)[0];
-        }
-
-        playerHand = data.hands[playerHandKey]; // playerHand 是一个 {top, middle, bottom} 对象
-        delete data.hands[playerHandKey];
-        const aiPlayers = data.hands;
-
-        setGameState({ gameType, hand: playerHand, otherPlayers: aiPlayers, error: null });
-      } else {
-        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message || '获取牌局数据失败。' });
+      try {
+        const response = await fetch(apiUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+        data = await response.json();
+      } catch (err) {
+        const errorMsg = err instanceof SyntaxError ? '服务器响应格式错误，请检查API或部署。' : `网络请求失败 (${err.message})`
+        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: errorMsg, isTrial: false });
+        return;
       }
-    } catch (err) {
-      const errorMsg = err instanceof SyntaxError ? '服务器响应格式错误，请检查API或部署。' : `网络请求失败 (${err.message})`
-      setGameState({ gameType: null, hand: null, otherPlayers: {}, error: errorMsg });
+    }
+
+    // --- 通用逻辑：处理获取到的牌局数据 ---
+    if (data.success && data.hands && typeof data.hands === 'object' && Object.keys(data.hands).length > 0) {
+      let playerHand;
+      let playerHandKey = isTrial ? '你' : '玩家 1'; // 试玩和正式模式的key可能不同
+      
+      if (!data.hands[playerHandKey]) {
+          playerHandKey = Object.keys(data.hands)[0]; // Fallback
+      }
+
+      playerHand = data.hands[playerHandKey];
+      delete data.hands[playerHandKey];
+      const aiPlayers = data.hands;
+
+      // 将 isTrial 存入 gameState，以便传递给游戏组件
+      setGameState({ gameType, hand: playerHand, otherPlayers: aiPlayers, error: null, isTrial });
+    } else {
+      setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message || '获取牌局数据失败。', isTrial: false });
     }
   };
 
+
   const handleBackToLobby = () => {
-    setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null });
+    setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null, isTrial: false });
     setCurrentView('lobby');
   };
 
@@ -123,7 +173,6 @@ function App() {
     setCurrentView('profile');
   };
 
-  // 关键判断：gameState.hand 必须是一个包含 top/middle/bottom 的对象
   const isInGame = gameState.gameType && gameState.hand && typeof gameState.hand === 'object' && 'top' in gameState.hand;
 
   const renderMainContent = () => {
@@ -132,6 +181,7 @@ function App() {
         playerHand: gameState.hand,
         otherPlayers: gameState.otherPlayers,
         onBackToLobby: handleBackToLobby,
+        isTrial: gameState.isTrial, // 将 isTrial 传递下去
       };
       if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
       if (gameState.gameType === 'eight') return <EightCardGame {...gameProps} />;
@@ -170,3 +220,4 @@ function App() {
 }
 
 export default App;
+// --- END OF FILE App.jsx ---
