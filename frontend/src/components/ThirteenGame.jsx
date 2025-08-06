@@ -26,8 +26,8 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const allLanesFilled = topLane.length === LANE_LIMITS.top &&
-    middleLane.length === LANE_LIMITS.middle &&
-    bottomLane.length === LANE_LIMITS.bottom;
+                         middleLane.length === LANE_LIMITS.middle &&
+                         bottomLane.length === LANE_LIMITS.bottom;
   const isConfirmDisabled = isLoading || !allLanesFilled || isInvalid;
 
   useEffect(() => {
@@ -49,7 +49,7 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     }
   }, [topLane, middleLane, bottomLane, allLanesFilled]);
 
-  // 支持多选/反选
+  // 多选/反选
   const handleCardClick = (card) => {
     setSelectedCards(prev =>
       prev.some(c => areCardsEqual(c, card))
@@ -58,11 +58,11 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     );
   };
 
-  // 点击牌墩，移动所有选中的牌至目标牌墩
+  // 移动所有选中的牌到目标牌墩，先移除再加
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
 
-    // 从所有牌墩移除选中的牌
+    // 移除所有选中牌
     const removeSelected = (lane) =>
       lane.filter(c => !selectedCards.some(s => areCardsEqual(s, c)));
 
@@ -70,7 +70,7 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     let newMiddle = removeSelected(middleLane);
     let newBottom = removeSelected(bottomLane);
 
-    // 把选中牌加入目标牌墩
+    // 加入目标牌墩
     if (targetLaneName === 'top') newTop = sortCards([...newTop, ...selectedCards]);
     if (targetLaneName === 'middle') newMiddle = sortCards([...newMiddle, ...selectedCards]);
     if (targetLaneName === 'bottom') newBottom = sortCards([...newBottom, ...selectedCards]);
@@ -86,7 +86,7 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setTopLane(newTop);
     setMiddleLane(newMiddle);
     setBottomLane(newBottom);
-    setSelectedCards([]); // 移动后清空选中
+    setSelectedCards([]); // 清空选中
   };
 
   const handleAutoSort = () => {
