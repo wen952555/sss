@@ -41,7 +41,28 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
   );
 
   useEffect(() => {
-    // (useEffect logic for AI remains the same)
+    if (!isTrial) return;
+    const aiNames = Object.keys(otherPlayers);
+    if (aiNames.length === 0) return;
+
+    const processNextAi = (index) => {
+      if (index >= aiNames.length) return;
+      const aiName = aiNames[index];
+      const aiUnsortedHand = otherPlayers[aiName];
+      const allAiCards = [...aiUnsortedHand.top, ...aiUnsortedHand.middle, ...aiUnsortedHand.bottom];
+      const sortedHand = getSmartSortedHand(allAiCards);
+      
+      setAiPlayerStatus(prevStatus => ({
+        ...prevStatus,
+        [aiName]: { status: '已准备', sortedHand: sortedHand }
+      }));
+      
+      const timeoutId = setTimeout(() => processNextAi(index + 1), 2000);
+      return () => clearTimeout(timeoutId);
+    };
+
+    const firstAiTimeout = setTimeout(() => processNextAi(0), 1000);
+    return () => clearTimeout(firstAiTimeout);
   }, [isTrial, otherPlayers]);
 
   const handleCardClick = (card) => {
@@ -65,10 +86,7 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
     if (targetLaneName === 'bottom') newBottom = sortCards([...newBottom, ...selectedCards]);
 
     // 移除容量检查
-    // if (newTop.length > LANE_LIMITS.top || ...) {
-    //   alert('空间不足!');
-    //   return;
-    // }
+    // if (newTop.length > LANE_LIMITS.top || ...) { alert('空间不足!'); return; }
 
     setTopLane(newTop);
     setMiddleLane(newMiddle);
@@ -107,9 +125,45 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
     const playerLanes = { top: topLane, middle: middleLane, bottom: bottomLane };
 
     if (isTrial) {
-      // (试玩逻辑不变)
+      const allAiReady = Object.values(aiPlayerStatus).every(s => s.status === '已准备');
+      if (!allAiReady) {
+        alert("请等待所有电脑玩家准备就绪！");
+        setIsLoading(false);
+        return;
+      }
+      setTimeout(() => {
+        const playersForScorer = [
+          { name: "你", head: convertCardsToStingFormat(playerLanes.top), middle: convertCardsToStingFormat(playerLanes.middle), tail: convertCardsToStingFormat(playerLanes.bottom) },
+          ...Object.entries(aiPlayerStatus).map(([name, status]) => ({ name, head: convertCardsToStingFormat(status.sortedHand.top), middle: convertCardsToStingFormat(status.sortedHand.middle), tail: convertCardsToStingFormat(status.sortedHand.bottom) }))
+        ];
+        const finalScores = calcSSSAllScores(playersForScorer);
+        const result = {
+          players: playersForScorer.map(p => ({
+            name: p.name,
+            hand: {
+              top: p.head.map(c => ({ rank: c.split('_')[0], suit: c.split('_')[2] })),
+              middle: p.middle.map(c => ({ rank: c.split('_')[0], suit: c.split('_')[2] })),
+              bottom: p.tail.map(c => ({ rank: c.split('_')[0], suit: c.split('_')[2] }))
+            }
+          })),
+          scores: finalScores
+        };
+        setGameResult(result);
+        setIsLoading(false);
+      }, 500);
     } else {
-      // (在线逻辑不变)
+      // 在线模式逻辑
+      try {
+        const response = await fetch('/api/compare_thirteen.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(playerLanes) });
+        if (!response.ok) throw new Error(`服务器错误: ${response.status}`);
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || '后端比牌失败');
+        // process data...
+      } catch (error) {
+        setErrorMessage(error.message);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -118,10 +172,35 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
     onBackToLobby();
   };
 
-  // (JSX return 部分不变)
   return (
     <div className="table-root">
-      {/* ... */}
+      <div className="table-panel">
+        <div className="table-top-bar">
+          <button onClick={onBackToLobby} className="table-quit-btn">退出游戏</button>
+          <div className="table-score-box">{isTrial ? "试玩模式" : "积分: 1000"}</div>
+        </div>
+        <div className="players-status-bar">
+          <div className="player-status-item you"><span className="player-name">你</span><span className="status-text">理牌中...</span></div>
+          {Object.entries(aiPlayerStatus).map(([name, status]) => (
+            <div key={name} className={`player-status-item ${status.status === '已准备' ? 'ready' : ''}`}>
+              <span className="player-name">{name}</span>
+              <span className="status-text">{status.status}</span>
+            </div>
+          ))}
+        </div>
+        <div className="table-lanes-area">
+          <Lane title="头道" cards={topLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
+          <Lane title="中道" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
+          <Lane title="尾道" cards={bottomLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('bottom')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
+        </div>
+        {errorMessage && <p className="error-message">{errorMessage}</p>}
+        <div className="table-actions-bar">
+          <button onClick={handleAutoSort} className="action-btn orange">自动理牌</button>
+          <button onClick={handleConfirm} disabled={isLoading} className="action-btn green">确认牌型</button>
+        </div>
+        {isLoading && <div className="loading-overlay">正在比牌...</div>}
+      </div>
+      {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
     </div>
   );
 };
