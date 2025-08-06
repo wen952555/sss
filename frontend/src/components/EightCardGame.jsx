@@ -121,26 +121,25 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
       setTimeout(() => {
         const playerYouData = { name: "你", head: playerLanes.top, middle: playerLanes.middle, tail: playerLanes.bottom };
         const aiPlayersData = Object.entries(aiPlayerStatus).map(([name, status]) => ({
-          name,
-          head: status.sortedHand.top,
-          middle: status.sortedHand.middle,
-          tail: status.sortedHand.bottom,
+            name,
+            head: status.sortedHand.top,
+            middle: status.sortedHand.middle,
+            tail: status.sortedHand.bottom,
         }));
 
-        const finalScores = [
-            null,
-            ...aiPlayersData.map(ai => calculateSinglePairScoreForEight(playerYouData, ai))
-        ];
+        // --- 核心修改：计算每个AI的得分，然后汇总成我的总分 ---
+        const pairScores = aiPlayersData.map(ai => calculateSinglePairScoreForEight(playerYouData, ai));
+        const myTotalScore = pairScores.reduce((sum, score) => sum + score, 0);
 
         const result = {
-          players: [
-            { name: "你", hand: playerLanes },
-            ...aiPlayersData.map(p => ({
-              name: p.name,
-              hand: { top: p.head, middle: p.middle, bottom: p.tail }
-            }))
-          ],
-          scores: finalScores
+            players: [
+                { name: "你", hand: playerLanes },
+                ...aiPlayersData.map(p => ({
+                    name: p.name,
+                    hand: { top: p.head, middle: p.middle, bottom: p.tail }
+                }))
+            ],
+            scores: [myTotalScore, ...pairScores] // 数组第一位是我的总分
         };
         
         setGameResult(result);
@@ -148,7 +147,6 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
       }, 500);
     } else {
       // 在线模式逻辑
-      setIsLoading(false);
     }
   };
   

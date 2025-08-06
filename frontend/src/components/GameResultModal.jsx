@@ -38,7 +38,8 @@ const GameResultModal = ({ result, onClose }) => {
               <div className="game-result-grid-item" key={player.name}>
                 <div style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: '8px' }}>
                   {player.name}
-                  {player.name !== '你' && score !== null && (
+                  {/* --- 核心修改：现在所有玩家都显示分数 --- */}
+                  {score !== null && (
                     <span style={{ color: scoreColor, marginLeft: '10px' }}>
                       {score > 0 ? `+${score}` : score}
                     </span>

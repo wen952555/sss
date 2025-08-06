@@ -1,29 +1,28 @@
-/* --- START OF FILE GameResultModal.css --- */
+// --- START OF FILE frontend/src/components/GameResultModal.css ---
 
-/* 1. 弹窗主内容区：移除最小宽度，防止在小屏上被强制撑开 */
 .result-modal-content {
   width: 100%;
-  max-width: 650px;
-  /* min-width: 350px;  <-- 移除此行 */
+  max-width: 650px; /* 在大屏上的最大宽度 */
   padding: 15px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto; /* 内容超高时，弹窗内部滚动 */
+  max-height: 90vh; /* 最大高度为视口的90% */
 }
 
-/* 2. 核心修改：默认使用单列布局（移动端优先），并减小间距 */
+/* 默认单列布局（移动端） */
 .game-result-grid {
   display: grid;
-  grid-template-columns: 1fr; /* 默认单列，垂直排列 */
-  gap: 10px; /* 减小网格间距 */
+  grid-template-columns: 1fr;
+  gap: 10px;
   margin: 8px 0;
 }
 
-/* 3. 网格项：减小内边距 */
 .game-result-grid-item {
   background: rgba(255,255,255,0.22);
   border-radius: 15px;
-  padding: 8px; /* 减小内边距 */
+  padding: 10px; /* 统一内边距 */
   border: 1px solid rgba(255,255,255,0.13);
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
@@ -36,31 +35,33 @@
 
 .result-cards-row {
   display: flex;
-  justify-content: flex-start;
-  align-items: center; /* 垂直居中对齐 */
+  justify-content: center; /* 居中卡牌 */
+  align-items: center;
   margin-bottom: 3px;
-  min-height: 55px; /* 给卡牌一个最小高度容器 */
+  min-height: 55px;
+  position: relative;
+  overflow: hidden; /* 隐藏超出部分的卡牌 */
 }
 
-/* 4. 核心修改：缩小卡牌并强制紧凑堆叠 */
+/* 强制紧凑堆叠 */
 .result-cards-row .card {
-  transform: scale(0.7); /* 进一步缩小卡牌 */
-  transform-origin: left center; /* 确保从左侧开始缩放 */
-  margin-right: -48px; /* 关键：强负边距，让卡牌大幅重叠 */
+  transform: scale(0.65);
+  transform-origin: center center;
+  margin-left: -52px; /* 强负边距，大幅重叠 */
 }
 
-/* 5. 响应式切换：当屏幕宽度大于600px时，才使用2x2网格布局 */
+.result-cards-row .card:first-child {
+  margin-left: 0; /* 第一张牌不偏移 */
+}
+
+/* 媒体查询：当屏幕宽度足够时，切换为网格布局 */
 @media (min-width: 600px) {
   .game-result-grid {
-    grid-template-columns: 1fr 1fr; /* 切换为两列 */
-    gap: 18px; /* 在大屏上使用更大的间距 */
-  }
-  .result-modal-content {
-    padding: 20px; /* 大屏上内边距也可以大一些 */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* 响应式网格 */
+    gap: 18px;
   }
 }
 
-/* 关闭按钮样式保持不变 */
 .close-button {
   padding: 14px 0;
   border: none;
@@ -71,8 +72,9 @@
   background: linear-gradient(45deg, #6a82fb, #fc5c7d);
   color: white;
   margin-top: 5px;
+  flex-shrink: 0;
 }
 .close-button:hover {
   transform: translateY(-2px);
 }
-/* --- END OF FILE GameResultModal.css --- */
+// --- END OF FILE frontend/src/components/GameResultModal.css ---

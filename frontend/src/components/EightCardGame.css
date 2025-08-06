@@ -1,64 +1,181 @@
-.eight-game-container {
+// --- START OF FILE frontend/src/components/ThirteenGame.css ---
+
+.table-root {
   width: 100%;
   height: 100%;
   padding: 10px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
+  align-items: center; /* 水平居中 */
   box-sizing: border-box;
+  overflow: hidden; /* 防止内部元素溢出 */
 }
 
-.eight-game-panel {
+.table-panel {
   width: 100%;
-  max-width: 500px;
-  background: rgba(255, 255, 255, 0.45);
+  max-width: 550px; /* 设置一个最大宽度，防止在大屏上过宽 */
+  height: auto; /* 高度由内容决定 */
+  max-height: 100%; /* 最大高度不超过父容器 */
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-  
-  /* --- 核心修改：移除所有高度限制 --- */
-  padding: 20px;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 15px;
+  position: relative;
+  box-sizing: border-box;
+  overflow-y: auto; /* 当内容超高时，面板内部滚动 */
 }
 
-.game-header,
-.eight-game-players,
-.game-actions-new {
+/* 媒体查询：针对非常窄的屏幕，进一步减小内边距 */
+@media (max-width: 360px) {
+  .table-panel {
+    padding: 10px;
+    gap: 10px;
+  }
+}
+
+.table-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0; /* 防止被压缩 */
+}
+
+.table-quit-btn {
+  background: rgba(231, 76, 60, 0.8);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(231, 76, 60, 0.3);
+}
+.table-quit-btn:hover {
+  background: #e74c3c;
+}
+
+.table-score-box {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px 16px;
+  border-radius: 10px;
+  color: #2c3e50;
+  font-weight: bold;
+}
+
+.players-status-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 8px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-.lanes-area {
+.player-status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+}
+
+.player-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #3b3b8e;
+  white-space: nowrap; /* 防止名字换行 */
+}
+
+.status-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.player-status-item.you .player-name {
+  color: #1a2a6c;
+}
+.player-status-item.you .status-text {
+  color: #3498db;
+}
+.player-status-item.ready .status-text {
+  color: #27ae60;
+}
+
+.table-lanes-area {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  
-  /* --- 核心修改：为弹起的卡牌顶部留出安全空间 --- */
-  padding-top: 25px; 
+  flex-grow: 1;
+  min-height: 0; /* 允许在flex布局中收缩 */
 }
 
+.table-actions-bar {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.action-btn {
+  flex: 1;
+  padding: 12px 0;
+  border-radius: 12px;
+  border: none;
+  font-size: 1.05rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.action-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.action-btn:disabled {
+  background: #bdc3c7 !important;
+  color: #7f8c8d !important;
+  box-shadow: none;
+  cursor: not-allowed;
+}
 
-/* --- 其他样式保持不变 --- */
-.game-header { display: flex; align-items: center; justify-content: space-between; }
-.game-header h2 { flex-grow: 1; text-align: center; margin: 0; font-size: 1.4rem; color: #1a2a6c; }
-.quit-button { background: rgba(231, 76, 60, 0.8); color: #fff; border: none; border-radius: 10px; padding: 8px 16px; font-size: 0.9rem; font-weight: bold; cursor: pointer; }
-.eight-game-players { display: flex; flex-direction: column; gap: 5px; }
-.player-group { display: flex; justify-content: space-around; background: rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 8px; gap: 8px; }
-.player-status-item { display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; }
-.player-name { font-size: 0.9rem; font-weight: 600; color: #3b3b8e; }
-.status-text { font-size: 0.75rem; font-weight: 500; }
-.player-status-item.you .player-name { color: #1a2a6c; }
-.player-status-item.you .status-text { color: #3498db; }
-.player-status-item.ready .status-text { color: #27ae60; }
-.game-actions-new { display: flex; gap: 12px; }
-.action-button-new { flex: 1; padding: 12px 0; border-radius: 12px; border: none; font-size: 1.05rem; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-.action-button-new:active { transform: scale(0.97); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-.action-button-new:disabled { background: #bdc3c7 !important; color: #7f8c8d !important; box-shadow: none; cursor: not-allowed; }
-.action-button-new.auto-sort { background: linear-gradient(45deg, #ff7e5f, #feb47b); color: #fff; }
-.action-button-new.confirm { background: linear-gradient(45deg, #00b894, #00cec9); color: #fff; }
-.error-message { color: #c0392b; background: rgba(231, 76, 60, 0.1); text-align: center; padding: 8px; border-radius: 8px; font-weight: bold; }
+.action-btn.orange {
+  background: linear-gradient(45deg, #f39c12, #fd79a8);
+  color: #fff;
+}
+
+.action-btn.green {
+  background: linear-gradient(45deg, #00b894, #00cec9);
+  color: #fff;
+}
+
+.error-message {
+  color: #c0392b;
+  background: rgba(231, 76, 60, 0.1);
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  color: #2c3e50;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  z-index: 100;
+}
+// --- END OF FILE frontend/src/components/ThirteenGame.css ---

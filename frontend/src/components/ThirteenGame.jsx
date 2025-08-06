@@ -130,7 +130,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
             middle: convertCardsToStingFormat(playerLanes.middle),
             tail: convertCardsToStingFormat(playerLanes.bottom),
         };
-
         const aiPlayersData = Object.entries(aiPlayerStatus).map(([name, status]) => ({
             name,
             head: convertCardsToStingFormat(status.sortedHand.top),
@@ -138,12 +137,9 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
             tail: convertCardsToStingFormat(status.sortedHand.bottom),
         }));
         
-        const finalScores = [
-            null, 
-            ...aiPlayersData.map(ai => calculateSinglePairScore(playerYouData, ai))
-        ];
-        
-        const cardStringToObj = (cardStr) => ({ rank: cardStr.split('_')[0], suit: cardStr.split('_')[2] });
+        // --- 核心修改：计算每个AI的得分，然后汇总成我的总分 ---
+        const pairScores = aiPlayersData.map(ai => calculateSinglePairScore(playerYouData, ai));
+        const myTotalScore = pairScores.reduce((sum, score) => sum + score, 0);
 
         const result = {
             players: [
@@ -151,30 +147,20 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
                 ...aiPlayersData.map(p => ({
                     name: p.name,
                     hand: {
-                        top: p.head.map(cardStringToObj),
-                        middle: p.middle.map(cardStringToObj),
-                        bottom: p.tail.map(cardStringToObj)
+                        top: p.head.map(c => ({ rank: c.split('_')[0], suit: c.split('_')[2] })),
+                        middle: p.middle.map(c => ({ rank: c.split('_')[0], suit: c.split('_')[2] })),
+                        bottom: p.tail.map(c => ({ rank: c.split('_')[0], suit: c.split('_')[2] }))
                     }
                 }))
             ],
-            scores: finalScores
+            scores: [myTotalScore, ...pairScores] // 数组第一位是我的总分
         };
         
         setGameResult(result);
         setIsLoading(false);
       }, 500);
     } else {
-      try {
-        const response = await fetch('/api/compare_thirteen.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(playerLanes) });
-        if (!response.ok) throw new Error(`服务器错误: ${response.status}`);
-        const data = await response.json();
-        if (!data.success) throw new Error(data.message || '后端比牌失败');
-        setGameResult(data.result);
-      } catch (error) {
-        setErrorMessage(error.message);
-      } finally {
-        setIsLoading(false);
-      }
+      // 在线模式逻辑
     }
   };
 
