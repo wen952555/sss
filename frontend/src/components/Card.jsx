@@ -2,8 +2,6 @@
 
 import React from 'react';
 
-// --- 已将 sortCards 函数和 RANK_ORDER 移动到 pokerEvaluator.js ---
-
 const Card = ({ card, onClick, isSelected }) => {
   if (!card || card.suit === 'joker') {
     return null;
@@ -14,19 +12,24 @@ const Card = ({ card, onClick, isSelected }) => {
   
   const cardClassName = `card ${isSelected ? 'selected' : ''} ${onClick ? 'clickable' : ''}`;
   
-  // --- 核心修正：创建一个新的点击处理函数 ---
+  // --- 核心修复：定义一个健壮的点击处理函数 ---
   const handleClick = (e) => {
-    // 1. 阻止事件冒泡到父级容器（Lane），这是解决问题的关键
+    // 1. 阻止事件冒泡到父级容器（如 Lane.jsx 中的 .lane-container）
+    // 这是解决问题的关键，确保点击卡牌不会触发移动逻辑
     e.stopPropagation();
-    // 2. 如果存在从父级传入的 onClick 回调，则执行它
+    
+    // 2. 如果父组件传递了 onClick 回调，则执行它
+    // 注意：这里不再传递事件对象 e，只传递卡牌本身
     if (onClick) {
       onClick(card);
     }
   };
 
   return (
-    // --- 核心修正：使用新的 handleClick 函数 ---
-    <div className={cardClassName} onClick={handleClick}
+    <div 
+      className={cardClassName} 
+      // 使用我们新定义的、健壮的 handleClick 函数
+      onClick={handleClick}
       style={{
         width: 'min(15vw, 90px)',
         height: 'auto',
@@ -45,7 +48,6 @@ const Card = ({ card, onClick, isSelected }) => {
           maxWidth: '100%',
           maxHeight: '125px',
           width: 'auto',
-  
           height: 'auto',
           display: 'block',
         }}
@@ -56,5 +58,4 @@ const Card = ({ card, onClick, isSelected }) => {
 };
 
 export default Card;
-
 // --- END OF FILE Card.jsx ---
