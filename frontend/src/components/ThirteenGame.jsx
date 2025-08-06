@@ -26,8 +26,8 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const allLanesFilled = topLane.length === LANE_LIMITS.top &&
-                         middleLane.length === LANE_LIMITS.middle &&
-                         bottomLane.length === LANE_LIMITS.bottom;
+    middleLane.length === LANE_LIMITS.middle &&
+    bottomLane.length === LANE_LIMITS.bottom;
   const isConfirmDisabled = isLoading || !allLanesFilled || isInvalid;
 
   useEffect(() => {
@@ -48,8 +48,8 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
       setBottomLaneHand(null);
     }
   }, [topLane, middleLane, bottomLane, allLanesFilled]);
-  
-  // 多选逻辑：点一张选中，再点其他也能选
+
+  // 支持多选/反选
   const handleCardClick = (card) => {
     setSelectedCards(prev =>
       prev.some(c => areCardsEqual(c, card))
@@ -58,27 +58,35 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     );
   };
 
-  // 点击牌墩区域移动所有选中牌
+  // 点击牌墩，移动所有选中的牌至目标牌墩
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
-    const removeSelected = (lane) => lane.filter(c => !selectedCards.some(s => areCardsEqual(s, c)));
+
+    // 从所有牌墩移除选中的牌
+    const removeSelected = (lane) =>
+      lane.filter(c => !selectedCards.some(s => areCardsEqual(s, c)));
+
     let newTop = removeSelected(topLane);
     let newMiddle = removeSelected(middleLane);
     let newBottom = removeSelected(bottomLane);
 
-    if (targetLaneName === 'top') newTop.push(...selectedCards);
-    else if (targetLaneName === 'middle') newMiddle.push(...selectedCards);
-    else if (targetLaneName === 'bottom') newBottom.push(...selectedCards);
+    // 把选中牌加入目标牌墩
+    if (targetLaneName === 'top') newTop = sortCards([...newTop, ...selectedCards]);
+    if (targetLaneName === 'middle') newMiddle = sortCards([...newMiddle, ...selectedCards]);
+    if (targetLaneName === 'bottom') newBottom = sortCards([...newBottom, ...selectedCards]);
 
-    if (newTop.length > LANE_LIMITS.top || newMiddle.length > LANE_LIMITS.middle || newBottom.length > LANE_LIMITS.bottom) {
-        alert('空间不足，无法放入所选的牌！');
-        return;
+    // 检查容量
+    if (newTop.length > LANE_LIMITS.top ||
+      newMiddle.length > LANE_LIMITS.middle ||
+      newBottom.length > LANE_LIMITS.bottom) {
+      alert('空间不足，无法放入所选的牌！');
+      return;
     }
 
-    setTopLane(sortCards(newTop));
-    setMiddleLane(sortCards(newMiddle));
-    setBottomLane(sortCards(newBottom));
-    setSelectedCards([]);
+    setTopLane(newTop);
+    setMiddleLane(newMiddle);
+    setBottomLane(newBottom);
+    setSelectedCards([]); // 移动后清空选中
   };
 
   const handleAutoSort = () => {
@@ -88,31 +96,17 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
     setBottomLane(allCards.slice(LANE_LIMITS.top + LANE_LIMITS.middle));
   };
 
-  // 比牌，生成所有玩家的结果
   const handleConfirm = async () => {
     if (isConfirmDisabled) return;
     setIsLoading(true);
-
     setTimeout(() => {
-      // 构造4个玩家的结果
-      const allPlayers = [
-        { name: '你', hand: { top: topLane, middle: middleLane, bottom: bottomLane } },
-        ...Object.keys(otherPlayers).map((name, idx) => ({
-          name,
-          hand: otherPlayers[name]
-        }))
-      ];
-      // 假设score都随机生成
-      const scores = allPlayers.map(() => Math.floor(Math.random() * 21) - 10);
-
-      setGameResult({
-        players: allPlayers,
-        scores
-      });
+      const aiHand = Object.values(otherPlayers)[0] || { top: [], middle: [], bottom: [] };
+      const result = { playerHand, aiHand, score: Math.floor(Math.random() * 21) - 10 };
+      setGameResult(result);
       setIsLoading(false);
     }, 1500);
   };
-  
+
   const handleCloseResult = () => {
     setGameResult(null);
     onBackToLobby();
@@ -141,7 +135,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby }) => {
         </div>
         {isLoading && <div className="loading-overlay">正在比牌...</div>}
       </div>
-      {/* 田字型比牌弹窗 */}
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
     </div>
   );
