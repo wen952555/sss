@@ -9,7 +9,7 @@
   flex-grow: 1;
   min-height: 0;
   overflow: visible; 
-  padding-top: 30px;
+  padding-top: 40px; /* 增大顶部空间，弹起牌不会被裁切 */
   margin-bottom: 24px;
 }
 
@@ -25,7 +25,6 @@
   position: relative;
 }
 
-/* 每张牌默认顺序堆叠，弹起的牌绝对定位且最高 z-index */
 .card-display-area > div {
   margin-left: -40px;
   transition: transform 0.2s, box-shadow 0.2s;
