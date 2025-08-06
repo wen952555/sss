@@ -1,3 +1,4 @@
+/* --- START OF FILE Lane.css --- */
 .lane-container {
   display: flex;
   align-items: center;
@@ -23,6 +24,9 @@
   padding-bottom: 5px;
   cursor: pointer;
   position: relative;
+  /* --- 核心修正：增加左内边距以抵消第一张牌的负外边距 --- */
+  padding-left: 40px; 
+  box-sizing: content-box; /* 确保内边距不会影响布局计算 */
 }
 
 .card-display-area > div {
@@ -39,3 +43,4 @@
   box-shadow: 0 0 25px rgba(255, 71, 87, 0.8);
   border-radius: 8px;
 }
+/* --- END OF FILE Lane.css --- */

@@ -1,3 +1,4 @@
+// --- START OF FILE Lane.jsx ---
 import React from 'react';
 import Card from './Card';
 import './Lane.css';
@@ -15,6 +16,14 @@ const Lane = ({
   const handleAreaClick = () => {
     if (selectedCards.length > 0 && onLaneClick) onLaneClick();
   };
+  
+  // --- 核心修正：为卡牌点击事件增加事件对象 e，并调用 e.stopPropagation() ---
+  const handleCardClick = (e, card) => {
+    e.stopPropagation(); // 阻止事件冒泡到父容器 .card-display-area
+    if (onCardClick) {
+      onCardClick(card);
+    }
+  };
 
   return (
     <div className="lane-container">
@@ -24,7 +33,8 @@ const Lane = ({
             key={`${card.rank}-${card.suit}-${idx}`}
             card={card}
             isSelected={selectedCards.some(sel => areCardsEqual(sel, card))}
-            onClick={onCardClick ? () => onCardClick(card) : undefined}
+            // 将修正后的 handleCardClick 传递给卡牌
+            onClick={(e) => handleCardClick(e, card)}
           />
         ))}
       </div>
@@ -37,3 +47,4 @@ const Lane = ({
 };
 
 export default Lane;
+// --- END OF FILE Lane.jsx ---
