@@ -119,7 +119,14 @@ function getLaneScore(cards, laneName) {
     return 1;
 }
 
-function calculateSinglePairScoreForEight(p1, p2) {
+// --- ↓↓↓ 核心修复：在这里添加 `export` 关键字 ↓↓↓ ---
+/**
+ * 计算两个玩家之间的胜负分 (八张)
+ * @param {Object} p1 - 玩家1的数据对象
+ * @param {Object} p2 - 玩家2的数据对象
+ * @returns {number} 返回 p1 相对于 p2 的得分
+ */
+export function calculateSinglePairScoreForEight(p1, p2) {
     const p1Info = { ...p1, isFoul: isFoul(p1.head, p1.middle, p1.tail) };
     const p2Info = { ...p2, isFoul: isFoul(p2.head, p2.middle, p2.tail) };
     
@@ -156,4 +163,5 @@ export function calculateEightCardScores(players) {
     }
     return finalScores;
 }
+
 // --- END OF FILE frontend/src/utils/eightCardScorer.js ---
