@@ -7,8 +7,11 @@ const areCardsEqual = (card1, card2) => {
   return card1.rank === card2.rank && card1.suit === card2.suit;
 };
 
-const Lane = ({ title, cards, onCardClick, onLaneClick, expectedCount, handType, selectedCards = [] }) => {
-  // 点击牌墩区域就尝试移动所有已选中的牌
+const Lane = ({
+  title, cards, onCardClick, onLaneClick,
+  expectedCount, handType, selectedCards = [],
+}) => {
+  // 支持牌墩点击（无论点到卡牌还是空白），都能移动选中的牌
   const handleAreaClick = () => {
     if (selectedCards.length > 0 && onLaneClick) onLaneClick();
   };
