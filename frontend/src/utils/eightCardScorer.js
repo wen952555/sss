@@ -43,36 +43,17 @@ function getHandType(cards) {
     return '高牌';
 }
 
-// --- ↓↓↓ 新增/修改的核心比较逻辑 ↓↓↓ ---
-
-/**
- * 计算顺子的“真实”价值用于比较
- * AKQ -> 14, A23 -> 13.5 (特殊值，介于AKQ和KQJ之间), KQJ -> 13, ...
- * @param {Array<Object>} cards - 牌对象数组
- * @returns {number} 顺子的价值
- */
 function getStraightValue(cards) {
     const ranks = cards.map(c => c.value).sort((a, b) => a - b);
-    if (ranks.includes(14) && ranks.includes(13)) { // A-K-Q
-        return 14;
-    }
-    if (ranks.includes(14) && ranks.includes(2)) { // A-2-3
-        return 13.5; // 特殊值，比K-Q-J大，比A-K-Q小
-    }
-    return ranks[ranks.length - 1]; // 普通顺子，返回最大牌的点数
+    if (ranks.includes(14) && ranks.includes(13)) return 14;
+    if (ranks.includes(14) && ranks.includes(2)) return 13.5;
+    return ranks[ranks.length - 1];
 }
 
-/**
- * 比较两手牌的大小（假设牌型相同）
- * @param {Array<Object>} cardsA - A的牌对象数组
- * @param {Array<Object>} cardsB - B的牌对象数组
- * @returns {number}
- */
 function compareSameTypeHands(cardsA, cardsB) {
     const sortedA = [...cardsA].sort((a, b) => b.value - a.value || b.suitValue - a.suitValue);
     const sortedB = [...cardsB].sort((a, b) => b.value - a.value || b.suitValue - a.suitValue);
 
-    // 比较三条、对子、高牌
     for (let i = 0; i < sortedA.length; i++) {
         if (sortedA[i].value !== sortedB[i].value) return sortedA[i].value - sortedB[i].value;
     }
@@ -82,13 +63,14 @@ function compareSameTypeHands(cardsA, cardsB) {
     return 0;
 }
 
+// --- ↓↓↓ 核心修复：在这里添加 `export` 关键字 ↓↓↓ ---
 /**
  * 比较单个道次的牌 (主比较函数)
  * @param {Array<Object>} laneA - A的牌道
  * @param {Array<Object>} laneB - B的牌道
  * @returns {number}
  */
-function compareLanes(laneA, laneB) {
+export function compareLanes(laneA, laneB) {
     const typeA = getHandType(laneA);
     const typeB = getHandType(laneB);
 
@@ -96,20 +78,16 @@ function compareLanes(laneA, laneB) {
         return HAND_RANK[typeA] - HAND_RANK[typeB];
     }
     
-    // 牌型相同，进入细分比较
     const cardsA = laneA.map(parseCardString);
     const cardsB = laneB.map(parseCardString);
     
     if (typeA === '同花顺') {
         const suitA = cardsA[0].suitValue;
         const suitB = cardsB[0].suitValue;
-        // 1. 先比花色
         if (suitA !== suitB) return suitA - suitB;
-        // 2. 花色相同，按顺子规则比大小
         const straightValueA = getStraightValue(cardsA);
         const straightValueB = getStraightValue(cardsB);
         if (straightValueA !== straightValueB) return straightValueA - straightValueB;
-        // 3. 顺子大小也相同（只可能都是A23），比A的花色
         const aceA = cardsA.find(c => c.rank === 'ace');
         const aceB = cardsB.find(c => c.rank === 'ace');
         return aceA.suitValue - aceB.suitValue;
@@ -119,19 +97,14 @@ function compareLanes(laneA, laneB) {
         const straightValueA = getStraightValue(cardsA);
         const straightValueB = getStraightValue(cardsB);
         if (straightValueA !== straightValueB) return straightValueA - straightValueB;
-        // 顺子大小相同（都是A23），比A的花色
         const aceA = cardsA.find(c => c.rank === 'ace');
         const aceB = cardsB.find(c => c.rank === 'ace');
         return aceA.suitValue - aceB.suitValue;
     }
 
-    // 其他牌型（三条、对子、高牌）的比较
     return compareSameTypeHands(cardsA, cardsB);
 }
 
-// --- ↑↑↑ 核心比较逻辑结束 ↑↑↑ ---
-
-// (isFoul, getLaneScore 等函数保持不变)
 function isFoul(head, middle, tail) {
     if (compareLanes(middle, tail) > 0) return true;
     if (compareLanes(head, middle) > 0) return true;
@@ -156,8 +129,6 @@ function getLaneScore(cards, laneName) {
     return 1;
 }
 
-
-// --- 主计分函数 (保持不变) ---
 export function calculateEightCardScores(players) {
     const n = players.length;
     if (n < 2) return new Array(n).fill(0);
