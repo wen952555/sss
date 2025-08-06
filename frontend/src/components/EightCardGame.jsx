@@ -1,11 +1,11 @@
-// --- START OF FILE EightCardGame.jsx ---
+// --- START OF FILE frontend/src/components/EightCardGame.jsx ---
 
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
 import { getSmartSortedHandForEight } from '../utils/eightCardAutoSorter';
-import { calculateEightCardScores } from '../utils/eightCardScorer';
+import { calculateSinglePairScoreForEight } from '../utils/eightCardScorer';
 import GameResultModal from './GameResultModal';
 import { sortCards } from '../utils/pokerEvaluator';
 
@@ -68,7 +68,6 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
     );
   };
 
-  // --- 核心修改 1: handleLaneClick 不再检查牌道容量 ---
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
     const removeSelected = (lane) => lane.filter(c => !selectedCards.some(s => areCardsEqual(s, c)));
@@ -79,9 +78,6 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
     if (targetLaneName === 'top') newTop = [...newTop, ...selectedCards];
     if (targetLaneName === 'middle') newMiddle = [...newMiddle, ...selectedCards];
     if (targetLaneName === 'bottom') newBottom = [...newBottom, ...selectedCards];
-
-    // 移除容量检查
-    // if (newTop.length > LANE_LIMITS.top || ...) { ... }
 
     setTopLane(sortCards(newTop));
     setMiddleLane(sortCards(newMiddle));
@@ -102,14 +98,10 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
     }
   };
 
-  // --- 核心修改 2: handleConfirm 增加牌道数量检查 ---
   const handleConfirm = async () => {
     if (isLoading) return;
-
-    // 1. 在这里进行数量检查
-    if (topLane.length !== LANE_LIMITS.top || 
-        middleLane.length !== LANE_LIMITS.middle || 
-        bottomLane.length !== LANE_LIMITS.bottom) {
+    
+    if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
       alert(`牌道数量错误！\n\n请确保：\n- 头道: ${LANE_LIMITS.top} 张\n- 中道: ${LANE_LIMITS.middle} 张\n- 尾道: ${LANE_LIMITS.bottom} 张`);
       return;
     }
@@ -127,26 +119,35 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
         return;
       }
       setTimeout(() => {
-        const playersData = [
-          { name: "你", ...playerLanes },
-          ...Object.entries(aiPlayerStatus).map(([name, status]) => ({
-            name, head: status.sortedHand.top, middle: status.sortedHand.middle, tail: status.sortedHand.bottom
-          }))
+        const playerYouData = { name: "你", head: playerLanes.top, middle: playerLanes.middle, tail: playerLanes.bottom };
+        const aiPlayersData = Object.entries(aiPlayerStatus).map(([name, status]) => ({
+          name,
+          head: status.sortedHand.top,
+          middle: status.sortedHand.middle,
+          tail: status.sortedHand.bottom,
+        }));
+
+        const finalScores = [
+            null,
+            ...aiPlayersData.map(ai => calculateSinglePairScoreForEight(playerYouData, ai))
         ];
-        const finalScores = calculateEightCardScores(playersData);
+
         const result = {
-          players: playersData.map(p => ({
-            name: p.name,
-            hand: { top: p.head || p.top, middle: p.middle, bottom: p.tail || p.bottom }
-          })),
+          players: [
+            { name: "你", hand: playerLanes },
+            ...aiPlayersData.map(p => ({
+              name: p.name,
+              hand: { top: p.head, middle: p.middle, bottom: p.tail }
+            }))
+          ],
           scores: finalScores
         };
+        
         setGameResult(result);
         setIsLoading(false);
       }, 500);
     } else {
       // 在线模式逻辑
-      // ...
       setIsLoading(false);
     }
   };
@@ -193,4 +194,4 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
 
 export default EightCardGame;
 
-// --- END OF FILE EightCardGame.jsx ---
+// --- END OF FILE frontend/src/components/EightCardGame.jsx ---

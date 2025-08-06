@@ -1,11 +1,11 @@
-// --- START OF FILE ThirteenGame.jsx ---
+// --- START OF FILE frontend/src/components/ThirteenGame.jsx ---
 
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './ThirteenGame.css';
 import { getSmartSortedHand } from '../utils/autoSorter';
-import { calcSSSAllScores } from '../utils/sssScorer';
+import { calculateSinglePairScore } from '../utils/sssScorer';
 import { sortCards } from '../utils/pokerEvaluator'; 
 import GameResultModal from './GameResultModal';
 
@@ -73,7 +73,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
     );
   };
 
-  // --- 核心修改 1: handleLaneClick 不再检查牌道容量 ---
   const handleLaneClick = (targetLaneName) => {
     if (selectedCards.length === 0) return;
     const removeSelected = (lane) => lane.filter(c => !selectedCards.some(s => areCardsEqual(s, c)));
@@ -84,9 +83,6 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
     if (targetLaneName === 'top') newTop = sortCards([...newTop, ...selectedCards]);
     if (targetLaneName === 'middle') newMiddle = sortCards([...newMiddle, ...selectedCards]);
     if (targetLaneName === 'bottom') newBottom = sortCards([...newBottom, ...selectedCards]);
-
-    // 移除容量检查
-    // if (newTop.length > LANE_LIMITS.top || ...) { alert('空间不足!'); return; }
 
     setTopLane(newTop);
     setMiddleLane(newMiddle);
@@ -107,14 +103,10 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
     }
   };
 
-  // --- 核心修改 2: handleConfirm 增加牌道数量检查 ---
   const handleConfirm = async () => {
     if (isLoading) return;
     
-    // 1. 在这里进行数量检查
-    if (topLane.length !== LANE_LIMITS.top || 
-        middleLane.length !== LANE_LIMITS.middle || 
-        bottomLane.length !== LANE_LIMITS.bottom) {
+    if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
       alert(`牌道数量错误！\n\n请确保：\n- 头道: ${LANE_LIMITS.top} 张\n- 中道: ${LANE_LIMITS.middle} 张\n- 尾道: ${LANE_LIMITS.bottom} 张`);
       return;
     }
@@ -132,33 +124,52 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
         return;
       }
       setTimeout(() => {
-        const playersForScorer = [
-          { name: "你", head: convertCardsToStingFormat(playerLanes.top), middle: convertCardsToStingFormat(playerLanes.middle), tail: convertCardsToStingFormat(playerLanes.bottom) },
-          ...Object.entries(aiPlayerStatus).map(([name, status]) => ({ name, head: convertCardsToStingFormat(status.sortedHand.top), middle: convertCardsToStingFormat(status.sortedHand.middle), tail: convertCardsToStingFormat(status.sortedHand.bottom) }))
-        ];
-        const finalScores = calcSSSAllScores(playersForScorer);
-        const result = {
-          players: playersForScorer.map(p => ({
-            name: p.name,
-            hand: {
-              top: p.head.map(c => ({ rank: c.split('_')[0], suit: c.split('_')[2] })),
-              middle: p.middle.map(c => ({ rank: c.split('_')[0], suit: c.split('_')[2] })),
-              bottom: p.tail.map(c => ({ rank: c.split('_')[0], suit: c.split('_')[2] }))
-            }
-          })),
-          scores: finalScores
+        const playerYouData = {
+            name: "你",
+            head: convertCardsToStingFormat(playerLanes.top),
+            middle: convertCardsToStingFormat(playerLanes.middle),
+            tail: convertCardsToStingFormat(playerLanes.bottom),
         };
+
+        const aiPlayersData = Object.entries(aiPlayerStatus).map(([name, status]) => ({
+            name,
+            head: convertCardsToStingFormat(status.sortedHand.top),
+            middle: convertCardsToStingFormat(status.sortedHand.middle),
+            tail: convertCardsToStingFormat(status.sortedHand.bottom),
+        }));
+        
+        const finalScores = [
+            null, 
+            ...aiPlayersData.map(ai => calculateSinglePairScore(playerYouData, ai))
+        ];
+        
+        const cardStringToObj = (cardStr) => ({ rank: cardStr.split('_')[0], suit: cardStr.split('_')[2] });
+
+        const result = {
+            players: [
+                { name: "你", hand: playerLanes },
+                ...aiPlayersData.map(p => ({
+                    name: p.name,
+                    hand: {
+                        top: p.head.map(cardStringToObj),
+                        middle: p.middle.map(cardStringToObj),
+                        bottom: p.tail.map(cardStringToObj)
+                    }
+                }))
+            ],
+            scores: finalScores
+        };
+        
         setGameResult(result);
         setIsLoading(false);
       }, 500);
     } else {
-      // 在线模式逻辑
       try {
         const response = await fetch('/api/compare_thirteen.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(playerLanes) });
         if (!response.ok) throw new Error(`服务器错误: ${response.status}`);
         const data = await response.json();
         if (!data.success) throw new Error(data.message || '后端比牌失败');
-        // process data...
+        setGameResult(data.result);
       } catch (error) {
         setErrorMessage(error.message);
       } finally {
@@ -207,4 +218,4 @@ const ThirteenGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => {
 
 export default ThirteenGame;
 
-// --- END OF FILE ThirteenGame.jsx ---
+// --- END OF FILE frontend/src/components/ThirteenGame.jsx ---

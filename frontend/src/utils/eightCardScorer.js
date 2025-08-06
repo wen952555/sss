@@ -14,15 +14,12 @@ const VALUE_ORDER = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9
 const SUIT_ORDER = { 'spades': 4, 'hearts': 3, 'clubs': 2, 'diamonds': 1 };
 const HAND_RANK = { '同花顺': 5, '三条': 4, '顺子': 3, '对子': 2, '高牌': 1 };
 
-// --- 辅助函数 ---
-
-const cardObjToString = (card) => `${card.rank}_of_${card.suit}`;
 const parseCardString = (cardStr) => {
     const [rank, , suit] = cardStr.split('_');
     return { rank, suit, value: VALUE_ORDER[rank], suitValue: SUIT_ORDER[suit] };
 };
 
-function getHandType(cards) {
+export function getHandType(cards) {
     if (!cards || cards.length === 0) return '高牌';
     const n = cards.length;
     const ranks = cards.map(c => VALUE_ORDER[c.rank]).sort((a, b) => a - b);
@@ -63,13 +60,6 @@ function compareSameTypeHands(cardsA, cardsB) {
     return 0;
 }
 
-// --- ↓↓↓ 核心修复：在这里添加 `export` 关键字 ↓↓↓ ---
-/**
- * 比较单个道次的牌 (主比较函数)
- * @param {Array<Object>} laneA - A的牌道
- * @param {Array<Object>} laneB - B的牌道
- * @returns {number}
- */
 export function compareLanes(laneA, laneB) {
     const typeA = getHandType(laneA);
     const typeB = getHandType(laneB);
@@ -78,8 +68,8 @@ export function compareLanes(laneA, laneB) {
         return HAND_RANK[typeA] - HAND_RANK[typeB];
     }
     
-    const cardsA = laneA.map(parseCardString);
-    const cardsB = laneB.map(parseCardString);
+    const cardsA = laneA.map(c => ({...c, value: VALUE_ORDER[c.rank], suitValue: SUIT_ORDER[c.suit]}));
+    const cardsB = laneB.map(c => ({...c, value: VALUE_ORDER[c.rank], suitValue: SUIT_ORDER[c.suit]}));
     
     if (typeA === '同花顺') {
         const suitA = cardsA[0].suitValue;
@@ -129,48 +119,41 @@ function getLaneScore(cards, laneName) {
     return 1;
 }
 
+function calculateSinglePairScoreForEight(p1, p2) {
+    const p1Info = { ...p1, isFoul: isFoul(p1.head, p1.middle, p1.tail) };
+    const p2Info = { ...p2, isFoul: isFoul(p2.head, p2.middle, p2.tail) };
+    
+    let pairScore = 0;
+    if (p1Info.isFoul && !p2Info.isFoul) pairScore = -3;
+    else if (!p1Info.isFoul && p2Info.isFoul) pairScore = 3;
+    else if (p1Info.isFoul && p2Info.isFoul) pairScore = 0;
+    else {
+        const headComparison = compareLanes(p1Info.head, p2Info.head);
+        if (headComparison > 0) pairScore += getLaneScore(p1Info.head, 'head');
+        else if (headComparison < 0) pairScore -= getLaneScore(p2Info.head, 'head');
+
+        const middleComparison = compareLanes(p1Info.middle, p2Info.middle);
+        if (middleComparison > 0) pairScore += getLaneScore(p1Info.middle, 'middle');
+        else if (middleComparison < 0) pairScore -= getLaneScore(p2Info.middle, 'middle');
+        
+        const tailComparison = compareLanes(p1Info.tail, p2Info.tail);
+        if (tailComparison > 0) pairScore += getLaneScore(p1Info.tail, 'tail');
+        else if (tailComparison < 0) pairScore -= getLaneScore(p2Info.tail, 'tail');
+    }
+    return pairScore;
+}
+
 export function calculateEightCardScores(players) {
     const n = players.length;
     if (n < 2) return new Array(n).fill(0);
-
     let finalScores = new Array(n).fill(0);
-
-    const playerInfos = players.map(p => ({
-        ...p,
-        isFoul: isFoul(p.head, p.middle, p.tail)
-    }));
-
     for (let i = 0; i < n; i++) {
         for (let j = i + 1; j < n; j++) {
-            const p1 = playerInfos[i];
-            const p2 = playerInfos[j];
-            let pairScore = 0;
-
-            if (p1.isFoul && !p2.isFoul) {
-                pairScore = -3;
-            } else if (!p1.isFoul && p2.isFoul) {
-                pairScore = 3;
-            } else if (p1.isFoul && p2.isFoul) {
-                pairScore = 0;
-            } else {
-                const headComparison = compareLanes(p1.head, p2.head);
-                if (headComparison > 0) pairScore += getLaneScore(p1.head, 'head');
-                else if (headComparison < 0) pairScore -= getLaneScore(p2.head, 'head');
-
-                const middleComparison = compareLanes(p1.middle, p2.middle);
-                if (middleComparison > 0) pairScore += getLaneScore(p1.middle, 'middle');
-                else if (middleComparison < 0) pairScore -= getLaneScore(p2.middle, 'middle');
-                
-                const tailComparison = compareLanes(p1.tail, p2.tail);
-                if (tailComparison > 0) pairScore += getLaneScore(p1.tail, 'tail');
-                else if (tailComparison < 0) pairScore -= getLaneScore(p2.tail, 'tail');
-            }
-            
+            const pairScore = calculateSinglePairScoreForEight(players[i], players[j]);
             finalScores[i] += pairScore;
             finalScores[j] -= pairScore;
         }
     }
     return finalScores;
 }
-
 // --- END OF FILE frontend/src/utils/eightCardScorer.js ---
