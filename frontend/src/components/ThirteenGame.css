@@ -15,7 +15,8 @@
 .table-panel {
   width: 100%;
   max-width: 550px;
-  height: auto;
+  /* --- 核心修复：让牌桌面板占满可用高度 --- */
+  height: 100%; 
   max-height: 100%;
   padding: 20px; /* 稍微增加内边距 */
   background: rgba(255, 255, 255, 0.3); /* 稍微降低透明度，让内容更清晰 */
@@ -179,5 +180,3 @@
   border-radius: 24px;
   z-index: 100;
 }
-
-// --- END OF FILE frontend/src/components/ThirteenGame.css ---
