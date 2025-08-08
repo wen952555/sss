@@ -9,7 +9,8 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   flex-grow: 1;
   min-height: 0;
-  overflow: visible;
+  /* --- 核心修复：防止内部卡牌的 transform 影响容器布局 --- */
+  overflow: hidden; 
   padding-top: 40px; /* 增大顶部空间 */
   margin-bottom: 24px;
 }
@@ -19,7 +20,8 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  overflow-x: visible;
+  /* --- 核心修复：保持Y轴溢出可见，允许卡牌阴影等效果 --- */
+  overflow-x: auto; /* 如果卡牌过多，允许横向滚动 */
   overflow-y: visible;
   padding-bottom: 5px;
   cursor: pointer;
@@ -28,6 +30,16 @@
   padding-left: 40px; 
   box-sizing: content-box; /* 确保内边距不会影响布局计算 */
 }
+
+/* 隐藏滚动条，但保留滚动功能 */
+.card-display-area::-webkit-scrollbar {
+  display: none;
+}
+.card-display-area {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 
 .card-display-area > div {
   margin-left: -40px;
