@@ -23,13 +23,13 @@ const Card = ({ card, onClick, isSelected }) => {
     <div 
       className={cardClassName} 
       onClick={handleClick}
-      // --- 核心修改：增大卡牌的尺寸 ---
+      // --- 核心修复：恢复到原始或略大的合理尺寸 ---
       style={{
-        width: 'min(18vw, 120px)', // 原: min(15vw, 90px)
+        width: 'min(16vw, 100px)', // 宽度适中
         height: 'auto',
-        minWidth: '60px',         // 原: 45px
-        maxWidth: '120px',        // 原: 90px
-        maxHeight: '170px',       // 原: 130px
+        minWidth: '50px',
+        maxWidth: '100px',        // 最大宽度100px
+        maxHeight: '150px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -38,12 +38,11 @@ const Card = ({ card, onClick, isSelected }) => {
       <img
         src={imagePath}
         alt={`${card.suit} ${card.rank}`}
-        // --- 核心修改：让图片完全填充容器 ---
         style={{
           width: '100%',
           height: '100%',
           display: 'block',
-          objectFit: 'contain' // 确保图片等比缩放
+          objectFit: 'contain'
         }}
         draggable={false}
       />

@@ -5,15 +5,13 @@
   align-items: center;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  /* --- 核心修改 1: 增加30%的最小高度 --- */
-  min-height: 130px; 
+  /* --- 核心修复 1: 大幅增加牌墩的最小高度 --- */
+  min-height: 160px; 
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   flex-grow: 1;
-  min-height: 0;
-  overflow: hidden;
-  /* --- 核心修改 2: 增加顶部空间，以容纳更大的、被选中的牌 --- */
-  padding-top: 50px; 
+  overflow: hidden; 
+  padding-top: 50px;
   margin-bottom: 24px;
 }
 
@@ -27,8 +25,8 @@
   padding-bottom: 5px;
   cursor: pointer;
   position: relative;
-  /* --- 核心修改 3: 增加左内边距，以匹配新的负外边距 --- */
-  padding-left: 70px; 
+  /* --- 核心修复 2: 调整左内边距以匹配新的、更小的负外边距 --- */
+  padding-left: 55px;
   box-sizing: content-box;
 }
 
@@ -38,8 +36,8 @@
 
 
 .card-display-area > div {
-  /* --- 核心修改 4: 调整负外边距，以适应更宽的牌 --- */
-  margin-left: -70px;
+  /* --- 核心修复 3: 减小负外边距，让卡牌散开，不再贴在一起 --- */
+  margin-left: -55px; 
   transition: transform 0.2s, box-shadow 0.2s;
   z-index: 1;
   flex-shrink: 0;
@@ -48,7 +46,6 @@
 .card-display-area > div.selected {
   position: relative;
   z-index: 99;
-  /* --- 核心修改 5: 调整选中牌的上移距离和缩放 --- */
   transform: translateY(-35px) scale(1.08); 
   box-shadow: 0 0 25px rgba(255, 71, 87, 0.8);
   border-radius: 8px;
