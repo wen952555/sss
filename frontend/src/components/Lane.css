@@ -1,17 +1,19 @@
 /* --- START OF FILE Lane.css --- */
+
 .lane-container {
   display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  min-height: 100px;
+  /* --- 核心修改 1: 增加30%的最小高度 --- */
+  min-height: 130px; 
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   flex-grow: 1;
   min-height: 0;
-  /* --- 核心修复：防止内部卡牌的 transform 影响容器布局 --- */
-  overflow: hidden; 
-  padding-top: 40px; /* 增大顶部空间 */
+  overflow: hidden;
+  /* --- 核心修改 2: 增加顶部空间，以容纳更大的、被选中的牌 --- */
+  padding-top: 50px; 
   margin-bottom: 24px;
 }
 
@@ -20,29 +22,24 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  /* --- 核心修复：保持Y轴溢出可见，允许卡牌阴影等效果 --- */
-  overflow-x: auto; /* 如果卡牌过多，允许横向滚动 */
+  overflow-x: auto;
   overflow-y: visible;
   padding-bottom: 5px;
   cursor: pointer;
   position: relative;
-  /* --- 核心修正：增加左内边距以抵消第一张牌的负外边距 --- */
-  padding-left: 40px; 
-  box-sizing: content-box; /* 确保内边距不会影响布局计算 */
+  /* --- 核心修改 3: 增加左内边距，以匹配新的负外边距 --- */
+  padding-left: 70px; 
+  box-sizing: content-box;
 }
 
-/* 隐藏滚动条，但保留滚动功能 */
-.card-display-area::-webkit-scrollbar {
-  display: none;
-}
-.card-display-area {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
+/* 隐藏滚动条 */
+.card-display-area::-webkit-scrollbar { display: none; }
+.card-display-area { -ms-overflow-style: none; scrollbar-width: none; }
 
 
 .card-display-area > div {
-  margin-left: -40px;
+  /* --- 核心修改 4: 调整负外边距，以适应更宽的牌 --- */
+  margin-left: -70px;
   transition: transform 0.2s, box-shadow 0.2s;
   z-index: 1;
   flex-shrink: 0;
@@ -51,7 +48,8 @@
 .card-display-area > div.selected {
   position: relative;
   z-index: 99;
-  transform: translateY(-28px) scale(1.08);
+  /* --- 核心修改 5: 调整选中牌的上移距离和缩放 --- */
+  transform: translateY(-35px) scale(1.08); 
   box-shadow: 0 0 25px rgba(255, 71, 87, 0.8);
   border-radius: 8px;
 }
