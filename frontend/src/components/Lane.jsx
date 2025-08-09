@@ -1,8 +1,8 @@
-// --- START OF FILE Lane.jsx (CORRECTED STRUCTURE) ---
+// --- START OF FILE Lane.jsx (FINAL INTERACTION FIX) ---
 
 import React from 'react';
 import Card from './Card';
-import './Lane.css'; // 我们将彻底重写这个CSS
+import './Lane.css'; 
 
 const areCardsEqual = (card1, card2) => {
   if (!card1 || !card2) return false;
@@ -20,31 +20,50 @@ const Lane = ({
     }
   };
 
-  // --- 核心修改：重构JSX结构，将标题和置牌区彻底分离 ---
+  // --- 核心修改：计算选中牌的位置，并为后续牌添加位移 ---
+  let selectedIndex = -1;
+  // 为了简化逻辑，我们只处理单选的情况
+  if (selectedCards.length === 1) {
+    selectedIndex = cards.findIndex(card => areCardsEqual(card, selectedCards[0]));
+  }
+
+  // 假设卡牌宽度约为 110px，重叠部分约为 33px，则暴露出的宽度约为 77px
+  const cardExposedWidth = 77; 
+
   return (
     <div className="lane-wrapper">
-      {/* 1. 独立的标题部分 */}
       <div className="lane-header">
         <span className="lane-title">{`${title} (${expectedCount})`}</span>
       </div>
 
-      {/* 2. 您要求的、带边框、固定高度的“置牌区” */}
       <div className="card-placement-box" onClick={handleAreaClick}>
-        {cards.map((card, idx) => (
-          <div 
-            key={`${card.rank}-${card.suit}-${idx}`}
-            className={`card-wrapper ${selectedCards.some(sel => areCardsEqual(sel, card)) ? 'selected' : ''}`}
-          >
-            <Card
-              card={card}
-              onClick={onCardClick ? () => onCardClick(card) : undefined}
-            />
-          </div>
-        ))}
+        {cards.map((card, idx) => {
+          const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
+          
+          let style = {};
+          // 如果有牌被选中，并且当前牌在选中牌之后
+          if (selectedIndex !== -1 && idx > selectedIndex) {
+            // 将这张牌向右平移一个“卡牌暴露宽度”的距离
+            style.transform = `translateX(${cardExposedWidth}px)`;
+          }
+
+          return (
+            <div 
+              key={`${card.rank}-${card.suit}-${idx}`}
+              className={`card-wrapper ${isSelected ? 'selected' : ''}`}
+              style={style} // 应用动态计算的样式
+            >
+              <Card
+                card={card}
+                onClick={onCardClick ? () => onCardClick(card) : undefined}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
 
 export default Lane;
-// --- END OF FILE Lane.jsx (CORRECTED STRUCTURE) ---
+// --- END OF FILE Lane.jsx (FINAL INTERACTION FIX) ---
