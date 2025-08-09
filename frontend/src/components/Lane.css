@@ -6,21 +6,22 @@
   background: rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   
-  /* --- 核心修改 1: 添加清晰的边框 --- */
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05); /* 添加内阴影增加“框”的感觉 */
+  /* --- 核心修改 1: 添加清晰的边框，形成“框” --- */
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.06);
   
-  /* --- 核心修改 2: 大幅增加高度，为弹起动画提供充足视觉空间 --- */
-  min-height: 220px; 
+  /* --- 核心修改 2: 固定并增加高度，为弹起提供充足空间 --- */
+  min-height: 200px; /* 设定一个足够的固定高度 */
+  height: 200px;     /* 强制固定尺寸 */
 
-  /* --- 核心修改 3: 允许内容溢出，这是防止切割的关键 --- */
+  /* --- 核心修改 3: 允许内容溢出，配合上层容器的修改，彻底解决切割问题 --- */
   overflow: visible; 
   
   padding: 10px;
   flex-grow: 1;
   padding-top: 50px;
   margin-bottom: 24px;
-  position: relative; /* 确保z-index生效 */
+  position: relative; 
 }
 
 .card-display-area {
@@ -52,7 +53,8 @@
 .card-display-area > div.selected {
   position: relative;
   z-index: 99;
-  transform: translateY(-35px) scale(1.08); 
+  /* 调整弹起高度，确保在新的框内有足够空间 */
+  transform: translateY(-40px) scale(1.08); 
   box-shadow: 0 0 25px rgba(255, 71, 87, 0.8);
   border-radius: 8px;
 }
