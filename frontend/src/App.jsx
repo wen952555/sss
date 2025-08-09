@@ -1,4 +1,4 @@
-// --- START OF FILE App.jsx ---
+// --- START OF FILE App.jsx (MODIFIED) ---
 
 import React, { useState, useEffect } from 'react';
 import GameLobby from './components/GameLobby';
@@ -30,21 +30,23 @@ const createOfflineGame = (gameType) => {
 
   const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
   
-  // --- 核心修改：为每个玩家发13张未理的牌 ---
   const dealUnsortedHand = (deck, startIndex) => {
     const hand = deck.slice(startIndex, startIndex + cardsPerPlayer);
-    // 直接切片，不做任何排序，确保发牌瞬间完成
+    const topSize = gameType === 'thirteen' ? 3 : (gameType === 'eight' ? 2 : 3);
+    const middleSize = gameType === 'thirteen' ? 5 : (gameType === 'eight' ? 3 : 5);
     return {
-      top: hand.slice(0, 3),
-      middle: hand.slice(3, 8),
-      bottom: hand.slice(8, 13)
+      top: hand.slice(0, topSize),
+      middle: hand.slice(topSize, topSize + middleSize),
+      bottom: hand.slice(topSize + middleSize)
     };
   };
   
-  const playerCount = gameType === 'thirteen' ? 4 : 2; // 十三张4人，八张2人（可配置）
+  // --- 核心修改：将八张游戏的玩家数从 2 改为 6 ---
+  const playerCount = gameType === 'thirteen' ? 4 : 6; 
 
   let hands = { '你': dealUnsortedHand(fullDeck, 0) };
   for (let i = 1; i < playerCount; i++) {
+    // 电脑玩家的名字将是 电脑 2, 电脑 3, ..., 电脑 6
     hands[`电脑 ${i + 1}`] = dealUnsortedHand(fullDeck, cardsPerPlayer * i);
   }
 
@@ -215,5 +217,4 @@ function App() {
 }
 
 export default App;
-
-// --- END OF FILE App.jsx ---
+// --- END OF FILE App.jsx (MODIFIED) ---

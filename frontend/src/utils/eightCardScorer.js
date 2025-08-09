@@ -1,7 +1,7 @@
-// --- START OF FILE frontend/src/utils/eightCardScorer.js ---
+// --- START OF FILE frontend/src/utils/eightCardScorer.js (MODIFIED) ---
 
 /**
- * eightCardScorer.js - 八张游戏专用比牌计分器 (V2 - 增强比较规则)
+ * eightCardScorer.js - 八张游戏专用比牌计分器 (V3 - 修复平局比较规则)
  * 规则：
  * - 牌型：同花顺 > 三条 > 顺子 > 对子 > 高牌
  * - 花色：黑桃 > 红桃 > 梅花 > 方块
@@ -60,6 +60,7 @@ function compareSameTypeHands(cardsA, cardsB) {
     return 0;
 }
 
+// --- 核心修复：重写此函数，使其逻辑更健壮 ---
 export function compareLanes(laneA, laneB) {
     const typeA = getHandType(laneA);
     const typeB = getHandType(laneB);
@@ -68,30 +69,24 @@ export function compareLanes(laneA, laneB) {
         return HAND_RANK[typeA] - HAND_RANK[typeB];
     }
     
+    // 如果牌型相同，则进行详细比较
     const cardsA = laneA.map(c => ({...c, value: VALUE_ORDER[c.rank], suitValue: SUIT_ORDER[c.suit]}));
     const cardsB = laneB.map(c => ({...c, value: VALUE_ORDER[c.rank], suitValue: SUIT_ORDER[c.suit]}));
     
     if (typeA === '同花顺') {
         const suitA = cardsA[0].suitValue;
         const suitB = cardsB[0].suitValue;
-        if (suitA !== suitB) return suitA - suitB;
-        const straightValueA = getStraightValue(cardsA);
-        const straightValueB = getStraightValue(cardsB);
-        if (straightValueA !== straightValueB) return straightValueA - straightValueB;
-        const aceA = cardsA.find(c => c.rank === 'ace');
-        const aceB = cardsB.find(c => c.rank === 'ace');
-        return aceA.suitValue - aceB.suitValue;
+        if (suitA !== suitB) return suitA - suitB; // 1. 比较花色
     }
 
-    if (typeA === '顺子') {
+    if (typeA === '同花顺' || typeA === '顺子') {
         const straightValueA = getStraightValue(cardsA);
         const straightValueB = getStraightValue(cardsB);
-        if (straightValueA !== straightValueB) return straightValueA - straightValueB;
-        const aceA = cardsA.find(c => c.rank === 'ace');
-        const aceB = cardsB.find(c => c.rank === 'ace');
-        return aceA.suitValue - aceB.suitValue;
+        if (straightValueA !== straightValueB) return straightValueA - straightValueB; // 2. 比较顺子大小
     }
 
+    // 3. 对于所有其他平局情况（包括三条、对子、高牌，以及顺子/同花顺的最终比较），
+    // 使用通用的、从大到小逐张比较的方法。
     return compareSameTypeHands(cardsA, cardsB);
 }
 
@@ -119,13 +114,6 @@ function getLaneScore(cards, laneName) {
     return 1;
 }
 
-// --- ↓↓↓ 核心修复：在这里添加 `export` 关键字 ↓↓↓ ---
-/**
- * 计算两个玩家之间的胜负分 (八张)
- * @param {Object} p1 - 玩家1的数据对象
- * @param {Object} p2 - 玩家2的数据对象
- * @returns {number} 返回 p1 相对于 p2 的得分
- */
 export function calculateSinglePairScoreForEight(p1, p2) {
     const p1Info = { ...p1, isFoul: isFoul(p1.head, p1.middle, p1.tail) };
     const p2Info = { ...p2, isFoul: isFoul(p2.head, p2.middle, p2.tail) };
@@ -164,4 +152,4 @@ export function calculateEightCardScores(players) {
     return finalScores;
 }
 
-// --- END OF FILE frontend/src/utils/eightCardScorer.js ---
+// --- END OF FILE frontend/src/utils/eightCardScorer.js (MODIFIED) ---
