@@ -23,17 +23,17 @@ const Card = ({ card, onClick, isSelected }) => {
     <div 
       className={cardClassName} 
       onClick={handleClick}
-      // --- 核心修复：恢复到原始或略大的合理尺寸 ---
+      // --- 核心修改：整体尺寸增加 10% 以适应更高的牌墩 ---
       style={{
-        width: 'min(16vw, 100px)', // 宽度适中
+        width: 'min(17.5vw, 110px)', // 原为 16vw, 100px
         height: 'auto',
-        minWidth: '50px',
-        maxWidth: '100px',        // 最大宽度100px
-        maxHeight: '150px',
+        minWidth: '55px',             // 相应增加
+        maxWidth: '110px',            // 原为 100px
+        maxHeight: '165px',           // 原为 150px
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxSizing: 'border-box',
+        box-sizing: 'border-box',
       }}>
       <img
         src={imagePath}
