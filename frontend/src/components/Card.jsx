@@ -1,4 +1,4 @@
-// --- START OF FILE Card.jsx ---
+// --- START OF FILE Card.jsx (CORRECTED) ---
 
 import React from 'react';
 
@@ -23,17 +23,17 @@ const Card = ({ card, onClick, isSelected }) => {
     <div 
       className={cardClassName} 
       onClick={handleClick}
-      // --- 核心修改：整体尺寸增加 10% 以适应更高的牌墩 ---
       style={{
-        width: 'min(17.5vw, 110px)', // 原为 16vw, 100px
+        width: 'min(17.5vw, 110px)',
         height: 'auto',
-        minWidth: '55px',             // 相应增加
-        maxWidth: '110px',            // 原为 100px
-        maxHeight: '165px',           // 原为 150px
+        minWidth: '55px',
+        maxWidth: '110px',
+        maxHeight: '165px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        box-sizing: 'border-box',
+        // --- 核心修复：将 'box-sizing' 改为驼峰命名 'boxSizing' ---
+        boxSizing: 'border-box',
       }}>
       <img
         src={imagePath}
@@ -51,4 +51,4 @@ const Card = ({ card, onClick, isSelected }) => {
 };
 
 export default Card;
-// --- END OF FILE Card.jsx ---
+// --- END OF FILE Card.jsx (CORRECTED) ---
