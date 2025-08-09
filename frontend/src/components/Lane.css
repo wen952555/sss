@@ -1,4 +1,4 @@
-/* --- START OF FILE Lane.css (MODIFIED) --- */
+/* --- START OF FILE Lane.css (FINAL FIX) --- */
 
 .lane-container {
   display: flex;
@@ -6,21 +6,21 @@
   background: rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   
-  /* --- 核心修改 1: 增加20%高度 (176px * 1.2 ≈ 212px) --- */
-  min-height: 212px; 
+  /* --- 核心修改 1: 添加清晰的边框 --- */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05); /* 添加内阴影增加“框”的感觉 */
+  
+  /* --- 核心修改 2: 大幅增加高度，为弹起动画提供充足视觉空间 --- */
+  min-height: 220px; 
 
-  /* --- 核心修改 2: 添加并强化边框，形成明确的“框” --- */
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* 可选：增加一点细微阴影 */
-
-  /* --- 核心修改 3: 解决卡牌被切割的关键 --- */
-  /* 将 overflow 从 hidden 改为 visible，允许弹起的卡牌超出容器边界 */
+  /* --- 核心修改 3: 允许内容溢出，这是防止切割的关键 --- */
   overflow: visible; 
   
   padding: 10px;
   flex-grow: 1;
   padding-top: 50px;
   margin-bottom: 24px;
+  position: relative; /* 确保z-index生效 */
 }
 
 .card-display-area {
@@ -29,7 +29,7 @@
   align-items: center;
   min-width: 0;
   overflow-x: auto;
-  overflow-y: visible; /* 确保垂直方向也可见 */
+  overflow-y: visible; /* 垂直方向也必须可见 */
   padding-bottom: 5px;
   cursor: pointer;
   position: relative;
@@ -56,4 +56,4 @@
   box-shadow: 0 0 25px rgba(255, 71, 87, 0.8);
   border-radius: 8px;
 }
-/* --- END OF FILE Lane.css (MODIFIED) --- */
+/* --- END OF FILE Lane.css (FINAL FIX) --- */
