@@ -1,9 +1,10 @@
-// --- START OF FILE frontend/src/components/EightCardGame.jsx ---
+// --- START OF FILE frontend/src/components/EightCardGame.jsx (MODIFIED) ---
 
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
-import './EightCardGame.css';
+// --- 核心修改 1: 引入统一的CSS文件 (尽管文件名没变，但内容已统一) ---
+import './EightCardGame.css'; 
 import { getSmartSortedHandForEight } from '../utils/eightCardAutoSorter';
 import { calculateSinglePairScoreForEight } from '../utils/eightCardScorer';
 import GameResultModal from './GameResultModal';
@@ -127,7 +128,6 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
             tail: status.sortedHand.bottom,
         }));
 
-        // --- 核心修改：计算每个AI的得分，然后汇总成我的总分 ---
         const pairScores = aiPlayersData.map(ai => calculateSinglePairScoreForEight(playerYouData, ai));
         const myTotalScore = pairScores.reduce((sum, score) => sum + score, 0);
 
@@ -139,7 +139,7 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
                     hand: { top: p.head, middle: p.middle, bottom: p.tail }
                 }))
             ],
-            scores: [myTotalScore, ...pairScores] // 数组第一位是我的总分
+            scores: [myTotalScore, ...pairScores]
         };
         
         setGameResult(result);
@@ -155,36 +155,35 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
     onBackToLobby();
   };
 
+  // --- 核心修改 2: 使用与ThirteenGame完全相同的JSX结构和className ---
   return (
-    <div className="eight-game-container">
-      <div className="eight-game-panel">
-        <div className="game-header">
-          <button onClick={onBackToLobby} className="quit-button">退出游戏</button>
-          <h2>急速八张</h2>
+    <div className="table-root">
+      <div className="table-panel">
+        <div className="table-top-bar">
+          <button onClick={onBackToLobby} className="table-quit-btn">退出游戏</button>
+          <div className="table-score-box">{isTrial ? "试玩模式" : "急速八张"}</div>
         </div>
-        <div className="eight-game-players">
-          <div className="player-group">
-            <div className="player-status-item you"><span className="player-name">你</span><span className="status-text">理牌中...</span></div>
-            {Object.entries(aiPlayerStatus).map(([name, status]) => (
-              <div key={name} className={`player-status-item ${status.status === '已准备' ? 'ready' : ''}`}>
-                <span className="player-name">{name}</span>
-                <span className="status-text">{status.status}</span>
-              </div>
-            ))}
-          </div>
+        <div className="players-status-bar">
+          <div className="player-status-item you"><span className="player-name">你</span><span className="status-text">理牌中...</span></div>
+          {Object.entries(aiPlayerStatus).map(([name, status]) => (
+            <div key={name} className={`player-status-item ${status.status === '已准备' ? 'ready' : ''}`}>
+              <span className="player-name">{name}</span>
+              <span className="status-text">{status.status}</span>
+            </div>
+          ))}
         </div>
-        <div className="lanes-area">
+        <div className="table-lanes-area">
           <Lane title="头道" cards={topLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
           <Lane title="中道" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
           <Lane title="尾道" cards={bottomLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('bottom')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
         </div>
         {errorMessage && <p className="error-message">{errorMessage}</p>}
-        <div className="game-actions-new">
-          <button onClick={handleAutoSort} className="action-button-new auto-sort">自动理牌</button>
-          <button onClick={handleConfirm} disabled={isLoading} className="action-button-new confirm">确认牌型</button>
+        <div className="table-actions-bar">
+          <button onClick={handleAutoSort} className="action-btn orange">自动理牌</button>
+          <button onClick={handleConfirm} disabled={isLoading} className="action-btn green">确认牌型</button>
         </div>
+        {isLoading && <div className="loading-overlay">正在比牌...</div>}
       </div>
-      {isLoading && <div className="loading-overlay">正在比牌...</div>}
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
     </div>
   );
@@ -192,4 +191,4 @@ const EightCardGame = ({ playerHand, otherPlayers, onBackToLobby, isTrial }) => 
 
 export default EightCardGame;
 
-// --- END OF FILE frontend/src/components/EightCardGame.jsx ---
+// --- END OF FILE frontend/src/components/EightCardGame.jsx (MODIFIED) ---
