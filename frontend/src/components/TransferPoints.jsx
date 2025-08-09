@@ -1,3 +1,5 @@
+// --- START OF FILE frontend/src/components/TransferPoints.jsx (FIXED) ---
+
 import React, { useState } from 'react';
 import './TransferPoints.css';
 
@@ -7,9 +9,7 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  // --- 核心修正：确保这一行代码存在 ---
-  const [step, setStep] = useState(1); // 1: 查找, 2: 确认赠送
+  const [step, setStep] = useState(1);
 
   const handleFindUser = async () => {
     if (!phone) return setError('请输入手机号。');
@@ -83,7 +83,8 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
           <div className="step-content">
             <div className="confirmation-box">
               请确认接收方ID的最后两位是否为：
-              <span className="confirm-id">{foundUserId.slice(-2)}</span>
+              {/* --- 核心修复：将 foundUserId 强制转换为字符串再 slice --- */}
+              <span className="confirm-id">{String(foundUserId).slice(-2)}</span>
             </div>
             <p>第二步：输入赠送的积分数量</p>
             <input
@@ -105,3 +106,5 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
 };
 
 export default TransferPoints;
+
+// --- END OF FILE frontend/src/components/TransferPoints.jsx (FIXED) ---

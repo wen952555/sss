@@ -1,4 +1,4 @@
-// --- START OF FILE App.jsx (MODIFIED) ---
+// --- START OF FILE App.jsx (FIXED & MORE ROBUST) ---
 
 import React, { useState, useEffect } from 'react';
 import GameLobby from './components/GameLobby';
@@ -22,7 +22,6 @@ const createOfflineGame = (gameType) => {
     }
   }
 
-  // 洗牌 (Fisher-Yates shuffle)
   for (let i = fullDeck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [fullDeck[i], fullDeck[j]] = [fullDeck[j], fullDeck[i]];
@@ -41,12 +40,10 @@ const createOfflineGame = (gameType) => {
     };
   };
   
-  // --- 核心修改：将八张游戏的玩家数从 2 改为 6 ---
   const playerCount = gameType === 'thirteen' ? 4 : 6; 
 
   let hands = { '你': dealUnsortedHand(fullDeck, 0) };
   for (let i = 1; i < playerCount; i++) {
-    // 电脑玩家的名字将是 电脑 2, 电脑 3, ..., 电脑 6
     hands[`电脑 ${i + 1}`] = dealUnsortedHand(fullDeck, cardsPerPlayer * i);
   }
 
@@ -144,10 +141,16 @@ function App() {
       let playerHandKey = isTrial ? '你' : (data.hands['玩家 1'] ? '玩家 1' : Object.keys(data.hands)[0]);
       
       const playerHand = data.hands[playerHandKey];
-      delete data.hands[playerHandKey];
-      const aiPlayers = data.hands;
-
-      setGameState({ gameType, hand: playerHand, otherPlayers: aiPlayers, error: null, isTrial });
+      
+      // --- 核心修复：增加对 playerHand 结构的健壮性检查 ---
+      if (playerHand && typeof playerHand === 'object' && Array.isArray(playerHand.top) && Array.isArray(playerHand.middle) && Array.isArray(playerHand.bottom)) {
+        delete data.hands[playerHandKey];
+        const aiPlayers = data.hands;
+        setGameState({ gameType, hand: playerHand, otherPlayers: aiPlayers, error: null, isTrial });
+      } else {
+        // 如果数据结构不正确，则设置错误信息
+        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: '从服务器获取的牌局数据格式不正确', isTrial: false });
+      }
     } else {
       setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message || '获取牌局数据失败', isTrial: false });
     }
@@ -217,4 +220,4 @@ function App() {
 }
 
 export default App;
-// --- END OF FILE App.jsx (MODIFIED) ---
+// --- END OF FILE App.jsx (FIXED & MORE ROBUST) ---

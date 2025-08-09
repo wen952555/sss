@@ -1,37 +1,41 @@
-/* --- START OF FILE Lane.css (SIMPLE & CORRECT FIX) --- */
+/* --- START OF FILE Lane.css (FINAL ADAPTIVE FIX) --- */
 
-/* 1. 外层包裹容器，负责整体布局和间距 */
+/* 1. 外层包裹容器，现在是Flex布局中的一部分 */
 .lane-wrapper {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 8px; /* 标题和框之间的间距 */
-  margin-bottom: 12px;
+  gap: 5px; /* 标题和框之间的间距减小 */
+  
+  /* --- 关键：让每个牌道在父容器中平均分配空间 --- */
+  flex: 1;
+  min-height: 0; /* 允许在flex布局中被压缩 */
 }
 
 /* 2. 标题样式 */
 .lane-header {
   padding-left: 10px;
-  font-size: 1rem;
+  font-size: 0.9rem; /* 减小字体 */
   color: #3b3b8e;
   font-weight: 600;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 
-/* 3. 带边框、固定高度的“置牌区” */
+/* 3. 带边框、高度自适应的“置牌区” */
 .card-placement-box {
   width: 100%;
   box-sizing: border-box;
-  height: 190px;
-  min-height: 190px;
+  
+  /* --- 核心修改：移除固定高度，使其自适应 --- */
+  height: 100%; 
+  
   background: rgba(255, 255, 255, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 16px;
   box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
   display: flex;
   align-items: center;
-  overflow-x: auto;
+  overflow-x: auto; /* 保持水平滚动 */
   padding: 0 10px;
   cursor: pointer;
   position: relative;
@@ -43,8 +47,9 @@
 
 /* 4. 卡牌的包裹层，负责堆叠效果 */
 .card-wrapper {
-  margin-left: -33px; 
-  transition: transform 0.2s ease-out; /* 只对 transform 添加动画 */
+  /* 调整负边距以适应不同尺寸的卡牌 */
+  margin-left: -35px; /* 可以根据卡牌实际宽度微调 */
+  transition: transform 0.2s ease-out;
   z-index: 1;
   flex-shrink: 0;
   position: relative;
@@ -53,13 +58,18 @@
   margin-left: 0;
 }
 
-/* 5. 核心：最简单的选中效果 */
+/* 5. 调整选中效果的弹起高度 */
 .card-wrapper.selected {
-  /* --- 关键修改：只保留向上弹起和层级提升 --- */
-  
-  /* 1. 提升层级，让它显示在所有未选中牌的上方 */
   z-index: 99;
-  
-  /* 2. 原地向上弹起，不进行任何缩放或水平移动 */
-  transform: translateY(-35px); 
+  /* 减小弹起高度，防止在压缩布局中穿透到上一个牌道 */
+  transform: translateY(-25px); 
 }
+
+/* 6. 媒体查询：在小屏幕上，牌堆叠更紧密 */
+@media (max-width: 380px) {
+  .card-wrapper {
+    margin-left: -40px;
+  }
+}
+
+/* --- END OF FILE Lane.css (FINAL ADAPTIVE FIX) --- */
