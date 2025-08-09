@@ -1,16 +1,24 @@
-/* --- START OF FILE Lane.css --- */
+/* --- START OF FILE Lane.css (MODIFIED) --- */
 
 .lane-container {
   display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  /* --- 核心修改 1: 牌墩高度增加 10% (160px -> 176px) --- */
-  min-height: 176px; 
+  
+  /* --- 核心修改 1: 增加20%高度 (176px * 1.2 ≈ 212px) --- */
+  min-height: 212px; 
+
+  /* --- 核心修改 2: 添加并强化边框，形成明确的“框” --- */
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* 可选：增加一点细微阴影 */
+
+  /* --- 核心修改 3: 解决卡牌被切割的关键 --- */
+  /* 将 overflow 从 hidden 改为 visible，允许弹起的卡牌超出容器边界 */
+  overflow: visible; 
+  
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
   flex-grow: 1;
-  overflow: hidden; 
   padding-top: 50px;
   margin-bottom: 24px;
 }
@@ -21,11 +29,10 @@
   align-items: center;
   min-width: 0;
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: visible; /* 确保垂直方向也可见 */
   padding-bottom: 5px;
   cursor: pointer;
   position: relative;
-  /* --- 核心修改 2: 调整左内边距以匹配新的、更小的负外边距 --- */
   padding-left: 33px;
   box-sizing: content-box;
 }
@@ -36,8 +43,6 @@
 
 
 .card-display-area > div {
-  /* --- 核心修改 3: 减小负外边距（即减小重叠），让卡牌散开 --- */
-  /* 原为 -55px, 现改为约等于卡牌宽度的 1/3，即 -33px */
   margin-left: -33px; 
   transition: transform 0.2s, box-shadow 0.2s;
   z-index: 1;
@@ -51,4 +56,4 @@
   box-shadow: 0 0 25px rgba(255, 71, 87, 0.8);
   border-radius: 8px;
 }
-/* --- END OF FILE Lane.css --- */
+/* --- END OF FILE Lane.css (MODIFIED) --- */
