@@ -1,4 +1,4 @@
-// --- START OF FILE Lane.jsx (FINAL-FINAL FIX) ---
+// --- START OF FILE Lane.jsx (ABSOLUTELY NO MOVEMENT FIX) ---
 
 import React from 'react';
 import Card from './Card';
@@ -20,16 +20,6 @@ const Lane = ({
     }
   };
 
-  // --- 核心逻辑：计算位移 ---
-  // 我们只处理单选的情况以获得最佳交互效果
-  const selectedIndex = selectedCards.length === 1 
-    ? cards.findIndex(card => areCardsEqual(card, selectedCards[0]))
-    : -1;
-
-  // 卡牌暴露出的宽度，根据 CSS 的 margin-left: -33px 和卡牌宽度 110px 计算
-  // 110px (总宽) - 33px (重叠) = 77px (暴露)
-  const cardExposedWidth = 77; 
-
   return (
     <div className="lane-wrapper">
       <div className="lane-header">
@@ -37,23 +27,15 @@ const Lane = ({
       </div>
 
       <div className="card-placement-box" onClick={handleAreaClick}>
+        {/* --- 核心修改：彻底移除所有动态 style 和位移计算 --- */}
         {cards.map((card, idx) => {
           const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
           
-          let wrapperStyle = {};
-
-          // 场景1：如果这张牌在被选中的牌的“右边”
-          if (selectedIndex !== -1 && idx > selectedIndex) {
-            // 向右平移，为选中的牌腾出空间
-            wrapperStyle.transform = `translateX(${cardExposedWidth}px)`;
-          }
-
           return (
             <div 
               key={`${card.rank}-${card.suit}-${idx}`}
-              // --- 核心修改：将 isSelected 作为一个独立的 prop 传递 ---
+              // 唯一的动态部分就是这个 className，它只负责触发 CSS 动画
               className={`card-wrapper ${isSelected ? 'selected' : ''}`}
-              style={wrapperStyle}
             >
               <Card
                 card={card}
@@ -68,4 +50,4 @@ const Lane = ({
 };
 
 export default Lane;
-// --- END OF FILE Lane.jsx (FINAL-FINAL FIX) ---
+// --- END OF FILE Lane.jsx (ABSOLUTELY NO MOVEMENT FIX) ---
