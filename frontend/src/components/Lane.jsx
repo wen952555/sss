@@ -1,4 +1,4 @@
-// --- START OF FILE Lane.jsx (FINAL INTERACTION FIX) ---
+// --- START OF FILE Lane.jsx (FINAL-FINAL FIX) ---
 
 import React from 'react';
 import Card from './Card';
@@ -20,14 +20,14 @@ const Lane = ({
     }
   };
 
-  // --- 核心修改：计算选中牌的位置，并为后续牌添加位移 ---
-  let selectedIndex = -1;
-  // 为了简化逻辑，我们只处理单选的情况
-  if (selectedCards.length === 1) {
-    selectedIndex = cards.findIndex(card => areCardsEqual(card, selectedCards[0]));
-  }
+  // --- 核心逻辑：计算位移 ---
+  // 我们只处理单选的情况以获得最佳交互效果
+  const selectedIndex = selectedCards.length === 1 
+    ? cards.findIndex(card => areCardsEqual(card, selectedCards[0]))
+    : -1;
 
-  // 假设卡牌宽度约为 110px，重叠部分约为 33px，则暴露出的宽度约为 77px
+  // 卡牌暴露出的宽度，根据 CSS 的 margin-left: -33px 和卡牌宽度 110px 计算
+  // 110px (总宽) - 33px (重叠) = 77px (暴露)
   const cardExposedWidth = 77; 
 
   return (
@@ -40,18 +40,20 @@ const Lane = ({
         {cards.map((card, idx) => {
           const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
           
-          let style = {};
-          // 如果有牌被选中，并且当前牌在选中牌之后
+          let wrapperStyle = {};
+
+          // 场景1：如果这张牌在被选中的牌的“右边”
           if (selectedIndex !== -1 && idx > selectedIndex) {
-            // 将这张牌向右平移一个“卡牌暴露宽度”的距离
-            style.transform = `translateX(${cardExposedWidth}px)`;
+            // 向右平移，为选中的牌腾出空间
+            wrapperStyle.transform = `translateX(${cardExposedWidth}px)`;
           }
 
           return (
             <div 
               key={`${card.rank}-${card.suit}-${idx}`}
+              // --- 核心修改：将 isSelected 作为一个独立的 prop 传递 ---
               className={`card-wrapper ${isSelected ? 'selected' : ''}`}
-              style={style} // 应用动态计算的样式
+              style={wrapperStyle}
             >
               <Card
                 card={card}
@@ -66,4 +68,4 @@ const Lane = ({
 };
 
 export default Lane;
-// --- END OF FILE Lane.jsx (FINAL INTERACTION FIX) ---
+// --- END OF FILE Lane.jsx (FINAL-FINAL FIX) ---

@@ -1,15 +1,13 @@
-/* --- START OF FILE Lane.css (COMPLETELY REWRITTEN) --- */
+/* --- START OF FILE Lane.css (FINAL-FINAL FIX) --- */
 
-/* 1. 外层包裹容器，负责整体布局和间距 */
 .lane-wrapper {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 8px; /* 标题和框之间的间距 */
+  gap: 8px;
   margin-bottom: 12px;
 }
 
-/* 2. 标题样式 */
 .lane-header {
   padding-left: 10px;
   font-size: 1rem;
@@ -18,44 +16,30 @@
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 
-/* 3. 核心：您要求的带边框、固定高度的“置牌区” */
 .card-placement-box {
   width: 100%;
   box-sizing: border-box;
-
-  /* --- 严格按照您的要求：增加高度并固定尺寸 --- */
   height: 190px;
   min-height: 190px;
-
-  /* --- 严格按照您的要求：添加一个清晰的框 --- */
   background: rgba(255, 255, 255, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 16px;
   box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.08);
-
-  /* --- 关键：强制裁剪溢出，因为框本身的高度已经足够 --- */
   overflow: hidden;
-
-  /* 使用Flex布局将牌垂直居中，为上下弹起留出空间 */
   display: flex;
   align-items: center;
-
-  /* 内部横向滚动和卡牌间距 */
   overflow-x: auto;
-  padding: 0 10px; /* 左右内边距 */
+  padding: 0 10px;
   cursor: pointer;
   position: relative;
 }
 
-/* 隐藏滚动条 */
 .card-placement-box::-webkit-scrollbar { display: none; }
 .card-placement-box { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* 4. 卡牌的包裹层，负责堆叠效果和动画 */
 .card-wrapper {
-  /* 保持您要的牌间距 */
   margin-left: -33px; 
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.25s ease-out; /* 使用更平滑的动画曲线 */
   z-index: 1;
   flex-shrink: 0;
   position: relative;
@@ -64,9 +48,12 @@
   margin-left: 0;
 }
 
+/* --- 核心修改：为选中牌的包裹层应用动画 --- */
 .card-wrapper.selected {
+  /* 1. 提升层级，确保它在最上方 */
   z-index: 99;
-  /* 向上弹起的动画，这个距离现在会安全地发生在190px高的框内部 */
-  transform: translateY(-35px); 
-  /* 选中时不再需要放大和阴影，因为弹起已经很明显 */
+  
+  /* 2. 应用向上弹起和轻微放大的复合变换 */
+  /* scale(1.05) 会让它在视觉上覆盖住左边牌的边缘，解决遮挡问题 */
+  transform: translateY(-35px) scale(1.05); 
 }
