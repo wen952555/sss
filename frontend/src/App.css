@@ -1,4 +1,4 @@
-// --- START OF FILE frontend/src/components/App.css (FINAL FIX) ---
+/* --- START OF FILE frontend/src/components/App.css (FINAL FIX) --- */
 
 /* --- 全局毛玻璃面板样式 (Crystal Panel) --- */
 .glass-panel {
@@ -14,8 +14,8 @@
 
 /* --- 主应用布局 --- */
 .app {
-  height: 100vh;
-  max-height: 100svh; /* 使用 svh 适配移动端浏览器UI */
+  height: 100%; /* 核心修复：使用百分比高度，继承自 #root */
+  /* max-height: 100svh; <-- 移除不兼容的 svh 单位 */
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -33,9 +33,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  /* --- 核心修复：解除这个容器的切割限制 --- */
-  overflow: visible; 
+  justify-content: flex-start; /* 改为从顶部开始，方便内容溢出时从头开始滚动 */
+  /* --- 核心修复：允许主内容区在必要时垂直滚动 --- */
+  overflow-y: auto; 
   padding: 15px 0;
 }
 
@@ -183,4 +183,4 @@
   box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
   transform: translateY(-2px);
 }
-// --- END OF FILE frontend/src/components/App.css (FINAL FIX) ---
+/* --- END OF FILE frontend/src/components/App.css (FINAL FIX) --- */
