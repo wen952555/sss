@@ -1,101 +1,104 @@
-// frontend/src/components/Auth.jsx
+// --- START OF FILE frontend/src/components/Auth.jsx (FINAL DB VERSION) ---
+
 import React, { useState } from 'react';
-import './Auth.css';
+import './Auth.css'; // 确保您有对应的CSS文件
 
 const Auth = ({ onLoginSuccess }) => {
+  const [isLoginView, setIsLoginView] = useState(true);
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState(''); // 新增密码状态
-  const [mode, setMode] = useState('login'); // 'login' or 'register'
-  const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 前端密码长度校验
-    if (mode === 'register' && password.length < 6) {
-      setError('密码长度不能少于6位');
-      return;
-    }
+    if (isLoading) return;
 
     setIsLoading(true);
     setError('');
-    setMessage('');
 
-    const url = mode === 'login' ? '/api/login.php' : '/api/register.php';
-    const payload = { phone, password }; // 发送手机号和密码
-
+    const endpoint = isLoginView ? '/api/login.php' : '/api/register.php';
+    
     try {
-      const response = await fetch(url, {
+      const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone, password }),
       });
+
       const data = await response.json();
 
-      if (data.success) {
-        if (mode === 'register') {
-          setMessage(`注册成功！您的ID是 ${data.userId}。请用手机号和密码登录。`);
-          setMode('login'); // 自动切换到登录模式
-          setPassword(''); // 清空密码
-        } else {
-          onLoginSuccess(data.userId, data.user);
-        }
+      if (response.ok && data.success) {
+        // 登录或注册成功，调用父组件的回调函数
+        onLoginSuccess(data.userId, data.userData);
       } else {
-        setError(data.message);
+        setError(data.message || (isLoginView ? '登录失败' : '注册失败'));
       }
     } catch (err) {
-      setError('无法连接到服务器。请检查网络或服务器状态。');
+      setError('无法连接到服务器，请检查网络。');
+      console.error('Auth request failed:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const toggleView = () => {
+    setIsLoginView(!isLoginView);
+    setError(''); // 切换视图时清空错误信息
+    setPhone('');
+    setPassword('');
+  };
+
   return (
     <div className="auth-container">
-      <div className="auth-form">
-        <h2>{mode === 'login' ? '欢迎回来' : '加入我们'}</h2>
-        <form onSubmit={handleSubmit}>
+      <div className="auth-card glass-panel">
+        <h2 className="auth-title">{isLoginView ? '欢迎回来' : '加入我们'}</h2>
+        <p className="auth-subtitle">{isLoginView ? '登录以继续游戏' : '创建新账户开始冒险'}</p>
+        
+        <form onSubmit={handleSubmit} className="auth-form">
           <div className="input-group">
-            <label htmlFor="phone">手机号</label>
             <input
               type="tel"
               id="phone"
+              placeholder="请输入11位手机号"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="请输入11位手机号"
               required
+              autoComplete="username"
             />
           </div>
-          {/* 新增的密码输入框 */}
           <div className="input-group">
-            <label htmlFor="password">密码</label>
             <input
               type="password"
               id="password"
+              placeholder="请设置至少6位密码"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={mode === 'register' ? '请设置至少6位密码' : '请输入密码'}
               required
+              autoComplete={isLoginView ? "current-password" : "new-password"}
             />
           </div>
-          <button type="submit" disabled={isLoading} className="submit-button">
-            {isLoading ? '请稍候...' : (mode === 'login' ? '登录' : '注册')}
+          
+          {error && <p className="auth-error">{error}</p>}
+
+          <button type="submit" className="auth-button" disabled={isLoading}>
+            {isLoading ? '请稍候...' : (isLoginView ? '登 录' : '注 册')}
           </button>
         </form>
-        {error && <p className="error-message">{error}</p>}
-        {message && <p className="success-message">{message}</p>}
-        <div className="toggle-mode">
-          {mode === 'login' ? (
-            <p>还没有账户？ <span onClick={() => { setMode('register'); setError(''); setMessage(''); }}>立即注册</span></p>
-          ) : (
-            <p>已有账户？ <span onClick={() => { setMode('login'); setError(''); setMessage(''); }}>直接登录</span></p>
-          )}
-        </div>
+
+        <p className="auth-toggle">
+          {isLoginView ? '还没有账户？' : '已有账户？'}
+          <button onClick={toggleView} className="toggle-button">
+            {isLoginView ? '立即注册' : '立即登录'}
+          </button>
+        </p>
       </div>
     </div>
   );
 };
 
 export default Auth;
+
+// --- END OF FILE frontend/src/components/Auth.jsx (FINAL DB VERSION) ---
