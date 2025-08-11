@@ -1,4 +1,4 @@
-// --- START OF FILE frontend/src/components/GameResultModal.jsx ---
+// --- START OF FILE GameResultModal.jsx (MULTI-PLAYER VERSION) ---
 
 import React from 'react';
 import Card from './Card';
@@ -21,29 +21,25 @@ const PlayerHandDisplay = ({ hand }) => {
 };
 
 const GameResultModal = ({ result, onClose }) => {
-  if (!result || !result.players) return null;
+  if (!result || !result.players || result.players.length === 0) return null;
 
   return (
     <div className="modal-backdrop">
       <div className="modal-content result-modal-content">
-        <div style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 'bold', color: '#1a2a6c', marginBottom: '10px' }}>
-          比牌结果
-        </div>
+        <h3>比牌结果</h3>
         <div className="game-result-grid">
-          {result.players.map((player, idx) => {
-            const score = result.scores[idx];
+          {result.players.map((player, index) => {
+            const score = player.score;
             const scoreColor = score > 0 ? '#27ae60' : (score < 0 ? '#c0392b' : '#34495e');
-
             return (
-              <div className="game-result-grid-item" key={player.name}>
-                <div style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: '8px' }}>
-                  {player.name}
-                  {/* --- 核心修改：现在所有玩家都显示分数 --- */}
-                  {score !== null && (
-                    <span style={{ color: scoreColor, marginLeft: '10px' }}>
-                      {score > 0 ? `+${score}` : score}
-                    </span>
-                  )}
+              <div key={index} className="game-result-grid-item">
+                <div className="result-player-header">
+                  <span className="result-player-name">
+                    {player.name ? `玩家 ${player.name.slice(-4)}` : `玩家 ${index + 1}`}
+                  </span>
+                  <span className="result-player-score" style={{ color: scoreColor }}>
+                    {score > 0 ? `+${score}` : score}
+                  </span>
                 </div>
                 <PlayerHandDisplay hand={player.hand} />
               </div>
@@ -58,4 +54,4 @@ const GameResultModal = ({ result, onClose }) => {
 
 export default GameResultModal;
 
-// --- END OF FILE frontend/src/components/GameResultModal.jsx ---
+// --- END OF FILE GameResultModal.jsx (MULTI-PLAYER VERSION) ---

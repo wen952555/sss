@@ -1,4 +1,4 @@
-// --- START OF FILE App.jsx (FIXED & MORE ROBUST) ---
+// --- START OF FILE App.jsx (FINAL DB VERSION) ---
 
 import React, { useState, useEffect } from 'react';
 import GameLobby from './components/GameLobby';
@@ -8,51 +8,7 @@ import TransferPoints from './components/TransferPoints';
 import ThirteenGame from './components/ThirteenGame';
 import EightCardGame from './components/EightCardGame';
 import './App.css';
-
 import { Browser } from '@capacitor/browser';
-
-// --- 工具函数：在前端生成并分发牌局 (用于离线试玩模式) ---
-const createOfflineGame = (gameType) => {
-  const ranksDeck = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
-  const suitsDeck = ['spades', 'hearts', 'clubs', 'diamonds'];
-  let fullDeck = [];
-  for (const suit of suitsDeck) {
-    for (const rank of ranksDeck) {
-      fullDeck.push({ rank, suit });
-    }
-  }
-
-  for (let i = fullDeck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [fullDeck[i], fullDeck[j]] = [fullDeck[j], fullDeck[i]];
-  }
-
-  const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
-  
-  const dealUnsortedHand = (deck, startIndex) => {
-    const hand = deck.slice(startIndex, startIndex + cardsPerPlayer);
-    const topSize = gameType === 'thirteen' ? 3 : (gameType === 'eight' ? 2 : 3);
-    const middleSize = gameType === 'thirteen' ? 5 : (gameType === 'eight' ? 3 : 5);
-    return {
-      top: hand.slice(0, topSize),
-      middle: hand.slice(topSize, topSize + middleSize),
-      bottom: hand.slice(topSize + middleSize)
-    };
-  };
-  
-  const playerCount = gameType === 'thirteen' ? 4 : 6; 
-
-  let hands = { '你': dealUnsortedHand(fullDeck, 0) };
-  for (let i = 1; i < playerCount; i++) {
-    hands[`电脑 ${i + 1}`] = dealUnsortedHand(fullDeck, cardsPerPlayer * i);
-  }
-
-  return {
-    success: true,
-    hands: hands
-  };
-};
-
 
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) return null;
@@ -86,8 +42,15 @@ function TopBanner({ user, onLobby, onProfile, onLogout }) {
 
 function App() {
   const [user, setUser] = useState(null);
-  const [gameState, setGameState] = useState({ gameType: null, hand: null, otherPlayers: {}, error: null, isTrial: false });
+  // 简化 gameState，只关心当前是否在游戏中，以及游戏的基本信息
+  const [gameState, setGameState] = useState({ 
+    gameType: null, 
+    gameMode: null, 
+    roomId: null,
+    error: null 
+  });
   const [currentView, setCurrentView] = useState('lobby');
+  const [isMatching, setIsMatching] = useState(false);
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
 
@@ -112,58 +75,72 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null, isTrial: false });
+    setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
   };
 
-  const handleSelectGame = async (gameType, isTrial) => {
-    setGameState(prev => ({ ...prev, error: null }));
-    let data;
+  const handleSelectGame = async (gameType, gameMode) => {
+    if (isMatching || !user) return;
+    setIsMatching(true);
+    setGameState({ ...gameState, error: null });
 
-    if (isTrial) {
-      data = createOfflineGame(gameType);
-    } else {
-      const playerCount = 1;
-      const cardsPerPlayer = gameType === 'thirteen' ? 13 : 8;
-      const params = `players=${playerCount}&cards=${cardsPerPlayer}&game=${gameType}`;
-      const apiUrl = `/api/deal_cards.php?${params}`;
-
-      try {
-        const response = await fetch(apiUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-        data = await response.json();
-      } catch (err) {
-        const errorMsg = err instanceof SyntaxError ? '服务器响应格式错误' : `网络请求失败 (${err.message})`
-        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: errorMsg, isTrial: false });
-        return;
-      }
-    }
-
-    if (data.success && data.hands && typeof data.hands === 'object' && Object.keys(data.hands).length > 0) {
-      let playerHandKey = isTrial ? '你' : (data.hands['玩家 1'] ? '玩家 1' : Object.keys(data.hands)[0]);
+    try {
+      // 发起匹配请求，后端会返回一个 roomId
+      const response = await fetch(`/api/match.php?gameType=${gameType}&gameMode=${gameMode}&userId=${user.id}`);
+      const data = await response.json();
       
-      const playerHand = data.hands[playerHandKey];
-      
-      // --- 核心修复：增加对 playerHand 结构的健壮性检查 ---
-      if (playerHand && typeof playerHand === 'object' && Array.isArray(playerHand.top) && Array.isArray(playerHand.middle) && Array.isArray(playerHand.bottom)) {
-        delete data.hands[playerHandKey];
-        const aiPlayers = data.hands;
-        setGameState({ gameType, hand: playerHand, otherPlayers: aiPlayers, error: null, isTrial });
+      if (data.success && data.roomId) {
+        // 成功获取roomId，直接进入游戏状态，让游戏组件自己去轮询
+        setGameState({
+          gameType: gameType,
+          gameMode: gameMode,
+          roomId: data.roomId,
+          error: null,
+        });
       } else {
-        // 如果数据结构不正确，则设置错误信息
-        setGameState({ gameType: null, hand: null, otherPlayers: {}, error: '从服务器获取的牌局数据格式不正确', isTrial: false });
+        // 匹配API可能因为在队列中而返回202，或者其他错误
+        // 这里可以不做处理，或者给个提示
+        console.warn("Match response:", data.message);
+        // 为了简单，我们让用户继续等待，isMatching 状态保持
       }
-    } else {
-      setGameState({ gameType: null, hand: null, otherPlayers: {}, error: data.message || '获取牌局数据失败', isTrial: false });
+    } catch (err) {
+      setGameState({ ...gameState, error: '无法连接到匹配服务器' });
+      setIsMatching(false); // 出错时停止匹配
     }
   };
+
+  // 轮询匹配状态，直到游戏开始
+  useEffect(() => {
+    if (!isMatching || !user) return;
+
+    const intervalId = setInterval(async () => {
+        // 如果已经进入游戏，则停止此处的轮询
+        if (gameState.roomId) {
+            setIsMatching(false);
+            clearInterval(intervalId);
+            return;
+        }
+        // 如果没有在匹配，也停止
+        if (!isMatching) {
+            clearInterval(intervalId);
+            return;
+        }
+        // 重新调用一次匹配，如果已在队列，API应能处理；如果匹配成功，API应能让我们知道
+        // 这是一个简化的逻辑，更好的方式是有一个专门的 'match_status.php' API
+        handleSelectGame(gameState.gameType, gameState.gameMode);
+    }, 2000); // 每2秒尝试一次
+
+    return () => clearInterval(intervalId);
+  }, [isMatching, user, gameState.roomId]);
 
 
   const handleBackToLobby = () => {
-    setGameState({ gameType: null, hand: null, otherPlayers: {}, error: null, isTrial: false });
+    setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
     setCurrentView('lobby');
+    setIsMatching(false); // 确保退出后停止匹配
   };
 
   const handleUpdate = async () => {
-    await Browser.open({ url: updateInfo.url });
+    if (updateInfo.url) await Browser.open({ url: updateInfo.url });
     setUpdateInfo({ ...updateInfo, show: false });
   };
 
@@ -173,27 +150,28 @@ function App() {
     setCurrentView('profile');
   };
 
-  const isInGame = gameState.gameType && gameState.hand && typeof gameState.hand === 'object' && 'top' in gameState.hand;
+  const isInGame = !!gameState.roomId;
 
   const renderMainContent = () => {
     if (isInGame) {
       const gameProps = {
-        playerHand: gameState.hand,
-        otherPlayers: gameState.otherPlayers,
+        roomId: gameState.roomId,
+        gameMode: gameState.gameMode,
         onBackToLobby: handleBackToLobby,
-        isTrial: gameState.isTrial,
+        user: user,
+        onGameEnd: (updatedUser) => updateUserData(updatedUser),
       };
       if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
       if (gameState.gameType === 'eight') return <EightCardGame {...gameProps} />;
     }
-    if (gameState.error) return <p className="error-message" style={{ margin: '20px', padding: '15px', textAlign: 'center' }}>{gameState.error}</p>;
+
+    if (gameState.error) return <p className="error-message">{gameState.error}</p>;
     if (showTransfer && user) return <TransferPoints fromId={user.id} onClose={() => setShowTransfer(false)} onSuccess={handleTransferSuccess} />;
     
     switch (currentView) {
       case 'profile': return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} />;
-      case 'transfer': return <TransferPoints fromId={user.id} onClose={() => setCurrentView('profile')} onSuccess={handleTransferSuccess} />;
       case 'lobby':
-      default: return <GameLobby onSelectGame={handleSelectGame} />;
+      default: return <GameLobby onSelectGame={handleSelectGame} isMatching={isMatching} />;
     }
   };
 
@@ -220,4 +198,5 @@ function App() {
 }
 
 export default App;
-// --- END OF FILE App.jsx (FIXED & MORE ROBUST) ---
+
+// --- END OF FILE App.jsx (FINAL DB VERSION) ---
