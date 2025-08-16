@@ -1,119 +1,197 @@
-/* --- START OF FILE GameLobby.css (NO CHANGE FROM PREVIOUS) --- */
+/* --- START OF FILE GameLobby.css (NEW DESIGN) --- */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes backgroundPan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
 .lobby-container {
   width: 100%;
-  text-align: center;
+  min-height: 100%; /* 确保在内容少时也能撑满屏幕 */
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  padding: 0 5px;
+  justify-content: center;
+  padding: 40px 20px;
   box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+}
+
+/* --- 动态背景 --- */
+.lobby-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -1;
+  background: linear-gradient(235deg, #0f0c29, #302b63, #24243e);
+  background-size: 200% 200%;
+  animation: backgroundPan 15s ease infinite;
+}
+
+.lobby-header {
+  text-align: center;
+  margin-bottom: 30px;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.lobby-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.lobby-subtitle {
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 5px;
 }
 
 .announcement-banner {
   width: 100%;
-  max-width: 440px;
-  padding: 12px;
-  background-color: rgba(255, 23, 68, 0.1);
-  border: 1px solid rgba(255, 23, 68, 0.3);
+  max-width: 500px;
+  padding: 12px 20px;
+  background: rgba(255, 71, 87, 0.15);
+  border: 1px solid rgba(255, 71, 87, 0.4);
   border-radius: 12px;
-  color: #d32f2f;
-  font-weight: bold;
+  color: #ff8a80;
+  font-weight: 500;
   text-align: center;
-  margin-bottom: 20px;
-  box-sizing: border-box;
+  margin-bottom: 30px;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 1s ease-out;
 }
 
-.lobby-title {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #1a2a6c;
-  text-shadow: 0 2px 5px rgba(255, 255, 255, 0.5);
-}
-
-.game-selection-grid {
+.game-card-grid {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
   align-items: center;
+  gap: 30px;
 }
 
 .game-card {
   width: 100%;
-  max-width: 440px;
+  max-width: 500px;
+  height: 220px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 6px 30px 0 rgba(31, 38, 135, 0.15);
-  padding: 25px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background-size: cover;
+  background-position: center;
+  cursor: default; /* 卡片本身不可点击 */
+  animation: fadeInUp 0.8s ease-out 0.2s;
+  animation-fill-mode: both; /* 保持动画结束状态 */
+}
+
+/* --- 卡片背景图片 --- */
+.thirteen-bg {
+  background-image: url('https://images.unsplash.com/photo-1575429189699-95c639643438?auto=format&fit=crop&w=800&q=80');
+}
+.eight-bg {
+  background-image: url('https://images.unsplash.com/photo-1614983643038-511559f1350a?auto=format&fit=crop&w=800&q=80');
 }
 
 .game-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 40px 0 rgba(31, 38, 135, 0.2);
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
-.game-card h2 {
-  font-size: 1.5rem;
-  color: #1a2a6c;
-  margin: 0 0 10px 0;
+.game-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* 内容沉底 */
+  padding: 25px;
+  box-sizing: border-box;
 }
-.game-card p {
-  font-size: 1rem;
-  color: #3b3b8e;
-  line-height: 1.5;
+
+.game-content {
+  text-align: left;
+}
+.game-title {
+  font-size: 1.8rem;
+  font-weight: 600;
   margin: 0;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+.game-description {
+  font-size: 1rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 5px 0 0 0;
 }
 
-.game-card-actions {
-  margin-top: 25px;
+.game-actions {
   display: flex;
   gap: 15px;
+  margin-top: 20px;
 }
-.action-btn {
+
+.btn {
   flex: 1;
-  min-height: 48px;
-  border-radius: 12px;
+  padding: 12px 20px;
+  border-radius: 10px;
   border: none;
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: all .2s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  transition: all .25s ease;
+  backdrop-filter: blur(5px);
 }
-.action-btn:active { 
-  transform: scale(0.97);
-}
-.action-btn:disabled {
-  background: #bdc3c7 !important;
-  color: #7f8c8d !important;
-  box-shadow: none;
+.btn:disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.action-btn.official {
-  background: linear-gradient(45deg, #ff4e50, #f9d423);
+.btn-primary {
+  background: rgba(236, 72, 153, 0.8);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(255, 78, 80, 0.3);
+  border: 1px solid rgba(236, 72, 153, 1);
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
 }
-.action-btn.official:hover {
-  box-shadow: 0 6px 20px rgba(255, 78, 80, 0.4);
-}
-
-.action-btn.trial {
-  background: rgba(255, 255, 255, 0.9);
-  color: #333;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-.action-btn.trial:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+.btn-primary:hover:not(:disabled) {
+  background: rgba(236, 72, 153, 1);
+  transform: scale(1.05);
 }
 
-/* --- END OF FILE GameLobby.css (NO CHANGE FROM PREVIOUS) --- */
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 移动端适配 */
+@media (max-width: 600px) {
+  .lobby-title { font-size: 2.2rem; }
+  .lobby-subtitle { font-size: 1rem; }
+  .game-card { height: 200px; }
+  .game-title { font-size: 1.5rem; }
+  .game-description { font-size: 0.9rem; }
+  .game-card-overlay { padding: 20px; }
+  .btn { padding: 10px 15px; font-size: 0.9rem;}
+}
+
+/* --- END OF FILE GameLobby.css (NEW DESIGN) --- */

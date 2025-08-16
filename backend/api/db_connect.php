@@ -1,21 +1,25 @@
 <?php
-// --- START OF FILE api/db_connect.php ---
+// --- START OF FILE api/db_connect.php (PRODUCTION VERSION) ---
 
-$DB_HOST = 'localhost';     // 您的数据库主机
-$DB_USER = 'YOUR_DB_USER';  // 您的数据库用户名
-$DB_PASS = 'YOUR_DB_PASS';  // 您的数据库密码
-$DB_NAME = 'YOUR_DB_NAME';  // 您的数据库名
+// 在生产环境中，通常建议关闭错误细节的直接输出
+// ini_set('display_errors', 0);
+// error_reporting(0);
+
+$DB_HOST = 'localhost';
+$DB_USER = 'YOUR_DB_USER';  // 请确认这里是您的正确信息
+$DB_PASS = 'YOUR_DB_PASS';  // 请确认这里是您的正确信息
+$DB_NAME = 'YOUR_DB_NAME';  // 请确认这里是您的正确信息
 
 // 创建连接
 $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
 
 // 检查连接
 if ($conn->connect_error) {
-    http_response_code(500);
-    die(json_encode(['success' => false, 'message' => '数据库连接失败: ' . $conn->connect_error]));
+    http_response_code(503); // Service Unavailable
+    // 在生产环境中，返回一个通用的错误信息
+    die(json_encode(['success' => false, 'message' => '服务器暂时无法连接到数据库，请稍后重试。']));
 }
 
-// 设置字符集
 $conn->set_charset("utf8mb4");
 
-// --- END OF FILE api/db_connect.php ---
+// --- END OF FILE api/db_connect.php (PRODUCTION VERSION) ---
