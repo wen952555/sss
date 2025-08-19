@@ -8,9 +8,10 @@ $input = json_decode(file_get_contents('php://input'), true);
 $userId = (int)($input['userId'] ?? 0);
 $roomId = (int)($input['roomId'] ?? 0);
 $hand = $input['hand'] ?? null;
+$isAutoManaged = (int)($input['isAutoManaged'] ?? 0); // 新增：是否智能托管
 
 if (!$userId || !$roomId || !$hand) {
-    //... 错误处理
+    echo json_encode(['success' => false, 'message' => '缺少参数']);
     exit;
 }
 
@@ -18,9 +19,9 @@ $submittedHandJson = json_encode($hand);
 
 $conn->begin_transaction();
 try {
-    // 更新玩家状态
-    $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1, submitted_hand = ? WHERE room_id = ? AND user_id = ?");
-    $stmt->bind_param("sii", $submittedHandJson, $roomId, $userId);
+    // 更新玩家状态（增加托管字段）
+    $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1, submitted_hand = ?, is_auto_managed = ?, auto_managed_at = IF(?=1, NOW(), NULL) WHERE room_id = ? AND user_id = ?");
+    $stmt->bind_param("siiii", $submittedHandJson, $isAutoManaged, $isAutoManaged, $roomId, $userId);
     $stmt->execute();
     $stmt->close();
 
@@ -39,7 +40,7 @@ try {
 
     if ($readyPlayers == $playersNeeded) {
         // 所有人都准备好了，结算
-        // 伪代码: calculateScores 应该是一个复杂的函数，它查询所有玩家的submitted_hand并返回一个分数数组
+        // TODO: calculateScores 查询所有玩家的submitted_hand并返回分数，更新room_players和users积分
         // $scores = calculateScores($conn, $roomId);
 
         // 更新房间状态为 finished
@@ -48,7 +49,7 @@ try {
         $stmt->execute();
         $stmt->close();
 
-        // 伪代码: 更新所有玩家的分数
+        // 伪代码: 更新所有玩家分数
         /*
         foreach($scores as $pId => $score) {
             $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?");
@@ -62,6 +63,9 @@ try {
             $stmt->close();
         }
         */
+
+        // 移除本局被托管玩家
+        $conn->query("DELETE FROM room_players WHERE room_id = $roomId AND is_auto_managed = 1");
     }
 
     $conn->commit();
@@ -69,7 +73,7 @@ try {
 
 } catch (Exception $e) {
     $conn->rollback();
-    //... 错误处理
+    echo json_encode(['success' => false, 'message' => '提交失败！']);
 }
 $conn->close();
 
