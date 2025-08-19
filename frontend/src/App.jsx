@@ -1,4 +1,4 @@
-// --- UPDATED App.jsx: 支持试玩模式 ---
+// --- FINAL VERSION: App.jsx (独立匹配状态, 全流程修复) ---
 
 import React, { useState, useEffect } from 'react';
 import GameLobby from './components/GameLobby';
@@ -46,10 +46,10 @@ function App() {
   const [user, setUser] = useState(null);
   const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null });
   const [currentView, setCurrentView] = useState('lobby');
-  const [isMatching, setIsMatching] = useState(false);
+  // --- 独立匹配状态 ---
+  const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, eight: false });
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
-
   // 试玩模式相关
   const [practiceMode, setPracticeMode] = useState(false);
   const [practiceConfig, setPracticeConfig] = useState(null);
@@ -76,46 +76,52 @@ function App() {
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
     setPracticeMode(false);
     setPracticeConfig(null);
+    setMatchingStatus({ thirteen: false, eight: false });
   };
 
+  // --- 独立匹配入口 ---
   const handleSelectGame = async (gameType, gameMode) => {
-    if (isMatching || !user) return;
-    setIsMatching(true);
-    setGameState({ ...gameState, error: null });
-
+    if (matchingStatus[gameType] || !user) return;
+    setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
+    setGameState({ ...gameState, gameType, gameMode, error: null });
     try {
       const response = await fetch(`/api/match.php?gameType=${gameType}&gameMode=${gameMode}&userId=${user.id}`);
       const data = await response.json();
       if (data.success && data.roomId) {
         setGameState({ gameType: gameType, gameMode: gameMode, roomId: data.roomId, error: null });
+      } else {
+        setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
+        setGameState({ ...gameState, error: data.message || '匹配失败，请重试' });
       }
     } catch (err) {
+      setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
       setGameState({ ...gameState, error: '无法连接到匹配服务器' });
-      setIsMatching(false);
     }
   };
 
+  // --- 匹配轮询，仅针对当前游戏 ---
   useEffect(() => {
-    if (!isMatching || !user) return;
+    const currentGame = gameState.gameType;
+    if (!currentGame || !matchingStatus[currentGame] || !user) return;
     const intervalId = setInterval(async () => {
       if (gameState.roomId) {
-        setIsMatching(false);
+        setMatchingStatus(prev => ({ ...prev, [currentGame]: false }));
         clearInterval(intervalId);
         return;
       }
-      if (!isMatching) {
+      if (!matchingStatus[currentGame]) {
         clearInterval(intervalId);
         return;
       }
-      handleSelectGame(gameState.gameType, gameState.gameMode);
+      await handleSelectGame(currentGame, gameState.gameMode);
     }, 2000);
     return () => clearInterval(intervalId);
-  }, [isMatching, user, gameState.roomId]);
+  }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
 
   const handleBackToLobby = () => {
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
     setCurrentView('lobby');
-    setIsMatching(false);
+    setMatchingStatus({ thirteen: false, eight: false });
     setPracticeMode(false);
     setPracticeConfig(null);
   };
@@ -131,7 +137,7 @@ function App() {
     setCurrentView('profile');
   };
 
-  // --- 试玩入口
+  // --- 试玩入口 ---
   const handlePracticeStart = (gameType, aiCount) => {
     setPracticeMode(true);
     setPracticeConfig({ gameType, aiCount });
@@ -168,7 +174,14 @@ function App() {
     switch (currentView) {
       case 'profile': return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} />;
       case 'lobby':
-      default: return <GameLobby onSelectGame={handleSelectGame} isMatching={isMatching} onPractice={handlePracticeStart} />;
+      default:
+        return (
+          <GameLobby
+            onSelectGame={handleSelectGame}
+            matchingStatus={matchingStatus}
+            onPractice={handlePracticeStart}
+          />
+        );
     }
   };
 
@@ -195,3 +208,4 @@ function App() {
 }
 
 export default App;
+// --- END FINAL VERSION ---

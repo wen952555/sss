@@ -1,14 +1,11 @@
-// --- UPDATED GameLobby.jsx: 在线人数+试玩按钮 ---
-
 import React, { useState, useEffect } from 'react';
 import './GameLobby.css';
 
-const GameLobby = ({ onSelectGame, isMatching, onPractice }) => {
+const GameLobby = ({ onSelectGame, matchingStatus, onPractice }) => {
   const [announcement, setAnnouncement] = useState('');
   const [onlineCount, setOnlineCount] = useState(null);
 
   useEffect(() => {
-    // 公告
     const fetchAnnouncement = async () => {
       try {
         const response = await fetch('/api/get_announcement.php');
@@ -22,7 +19,6 @@ const GameLobby = ({ onSelectGame, isMatching, onPractice }) => {
   }, []);
 
   useEffect(() => {
-    // 在线人数
     const fetchOnlineCount = async () => {
       try {
         const resp = await fetch('/api/get_online_count.php');
@@ -34,10 +30,6 @@ const GameLobby = ({ onSelectGame, isMatching, onPractice }) => {
     const intervalId = setInterval(fetchOnlineCount, 15000);
     return () => clearInterval(intervalId);
   }, []);
-
-  const handleSelect = (gameType, gameMode) => {
-    if (!isMatching) onSelectGame(gameType, gameMode);
-  };
 
   return (
     <div className="lobby-container">
@@ -64,13 +56,23 @@ const GameLobby = ({ onSelectGame, isMatching, onPractice }) => {
               <p className="game-description">策略与运气的巅峰对决</p>
             </div>
             <div className="game-actions">
-              <button className="btn btn-secondary" onClick={() => handleSelect('thirteen', 'normal')} disabled={isMatching}>
-                {isMatching ? '匹配中' : '普通场'}
+              <button className="btn btn-secondary"
+                onClick={() => onSelectGame('thirteen', 'normal')}
+                disabled={matchingStatus.thirteen}
+              >
+                {matchingStatus.thirteen ? '匹配中' : '普通场'}
               </button>
-              <button className="btn btn-primary" onClick={() => handleSelect('thirteen', 'double')} disabled={isMatching}>
-                {isMatching ? '匹配中' : '翻倍场'}
+              <button className="btn btn-primary"
+                onClick={() => onSelectGame('thirteen', 'double')}
+                disabled={matchingStatus.thirteen}
+              >
+                {matchingStatus.thirteen ? '匹配中' : '翻倍场'}
               </button>
-              <button className="btn btn-secondary" style={{ background: '#7ed6df', color: '#222' }} onClick={() => onPractice('thirteen', 3)} disabled={isMatching}>
+              <button className="btn btn-secondary"
+                style={{ background: '#7ed6df', color: '#222' }}
+                onClick={() => onPractice('thirteen', 3)}
+                disabled={matchingStatus.thirteen}
+              >
                 试玩
               </button>
             </div>
@@ -84,13 +86,23 @@ const GameLobby = ({ onSelectGame, isMatching, onPractice }) => {
               <p className="game-description">快节奏的竞技体验</p>
             </div>
             <div className="game-actions">
-              <button className="btn btn-secondary" onClick={() => handleSelect('eight', 'normal')} disabled={isMatching}>
-                {isMatching ? '匹配中' : '普通场'}
+              <button className="btn btn-secondary"
+                onClick={() => onSelectGame('eight', 'normal')}
+                disabled={matchingStatus.eight}
+              >
+                {matchingStatus.eight ? '匹配中' : '普通场'}
               </button>
-              <button className="btn btn-primary" onClick={() => handleSelect('eight', 'special')} disabled={isMatching}>
-                {isMatching ? '匹配中' : '独头场'}
+              <button className="btn btn-primary"
+                onClick={() => onSelectGame('eight', 'special')}
+                disabled={matchingStatus.eight}
+              >
+                {matchingStatus.eight ? '匹配中' : '独头场'}
               </button>
-              <button className="btn btn-secondary" style={{ background: '#7ed6df', color: '#222' }} onClick={() => onPractice('eight', 5)} disabled={isMatching}>
+              <button className="btn btn-secondary"
+                style={{ background: '#7ed6df', color: '#222' }}
+                onClick={() => onPractice('eight', 5)}
+                disabled={matchingStatus.eight}
+              >
                 试玩
               </button>
             </div>
@@ -102,5 +114,3 @@ const GameLobby = ({ onSelectGame, isMatching, onPractice }) => {
 };
 
 export default GameLobby;
-
-// --- END UPDATED GameLobby.jsx ---
