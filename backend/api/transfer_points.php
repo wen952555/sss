@@ -4,19 +4,7 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
 
-$db_path = '../database/users.json';
-
-// --- Helper Functions ---
-function getUsers($path) {
-    if (!file_exists($path)) return [];
-    return json_decode(file_get_contents($path), true);
-}
-
-function saveUsers($path, $users) {
-    file_put_contents($path, json_encode($users, JSON_PRETTY_PRINT));
-}
-
-// --- Main Logic ---
+require_once 'db_connect.php';
 
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -26,9 +14,9 @@ if (!$input || !isset($input['fromId'], $input['toId'], $input['amount'])) {
     exit;
 }
 
-$fromId = $input['fromId'];
-$toId = $input['toId'];
-$amount = (int)$input['amount'];
+$fromId = intval($input['fromId']);
+$toId = intval($input['toId']);
+$amount = intval($input['amount']);
 
 if ($amount <= 0) {
     http_response_code(400);
@@ -42,54 +30,57 @@ if ($fromId === $toId) {
     exit;
 }
 
-// --- 数据库操作 ---
-// 为了保证数据一致性，我们在这里加一个简单的文件锁
-$fp = fopen($db_path, 'r+');
-if (!flock($fp, LOCK_EX)) {
-    http_response_code(503); // Service Unavailable
-    echo json_encode(['success' => false, 'message' => '服务器繁忙，请稍后再试。']);
-    exit;
-}
+$conn->begin_transaction();
+try {
+    // 检查赠送方积分
+    $stmt = $conn->prepare("SELECT points FROM users WHERE id = ?");
+    $stmt->bind_param("i", $fromId);
+    $stmt->execute();
+    $resultFrom = $stmt->get_result();
+    if ($resultFrom->num_rows !== 1) throw new Exception('赠送方不存在');
+    $fromPoints = $resultFrom->fetch_assoc()['points'];
+    $stmt->close();
 
-$users = json_decode(fread($fp, filesize($db_path)), true);
+    $stmt = $conn->prepare("SELECT id FROM users WHERE id = ?");
+    $stmt->bind_param("i", $toId);
+    $stmt->execute();
+    $resultTo = $stmt->get_result();
+    if ($resultTo->num_rows !== 1) throw new Exception('接收方不存在');
+    $stmt->close();
 
-// 检查用户是否存在
-if (!isset($users[$fromId]) || !isset($users[$toId])) {
-    flock($fp, LOCK_UN);
-    fclose($fp);
-    http_response_code(404);
-    echo json_encode(['success' => false, 'message' => '赠送方或接收方用户不存在。']);
-    exit;
-}
+    if ($fromPoints < $amount) throw new Exception('您的积分不足。');
 
-// 检查积分是否足够
-if ($users[$fromId]['points'] < $amount) {
-    flock($fp, LOCK_UN);
-    fclose($fp);
+    // 扣除积分
+    $stmt = $conn->prepare("UPDATE users SET points = points - ? WHERE id = ?");
+    $stmt->bind_param("ii", $amount, $fromId);
+    $stmt->execute();
+    $stmt->close();
+
+    // 增加积分
+    $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?");
+    $stmt->bind_param("ii", $amount, $toId);
+    $stmt->execute();
+    $stmt->close();
+
+    // 查询赠送方最新信息
+    $stmt = $conn->prepare("SELECT id, phone, points FROM users WHERE id = ?");
+    $stmt->bind_param("i", $fromId);
+    $stmt->execute();
+    $updatedUser = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    $conn->commit();
+
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
+        'message' => '积分赠送成功！',
+        'updatedUser' => $updatedUser
+    ]);
+} catch (Exception $e) {
+    $conn->rollback();
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => '您的积分不足。']);
-    exit;
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
-
-// 执行转账
-$users[$fromId]['points'] -= $amount;
-$users[$toId]['points'] += $amount;
-
-// 写回数据库
-ftruncate($fp, 0); // 清空文件
-rewind($fp);
-fwrite($fp, json_encode($users, JSON_PRETTY_PRINT));
-fflush($fp);
-
-// 解锁并关闭文件
-flock($fp, LOCK_UN);
-fclose($fp);
-
-// 返回成功响应
-http_response_code(200);
-echo json_encode([
-    'success' => true,
-    'message' => '积分赠送成功！',
-    'updatedUser' => $users[$fromId] // 返回更新后的赠送者信息
-]);
+$conn->close();
 ?>

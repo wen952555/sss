@@ -4,15 +4,7 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
 
-$db_path = '../database/users.json';
-
-// 读取数据库
-function getUsers($path) {
-    if (!file_exists($path)) return [];
-    return json_decode(file_get_contents($path), true);
-}
-
-// --- Main Logic ---
+require_once 'db_connect.php';
 
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -24,21 +16,25 @@ if (!$input || !isset($input['phone'])) {
 
 $phoneToFind = $input['phone'];
 
-$users = getUsers($db_path);
+$stmt = $conn->prepare("SELECT id FROM users WHERE phone = ?");
+$stmt->bind_param("s", $phoneToFind);
+$stmt->execute();
+$result = $stmt->get_result();
 
-// 查找用户
-foreach ($users as $id => $user) {
-    if ($user['phone'] === $phoneToFind) {
-        http_response_code(200);
-        echo json_encode([
-            'success' => true,
-            'userId' => $id,
-        ]);
-        exit;
-    }
+if ($result->num_rows === 1) {
+    $row = $result->fetch_assoc();
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
+        'userId' => $row['id'],
+    ]);
+    exit;
+} else {
+    http_response_code(404);
+    echo json_encode(['success' => false, 'message' => '未找到该手机号对应的用户。']);
+    exit;
 }
 
-// 如果没找到
-http_response_code(404);
-echo json_encode(['success' => false, 'message' => '未找到该手机号对应的用户。']);
+$stmt->close();
+$conn->close();
 ?>
