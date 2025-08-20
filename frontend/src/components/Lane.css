@@ -24,13 +24,13 @@
 }
 
 .card-wrapper {
-  margin-left: -18px; /* 堆叠间隔宽，防止太紧密 */
+  margin-left: -48px; /* 调整负边距以平铺显示更多内容 */
   z-index: 1;
   position: relative;
   transition: box-shadow 0.2s, transform 0.18s;
   overflow: visible;
   width: 72px;
-  min-width: 60px;
+  min-width: 72px; /* 固定宽度防止压缩 */
   max-width: 72px;
   height: 110px;
 }

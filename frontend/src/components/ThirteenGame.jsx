@@ -22,6 +22,7 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
   const [bottomLane, setBottomLane] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
   const [hasDealt, setHasDealt] = useState(false); // 是否已发牌
+  const [isPreparing, setIsPreparing] = useState(false); // 是否已点击准备
   const [isReady, setIsReady] = useState(false); // 是否已提交理牌
   const [players, setPlayers] = useState([]);
   const [gameStatus, setGameStatus] = useState('matching'); // 牌桌状态
@@ -41,24 +42,22 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
           setGameStatus(data.gameStatus);
           setPlayers(data.players);
 
+          // --- 1. 检查自己是否已准备 ---
           const me = data.players.find(p => p.id === user.id);
-          if (me) {
-            setIsReady(!!me.is_ready);
-          }
+          setIsPreparing(me ? !!me.is_ready : false);
 
+          // --- 2. 检查是否已发牌 ---
           if (data.hand && !hasDealt) {
             setTopLane(data.hand.top);
             setMiddleLane(data.hand.middle);
             setBottomLane(data.hand.bottom);
             setHasDealt(true);
+            setIsReady(false); // 理牌还没提交
           }
 
+          // --- 3. 结果展示 ---
           if (data.gameStatus === 'finished' && data.result) {
             setGameResult(data.result);
-            if (onGameEnd) {
-                const updatedUser = data.result.players.find(p => p.id === user.id);
-                if(updatedUser) onGameEnd(updatedUser);
-            }
             clearInterval(intervalId);
           }
         }
@@ -68,8 +67,33 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
       }
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [roomId, user.id, gameStatus, hasDealt, onGameEnd]);
+  }, [roomId, user.id, gameStatus, hasDealt]);
 
+  // --- 1. 点击准备 ---
+  const handlePrepare = async () => {
+    if (isPreparing) return;
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const resp = await fetch('/api/player_ready.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, roomId })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setIsPreparing(true); // 已准备，等发牌
+      } else {
+        setErrorMessage(data.message || '准备失败');
+      }
+    } catch (err) {
+      setErrorMessage('与服务器通信失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- 2. 理牌提交 ---
   const handleConfirm = async () => {
     if (isLoading || isReady) return;
     if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
@@ -84,7 +108,7 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
         roomId: roomId,
         hand: { top: topLane, middle: middleLane, bottom: bottomLane },
       };
-      const response = await fetch('/api/submit_hand.php', {
+      const response = await fetch('/api/player_ready.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
