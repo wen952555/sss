@@ -38,6 +38,20 @@
   z-index: 1;
   flex-shrink: 0;
   position: relative;
+  /* 默认只显示左半边 */
+  overflow: hidden;
+  width: 55px;
+  max-width: 55px;
+  min-width: 28px;
+  height: 165px;
+}
+
+/* 最右侧一张牌完整显示 */
+.card-wrapper.last {
+  overflow: visible;
+  width: 110px;
+  max-width: 110px;
+  min-width: 55px;
 }
 
 /* 弹起效果，只Y轴，不提升层级 */

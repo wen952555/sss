@@ -1,4 +1,4 @@
-// --- Lane.jsx: 弹起只Y轴，堆叠层级始终按索引，始终保持遮挡 ---
+// --- Lane.jsx: 只有最右边牌显示完整，其它牌始终只显示左半边，无论是否弹起 ---
 import React from 'react';
 import Card from './Card';
 import './Lane.css';
@@ -23,18 +23,25 @@ const Lane = ({
       </div>
       <div className="card-placement-box" onClick={handleAreaClick}>
         {cards.map((card, idx) => {
+          const isLast = idx === cards.length - 1;
           const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
           return (
             <div
               key={`${card.rank}-${card.suit}-${idx}`}
-              className={`card-wrapper${isSelected ? ' selected' : ''}`}
+              className={`card-wrapper${isSelected ? ' selected' : ''}${isLast ? ' last' : ''}`}
               style={{
                 position: 'relative',
                 left: `${idx === 0 ? 0 : -34 * idx}px`,
-                zIndex: idx, // 永远保持原堆叠遮挡顺序
-                transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none', // 只弹起Y轴
+                zIndex: idx,
+                transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none',
                 transition: 'box-shadow 0.2s, transform 0.18s',
-                pointerEvents: 'auto'
+                pointerEvents: 'auto',
+                // 只有最后一张牌显示完整，其它只显示左半边
+                overflow: isLast ? 'visible' : 'hidden',
+                width: isLast ? '110px' : '55px', // 只露左半边，完整牌宽度110px
+                minWidth: isLast ? '55px' : '28px',
+                maxWidth: isLast ? '110px' : '55px',
+                height: '165px',
               }}
             >
               <Card
