@@ -1,4 +1,4 @@
-// --- Lane.jsx: 只有最右边牌显示完整，其它牌始终只显示左半边，无论是否弹起 ---
+// --- Lane.jsx: 恢复正常堆叠，只有弹起的牌显示左半边，最右侧未选中牌始终完整 ---
 import React from 'react';
 import Card from './Card';
 import './Lane.css';
@@ -33,15 +33,15 @@ const Lane = ({
                 position: 'relative',
                 left: `${idx === 0 ? 0 : -34 * idx}px`,
                 zIndex: idx,
+                // 只有选中弹起的牌显示左半边
+                overflow: isSelected ? 'hidden' : (isLast ? 'visible' : 'visible'),
+                width: isSelected ? '55px' : (isLast ? '110px' : '110px'),
+                minWidth: isSelected ? '28px' : (isLast ? '55px' : '55px'),
+                maxWidth: isSelected ? '55px' : (isLast ? '110px' : '110px'),
+                height: '165px',
                 transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none',
                 transition: 'box-shadow 0.2s, transform 0.18s',
-                pointerEvents: 'auto',
-                // 只有最后一张牌显示完整，其它只显示左半边
-                overflow: isLast ? 'visible' : 'hidden',
-                width: isLast ? '110px' : '55px', // 只露左半边，完整牌宽度110px
-                minWidth: isLast ? '55px' : '28px',
-                maxWidth: isLast ? '110px' : '55px',
-                height: '165px',
+                pointerEvents: 'auto'
               }}
             >
               <Card

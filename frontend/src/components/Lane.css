@@ -38,24 +38,19 @@
   z-index: 1;
   flex-shrink: 0;
   position: relative;
-  /* 默认只显示左半边 */
-  overflow: hidden;
-  width: 55px;
-  max-width: 55px;
-  min-width: 28px;
-  height: 165px;
-}
-
-/* 最右侧一张牌完整显示 */
-.card-wrapper.last {
   overflow: visible;
   width: 110px;
   max-width: 110px;
   min-width: 55px;
+  height: 165px;
 }
 
-/* 弹起效果，只Y轴，不提升层级 */
+/* 弹起的牌只显示左半边 */
 .card-wrapper.selected {
+  overflow: hidden;
+  width: 55px;
+  max-width: 55px;
+  min-width: 28px;
   box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
   transform: translateY(-20px) scale(1.08);
 }
@@ -63,6 +58,14 @@
   border: 2px solid #00cec9;
   box-shadow: 0 4px 18px #00cec9b3;
   filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
+}
+
+/* 最右侧一张牌始终完整显示 */
+.card-wrapper.last {
+  overflow: visible;
+  width: 110px;
+  max-width: 110px;
+  min-width: 55px;
 }
 
 .card-wrapper:first-child {
