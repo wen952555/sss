@@ -7,10 +7,11 @@ import './GameResultModal.css';
 const PlayerHandDisplay = ({ hand }) => {
   if (!hand || !hand.top || !hand.middle || !hand.bottom) return null;
   const lanes = [hand.top, hand.middle, hand.bottom];
+  // 横向平铺每一道
   return (
     <div className="result-hand-container">
       {lanes.map((laneCards, idx) => (
-        <div key={idx} className="result-cards-row">
+        <div key={idx} className="result-cards-row" style={{ display: 'flex', flexDirection: 'row', gap: '6px', marginBottom: '6px' }}>
           {laneCards && laneCards.map((card, cardIdx) => (
             <Card key={`${card.rank}-${card.suit}-${cardIdx}`} card={card} />
           ))}
