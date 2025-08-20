@@ -6,40 +6,16 @@
   border-radius: 28px; box-shadow: 0 12px 45px rgba(20,20,40,0.25);
   color: #e3e6ff;
 }
-.game-result-grid-item {
-  background: #171730;
-  border-radius: 18px;
-  padding: 12px;
-  box-shadow: 0 4px 15px rgba(20,20,40,0.09);
-}
+.game-result-grid-item { background: #171730; border-radius: 18px; padding: 12px; box-shadow: 0 4px 15px rgba(20,20,40,0.09); }
 .close-button {
-  padding: 14px 0;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  background: linear-gradient(45deg, #6a82fb, #fc5c7d);
-  color: white;
-  margin-top: 5px;
-  transition: all 0.2s;
+  padding: 14px 0; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+  background: linear-gradient(45deg, #6a82fb, #fc5c7d); color: white; margin-top: 5px; transition: all 0.2s;
 }
-.close-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px #6a82fb44;
-}
-.result-player-name {
-  color: #89f0ff;
-  font-weight: bold;
-  font-size: 1.15rem;
-}
-.result-player-score {
-  font-weight: bold;
-  font-size: 1.15rem;
-  margin-left: 12px;
-}
+.close-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px #6a82fb44; }
+.result-player-name { color: #89f0ff; font-weight: bold; font-size: 1.15rem; }
+.result-player-score { font-weight: bold; font-size: 1.15rem; margin-left: 12px; }
 
-/* 补充：每一道横向堆叠，每张牌统一小尺寸 */
+/* 统一每一道横向堆叠，每张牌小尺寸、无边框凸起 */
 .result-hand-container {
   display: flex;
   flex-direction: column;
@@ -58,4 +34,10 @@
   height: 100px !important;
   max-height: 100px !important;
   box-sizing: border-box;
+  border: none !important;          /* 移除边框 */
+  border-radius: 8px !important;    /* 可根据实际需要设置圆角 */
+  box-shadow: none !important;      /* 移除所有阴影/凸起效果 */
+  background: #fff !important;      /* 保持纯白背景 */
+  margin-top: 0 !important;         /* 移除顶部凸起 */
+  margin-bottom: 0 !important;      /* 移除底部凸起 */
 }
