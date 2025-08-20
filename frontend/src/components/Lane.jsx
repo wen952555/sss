@@ -15,7 +15,8 @@ const Lane = ({
     }
   };
 
-  // --- 堆叠修复：每张牌的z-index = idx。弹起牌z-index = cards.length（最高），其他牌按idx排序。
+  // 修复堆叠遮挡：
+  // - 所有牌 zIndex = idx + 2，弹起牌 zIndex = 99（永远最高，但只弹起不遮盖右侧）
   return (
     <div className="lane-wrapper">
       <div className="lane-header">
@@ -24,21 +25,19 @@ const Lane = ({
       <div className="card-placement-box" onClick={handleAreaClick}>
         {cards.map((card, idx) => {
           const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
-          // 关键修复：弹起牌z-index最高，其余牌按idx
-          const zIndex = isSelected ? cards.length : idx;
           return (
             <div
               key={`${card.rank}-${card.suit}-${idx}`}
               className={`card-wrapper${isSelected ? ' selected' : ''}`}
               style={{
                 position: 'relative',
-                left: `${idx === 0 ? 0 : -34 * idx}px`,
-                zIndex,
+                left: `${idx === 0 ? 0 : -18 * idx}px`,
+                zIndex: isSelected ? 99 : idx + 2,
                 overflow: 'visible',
-                width: '110px',
-                minWidth: '55px',
-                maxWidth: '110px',
-                height: '165px',
+                width: '72px',
+                minWidth: '60px',
+                maxWidth: '72px',
+                height: '110px',
                 transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none',
                 transition: 'box-shadow 0.2s, transform 0.18s',
                 pointerEvents: 'auto'

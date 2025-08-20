@@ -1,20 +1,14 @@
 import React from 'react';
 
 const Card = ({ card, onClick, isSelected }) => {
-  if (!card || card.suit === 'joker') {
-    return null;
-  }
-
+  if (!card || card.suit === 'joker') return null;
   const imageName = `${card.rank}_of_${card.suit}.svg`;
   const imagePath = `/cards/${imageName}`;
-  
   const cardClassName = `card ${isSelected ? 'selected' : ''} ${onClick ? 'clickable' : ''}`;
-  
+
   const handleClick = (e) => {
     e.stopPropagation();
-    if (onClick) {
-      onClick(card);
-    }
+    if (onClick) onClick(card);
   };
 
   return (
@@ -28,9 +22,9 @@ const Card = ({ card, onClick, isSelected }) => {
         maxWidth: 'none',
         boxSizing: 'border-box',
         border: 'none',
-        borderRadius: '11px',
+        borderRadius: '9px',
         boxShadow: 'none',
-        background: isSelected ? '#23243c' : '#23243c',
+        background: '#fff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'

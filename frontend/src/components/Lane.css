@@ -2,45 +2,64 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 10px; /* 增大区间隔，防止拥挤 */
   flex: 1;
   min-height: 0;
 }
+
 .card-placement-box {
   width: 100%;
   box-sizing: border-box;
-  min-height: 120px; /* 大于弹起高度 */
+  min-height: 130px; /* 高度大于弹起高度，防止顶部裁切 */
   background: #171730;
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: 0 1px 4px #23243c22;
   display: flex;
   align-items: flex-end;
   overflow-x: auto;
-  overflow-y: visible; /* 关键修复：保证弹起不切割 */
-  padding: 0 10px;
+  overflow-y: visible !important; /* 强力保证弹起不裁切 */
+  padding: 0 12px;
   cursor: pointer;
   position: relative;
 }
+
 .card-wrapper {
-  margin-left: -34px;
+  margin-left: -18px; /* 堆叠间隔宽，防止太紧密 */
   z-index: 1;
   position: relative;
   transition: box-shadow 0.2s, transform 0.18s;
   overflow: visible;
-  width: 110px;
-  max-width: 110px;
-  min-width: 55px;
-  height: 165px;
+  width: 72px;
+  min-width: 60px;
+  max-width: 72px;
+  height: 110px;
 }
+
+/* 堆叠z-index：后面的牌层级高，弹起牌层级最高 */
 .card-wrapper.selected {
-  box-shadow: 0 7px 22px #6a82fb55,0 0 0 2px #6a82fb;
+  z-index: 99 !important;
+  box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
   transform: translateY(-20px) scale(1.08);
 }
 .card-wrapper.selected .card {
-  border: 2px solid #6a82fb;
-  box-shadow: 0 4px 18px #6a82fb55;
-  filter: brightness(1.15) drop-shadow(0 0 4px #6a82fb);
+  border: 2px solid #00cec9;
+  box-shadow: 0 4px 18px #00cec9b3;
+  filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
 }
+
 .card-wrapper:first-child { margin-left: 0; }
-.card { box-sizing: border-box; border-radius: 11px; background: #fff; border: none; box-shadow: none; }
-@media (max-width: 380px) { .card-wrapper { width: 70px; max-width: 70px; min-width: 38px; height: 105px; margin-left: -22px; } }
+
+.card {
+  box-sizing: border-box;
+  border-radius: 9px;
+  background: #fff;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 450px) {
+  .card-wrapper {
+    width: 54px; min-width: 42px; max-width: 54px; height: 78px; margin-left: -11px;
+  }
+  .card-placement-box { min-height: 85px; padding: 0 6px; }
+}
