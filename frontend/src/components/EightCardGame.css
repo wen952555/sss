@@ -1,14 +1,13 @@
-/* 牌桌主布局自适应修正版 */
-
 .table-root {
   width: 100vw;
-  height: 100vh;
-  min-height: 100vh;
+  height: 100dvh; /* 彻底用物理屏幕高度，防止切割 */
+  min-height: 100dvh;
   padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  justify-content: stretch;
+  align-items: stretch;
   box-sizing: border-box;
   overflow: hidden;
   background: linear-gradient(135deg, #23243c 0%, #171730 80%, #121223 100%);
@@ -16,9 +15,9 @@
 
 .table-panel {
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
   max-width: 100vw;
-  min-height: 100vh;
   padding: 0;
   margin: 0;
   display: flex;
@@ -27,9 +26,10 @@
   position: relative;
   box-sizing: border-box;
   overflow: hidden;
-  justify-content: flex-start;
+  /* 禁止圆角阴影，防止顶底溢出 */
   background: linear-gradient(120deg, #23243c 0%, #171730 80%);
   border-radius: 0;
+  box-shadow: none;
 }
 
 /* 顶部栏、玩家栏、底部栏高度固定 */
@@ -44,14 +44,6 @@
   padding: 8px 8px 0 8px;
 }
 
-.table-score-box {
-  background: rgba(0,0,0,0.08);
-  padding: 6px 12px;
-  border-radius: 7px;
-  font-size: 0.95rem;
-  color: #89f0ff;
-}
-
 .players-status-bar {
   display: flex;
   flex-direction: row;
@@ -59,12 +51,11 @@
   align-items: center;
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 15px rgba(8,22,90,0.10);
   border-radius: 16px;
-  padding: 10px 6px;
+  padding: 8px 5px;
   gap: 8px;
-  margin: 0 5px 12px 5px;
+  margin: 0 5px 8px 5px;
 }
 
 .player-status-item {
@@ -96,12 +87,15 @@
 .table-actions-bar {
   display: flex;
   gap: 10px;
-  padding: 9px 8px 15px 8px;
+  padding: 9px 8px 10px 8px;
   position: sticky;
   bottom: 0;
+  left: 0;
+  width: 100vw;
   background: linear-gradient(180deg, #23243c 80%, #171730 100%);
   z-index: 20;
 }
+
 .action-btn {
   flex: 1;
   padding: 12px 0;
@@ -137,7 +131,6 @@
   position: absolute; inset: 0;
   background: rgba(255,255,255,0.6);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   color: #2c3e50; font-size: 1.2rem;
   display: flex; align-items: center; justify-content: center;
   z-index: 100;
