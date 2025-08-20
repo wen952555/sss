@@ -1,4 +1,4 @@
-// --- PracticeThirteenGame.jsx (托管/多选/准备/牌墩不限制) ---
+// --- PracticeThirteenGame.jsx (按3-5-5分配+多选高亮+弹起不覆盖+弹起不切割 完美修正版) ---
 
 import React, { useState } from 'react';
 import Lane from './Lane';
@@ -47,7 +47,6 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
 
   const [isReady, setIsReady] = useState(false);
   const [showTrusteeModal, setShowTrusteeModal] = useState(false);
-  const [trusteeCount, setTrusteeCount] = useState(0);
 
   // --- 选牌逻辑 ---
   const allCards = [...topLane, ...middleLane, ...bottomLane];
@@ -66,8 +65,6 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
   // 牌墩点击：批量移动选中的牌到目标牌墩
   const handleLaneClick = (lane) => {
     if (!selectedCards.length) return;
-    // 先移除所有选中的牌
-    const remain = allCards.filter(c => !selectedCards.some(sel => areCardsEqual(sel, c)));
     let newTop = topLane.filter(c => !selectedCards.some(sel => areCardsEqual(sel, c)));
     let newMiddle = middleLane.filter(c => !selectedCards.some(sel => areCardsEqual(sel, c)));
     let newBottom = bottomLane.filter(c => !selectedCards.some(sel => areCardsEqual(sel, c)));
@@ -77,22 +74,29 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
     setTopLane(newTop);
     setMiddleLane(newMiddle);
     setBottomLane(newBottom);
-    setSelectedCards([]); // 清空选中
+    setSelectedCards([]);
   };
 
   // 准备按钮
   const handleReady = () => {
-    // 自动填充 13 张牌到中道（初始理牌）
-    setTopLane([]);
-    setMiddleLane([...handCards]);
-    setBottomLane([]);
+    // 按智能理牌分配3-5-5
+    const sorted = getSmartSortedHand(handCards);
+    if (sorted) {
+      setTopLane(sorted.top);
+      setMiddleLane(sorted.middle);
+      setBottomLane(sorted.bottom);
+    } else {
+      // 没有智能理牌可用时，先按顺序分配
+      setTopLane(handCards.slice(0, 3));
+      setMiddleLane(handCards.slice(3, 8));
+      setBottomLane(handCards.slice(8, 13));
+    }
     setSelectedCards([]);
     setIsReady(true);
   };
 
   // 确认牌型
   const handleConfirm = () => {
-    // 检查数量
     if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
       alert('牌道数量错误！头道3，中道5，尾道5');
       return;
@@ -106,7 +110,7 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
         name: user.phone,
       },
       ...allHands.slice(1).map((hand, i) => {
-        const sorted = getSmartSortedHand(hand) || { top: hand.slice(10), middle: hand.slice(5, 10), bottom: hand.slice(0, 5) };
+        const sorted = getSmartSortedHand(hand) || { top: hand.slice(0,3), middle: hand.slice(3,8), bottom: hand.slice(8,13) };
         return {
           head: sorted.top.map(card => `${card.rank}_of_${card.suit}`),
           middle: sorted.middle.map(card => `${card.rank}_of_${card.suit}`),
@@ -140,7 +144,7 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
 
   // 智能理牌
   const handleAutoSort = () => {
-    const sorted = getSmartSortedHand(handCards);
+    const sorted = getSmartSortedHand([...topLane, ...middleLane, ...bottomLane]);
     if (sorted) {
       setTopLane(sorted.top);
       setMiddleLane(sorted.middle);
@@ -150,14 +154,11 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
   };
 
   // 智能托管按钮
-  const handleTrusteeClick = () => {
-    setShowTrusteeModal(true);
-  };
+  const handleTrusteeClick = () => setShowTrusteeModal(true);
 
   // 智能托管选择
   const handleTrusteeSelect = (cnt) => {
     setShowTrusteeModal(false);
-    setTrusteeCount(cnt);
     runTrustee(cnt);
   };
 
@@ -196,7 +197,6 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
   // 结果关闭
   const handleCloseResult = () => {
     setGameResult(null);
-    // 新一局需要玩家再点准备
     setIsReady(false);
     setTopLane([]);
     setMiddleLane([]);
@@ -211,8 +211,8 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
     setAllHands(hands);
   };
 
-  // 首次进入后不自动准备，等玩家点“准备”
-  // 牌区
+  // --- 修复弹起/高亮覆盖问题，Lane 组件内只需调整样式 ---
+  // 选牌区和牌区
   return (
     <div className="table-root">
       <div className="table-panel">
@@ -264,6 +264,27 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
         </div>
       )}
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
+      {/* --- 优化Lane样式 --- */}
+      <style>{`
+      .card-wrapper { 
+        margin-left: -34px; 
+        z-index: 1;
+        position: relative;
+        transition: box-shadow 0.2s, transform 0.18s;
+      }
+      .card-wrapper.selected {
+        z-index: 10 !important;
+        box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
+        transform: translateY(-20px) scale(1.08);
+      }
+      .card-wrapper.selected .card {
+        border: 2px solid #00cec9;
+        box-shadow: 0 4px 18px #00cec9b3;
+        filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
+      }
+      .card-wrapper:first-child { margin-left: 0; }
+      .card { box-sizing: border-box; border-radius: 11px; background: #fff; }
+      `}</style>
     </div>
   );
 };
