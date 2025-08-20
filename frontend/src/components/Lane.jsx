@@ -1,4 +1,4 @@
-// --- START OF FILE Lane.jsx (ABSOLUTELY NO MOVEMENT FIX) ---
+// --- FIX: Lane.jsx 保持弹起牌在堆叠位置，仅高度弹起不覆盖后牌 ---
 
 import React from 'react';
 import Card from './Card';
@@ -27,15 +27,20 @@ const Lane = ({
       </div>
 
       <div className="card-placement-box" onClick={handleAreaClick}>
-        {/* --- 核心修改：彻底移除所有动态 style 和位移计算 --- */}
         {cards.map((card, idx) => {
           const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
-          
+          // 堆叠效果：每张牌左移固定像素，弹起只是Y方向
           return (
             <div 
               key={`${card.rank}-${card.suit}-${idx}`}
-              // 唯一的动态部分就是这个 className，它只负责触发 CSS 动画
-              className={`card-wrapper ${isSelected ? 'selected' : ''}`}
+              className={`card-wrapper${isSelected ? ' selected' : ''}`}
+              style={{
+                position: 'relative',
+                left: `${idx === 0 ? 0 : -34 * idx}px`,
+                zIndex: isSelected ? 10 : idx,
+                transform: isSelected ? 'translateY(-20px)' : 'none',
+                transition: 'box-shadow 0.2s, transform 0.18s',
+              }}
             >
               <Card
                 card={card}
@@ -50,4 +55,4 @@ const Lane = ({
 };
 
 export default Lane;
-// --- END OF FILE Lane.jsx (ABSOLUTELY NO MOVEMENT FIX) ---
+// --- END FIX ---

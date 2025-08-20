@@ -1,75 +1,71 @@
-/* --- START OF FILE Lane.css (FINAL ADAPTIVE FIX) --- */
+/* --- FIX: Lane.css 保持弹起牌堆叠位置且顶部不被切割 --- */
 
-/* 1. 外层包裹容器，现在是Flex布局中的一部分 */
 .lane-wrapper {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 5px; /* 标题和框之间的间距减小 */
-  
-  /* --- 关键：让每个牌道在父容器中平均分配空间 --- */
+  gap: 5px;
   flex: 1;
-  min-height: 0; /* 允许在flex布局中被压缩 */
+  min-height: 0;
 }
 
-/* 2. 标题样式 */
 .lane-header {
   padding-left: 10px;
-  font-size: 0.9rem; /* 减小字体 */
+  font-size: 0.9rem;
   color: #3b3b8e;
   font-weight: 600;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
 }
 
-/* 3. 带边框、高度自适应的“置牌区” */
 .card-placement-box {
   width: 100%;
   box-sizing: border-box;
-  
-  /* --- 核心修改：移除固定高度，使其自适应 --- */
-  height: 100%; 
-  
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  height: 100%;
+  background: rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.4);
   border-radius: 16px;
-  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.08);
   display: flex;
-  align-items: center;
-  overflow-x: auto; /* 保持水平滚动 */
+  align-items: flex-end;
+  overflow-x: auto;
   padding: 0 10px;
   cursor: pointer;
   position: relative;
 }
 
-/* 隐藏滚动条 */
-.card-placement-box::-webkit-scrollbar { display: none; }
-.card-placement-box { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* 4. 卡牌的包裹层，负责堆叠效果 */
+/* --- 堆叠，每张牌左移 --- */
 .card-wrapper {
-  /* 调整负边距以适应不同尺寸的卡牌 */
-  margin-left: -35px; /* 可以根据卡牌实际宽度微调 */
-  transition: transform 0.2s ease-out;
+  margin-left: 0;
+  transition: transform 0.2s, box-shadow 0.2s;
   z-index: 1;
   flex-shrink: 0;
   position: relative;
 }
-.card-wrapper:first-child {
-  margin-left: 0;
-}
 
-/* 5. 调整选中效果的弹起高度 */
+/* 堆叠实际由JS left属性控制，不再margin负值 */
+
+/* 弹起效果，只Y轴，不改变Z层，不覆盖后牌 */
 .card-wrapper.selected {
-  z-index: 99;
-  /* 减小弹起高度，防止在压缩布局中穿透到上一个牌道 */
-  transform: translateY(-25px); 
+  /* 只弹起，不改margin，不覆盖后牌 */
+  box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
+  transform: translateY(-20px) scale(1.08);
+}
+.card-wrapper.selected .card {
+  border: 2px solid #00cec9;
+  box-shadow: 0 4px 18px #00cec9b3;
+  filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
 }
 
-/* 6. 媒体查询：在小屏幕上，牌堆叠更紧密 */
+/* 第一张牌不左移 */
+.card-wrapper:first-child {
+  left: 0 !important;
+}
+
+/* 卡牌不被切割：父容器align-items:flex-end，弹起后顶部不会被遮挡 */
+.card { box-sizing: border-box; border-radius: 11px; background: #fff; }
+
 @media (max-width: 380px) {
-  .card-wrapper {
-    margin-left: -40px;
-  }
+  .card-wrapper { /* left由JS控制，不再margin负值 */ }
 }
 
-/* --- END OF FILE Lane.css (FINAL ADAPTIVE FIX) --- */
+/* --- END FIX --- */
