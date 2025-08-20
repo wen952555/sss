@@ -15,7 +15,7 @@
 .result-player-name { color: #89f0ff; font-weight: bold; font-size: 1.15rem; }
 .result-player-score { font-weight: bold; font-size: 1.15rem; margin-left: 12px; }
 
-/* 统一弹窗所有牌的尺寸+无圆角无边框无阴影 */
+/* 统一弹窗所有牌尺寸、完全无圆角无边框无阴影（强力覆盖全局 .card） */
 .result-hand-container {
   display: flex;
   flex-direction: column;
@@ -27,17 +27,22 @@
   gap: 6px;
   margin-bottom: 6px;
 }
-.result-cards-row .card {
+.result-cards-row .card,
+.result-cards-row .card.selected,
+.result-cards-row .card-wrapper .card {
   width: 65px !important;
   min-width: 65px !important;
   max-width: 65px !important;
   height: 100px !important;
   max-height: 100px !important;
   box-sizing: border-box !important;
-  border: none !important;           /* 去掉边框 */
-  border-radius: 0 !important;       /* 去掉圆角 */
-  box-shadow: none !important;       /* 去掉阴影 */
-  background: #fff !important;       /* 纯白背景 */
-  margin: 0 !important;              /* 去掉所有外边距 */
-  padding: 0 !important;             /* 去掉所有内边距 */
+  border: none !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #fff !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
