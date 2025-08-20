@@ -1,72 +1,26 @@
-.lane-wrapper {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex: 1;
-  min-height: 0;
-}
-
+.lane-wrapper { width: 100%; display: flex; flex-direction: column; gap: 5px; flex: 1; min-height: 0; }
 .card-placement-box {
-  width: 100%;
-  box-sizing: border-box;
-  height: 100%;
-  background: #171730;
-  border-radius: 16px;
+  width: 100%; box-sizing: border-box; height: 100%;
+  background: #171730; border-radius: 16px;
   box-shadow: 0 1px 4px #23243c22;
-  display: flex;
-  align-items: flex-end;
-  overflow-x: auto;
-  /* 关键修复：允许牌弹起时顶部不被裁切 */
-  overflow-y: visible;
-  padding: 0 10px;
-  cursor: pointer;
-  position: relative;
+  display: flex; align-items: flex-end;
+  overflow-x: auto; overflow-y: visible; padding: 0 10px; cursor: pointer; position: relative;
 }
-
 .card-wrapper {
-  margin-left: -32px;
-  z-index: 1;
-  position: relative;
-  transition: box-shadow 0.2s, transform 0.18s;
-  overflow: visible;
-  width: 110px;
-  max-width: 110px;
-  min-width: 55px;
-  height: 165px;
+  margin-left: -34px; z-index: 1; position: relative; transition: box-shadow 0.2s, transform 0.18s; overflow: visible;
+  width: 110px; max-width: 110px; min-width: 55px; height: 165px;
 }
-
 .card-wrapper.selected {
-  z-index: 3 !important;
-  box-shadow: 0 5px 16px #6a82fb55,0 0 0 2px #6a82fb;
-  /* 关键修复：弹起高度略降且不裁切 */
-  transform: translateY(-14px) scale(1.08);
+  z-index: 10 !important;
+  box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
+  transform: translateY(-20px) scale(1.08);
 }
-
 .card-wrapper.selected .card {
-  border: 2px solid #6a82fb;
-  box-shadow: 0 4px 14px #6a82fb55;
-  filter: brightness(1.10) drop-shadow(0 0 4px #6a82fb);
+  border: 2px solid #00cec9;
+  box-shadow: 0 4px 18px #00cec9b3;
+  filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
+  background: #23243c !important; /* 弹起时背景统一深色 */
 }
-
-.card-wrapper:first-child {
-  margin-left: 0;
-}
-
-.card {
-  box-sizing: border-box;
-  border-radius: 11px;
-  background: #fff;
-  border: none;
-  box-shadow: none;
-}
-
-@media (max-width: 380px) {
-  .card-wrapper {
-    width: 70px;
-    max-width: 70px;
-    min-width: 38px;
-    height: 105px;
-    margin-left: -18px;
-  }
-}
+.card-wrapper:first-child { margin-left: 0; }
+.card { box-sizing: border-box; border-radius: 11px; background: #23243c; border: none; box-shadow: none; }
+@media (max-width: 380px) { .card-wrapper { width: 70px; max-width: 70px; min-width: 38px; height: 105px; margin-left: -22px; } }
