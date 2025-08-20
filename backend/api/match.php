@@ -56,12 +56,12 @@ try {
     }
 
     // --- 加入房间（如已在房间则忽略） ---
-    $stmt = $conn->prepare("SELECT COUNT(*) as exists FROM room_players WHERE room_id=? AND user_id=?");
+    $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM room_players WHERE room_id=? AND user_id=?");
     $stmt->bind_param("ii", $roomId, $userId);
     $stmt->execute();
-    $exists = $stmt->get_result()->fetch_assoc()['exists'];
+    $cnt = $stmt->get_result()->fetch_assoc()['cnt'];
     $stmt->close();
-    if (!$exists) {
+    if (!$cnt) {
         $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, initial_hand) VALUES (?, ?, '[]')");
         $stmt->bind_param("ii", $roomId, $userId);
         $stmt->execute();
