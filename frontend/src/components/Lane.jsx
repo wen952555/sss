@@ -1,4 +1,4 @@
-// --- Lane.jsx: 恢复正常堆叠，只有弹起的牌显示左半边，最右侧未选中牌始终完整 ---
+// --- Lane.jsx: 恢复所有扑克牌正常堆叠和完整显示（无左半边遮挡/无弹起只露半边） ---
 import React from 'react';
 import Card from './Card';
 import './Lane.css';
@@ -23,21 +23,21 @@ const Lane = ({
       </div>
       <div className="card-placement-box" onClick={handleAreaClick}>
         {cards.map((card, idx) => {
-          const isLast = idx === cards.length - 1;
           const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
+          // 恢复正常堆叠和完整显示
           return (
             <div
               key={`${card.rank}-${card.suit}-${idx}`}
-              className={`card-wrapper${isSelected ? ' selected' : ''}${isLast ? ' last' : ''}`}
+              className={`card-wrapper${isSelected ? ' selected' : ''}`}
               style={{
                 position: 'relative',
                 left: `${idx === 0 ? 0 : -34 * idx}px`,
                 zIndex: idx,
-                // 只有选中弹起的牌显示左半边
-                overflow: isSelected ? 'hidden' : (isLast ? 'visible' : 'visible'),
-                width: isSelected ? '55px' : (isLast ? '110px' : '110px'),
-                minWidth: isSelected ? '28px' : (isLast ? '55px' : '55px'),
-                maxWidth: isSelected ? '55px' : (isLast ? '110px' : '110px'),
+                // 完整显示所有牌
+                overflow: 'visible',
+                width: '110px',
+                minWidth: '55px',
+                maxWidth: '110px',
                 height: '165px',
                 transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none',
                 transition: 'box-shadow 0.2s, transform 0.18s',
