@@ -1,4 +1,4 @@
-/* --- FIX: Lane.css 保持弹起牌堆叠位置且顶部不被切割 --- */
+/* --- FIX: Lane.css 保证弹起牌不遮挡后面牌 --- */
 
 .lane-wrapper {
   width: 100%;
@@ -33,7 +33,7 @@
   position: relative;
 }
 
-/* --- 堆叠，每张牌左移 --- */
+/* 堆叠，每张牌左移，实际由JS left属性控制 */
 .card-wrapper {
   margin-left: 0;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -42,11 +42,8 @@
   position: relative;
 }
 
-/* 堆叠实际由JS left属性控制，不再margin负值 */
-
-/* 弹起效果，只Y轴，不改变Z层，不覆盖后牌 */
+/* 弹起效果，只Y轴，不改变X轴，不覆盖后牌，选中牌始终最顶层 */
 .card-wrapper.selected {
-  /* 只弹起，不改margin，不覆盖后牌 */
   box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
   transform: translateY(-20px) scale(1.08);
 }
@@ -56,7 +53,6 @@
   filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
 }
 
-/* 第一张牌不左移 */
 .card-wrapper:first-child {
   left: 0 !important;
 }
@@ -65,7 +61,7 @@
 .card { box-sizing: border-box; border-radius: 11px; background: #fff; }
 
 @media (max-width: 380px) {
-  .card-wrapper { /* left由JS控制，不再margin负值 */ }
+  .card-wrapper { }
 }
 
 /* --- END FIX --- */
