@@ -1,3 +1,5 @@
+/* 牌桌主布局自适应修正版 */
+
 .table-root {
   width: 100vw;
   height: 100vh;
@@ -26,8 +28,11 @@
   box-sizing: border-box;
   overflow: hidden;
   justify-content: flex-start;
+  background: linear-gradient(120deg, #23243c 0%, #171730 80%);
+  border-radius: 0;
 }
 
+/* 顶部栏、玩家栏、底部栏高度固定 */
 .table-top-bar, .players-status-bar, .table-actions-bar {
   flex-shrink: 0;
 }
@@ -44,7 +49,36 @@
   padding: 6px 12px;
   border-radius: 7px;
   font-size: 0.95rem;
+  color: #89f0ff;
 }
+
+.players-status-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 15px rgba(8,22,90,0.10);
+  border-radius: 16px;
+  padding: 10px 6px;
+  gap: 8px;
+  margin: 0 5px 12px 5px;
+}
+
+.player-status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+}
+.player-name { font-size: 0.85rem; font-weight: 600; color: #3b3b8e; }
+.status-text { font-size: 0.7rem; font-weight: 500; }
+.player-status-item.you .player-name { color: #1a2a6c; }
+.player-status-item.you .status-text { color: #3498db; }
+.player-status-item.ready .status-text { color: #27ae60; }
 
 /* 牌墩区域自适应，内容区可滚动，不裁切底部 */
 .table-lanes-area {
@@ -53,8 +87,12 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
+/* 底部栏始终可见且不被切割 */
 .table-actions-bar {
   display: flex;
   gap: 10px;
@@ -85,4 +123,22 @@
   .table-panel { padding: 0; gap: 0; }
   .table-lanes-area { gap: 2px; }
   .action-btn { padding: 8px 0; font-size: 0.9rem; }
+}
+
+/* 错误和加载提示 */
+.error-message {
+  color: #c0392b;
+  background: rgba(231, 76, 60, 0.1);
+  text-align: center; padding: 8px;
+  border-radius: 8px; font-weight: bold;
+  flex-shrink: 0;
+}
+.loading-overlay {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #2c3e50; font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
 }
