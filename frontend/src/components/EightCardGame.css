@@ -9,7 +9,6 @@
   justify-content: stretch;
   align-items: stretch;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .table-panel {
@@ -24,7 +23,6 @@
   gap: 0;
   position: relative;
   box-sizing: border-box;
-  overflow: hidden;
   background: linear-gradient(120deg, #23243c 0%, #171730 80%);
   border-radius: 0;
 }
