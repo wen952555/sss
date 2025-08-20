@@ -1,31 +1,46 @@
-.lane-wrapper { width: 100%; display: flex; flex-direction: column; gap: 5px; flex: 1; min-height: 0; }
-.lane-header { font-size: 1rem; color: #c3c8e6; font-weight: 500; margin-bottom: 3px; }
+.lane-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-height: 0;
+}
 .card-placement-box {
-  width: 100%; box-sizing: border-box; min-height: 80px;
-  background: #171730; border-radius: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 120px; /* 大于弹起高度 */
+  background: #171730;
+  border-radius: 16px;
   box-shadow: 0 1px 4px #23243c22;
-  display: flex; align-items: flex-end;
-  overflow-x: auto; 
-  /* 关键修复：允许弹起牌露出顶部，不被裁切 */
-  overflow-y: visible;
-  padding: 0 10px; cursor: pointer; position: relative;
+  display: flex;
+  align-items: flex-end;
+  overflow-x: auto;
+  overflow-y: visible; /* 关键修复：保证弹起不切割 */
+  padding: 0 10px;
+  cursor: pointer;
+  position: relative;
 }
 .card-wrapper {
-  margin-left: -22px; /* 露出更多后面牌 */
-  z-index: 1; position: relative; transition: box-shadow 0.2s, transform 0.18s; overflow: visible;
-  width: 105px; max-width: 105px; min-width: 54px; height: 155px;
+  margin-left: -34px;
+  z-index: 1;
+  position: relative;
+  transition: box-shadow 0.2s, transform 0.18s;
+  overflow: visible;
+  width: 110px;
+  max-width: 110px;
+  min-width: 55px;
+  height: 165px;
 }
 .card-wrapper.selected {
-  /* 弹起高度适度，z-index只比后面牌多1 */
-  z-index: 3 !important;
-  box-shadow: 0 6px 16px #6a82fb55, 0 0 0 2px #6a82fb;
-  transform: translateY(-16px) scale(1.06);
+  box-shadow: 0 7px 22px #6a82fb55,0 0 0 2px #6a82fb;
+  transform: translateY(-20px) scale(1.08);
 }
 .card-wrapper.selected .card {
   border: 2px solid #6a82fb;
-  box-shadow: 0 4px 12px #6a82fb55;
-  filter: brightness(1.11) drop-shadow(0 0 4px #6a82fb);
+  box-shadow: 0 4px 18px #6a82fb55;
+  filter: brightness(1.15) drop-shadow(0 0 4px #6a82fb);
 }
 .card-wrapper:first-child { margin-left: 0; }
-.card { box-sizing: border-box; border-radius: 7px; background: #fff; border: none; box-shadow: none; }
-@media (max-width: 380px) { .card-wrapper { width: 64px; max-width: 64px; min-width: 34px; height: 85px; margin-left: -14px; } }
+.card { box-sizing: border-box; border-radius: 11px; background: #fff; border: none; box-shadow: none; }
+@media (max-width: 380px) { .card-wrapper { width: 70px; max-width: 70px; min-width: 38px; height: 105px; margin-left: -22px; } }
