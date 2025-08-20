@@ -264,27 +264,6 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
         </div>
       )}
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
-      {/* --- 优化Lane样式 --- */}
-      <style>{`
-      .card-wrapper { 
-        margin-left: -34px; 
-        z-index: 1;
-        position: relative;
-        transition: box-shadow 0.2s, transform 0.18s;
-      }
-      .card-wrapper.selected {
-        z-index: 10 !important;
-        box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
-        transform: translateY(-20px) scale(1.08);
-      }
-      .card-wrapper.selected .card {
-        border: 2px solid #00cec9;
-        box-shadow: 0 4px 18px #00cec9b3;
-        filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
-      }
-      .card-wrapper:first-child { margin-left: 0; }
-      .card { box-sizing: border-box; border-radius: 11px; background: #fff; }
-      `}</style>
     </div>
   );
 };
