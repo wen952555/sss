@@ -1,30 +1,28 @@
 .result-modal-content {
   width: 100%;
-  max-width: 96vw;
-  min-width: 0;
-  padding: 16px;
+  max-width: 680px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 15px;
   overflow-y: auto;
+  max-height: 90vh;
   background: linear-gradient(120deg, #23243c 0%, #171730 80%);
-  border-radius: 18px;
-  box-shadow: 0 4px 32px rgba(20, 20, 40, 0.18);
+  border-radius: 28px;
+  box-shadow: 0 12px 45px rgba(20,20,40,0.25);
   color: #e3e6ff;
 }
-
 .game-result-grid-item {
   background: #171730;
-  border-radius: 12px;
-  padding: 10px;
-  box-shadow: 0 2px 12px rgba(20,20,40,0.05);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 4px 15px rgba(20,20,40,0.09);
 }
-
 .close-button {
-  padding: 12px 0;
+  padding: 14px 0;
   border: none;
   border-radius: 12px;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
   background: linear-gradient(45deg, #6a82fb, #fc5c7d);
@@ -32,46 +30,49 @@
   margin-top: 5px;
   transition: all 0.2s;
 }
+.close-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px #6a82fb44;
+}
+.result-player-name {
+  color: #89f0ff;
+  font-weight: bold;
+  font-size: 1.15rem;
+}
+.result-player-score {
+  font-weight: bold;
+  font-size: 1.15rem;
+  margin-left: 12px;
+}
 
-.result-player-name { color: #89f0ff; font-weight: bold; font-size: 1.08rem; }
-.result-player-score { font-weight: bold; font-size: 1.08rem; margin-left: 10px; }
-
+/* 彻底去除比牌弹窗卡牌的边框阴影，并调整为等宽等高（强力覆盖） */
 .result-hand-container {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  width: 100%;
+  gap: 9px;
 }
-
 .result-cards-row {
   display: flex;
   flex-direction: row;
-  gap: 4px;
-  flex-wrap: wrap;
-  width: 100%;
-  justify-content: flex-start;
-  margin-bottom: 4px;
-  overflow-x: auto;
+  gap: 6px;
+  margin-bottom: 6px;
 }
-
 .result-cards-row .card,
 .result-cards-row .card.selected,
 .result-cards-row .card-wrapper .card {
-  width: min(11vw, 44px) !important;
-  min-width: 32px !important;
-  max-width: 44px !important;
-  height: min(16vw, 68px) !important;
-  max-height: 68px !important;
+  width: 62px !important;
+  min-width: 62px !important;
+  max-width: 62px !important;
+  height: 92px !important;
+  max-height: 92px !important;
   box-sizing: border-box !important;
   border: none !important;
-  border-radius: 5px !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
   box-shadow: none !important;
   background: #fff !important;
   margin: 0 !important;
   padding: 0 !important;
-}
-
-@media (max-width: 420px) {
-  .result-modal-content { max-width: 100vw; padding: 8px; }
-  .result-cards-row .card { width: 9vw !important; max-width: 36px !important; height: 13vw !important; max-height: 44px !important; }
 }

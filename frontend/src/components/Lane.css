@@ -2,59 +2,51 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   flex: 1;
   min-height: 0;
 }
 
-.lane-header {
-  font-size: 0.98rem;
-  color: #c3c8e6;
-  font-weight: 500;
-}
-
 .card-placement-box {
   width: 100%;
-  min-height: 65px;
+  box-sizing: border-box;
+  height: 100%;
   background: #171730;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px #23243c12;
+  border-radius: 16px;
+  box-shadow: 0 1px 4px #23243c22;
   display: flex;
   align-items: flex-end;
   overflow-x: auto;
+  /* 关键修复：允许牌弹起时顶部不被裁切 */
   overflow-y: visible;
-  padding: 4px 2px;
+  padding: 0 10px;
   cursor: pointer;
   position: relative;
 }
 
 .card-wrapper {
-  margin-left: -26px;
+  margin-left: -32px;
   z-index: 1;
   position: relative;
   transition: box-shadow 0.2s, transform 0.18s;
-  width: min(15vw, 80px);
-  min-width: 45px;
-  max-width: 80px;
-  height: min(22vw, 120px);
-  max-height: 120px;
   overflow: visible;
-  border-radius: 6px;
-  background: #fff;
-  box-shadow: none;
-  border: none;
+  width: 110px;
+  max-width: 110px;
+  min-width: 55px;
+  height: 165px;
 }
 
 .card-wrapper.selected {
-  z-index: 10 !important;
-  box-shadow: 0 7px 22px #6a82fb55,0 0 0 2px #6a82fb;
-  transform: translateY(-12px) scale(1.08);
+  z-index: 3 !important;
+  box-shadow: 0 5px 16px #6a82fb55,0 0 0 2px #6a82fb;
+  /* 关键修复：弹起高度略降且不裁切 */
+  transform: translateY(-14px) scale(1.08);
 }
 
 .card-wrapper.selected .card {
   border: 2px solid #6a82fb;
-  box-shadow: 0 4px 18px #6a82fb55;
-  filter: brightness(1.09) drop-shadow(0 0 4px #6a82fb);
+  box-shadow: 0 4px 14px #6a82fb55;
+  filter: brightness(1.10) drop-shadow(0 0 4px #6a82fb);
 }
 
 .card-wrapper:first-child {
@@ -63,7 +55,7 @@
 
 .card {
   box-sizing: border-box;
-  border-radius: 6px;
+  border-radius: 11px;
   background: #fff;
   border: none;
   box-shadow: none;
@@ -71,11 +63,10 @@
 
 @media (max-width: 380px) {
   .card-wrapper {
-    width: 9vw;
-    min-width: 32px;
-    max-width: 38px;
-    height: 13vw;
-    max-height: 48px;
+    width: 70px;
+    max-width: 70px;
+    min-width: 38px;
+    height: 105px;
     margin-left: -18px;
   }
 }
