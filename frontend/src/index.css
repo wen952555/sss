@@ -1,10 +1,9 @@
-/* --- START OF FILE index.css (FINAL FIX) --- */
+/* 全局根容器高度适配修正版 */
 
-/* --- 全局防滚动和全新明亮背景 --- */
 html, body, #root {
   overscroll-behavior: none;
   overflow: hidden;
-  height: 100%; /* 核心修复：使用百分比高度，避免vh在移动端的陷阱 */
+  height: 100%; /* 用百分比高度，兼容安卓和iOS WebView */
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -12,12 +11,8 @@ html, body, #root {
 
 body {
   font-family: 'Noto Sans SC', sans-serif;
-  
-  /* --- 全新明亮渐变背景 --- */
-  background: linear-gradient(135deg, #f0f8ff 0%, #e6e6fa 100%); /* 柔和的淡色基底 */
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6e6fa 100%);
   background-attachment: fixed;
-  
-  /* --- 覆盖一层明亮的光斑，增加活力 --- */
   position: relative;
   z-index: 1;
 }
@@ -31,7 +26,7 @@ body::before {
   background-image:
     radial-gradient(circle at 15% 20%, hsla(180, 90%, 70%, 0.5) 0px, transparent 40%),
     radial-gradient(circle at 85% 75%, hsla(300, 90%, 70%, 0.5) 0px, transparent 40%);
-  filter: blur(80px); /* 模糊光斑 */
+  filter: blur(80px);
   animation: background-pan 15s ease-in-out infinite;
 }
 
@@ -45,18 +40,15 @@ body::before {
 
 #root {
   width: 100%;
-  /* height: 100vh; <-- 已移至 html, body, #root */
-  /* max-height: 100vh; <-- 已移至 html, body, #root */
+  height: 100%; /* 用百分比而非vh，彻底解决WebView不兼容问题 */
   overflow: hidden;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  color: #2c3e50; /* --- 默认文字颜色改为深色 --- */
+  color: #2c3e50;
 }
 
 /* 局部滚动条样式 */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
 ::-webkit-scrollbar-thumb { background: rgba(0, 180, 220, 0.5); border-radius: 3px; }
-
-/* --- END OF FILE index.css (FINAL FIX) --- */

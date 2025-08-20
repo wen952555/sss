@@ -1,44 +1,33 @@
-/* --- START OF FILE ThirteenGame.css / EightCardGame.css (FINAL ADAPTIVE FIX) --- */
+/* 牌桌主布局自适应修正版 */
 
-/* --- 1. 游戏界面的根容器 --- */
 .table-root {
   width: 100%;
   height: 100%;
-  padding: 0; /* 移除外层padding，交由内部面板处理 */
+  padding: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* 垂直居中整个面板 */
-  align-items: center;   /* 水平居中整个面板 */
+  justify-content: center;
+  align-items: center;
   box-sizing: border-box;
-  overflow: hidden; /* 保持根容器不滚动 */
+  overflow: hidden;
 }
 
-/* --- 2. 核心：游戏主面板，现在负责所有布局 --- */
 .table-panel {
   width: 100%;
   max-width: 550px;
-  height: 100%; /* 占满可用高度 */
-  padding: 10px; /* 统一内边距 */
-  background: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-radius: 0;
-  border: none;
-  box-shadow: none;
-  
-  /* --- 关键：高效的Flex布局 --- */
+  height: 100%;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px; /* 减小主要元素间的垂直间距 */
-  
+  gap: 10px;
   position: relative;
   box-sizing: border-box;
-  overflow: hidden; /* 面板内部不应该滚动，因为内容会被动态压缩 */
+  overflow: hidden;
 }
 
-/* --- 3. 顶部栏和玩家状态栏 (Flex Shrink) --- */
+/* 顶部栏、玩家栏、底部栏高度固定 */
 .table-top-bar, .players-status-bar, .table-actions-bar {
-  flex-shrink: 0; /* 这三部分高度固定，不允许被压缩 */
+  flex-shrink: 0;
 }
 
 .table-top-bar {
@@ -53,7 +42,7 @@
   color: #fff;
   border: none;
   border-radius: 10px;
-  padding: 8px 14px; /* 稍微减小padding */
+  padding: 8px 14px;
   font-size: 0.85rem;
   font-weight: bold;
   cursor: pointer;
@@ -78,7 +67,7 @@
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 15px rgba(8, 22, 90, 0.1);
   border-radius: 16px;
-  padding: 10px 8px; /* 减小垂直padding */
+  padding: 10px 8px;
   gap: 8px;
   margin: 0 5px;
 }
@@ -91,32 +80,23 @@
   flex: 1;
 }
 
-.player-name {
-  font-size: 0.85rem;
-  font-weight: 600; color: #3b3b8e;
-}
-.status-text {
-  font-size: 0.7rem;
-  font-weight: 500;
-}
+.player-name { font-size: 0.85rem; font-weight: 600; color: #3b3b8e; }
+.status-text { font-size: 0.7rem; font-weight: 500; }
 .player-status-item.you .player-name { color: #1a2a6c; }
 .player-status-item.you .status-text { color: #3498db; }
 .player-status-item.ready .status-text { color: #27ae60; }
 
-
-/* --- 4. 牌道区域 (Flex Grow) --- */
+/* 牌墩区域自适应，溢出可滚动 */
 .table-lanes-area {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* 减小牌道之间的间距 */
-  
-  /* --- 关键：让这个区域填充所有剩余空间 --- */
-  flex-grow: 1; 
-  /* --- 关键：允许它在flex布局中被压缩 --- */
-  min-height: 0; 
+  gap: 8px;
+  flex-grow: 1;
+  min-height: 0; /* 允许flex收缩 */
+  overflow-y: auto; /* 内容超出时垂直滚动 */
+  overscroll-behavior: contain;
 }
 
-/* --- 5. 底部操作栏 --- */
 .table-actions-bar {
   display: flex;
   gap: 12px;
@@ -124,10 +104,10 @@
 }
 .action-btn {
   flex: 1;
-  padding: 12px 0; /* 保持按钮高度以便点击 */
+  padding: 12px 0;
   border-radius: 12px;
   border: none;
-  font-size: 1rem; /* 字体大小适中 */
+  font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
@@ -142,22 +122,16 @@
 .action-btn.orange { background: linear-gradient(45deg, #f39c12, #fd79a8); color: #fff; }
 .action-btn.green { background: linear-gradient(45deg, #00b894, #00cec9); color: #fff; }
 
-/* --- 6. 媒体查询：针对小屏幕进行激进压缩 --- */
-@media (max-height: 700px) {
-  .table-panel {
-    gap: 8px; /* 进一步减小间距 */
-    padding: 8px 5px;
-  }
-  .players-status-bar {
-    padding: 8px;
-    border-radius: 12px;
-  }
-  .player-name { font-size: 0.8rem; }
-  .table-lanes-area { gap: 5px; }
-  .action-btn { padding: 10px 0; font-size: 0.95rem; }
+/* 针对极小高的屏幕进一步压缩 */
+@media (max-height: 600px) {
+  .table-panel { gap: 6px; padding: 6px 2px; }
+  .players-status-bar { padding: 6px; border-radius: 10px; }
+  .player-name { font-size: 0.7rem; }
+  .table-lanes-area { gap: 3px; }
+  .action-btn { padding: 8px 0; font-size: 0.9rem; }
 }
 
-/* --- 其它通用样式 --- */
+/* 错误和加载提示 */
 .error-message {
   color: #c0392b;
   background: rgba(231, 76, 60, 0.1);
@@ -174,5 +148,3 @@
   display: flex; align-items: center; justify-content: center;
   z-index: 100;
 }
-
-/* --- END OF FILE ThirteenGame.css / EightCardGame.css (FINAL ADAPTIVE FIX) --- */

@@ -7,14 +7,7 @@
   min-height: 0;
 }
 
-.lane-header {
-  padding-left: 10px;
-  font-size: 0.9rem;
-  color: #3b3b8e;
-  font-weight: 600;
-  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
-}
-
+/* 牌墩区溢出时横向滚动，不遮挡底部按钮 */
 .card-placement-box {
   width: 100%;
   box-sizing: border-box;
@@ -25,28 +18,27 @@
   box-shadow: inset 0 1px 4px rgba(0,0,0,0.08);
   display: flex;
   align-items: flex-end;
-  overflow-x: auto;
+  overflow-x: auto; /* 横向溢出时滚动 */
+  overflow-y: visible; /* 允许弹起的牌显示在本区之上，不被遮挡 */
   padding: 0 10px;
   cursor: pointer;
   position: relative;
 }
 
-/* 堆叠，每张牌左移，实际由JS left属性控制 */
+/* 卡牌堆叠改为margin，弹起高亮不遮挡后面的牌 */
 .card-wrapper {
-  margin-left: 0;
-  transition: transform 0.2s, box-shadow 0.2s;
+  margin-left: -34px;
   z-index: 1;
-  flex-shrink: 0;
   position: relative;
+  transition: box-shadow 0.2s, transform 0.18s;
   overflow: visible;
   width: 110px;
   max-width: 110px;
   min-width: 55px;
   height: 165px;
 }
-
-/* 弹起的牌只弹起高亮，不影响遮挡和显示 */
 .card-wrapper.selected {
+  z-index: 10 !important;
   box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
   transform: translateY(-20px) scale(1.08);
 }
@@ -55,13 +47,10 @@
   box-shadow: 0 4px 18px #00cec9b3;
   filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
 }
-
-.card-wrapper:first-child {
-  left: 0 !important;
-}
-
+.card-wrapper:first-child { margin-left: 0; }
 .card { box-sizing: border-box; border-radius: 11px; background: #fff; }
 
+/* 针对窄屏设备缩小卡牌 */
 @media (max-width: 380px) {
-  .card-wrapper { }
+  .card-wrapper { width: 70px; max-width: 70px; min-width: 38px; height: 105px; margin-left: -22px; }
 }
