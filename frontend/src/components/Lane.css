@@ -24,15 +24,10 @@
 }
 
 .card-wrapper {
-  margin-left: -48px; /* 调整负边距以平铺显示更多内容 */
-  z-index: 1;
   position: relative;
-  transition: box-shadow 0.2s, transform 0.18s;
-  overflow: visible;
+  transition: transform 0.2s ease-out, box-shadow 0.2s;
   width: 72px;
-  min-width: 72px; /* 固定宽度防止压缩 */
-  max-width: 72px;
-  height: 110px;
+  height: 100px;
 }
 
 /* 堆叠z-index：后面的牌层级高，弹起牌层级最高 */

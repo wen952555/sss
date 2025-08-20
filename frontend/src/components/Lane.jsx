@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Card from './Card';
 import './Lane.css';
 
@@ -9,20 +9,48 @@ const Lane = ({
   title, cards, onCardClick, onLaneClick,
   expectedCount, selectedCards = [],
 }) => {
+  const laneRef = useRef(null);
+  const [laneWidth, setLaneWidth] = useState(0);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (laneRef.current) {
+        setLaneWidth(laneRef.current.offsetWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
   const handleAreaClick = () => {
     if (selectedCards.length > 0 && onLaneClick) {
       onLaneClick();
     }
   };
 
-  // 修复堆叠遮挡：
-  // - 所有牌 zIndex = idx + 2，弹起牌 zIndex = 99（永远最高，但只弹起不遮盖右侧）
+  const cardWidth = 72;
+  const defaultOverlap = cardWidth / 3;
+  let marginLeft = -defaultOverlap;
+
+  if (cards.length > 1 && laneWidth > 0) {
+    const totalCardWidth = cards.length * cardWidth;
+    const totalOverlappedWidth = (cards.length - 1) * defaultOverlap;
+    const totalWidth = totalCardWidth - totalOverlappedWidth;
+
+    if (totalWidth > laneWidth) {
+      const newOverlap = (totalCardWidth - laneWidth) / (cards.length - 1);
+      marginLeft = -newOverlap;
+    }
+  }
+
+
   return (
     <div className="lane-wrapper">
       <div className="lane-header">
         <span className="lane-title">{`${title} (${expectedCount})`}</span>
       </div>
-      <div className="card-placement-box" onClick={handleAreaClick}>
+      <div className="card-placement-box" ref={laneRef} onClick={handleAreaClick}>
         {cards.map((card, idx) => {
           const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
           return (
@@ -30,17 +58,8 @@ const Lane = ({
               key={`${card.rank}-${card.suit}-${idx}`}
               className={`card-wrapper${isSelected ? ' selected' : ''}`}
               style={{
-                position: 'relative',
-                left: `${idx === 0 ? 0 : -18 * idx}px`,
-                zIndex: isSelected ? 99 : idx + 2,
-                overflow: 'visible',
-                width: '72px',
-                minWidth: '60px',
-                maxWidth: '72px',
-                height: '110px',
-                transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none',
-                transition: 'box-shadow 0.2s, transform 0.18s',
-                pointerEvents: 'auto'
+                zIndex: isSelected ? 100 + idx : idx,
+                marginLeft: idx === 0 ? '0px' : `${marginLeft}px`
               }}
             >
               <Card
