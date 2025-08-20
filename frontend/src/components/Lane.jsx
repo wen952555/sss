@@ -1,4 +1,3 @@
-// --- Lane.jsx: 恢复所有扑克牌正常堆叠和完整显示（无左半边遮挡/无弹起只露半边） ---
 import React from 'react';
 import Card from './Card';
 import './Lane.css';
@@ -24,24 +23,17 @@ const Lane = ({
       <div className="card-placement-box" onClick={handleAreaClick}>
         {cards.map((card, idx) => {
           const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
-          // 恢复正常堆叠和完整显示
+          // 堆叠方式微调，防止切割和悬空
           return (
             <div
               key={`${card.rank}-${card.suit}-${idx}`}
               className={`card-wrapper${isSelected ? ' selected' : ''}`}
               style={{
                 position: 'relative',
-                left: `${idx === 0 ? 0 : -34 * idx}px`,
+                left: `${idx === 0 ? 0 : -26 * idx}px`,
                 zIndex: idx,
-                // 完整显示所有牌
                 overflow: 'visible',
-                width: '110px',
-                minWidth: '55px',
-                maxWidth: '110px',
-                height: '165px',
-                transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none',
-                transition: 'box-shadow 0.2s, transform 0.18s',
-                pointerEvents: 'auto'
+                pointerEvents: 'auto',
               }}
             >
               <Card

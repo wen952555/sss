@@ -1,8 +1,8 @@
 import React from 'react';
 import Card from './Card';
 import './GameResultModal.css';
-import { calculateSinglePairScore } from '../utils/sssScorer'; // 13张计分器
-import { calculateSinglePairScoreForEight } from '../utils/eightCardScorer'; // 8张计分器
+import { calculateSinglePairScore } from '../utils/sssScorer';
+import { calculateSinglePairScoreForEight } from '../utils/eightCardScorer';
 
 const PlayerHandDisplay = ({ hand }) => {
   if (!hand || !hand.top || !hand.middle || !hand.bottom) return null;
@@ -23,7 +23,6 @@ const PlayerHandDisplay = ({ hand }) => {
 function getScoreAgainstMe(me, other, gameType = 'thirteen') {
   if (!me || !other) return 0;
   if (gameType === 'eight') {
-    // 8张
     return calculateSinglePairScoreForEight(
       {
         head: me.hand.top,
@@ -37,7 +36,6 @@ function getScoreAgainstMe(me, other, gameType = 'thirteen') {
       }
     );
   }
-  // 13张
   return calculateSinglePairScore(
     {
       head: me.hand.top.map(c => `${c.rank}_of_${c.suit}`),
@@ -54,22 +52,18 @@ function getScoreAgainstMe(me, other, gameType = 'thirteen') {
 
 const GameResultModal = ({ result, onClose }) => {
   if (!result || !result.players || result.players.length === 0) return null;
-  // 找到自己
   const myIdx = result.players.findIndex(p => p.is_self || (p.is_me) || p.name === '你' || (p.phone && p.phone === result.mePhone));
-  // 后端没加 is_self，可前端补：假如只有一个 name === '你'，或自己总是在数组第一个（试玩），或通过传参 result.mePhone
   const me = myIdx >= 0 ? result.players[myIdx] : result.players[0];
-  // 判断游戏类型
   const isEight = me.hand.top.length + me.hand.middle.length + me.hand.bottom.length === 8;
   const gameType = isEight ? 'eight' : 'thirteen';
 
   return (
     <div className="modal-backdrop">
-      <div className="modal-content result-modal-content">
+      <div className="modal-content result-modal-content" style={{ maxWidth: '96vw', margin: '0 auto', overflowY: 'auto' }}>
         <h3>比牌结果</h3>
         <div className="game-result-grid">
           {result.players.map((player, index) => {
-            if (player === me) return null; // 不显示自己
-            // 与我单独比分
+            if (player === me) return null;
             const vsScore = getScoreAgainstMe(me, player, gameType);
             const color = vsScore > 0 ? '#27ae60' : vsScore < 0 ? '#c0392b' : '#34495e';
             return (
