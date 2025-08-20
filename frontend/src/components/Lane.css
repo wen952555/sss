@@ -1,5 +1,3 @@
-/* --- FIX: Lane.css 保证弹起牌不遮挡后面牌 --- */
-
 .lane-wrapper {
   width: 100%;
   display: flex;
@@ -42,7 +40,7 @@
   position: relative;
 }
 
-/* 弹起效果，只Y轴，不改变X轴，不覆盖后牌，选中牌始终最顶层 */
+/* 弹起效果，只Y轴，不提升层级 */
 .card-wrapper.selected {
   box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
   transform: translateY(-20px) scale(1.08);
@@ -57,11 +55,8 @@
   left: 0 !important;
 }
 
-/* 卡牌不被切割：父容器align-items:flex-end，弹起后顶部不会被遮挡 */
 .card { box-sizing: border-box; border-radius: 11px; background: #fff; }
 
 @media (max-width: 380px) {
   .card-wrapper { }
 }
-
-/* --- END FIX --- */

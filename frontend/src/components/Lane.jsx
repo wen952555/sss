@@ -1,4 +1,4 @@
-// --- Lane.jsx 保证弹起牌只是Y轴弹起，堆叠顺序不变，永远不覆盖后面的牌 ---
+// --- Lane.jsx: 保证弹起牌只在Y轴弹起，堆叠层级始终按索引，永远不会覆盖后面的牌 ---
 import React from 'react';
 import Card from './Card';
 import './Lane.css';
@@ -31,8 +31,9 @@ const Lane = ({
               style={{
                 position: 'relative',
                 left: `${idx === 0 ? 0 : -34 * idx}px`,
-                zIndex: idx, // 关键：始终右边的牌在最上面
-                transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none', // 只弹起，不提升层级
+                zIndex: idx, // 关键：始终右边牌在最上面，堆叠不动
+                // 弹起只Y轴，不提升层级
+                transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none',
                 transition: 'box-shadow 0.2s, transform 0.18s',
                 pointerEvents: 'auto'
               }}
