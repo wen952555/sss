@@ -1,95 +1,16 @@
-// --- START OF FILE frontend/src/components/GameResultModal.css ---
-
 .result-modal-content {
-  width: 100%;
-  max-width: 680px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  overflow-y: auto;
-  max-height: 90vh;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border-radius: 28px;
-  box-shadow: 0 12px 45px rgba(31, 38, 135, 0.25);
+  width: 100%; max-width: 680px; padding: 20px;
+  display: flex; flex-direction: column; gap: 15px;
+  overflow-y: auto; max-height: 90vh;
+  background: linear-gradient(120deg, #23243c 0%, #171730 80%);
+  border-radius: 28px; box-shadow: 0 12px 45px rgba(20,20,40,0.25);
+  color: #e3e6ff;
 }
-
-.game-result-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin: 8px 0;
-}
-
-.game-result-grid-item {
-  background: rgba(255,255,255,0.3);
-  border-radius: 18px;
-  padding: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.game-result-grid-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-}
-
-/* --- 核心修改 1: 减小牌道容器之间的间距 --- */
-.result-hand-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0; /* 移除牌道之间的垂直间距 */
-}
-
-/* --- 核心修改 2: 牌道行样式调整 --- */
-.result-cards-row {
-  display: flex;
-  /* --- 卡牌左对齐 --- */
-  justify-content: flex-start; 
-  align-items: center;
-  position: relative;
-  /* 调整行高以适应更大的卡牌 */
-  min-height: 65px;
-}
-
-/* --- 核心修改 3: 增大卡牌并调整堆叠效果 --- */
-.result-cards-row .card {
-  /* --- 增大卡牌尺寸 --- */
-  transform: scale(0.75); 
-  transform-origin: left center; /* 确保从左侧缩放和对齐 */
-  /* --- 调整负边距以适应新尺寸 --- */
-  margin-left: -50px; 
-}
-
-.result-cards-row .card:first-child {
-  margin-left: 0; /* 第一张牌不偏移 */
-}
-
-/* 媒体查询：当屏幕宽度足够时，切换为网格布局 */
-@media (min-width: 600px) {
-  .game-result-grid {
-    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-    gap: 18px;
-  }
-}
-
+.game-result-grid-item { background: #171730; border-radius: 18px; padding: 12px; box-shadow: 0 4px 15px rgba(20,20,40,0.09); }
 .close-button {
-  padding: 14px 0;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  background: linear-gradient(45deg, #6a82fb, #fc5c7d);
-  color: white;
-  margin-top: 5px;
-  flex-shrink: 0;
-  transition: all 0.2s;
+  padding: 14px 0; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+  background: linear-gradient(45deg, #6a82fb, #fc5c7d); color: white; margin-top: 5px; transition: all 0.2s;
 }
-.close-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(106, 130, 251, 0.3);
-}
-
-// --- END OF FILE frontend/src/components/GameResultModal.css ---
+.close-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px #6a82fb44; }
+.result-player-name { color: #89f0ff; font-weight: bold; font-size: 1.15rem; }
+.result-player-score { font-weight: bold; font-size: 1.15rem; margin-left: 12px; }
