@@ -14,3 +14,24 @@
 .close-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px #6a82fb44; }
 .result-player-name { color: #89f0ff; font-weight: bold; font-size: 1.15rem; }
 .result-player-score { font-weight: bold; font-size: 1.15rem; margin-left: 12px; }
+
+/* 统一弹窗所有牌大小为小号（头道/中道/尾道一致） */
+.result-hand-container {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.result-cards-row {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.result-cards-row .card {
+  width: 65px !important;
+  min-width: 65px !important;
+  max-width: 65px !important;
+  height: 100px !important;
+  max-height: 100px !important;
+  box-sizing: border-box;
+}
