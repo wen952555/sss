@@ -1,7 +1,9 @@
-/* 全局深色渐变主题（无毛玻璃/无半透明） */
+/* 全局深色渐变主题、响应式保障 */
 
 html, body, #root {
   height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -9,13 +11,13 @@ html, body, #root {
   background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
   font-family: 'Noto Sans SC', 'Arial', sans-serif;
   overscroll-behavior: none;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  touch-action: manipulation;
 }
-
 body {
   background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
 }
-
 body::before { display: none; }
 
 /* 滚动条深色风格 */
@@ -24,3 +26,10 @@ body::before { display: none; }
 ::-webkit-scrollbar-thumb { background: #2c2e4f; border-radius: 4px; }
 
 a { color: #89f0ff; }
+
+/* 适配iOS和安卓底部安全区 */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  html, body, #root {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

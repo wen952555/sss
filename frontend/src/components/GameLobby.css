@@ -1,141 +1,156 @@
-.lobby-main-bg {
-  min-height: 100vh;
+.lobby-container {
   width: 100vw;
-  background: linear-gradient(135deg, #23243c 0%, #2e2f4f 60%, #18182f 100%);
-  display: flex; flex-direction: column; align-items: center;
-  padding: 0; box-sizing: border-box; overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  box-sizing: border-box;
+  color: #f5f6fa;
+  background: linear-gradient(135deg, #23243c 0%, #171730 80%, #121223 100%);
+  overflow-x: hidden;
 }
-.lobby-header-bar {
-  width: 100%; max-width: 980px;
-  margin: 0 auto; margin-top: 32px;
-  padding: 0 32px 0 24px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.lobby-header-left {
-  display: flex; align-items: center; gap: 18px;
-}
-.lobby-logo {
-  width: 52px; height: 52px; border-radius: 14px; box-shadow: 0 2px 12px #23243c44;
-  background: #fff; object-fit: cover;
+
+.lobby-header {
+  width: 100%;
+  text-align: center;
+  margin: 24px 0 14px 0;
+  padding: 0 6vw;
+  box-sizing: border-box;
 }
 .lobby-title {
-  font-size: 2.1rem; font-weight: 800; color: #89f0ff; letter-spacing: 1px;
-  text-shadow: 0 2px 6px #17173099;
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #89f0ff;
+  text-shadow: 0 4px 15px #23243c;
 }
-.lobby-online {
-  font-size: 1rem; color: #37e6c5; font-weight: 700; margin-top: 2px; letter-spacing: 1px;
+.lobby-subtitle {
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: #c3c8e6;
+  margin-top: 5px;
 }
-.lobby-header-right { font-size: 1.1rem; color: #c3c8e6; }
-.lobby-mini-hint { font-size: 0.98rem; color: #abb2d8; }
-
-.lobby-announcement {
-  width: 100%; max-width: 700px; margin: 26px auto 0 auto;
+.announcement-banner {
+  width: 100%;
+  max-width: 540px;
+  padding: 12px 5vw;
   background: linear-gradient(90deg, #fc5c7d22 0%, #6a82fb22 100%);
-  border-radius: 12px; color: #fc5c7d; font-weight: 500;
-  text-align: center; padding: 13px 18px; font-size: 1.1rem;
-  letter-spacing: 1px;
+  border-radius: 12px;
+  color: #fc5c7d;
+  font-weight: 500;
+  text-align: center;
+  margin: 0 auto 20px auto;
+  box-sizing: border-box;
 }
 
-.lobby-cards-area {
-  width: 100%; max-width: 980px;
-  margin: 38px auto 0 auto;
-  display: flex; gap: 36px; justify-content: center; align-items: stretch;
+.game-card-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3vw;
+  margin-bottom: 24px;
+}
+
+.game-card {
+  width: 94vw;
+  max-width: 500px;
+  min-width: 0;
+  height: auto;
+  min-height: 170px;
+  border-radius: 20px;
+  margin-bottom: 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(20,20,40,0.22);
+  background: linear-gradient(120deg, #23243c 0%, #171730 80%);
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  box-sizing: border-box;
+}
+
+.game-card-overlay {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 22px 7vw 20px 7vw;
+  box-sizing: border-box;
+}
+
+.game-content {
+  margin-bottom: 10px;
+}
+.game-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+  color: #89f0ff;
+}
+.game-description {
+  font-size: 1rem;
+  font-weight: 300;
+  color: #c3c8e6;
+  margin: 5px 0 0 0;
+}
+.game-actions {
+  width: 100%;
+  display: flex;
+  gap: 3vw;
+  margin-top: 15px;
   flex-wrap: wrap;
 }
-.lobby-card {
-  flex: 1 1 380px;
-  max-width: 430px; min-width: 310px; min-height: 250px;
-  background: #23243c;
-  border-radius: 24px;
-  box-shadow: 0 10px 38px rgba(20,20,40,0.20), 0 1.5px 12px #89f0ff11;
-  position: relative; overflow: hidden;
-  display: flex; flex-direction: column; justify-content: flex-end;
-  margin-bottom: 24px;
-  transition: transform 0.18s, box-shadow 0.22s;
+.btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 12px 0;
+  border-radius: 10px;
+  border: none;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all .25s ease;
+  background: linear-gradient(45deg, #42436c 0%, #1a1a3e 100%);
+  color: #e3e6ff;
+  box-shadow: 0 2px 10px rgba(30,30,60,0.10);
 }
-.lobby-card:hover {
-  transform: translateY(-6px) scale(1.03) rotate(-1deg);
-  box-shadow: 0 18px 64px #fc5c7d33, 0 1.5px 12px #89f0ff33;
-}
-.card-bg-deco {
-  position: absolute; z-index: 1; right: -70px; top: -34px;
-  width: 210px; height: 210px; border-radius: 50%;
-  opacity: 0.18; filter: blur(1.5px);
-}
-.card-bg-deco.thirteen { background: radial-gradient(circle at 45% 45%, #fc5c7d 0%, #6a82fb 80%); }
-.card-bg-deco.eight { background: radial-gradient(circle at 60% 40%, #6a82fb 0%, #fc5c7d 80%); }
-.lobby-card-main {
-  position: relative; z-index: 2; padding: 32px 32px 22px 32px;
-  display: flex; flex-direction: column; align-items: flex-start;
-}
-.lobby-card-header { margin-bottom: 18px; }
-.lobby-card-title {
-  font-size: 1.6rem; font-weight: bold; color: #89f0ff; letter-spacing: 1.5px;
-}
-.lobby-card-desc {
-  font-size: 1.07rem; color: #c3c8e6; margin-top: 5px;
-  font-weight: 300; letter-spacing: 1px;
-}
-.lobby-card-actions {
-  display: flex; gap: 15px; width: 100%; margin-top: 12px;
-}
-.lobby-btn {
-  flex: 1 1 0; padding: 15px 0; border-radius: 11px; border: none;
-  font-size: 1.08rem; font-weight: bold; cursor: pointer;
-  transition: background 0.20s, color 0.20s, box-shadow 0.18s;
-  box-shadow: 0 2px 10px #6a82fb18;
-  letter-spacing: 1.2px;
-}
-.lobby-btn.normal {
-  background: linear-gradient(90deg,#23243c 0%,#37e6c5 100%);
-  color: #1a1a3e;
-}
-.lobby-btn.normal:hover:not(:disabled) {
-  background: linear-gradient(90deg,#89f0ff 0%,#37e6c5 90%);
-  color: #23243c;
-}
-
-.lobby-btn.double {
-  background: linear-gradient(90deg,#fc5c7d 0%,#6a82fb 100%);
+.btn:disabled { cursor: not-allowed; opacity: 0.6; }
+.btn-primary {
+  background: linear-gradient(45deg, #fc5c7d 0%, #6a82fb 100%);
   color: #fff;
 }
-.lobby-btn.double:hover:not(:disabled) {
-  background: linear-gradient(90deg,#6a82fb 0%,#fc5c7d 100%);
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(45deg, #89f0ff 0%, #fc5c7d 100%);
+  color: #23243c;
+}
+.btn-secondary {
+  background: #34365c;
+  color: #89f0ff;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #89f0ff;
   color: #23243c;
 }
 
-.lobby-btn.practice {
-  background: linear-gradient(90deg,#b1f9f6 0%,#7ed6df 100%);
-  color: #23243c;
-}
-.lobby-btn.practice:hover:not(:disabled) {
-  background: linear-gradient(90deg,#89f0ff 0%,#b1f9f6 100%);
-  color: #23243c;
-}
-.lobby-btn:disabled {
-  opacity: 0.68; cursor: not-allowed; filter: grayscale(0.2);
-}
-
-.lobby-footer {
-  width: 100%; max-width: 980px; margin: 32px auto 0 auto;
-  padding: 0 0 18px 0; color: #abb2d8;
-  font-size: 1rem; display: flex; justify-content: space-between; align-items: center;
-  letter-spacing: 1.2px;
-}
-
-/* 移动端适配 */
 @media (max-width: 800px) {
-  .lobby-header-bar, .lobby-cards-area, .lobby-footer {
-    max-width: 100vw; padding-left: 7vw; padding-right: 7vw;
-  }
-  .lobby-main-bg { padding: 0 2vw; }
-  .lobby-cards-area { flex-direction: column; gap: 18px; }
-  .lobby-card { min-width: 0; width: 100%; }
+  .lobby-header { padding: 0 4vw; }
+  .game-card { width: 98vw; max-width: 99vw; min-width: 0; }
+  .game-card-overlay { padding: 14px 6vw 13px 6vw; }
+  .announcement-banner { max-width: 95vw; padding: 10px 4vw; }
 }
 @media (max-width: 450px) {
-  .lobby-header-bar { flex-direction: column; align-items: flex-start; gap: 5px; padding: 0 7vw; }
-  .lobby-title { font-size: 1.5rem; }
-  .lobby-card-main { padding: 22px 12px 18px 12px; }
-  .lobby-announcement { font-size: 1rem; padding: 7px 8px; }
-  .lobby-footer { flex-direction: column; gap: 3px; font-size: 0.92rem; }
+  .lobby-title { font-size: 1.35rem; }
+  .lobby-header { margin: 16px 0 7px 0; padding: 0 2vw; }
+  .game-title { font-size: 1.05rem; }
+  .game-card { min-height: 120px; }
+  .game-card-overlay { padding: 9px 2vw 10px 2vw; }
+  .game-actions { gap: 2vw; }
+  .btn { font-size: 0.95rem; padding: 10px 0; }
 }
