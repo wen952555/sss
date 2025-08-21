@@ -29,28 +29,26 @@ const Lane = ({
     }
   };
 
-  const cardWidth = 72;
-  const defaultOverlap = cardWidth / 3;
+  const cardWidth = 60;
+  const defaultOverlap = cardWidth / 2.2;
   let marginLeft = -defaultOverlap;
 
   if (cards.length > 1 && laneWidth > 0) {
     const totalCardWidth = cards.length * cardWidth;
     const totalOverlappedWidth = (cards.length - 1) * defaultOverlap;
     const totalWidth = totalCardWidth - totalOverlappedWidth;
-
     if (totalWidth > laneWidth) {
       const newOverlap = (totalCardWidth - laneWidth) / (cards.length - 1);
       marginLeft = -newOverlap;
     }
   }
 
-
   return (
-    <div className="lane-wrapper">
+    <div className="lane-wrapper" style={{ overflow: 'visible' }}>
       <div className="lane-header">
         <span className="lane-title">{`${title} (${expectedCount})`}</span>
       </div>
-      <div className="card-placement-box" ref={laneRef} onClick={handleAreaClick}>
+      <div className="card-placement-box" ref={laneRef} onClick={handleAreaClick} style={{ overflow: 'visible' }}>
         {cards.map((card, idx) => {
           const isSelected = selectedCards.some(sel => areCardsEqual(sel, card));
           return (

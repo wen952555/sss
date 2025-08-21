@@ -1,33 +1,51 @@
-/* 全局深色渐变主题、响应式保障 */
+/* 适用于亮色主题的全局自适应样式，彻底解决溢出、切割、铺满问题 */
 
 html, body, #root {
   height: 100%;
   min-height: 100vh;
   min-height: 100dvh;
+  width: 100vw;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  color: #f5f6fa;
-  background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
   font-family: 'Noto Sans SC', 'Arial', sans-serif;
+  color: #222;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e6eafc 60%, #f9e7fa 100%);
   overscroll-behavior: none;
   overflow-x: hidden;
   overflow-y: auto;
   touch-action: manipulation;
+  /* 适配iOS/安卓底部安全区（刘海屏） */
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
+
+/* 保证移动端缩放行为友好 */
 body {
-  background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
+  background: linear-gradient(135deg, #f5f7fa 0%, #e6eafc 60%, #f9e7fa 100%);
+  -webkit-tap-highlight-color: transparent;
 }
-body::before { display: none; }
 
-/* 滚动条深色风格 */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #181829; }
-::-webkit-scrollbar-thumb { background: #2c2e4f; border-radius: 4px; }
+a { color: #6a82fb; }
 
-a { color: #89f0ff; }
+/* 自定义滚动条（淡色风格） */
+::-webkit-scrollbar { width: 7px; height: 8px; }
+::-webkit-scrollbar-track { background: #f0f0f4; }
+::-webkit-scrollbar-thumb { background: #e6e9f5; border-radius: 4px; }
 
-/* 适配iOS和安卓底部安全区 */
+/* 禁止文本选中高亮，提升APP体验 */
+* {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+}
+
+/* 适配iOS和安卓底部安全区（刘海屏） */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   html, body, #root {
     padding-bottom: env(safe-area-inset-bottom);
