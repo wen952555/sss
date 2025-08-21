@@ -2,48 +2,56 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px; /* 增大区间隔，防止拥挤 */
+  gap: 8px;
   flex: 1;
   min-height: 0;
+  margin-bottom: 10px;
+  background: #23243c;
+  border-radius: 12px;
+  box-shadow: 0 1px 8px #23243c15;
+  padding: 7px 0 13px 0;
+}
+
+.lane-header {
+  padding-left: 10px;
+  font-size: 1.04rem;
+  color: #89f0ff;
+  font-weight: 600;
+  margin-bottom: 2px;
+  letter-spacing: 1px;
 }
 
 .card-placement-box {
   width: 100%;
-  box-sizing: border-box;
-  min-height: 130px; /* 高度大于弹起高度，防止顶部裁切 */
-  background: #171730;
-  border-radius: 14px;
-  box-shadow: 0 1px 4px #23243c22;
+  min-height: 88px;
+  background: #20243b;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px #17173018;
   display: flex;
   align-items: flex-end;
   overflow-x: auto;
-  overflow-y: visible !important; /* 强力保证弹起不裁切 */
-  padding: 0 12px;
+  overflow-y: visible !important;
+  padding: 3px 13px;
   cursor: pointer;
   position: relative;
 }
-
 .card-wrapper {
   position: relative;
-  transition: transform 0.2s ease-out, box-shadow 0.2s;
-  width: 72px;
-  height: 100px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 64px;
+  height: 86px;
 }
-
-/* 堆叠z-index：后面的牌层级高，弹起牌层级最高 */
 .card-wrapper.selected {
   z-index: 99 !important;
   box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
-  transform: translateY(-20px) scale(1.08);
+  transform: translateY(-15px) scale(1.08);
 }
 .card-wrapper.selected .card {
   border: 2px solid #00cec9;
   box-shadow: 0 4px 18px #00cec9b3;
   filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
 }
-
 .card-wrapper:first-child { margin-left: 0; }
-
 .card {
   box-sizing: border-box;
   border-radius: 9px;
@@ -53,8 +61,7 @@
 }
 
 @media (max-width: 450px) {
-  .card-wrapper {
-    width: 54px; min-width: 42px; max-width: 54px; height: 78px; margin-left: -11px;
-  }
-  .card-placement-box { min-height: 85px; padding: 0 6px; }
+  .card-wrapper { width: 48px; min-width: 36px; max-width: 48px; height: 62px; margin-left: -9px; }
+  .card-placement-box { min-height: 54px; padding: 2px 4px; }
+  .lane-header { padding-left: 5px; font-size: 0.93rem; }
 }
