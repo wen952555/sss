@@ -22,38 +22,29 @@ function generateDeck() {
 }
 
 const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
-
-const areCardsEqual = (card1, card2) => card1.rank === card2.rank && card1.suit === card2.suit;
+const areCardsEqual = (c1, c2) => c1.rank === c2.rank && c1.suit === c2.suit;
 
 const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
   const [allHands, setAllHands] = useState(() => {
     const deck = shuffle(generateDeck());
     const hands = [];
-    for (let i = 0; i < aiCount + 1; i++) {
-      hands.push(deck.slice(i * 13, (i + 1) * 13));
-    }
+    for (let i = 0; i < aiCount + 1; i++) hands.push(deck.slice(i * 13, (i + 1) * 13));
     return hands;
   });
-
   const [topLane, setTopLane] = useState([]);
   const [middleLane, setMiddleLane] = useState([]);
   const [bottomLane, setBottomLane] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
   const [gameResult, setGameResult] = useState(null);
 
-  const [isReady, setIsReady] = useState(false);
-
-  // 卡牌点击
+  // 卡牌点击选中
   const handleCardClick = (card) => {
     const selected = selectedCards.some(c => areCardsEqual(c, card));
-    if (selected) {
-      setSelectedCards(selectedCards.filter(c => !areCardsEqual(c, card)));
-    } else {
-      setSelectedCards([...selectedCards, card]);
-    }
+    setSelectedCards(selected
+      ? selectedCards.filter(c => !areCardsEqual(c, card))
+      : [...selectedCards, card]);
   };
-
-  // 牌墩点击
+  // 牌墩点击，把选中的牌放到对应墩
   const handleLaneClick = (lane) => {
     if (!selectedCards.length) return;
     let newTop = topLane.filter(c => !selectedCards.some(sel => areCardsEqual(sel, c)));
@@ -67,30 +58,18 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
     setBottomLane(newBottom);
     setSelectedCards([]);
   };
-
-  // 准备
-  const handleReady = () => {
-    const handCards = allHands[0];
-    const sorted = getSmartSortedHand(handCards);
+  // 智能理牌
+  const handleAutoSort = () => {
+    const hand = [...topLane, ...middleLane, ...bottomLane];
+    const sorted = getSmartSortedHand(hand.length ? hand : allHands[0]);
     if (sorted) {
-      setTopLane(sorted.top);
-      setMiddleLane(sorted.middle);
-      setBottomLane(sorted.bottom);
-    } else {
-      setTopLane(handCards.slice(0, 3));
-      setMiddleLane(handCards.slice(3, 8));
-      setBottomLane(handCards.slice(8, 13));
+      setTopLane(sorted.top); setMiddleLane(sorted.middle); setBottomLane(sorted.bottom); setSelectedCards([]);
     }
-    setSelectedCards([]);
-    setIsReady(true);
   };
-
-  // 确认牌型
+  // 确认比牌
   const handleConfirm = () => {
-    if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
-      alert('牌道数量错误！头道3，中道5，尾道5');
-      return;
-    }
+    if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom)
+      return alert('牌道数量错误！头道3，中道5，尾道5');
     const players = [
       {
         head: topLane.map(card => `${card.rank}_of_${card.suit}`),
@@ -113,53 +92,25 @@ const PracticeThirteenGame = ({ aiCount, user, onBackToLobby }) => {
       players: players.map((p, i) => ({
         name: p.name,
         hand: {
-          top: p.head.map(c => {
-            const [rank, , suit] = c.split('_');
-            return { rank, suit };
-          }),
-          middle: p.middle.map(c => {
-            const [rank, , suit] = c.split('_');
-            return { rank, suit };
-          }),
-          bottom: p.tail.map(c => {
-            const [rank, , suit] = c.split('_');
-            return { rank, suit };
-          }),
+          top: p.head.map(c => { const [rank, , suit] = c.split('_'); return { rank, suit }; }),
+          middle: p.middle.map(c => { const [rank, , suit] = c.split('_'); return { rank, suit }; }),
+          bottom: p.tail.map(c => { const [rank, , suit] = c.split('_'); return { rank, suit }; }),
         },
         score: scores[i],
       })),
     });
   };
-
-  // 自动理牌
-  const handleAutoSort = () => {
-    const sorted = getSmartSortedHand([...topLane, ...middleLane, ...bottomLane]);
-    if (sorted) {
-      setTopLane(sorted.top);
-      setMiddleLane(sorted.middle);
-      setBottomLane(sorted.bottom);
-      setSelectedCards([]);
-    }
-  };
-
-  // 结果关闭
+  // 结果关闭/重开一局
   const handleCloseResult = () => {
     setGameResult(null);
-    setIsReady(false);
-    setTopLane([]);
-    setMiddleLane([]);
-    setBottomLane([]);
-    setSelectedCards([]);
-    // 发新牌
+    setTopLane([]); setMiddleLane([]); setBottomLane([]); setSelectedCards([]);
     const deck = shuffle(generateDeck());
     const hands = [];
-    for (let i = 0; i < aiCount + 1; i++) {
-      hands.push(deck.slice(i * 13, (i + 1) * 13));
-    }
+    for (let i = 0; i < aiCount + 1; i++) hands.push(deck.slice(i * 13, (i + 1) * 13));
     setAllHands(hands);
   };
 
-  // 玩家横幅平铺（如图4）
+  // 玩家横幅 - 平铺
   const renderPlayerBar = () => (
     <div className="player-bar-horizontal-v2">
       <div className="player-bar-item-v2 me">

@@ -2,10 +2,7 @@
     background: linear-gradient(135deg, #f8fbff 0%, #eaf0fa 50%, #f9e7fa 100%) !important;
   }
   
-  .table-panel {
-    background: none !important;
-    box-shadow: none !important;
-  }
+  .table-panel { background: none !important; box-shadow: none !important; }
   
   .table-top-bar-v2 {
     display: flex;
@@ -34,7 +31,6 @@
     letter-spacing: 1.2px;
   }
   
-  /* 玩家横幅（平铺） */
   .player-bar-horizontal-v2 {
     width: 100%;
     max-width: 100vw;
@@ -71,10 +67,7 @@
     background: #eaf0fa;
     opacity: 1;
   }
-  .player-bar-item-v2.ready {
-    color: #37e6c5;
-    opacity: 1;
-  }
+  .player-bar-item-v2.ready { color: #37e6c5; opacity: 1; }
   .player-bar-name-v2 {
     font-size: 1.06rem;
     font-weight: 700;
@@ -88,7 +81,6 @@
     font-weight: 400;
   }
   
-  /* 牌区整体留白 */
   .lane-list-area-v2 {
     width: 100%;
     max-width: 480px;
