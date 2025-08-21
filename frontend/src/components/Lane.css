@@ -1,60 +1,67 @@
 .lane-wrapper {
   width: 100%;
+  margin: 0 auto 20px auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 18px #c9d6ff22;
+  padding: 12px 9px 18px 9px;
   display: flex;
   flex-direction: column;
-  gap: 10px; /* 增大区间隔，防止拥挤 */
-  flex: 1;
-  min-height: 0;
+  gap: 8px;
+  border: 1.5px solid #e6e9f5;
+}
+
+.lane-header {
+  padding-left: 5px;
+  font-size: 1.08rem;
+  color: #6a82fb;
+  font-weight: 700;
+  margin-bottom: 2px;
+  letter-spacing: 1.1px;
 }
 
 .card-placement-box {
   width: 100%;
-  box-sizing: border-box;
-  min-height: 130px; /* 高度大于弹起高度，防止顶部裁切 */
-  background: #171730;
-  border-radius: 14px;
-  box-shadow: 0 1px 4px #23243c22;
+  min-height: 85px;
+  background: none;
+  border-radius: 13px;
   display: flex;
   align-items: flex-end;
   overflow-x: auto;
-  overflow-y: visible !important; /* 强力保证弹起不裁切 */
-  padding: 0 12px;
+  overflow-y: visible !important;
+  padding: 0 8px;
   cursor: pointer;
   position: relative;
 }
-
 .card-wrapper {
   position: relative;
-  transition: transform 0.2s ease-out, box-shadow 0.2s;
-  width: 72px;
-  height: 100px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 62px;
+  height: 86px;
+  margin-left: -13px;
 }
-
-/* 堆叠z-index：后面的牌层级高，弹起牌层级最高 */
 .card-wrapper.selected {
   z-index: 99 !important;
-  box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
-  transform: translateY(-20px) scale(1.08);
+  box-shadow: 0 7px 22px #6a82fb44,0 0 0 2px #6a82fb;
+  transform: translateY(-17px) scale(1.08);
 }
 .card-wrapper.selected .card {
-  border: 2px solid #00cec9;
-  box-shadow: 0 4px 18px #00cec9b3;
-  filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
+  border: 2px solid #6a82fb;
+  box-shadow: 0 4px 18px #6a82fb33;
+  filter: brightness(1.12) drop-shadow(0 0 4px #6a82fb);
 }
-
 .card-wrapper:first-child { margin-left: 0; }
-
 .card {
   box-sizing: border-box;
-  border-radius: 9px;
+  border-radius: 7px;
   background: #fff;
   width: 100%;
   height: 100%;
 }
 
 @media (max-width: 450px) {
-  .card-wrapper {
-    width: 54px; min-width: 42px; max-width: 54px; height: 78px; margin-left: -11px;
-  }
-  .card-placement-box { min-height: 85px; padding: 0 6px; }
+  .lane-wrapper { padding: 8px 2px 13px 2px; }
+  .card-wrapper { width: 42px; min-width: 32px; max-width: 42px; height: 56px; margin-left: -7px; }
+  .card-placement-box { min-height: 38px; padding: 0 2px; }
+  .lane-header { padding-left: 3px; font-size: 0.93rem; }
 }

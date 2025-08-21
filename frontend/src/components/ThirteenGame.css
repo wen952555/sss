@@ -1,51 +1,122 @@
-.table-root {
-  width: 100vw;
-  height: 100dvh;
-  min-height: 100dvh;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: stretch;
-  align-items: stretch;
-  box-sizing: border-box;
+.pastel-bg {
+  background: linear-gradient(135deg, #f8fbff 0%, #eaf0fa 50%, #f9e7fa 100%) !important;
 }
-
-.table-panel {
-  width: 100vw;
-  height: 100dvh;
-  min-height: 100dvh;
+.table-panel { background: none !important; box-shadow: none !important; }
+.table-top-bar-v2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 8px 4px 8px;
+  background: none;
+}
+.table-quit-btn-v2 {
+  background: #ff8a9a;
+  color: #fff;
+  border: none;
+  border-radius: 13px;
+  font-size: 1.1rem;
+  padding: 11px 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background .18s, transform .2s;
+  margin-right: 10px;
+}
+.table-quit-btn-v2:hover { background: #ff6384; transform: scale(1.04); }
+.table-title-v2 {
+  font-size: 1.18rem;
+  font-weight: bold;
+  color: #6a82fb;
+  letter-spacing: 1.2px;
+}
+.player-bar-horizontal-v2 {
+  width: 100%;
   max-width: 100vw;
-  padding: 0;
-  margin: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: stretch;
+  background: #f4f8fe;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px #e6e9f555;
+  margin: 0 0 20px 0;
+  min-height: 54px;
+  gap: 0;
+}
+.player-bar-item-v2 {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
-  position: relative;
-  box-sizing: border-box;
-  background: linear-gradient(120deg, #23243c 0%, #171730 80%);
-  border-radius: 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 7px 0 5px 0;
+  font-size: 0.97rem;
+  font-weight: 600;
+  color: #abb2d8;
+  opacity: 0.88;
+  border-right: 1px solid #e6e9f5;
 }
-
-.table-lanes-area {
-  flex-grow: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-bottom: 70px; /* 留出底部空间，防止操作栏被裁切 */
+.player-bar-item-v2:last-child { border-right: none; }
+.player-bar-item-v2.me { color: #6a82fb; font-weight: bold; background: #eaf0fa; opacity: 1; }
+.player-bar-item-v2.ready { color: #37e6c5; opacity: 1; }
+.player-bar-name-v2 {
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: inherit;
+  margin-bottom: 2px;
+  letter-spacing: 0.8px;
 }
-
-.table-actions-bar {
+.player-bar-status-v2 {
+  font-size: 0.9rem;
+  color: #abb2d8;
+  font-weight: 400;
+}
+.lane-list-area-v2 {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto 0 auto;
   display: flex;
-  gap: 10px;
-  padding: 9px 8px 18px 8px;
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(180deg, #23243c 80%, #171730 100%);
-  z-index: 100;
+  flex-direction: column;
+  gap: 22px;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 0;
 }
-
-@media (max-width: 450px), (max-height: 600px) {
-  .table-panel { padding: 0; gap: 0; }
-  .table-lanes-area { padding-bottom: 70px; gap: 4px; }
+.footer-action-bar-v2 {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100vw;
+  display: flex;
+  gap: 18px;
+  background: linear-gradient(90deg,#f9e7fa 0%,#eaf0fa 100%);
+  box-shadow: 0 -3px 18px #e6e9f555;
+  padding: 18px 7vw 16px 7vw;
+  z-index: 1000;
+  border-top: 1.5px solid #e6e9f5;
+}
+.footer-btn-v2 {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 15px 0;
+  border-radius: 13px;
+  border: none;
+  font-size: 1.08rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all .21s;
+  background: linear-gradient(90deg,#ffb199 0%,#ff8a9a 100%);
+  color: #fff;
+  box-shadow: 0 2px 10px #ffb19922;
+  letter-spacing: 1.1px;
+}
+.footer-btn-v2.blue { background: linear-gradient(90deg,#6a82fb 0%,#89f0ff 100%); color: #fff; }
+.footer-btn-v2.orange { background: linear-gradient(90deg,#ffb199 0%,#ff8a9a 100%); color: #fff; }
+.footer-btn-v2:active { transform: scale(0.98); }
+.waiting-text { text-align:center; margin:40px 0 18px 0; font-size:1.18rem; color:#6a82fb; font-weight:600; }
+.table-error { color: #ff6b81; text-align: center; margin-top: 18px; font-weight: bold; }
+@media (max-width: 450px) {
+  .table-top-bar-v2 { padding: 8px 2vw 2px 2vw; }
+  .lane-list-area-v2 { gap: 9px; }
+  .footer-action-bar-v2 { padding: 8px 2vw 10vw 2vw; }
 }
