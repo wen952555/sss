@@ -1,8 +1,7 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
 require_once 'db_connect.php';
-require_once '../utils/sssScorer.php';
-require_once '../utils/eightCardScorer.php';
+require_once '../utils/GameUtils.php';
 
 $input = json_decode(file_get_contents('php://input'), true);
 $userId = (int)($input['userId'] ?? 0);

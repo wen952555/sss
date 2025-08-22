@@ -1,177 +1,157 @@
-.lobby-root {
-  min-height: 100vh;
-  min-height: 100dvh;
-  width: 100vw;
-  background: linear-gradient(135deg,#23243c 0%,#171730 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0 0 20px 0;
-  box-sizing: border-box;
+/* Cyberpunk Neon Theme for Game Lobby */
+.lobby-container {
+    width: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* 从顶部开始 */
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: #0d0d2b; /* 深蓝紫色背景 */
+    color: #e0e0ff;
 }
 
-/* 顶部logo和标题区 */
 .lobby-header {
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 32px 0 12px 0;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  justify-content: center;
+    text-align: center;
+    margin-bottom: 25px;
+    padding-top: 10px;
 }
-.lobby-logo {
-  width: 52px; height: 52px; border-radius: 16px; background: #fff; box-shadow: 0 2px 16px #23243c44;
-  object-fit: cover;
-}
-.lobby-header-info {
-  display: flex; flex-direction: column; align-items: flex-start;
-}
+
 .lobby-title {
-  font-size: 2.0rem; font-weight: 800; color: #89f0ff; letter-spacing: 2px;
-  text-shadow: 0 2px 10px #17173099;
-  margin-bottom: 3px;
-}
-.lobby-online {
-  font-size: 1.03rem; color: #37e6c5; font-weight: 600;
-  margin-top: 0px; letter-spacing: 1px;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #00f6ff; /* 霓虹青色 */
+    text-shadow: 0 0 5px #00f6ff, 0 0 10px #00f6ff, 0 0 20px #00f6ff, 0 0 40px #23243c;
+    margin: 0;
 }
 
-/* 公告横幅 */
-.lobby-announcement {
-  width: 90vw;
-  max-width: 440px;
-  margin: 0 auto 18px auto;
-  background: linear-gradient(90deg, #fc5c7d22 0%, #6a82fb22 100%);
-  border-radius: 12px;
-  color: #fc5c7d;
-  font-weight: 500;
-  text-align: center;
-  padding: 11px 10px;
-  font-size: 1.04rem;
-  letter-spacing: 1px;
+.lobby-subtitle {
+    font-size: 1rem;
+    color: #a9a9c4;
+    margin-top: 5px;
+    letter-spacing: 1px;
 }
 
-.lobby-game-list {
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  align-items: stretch;
-  margin-bottom: 20px;
+.announcement-banner {
+    width: 100%;
+    max-width: 550px;
+    padding: 12px 18px;
+    background: rgba(255, 0, 150, 0.1); /* 洋红色半透明背景 */
+    border: 1px solid rgba(255, 0, 150, 0.5);
+    border-radius: 10px;
+    color: #ff0096; /* 洋红色 */
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 25px;
+    box-shadow: 0 0 10px rgba(255, 0, 150, 0.3);
 }
 
-/* 游戏卡片 */
+.game-card-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+}
+
 .game-card {
-  position: relative;
-  background: #20243b;
-  border-radius: 18px;
-  box-shadow: 0 7px 38px rgba(60,60,110,0.14), 0 0.5px 6px #89f0ff11;
-  overflow: hidden;
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.18s, box-shadow 0.22s;
-  margin: 0 10px;
+    width: 100%;
+    max-width: 550px;
+    height: 230px;
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid #00f6ff;
+    box-shadow: 0 0 15px #00f6ff, inset 0 0 15px #00f6ff;
+    transition: all 0.3s ease;
 }
+
 .game-card:hover {
-  transform: translateY(-6px) scale(1.015) rotate(-0.8deg);
-  box-shadow: 0 18px 44px #fc5c7d33, 0 1.5px 12px #89f0ff33;
-}
-.game-card-bg {
-  position: absolute; z-index: 1; right: -40px; top: -30px;
-  width: 130px; height: 130px; border-radius: 50%; opacity: 0.13;
-  filter: blur(2.5px);
-}
-.game-card-bg.thirteen { background: radial-gradient(circle at 45% 45%, #fc5c7d 0%, #6a82fb 80%); }
-.game-card-bg.eight { background: radial-gradient(circle at 60% 40%, #6a82fb 0%, #fc5c7d 80%); }
-.game-card-main {
-  position: relative; z-index: 2;
-  padding: 24px 16px 19px 18px;
-  display: flex; flex-direction: column; align-items: flex-start;
-}
-.game-card-title-area {
-  margin-bottom: 9px;
-}
-.game-card-title {
-  font-size: 1.25rem; font-weight: bold; color: #89f0ff; letter-spacing: 1.2px;
-}
-.game-card-desc {
-  font-size: 1.04rem; color: #c3c8e6; margin-top: 2px;
-  font-weight: 300; letter-spacing: 1px;
-}
-.game-card-actions {
-  display: flex; gap: 12px; width: 100%; margin-top: 8px;
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 0 25px #00f6ff, inset 0 0 25px #00f6ff;
 }
 
-/* 按钮风格 */
-.game-btn {
-  flex: 1 1 0;
-  padding: 12px 0;
-  border-radius: 11px;
-  border: none;
-  font-size: 1.06rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.20s, color 0.20s, box-shadow 0.18s;
-  box-shadow: 0 2px 10px #6a82fb11;
-  letter-spacing: 1.15px;
-}
-.game-btn.primary {
-  background: linear-gradient(90deg,#23243c 0%,#37e6c5 100%);
-  color: #1a1a3e;
-}
-.game-btn.primary:hover:not(:disabled) {
-  background: linear-gradient(90deg,#89f0ff 0%,#37e6c5 90%);
-  color: #23243c;
-}
-.game-btn.secondary {
-  background: linear-gradient(90deg,#fc5c7d 0%,#6a82fb 100%);
-  color: #fff;
-}
-.game-btn.secondary:hover:not(:disabled) {
-  background: linear-gradient(90deg,#6a82fb 0%,#fc5c7d 100%);
-  color: #23243c;
-}
-.game-btn.ghost {
-  background: linear-gradient(90deg,#b1f9f6 0%,#7ed6df 100%);
-  color: #23243c;
-}
-.game-btn.ghost:hover:not(:disabled) {
-  background: linear-gradient(90deg,#89f0ff 0%,#b1f9f6 100%);
-  color: #23243c;
-}
-.game-btn:disabled {
-  opacity: 0.62; cursor: not-allowed; filter: grayscale(0.18);
+.thirteen-bg {
+    background-image: url('/cards/background_thirteen.jpg'); /* 替换为合适的背景图 */
 }
 
-/* 底部版权 */
-.lobby-footer {
-  width: 100%;
-  max-width: 480px;
-  margin: 30px auto 0 auto;
-  padding: 0 0 12px 0;
-  color: #abb2d8;
-  font-size: 0.98rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  letter-spacing: 1.1px;
+.eight-bg {
+    background-image: url('/cards/background_eight.jpg'); /* 替换为合适的背景图 */
 }
 
-/* 手机端适配 */
-@media (max-width: 600px) {
-  .lobby-header, .lobby-footer, .lobby-game-list { max-width: 99vw; }
-  .game-card { margin: 0 3vw; }
+.game-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(13, 13, 43, 0.95) 20%, rgba(13, 13, 43, 0.3) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    box-sizing: border-box;
 }
-@media (max-width: 420px) {
-  .lobby-root { padding-bottom: 14vw; }
-  .lobby-title { font-size: 1.18rem; }
-  .lobby-header { padding: 17px 0 7px 0; gap: 10px; }
-  .game-card-title { font-size: 0.98rem; }
-  .game-card-main { padding: 17px 6px 12px 10px; }
-  .lobby-footer { flex-direction: column; gap: 3px; font-size: 0.91rem; }
+
+.game-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: #e0e0ff;
+    text-shadow: 0 0 8px #ff0096;
+}
+
+.game-description {
+    font-size: 1rem;
+    color: #a9a9c4;
+    margin: 5px 0 0 0;
+}
+
+.game-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.btn {
+    flex-grow: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #00f6ff;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all .2s ease;
+    background: rgba(0, 246, 255, 0.1);
+    color: #00f6ff;
+    text-shadow: 0 0 5px #00f6ff;
+}
+
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    border-color: #a9a9c4;
+    color: #a9a9c4;
+    text-shadow: none;
+    background: rgba(169, 169, 196, 0.1);
+}
+
+.btn:hover:not(:disabled) {
+    background: #00f6ff;
+    color: #0d0d2b;
+    text-shadow: none;
+    box-shadow: 0 0 15px #00f6ff;
+}
+
+.btn-primary {
+    border-color: #ff0096;
+    background: rgba(255, 0, 150, 0.1);
+    color: #ff0096;
+    text-shadow: 0 0 5px #ff0096;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #ff0096;
+    color: #fff;
+    text-shadow: none;
+    box-shadow: 0 0 15px #ff0096;
 }
