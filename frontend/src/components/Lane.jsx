@@ -29,7 +29,7 @@ const Lane = ({
     }
   };
 
-  const cardWidth = 80;
+  const cardWidth = 90;
   const defaultOverlap = cardWidth / 3;
   let marginLeft = -defaultOverlap;
 

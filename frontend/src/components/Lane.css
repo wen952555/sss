@@ -10,7 +10,7 @@
 .card-placement-box {
   width: 100%;
   box-sizing: border-box;
-  min-height: 150px; /* 增加高度以容纳更大的卡牌 */
+  min-height: 160px; /* 再次增加高度 */
   background: #171730;
   border-radius: 14px;
   box-shadow: 0 1px 4px #23243c22;
@@ -26,9 +26,9 @@
 .card-wrapper {
   position: relative;
   transition: transform 0.2s ease-out, box-shadow 0.2s;
-  width: 80px; /* 增加卡牌宽度 */
-  height: 112px; /* 增加卡牌高度 */
-  margin-left: -53px; /* 调整重叠，保持约1/3的宽度可见 */
+  width: 90px; /* 再次增加卡牌宽度 */
+  height: 126px; /* 再次增加卡牌高度 */
+  margin-left: -60px; /* 调整重叠 */
 }
 
 /* 堆叠z-index：后面的牌层级高，弹起牌层级最高 */
