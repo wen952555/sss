@@ -144,6 +144,8 @@
   justify-content: space-around;
   gap: 10px;
   min-height: 0;
+  padding-top: 20px;
+  box-sizing: border-box;
 }
 
 .error-text {
