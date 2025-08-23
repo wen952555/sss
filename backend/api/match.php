@@ -84,41 +84,41 @@ $playersNeeded = $gameType === 'thirteen' ? 4 : 2;
 
 $conn->begin_transaction();
 try {
-    // Find a non-full matching room
-    $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id=rp.room_id WHERE r.status='matching' AND r.game_type=? AND r.game_mode=? AND rp.user_id > 0 GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
-    $stmt->bind_param("ssi", $gameType, $gameMode, $playersNeeded);
+    $roomId = null;
+
+    // Check for waiting human players globally
+    $stmt = $conn->prepare("SELECT rp.room_id FROM room_players rp JOIN game_rooms r ON rp.room_id = r.id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? AND rp.user_id > 0 AND rp.user_id != ? LIMIT 1");
+    $stmt->bind_param("ssi", $gameType, $gameMode, $userId);
     $stmt->execute();
-    $room = $stmt->get_result()->fetch_assoc();
+    $waitingRoom = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
-    if ($room) {
-        $roomId = $room['id'];
+    if ($waitingRoom) {
+        // Found a room with waiting players, join it
+        $roomId = $waitingRoom['room_id'];
+        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, initial_hand) VALUES (?, ?, '[]') ON DUPLICATE KEY UPDATE room_id=room_id");
+        $stmt->bind_param("ii", $roomId, $userId);
+        $stmt->execute();
+        $stmt->close();
     } else {
-        // Create new room
+        // No one is waiting, create a new room and fill with AI
         $roomCode = uniqid('room_');
         $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'matching', ?)");
         $stmt->bind_param("sssi", $roomCode, $gameType, $gameMode, $playersNeeded);
         $stmt->execute();
         $roomId = $stmt->insert_id;
         $stmt->close();
-    }
 
-    // Join room (ignore if already in)
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM room_players WHERE room_id=? AND user_id=?");
-    $stmt->bind_param("ii", $roomId, $userId);
-    $stmt->execute();
-    $isInRoom = $stmt->get_result()->fetch_row()[0] > 0;
-    $stmt->close();
-    if (!$isInRoom) {
+        // Add the human player
         $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, initial_hand) VALUES (?, ?, '[]')");
         $stmt->bind_param("ii", $roomId, $userId);
         $stmt->execute();
         $stmt->close();
-    }
 
-    // AI Fill Logic
-    if ($gameMode === 'normal' || $gameMode === 'double') {
-        fillWithAI($conn, $roomId, $gameType, $playersNeeded);
+        // Fill with AI
+        if ($gameMode === 'normal' || $gameMode === 'double') {
+            fillWithAI($conn, $roomId, $gameType, $playersNeeded);
+        }
     }
 
     // Check room player count
