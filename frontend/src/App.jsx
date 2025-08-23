@@ -25,20 +25,6 @@ const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   );
 };
 
-function TopBanner({ user, onLobby, onProfile, onLogout }) {
-  return (
-    <div className="top-banner">
-      <div className="banner-title">游戏中心</div>
-      <div className="banner-welcome">欢迎, {user.phone}</div>
-      <div className="banner-actions">
-        <button className="banner-btn" onClick={onLobby}>游戏大厅</button>
-        <button className="banner-btn" onClick={onProfile}>我的资料</button>
-        <button className="banner-btn" onClick={onLogout}>退出登录</button>
-      </div>
-    </div>
-  );
-}
-
 function App() {
   const [user, setUser] = useState(null);
   const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null });
@@ -162,6 +148,9 @@ function App() {
           <GameLobby
             onSelectGameType={handleSelectGameType}
             matchingStatus={matchingStatus}
+            user={user}
+            onProfile={() => setCurrentView('profile')}
+            onLogout={handleLogout}
           />
         );
     }
@@ -179,9 +168,6 @@ function App() {
   return (
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
-      {!isInGame && (
-        <TopBanner user={user} onLobby={() => { setCurrentView('lobby'); handleBackToLobby(); }} onProfile={() => setCurrentView('profile')} onLogout={handleLogout} />
-      )}
       <main className="app-main">
         {renderMainContent()}
       </main>
