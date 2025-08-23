@@ -44,30 +44,35 @@ function fillWithAI($conn, $roomId, $gameType, $playersNeeded) {
     if ($aiToCreate <= 0) return;
 
     for ($i = 1; $i <= $aiToCreate; $i++) {
-        $aiId = -$i;
-        $aiPhone = "ai_player_" . abs($aiId);
+        $aiPhone = "ai_player_" . $i;
+        $aiId = null;
 
         // Check if AI user exists
-        $stmt = $conn->prepare("SELECT id FROM users WHERE id = ?");
-        $stmt->bind_param("i", $aiId);
+        $stmt = $conn->prepare("SELECT id FROM users WHERE phone = ?");
+        $stmt->bind_param("s", $aiPhone);
         $stmt->execute();
         $result = $stmt->get_result();
-        if ($result->num_rows == 0) {
-            $stmt->close();
-            // Create AI user
-            $insertStmt = $conn->prepare("INSERT INTO users (id, phone, password, points) VALUES (?, ?, '', 1000)");
-            $insertStmt->bind_param("is", $aiId, $aiPhone);
+        if ($row = $result->fetch_assoc()) {
+            $aiId = $row['id'];
+        }
+        $stmt->close();
+
+        // If not, create AI user
+        if (!$aiId) {
+            $insertStmt = $conn->prepare("INSERT INTO users (phone, password, points) VALUES (?, '', 1000)");
+            $insertStmt->bind_param("s", $aiPhone);
             $insertStmt->execute();
+            $aiId = $insertStmt->insert_id;
             $insertStmt->close();
-        } else {
-            $stmt->close();
         }
 
         // Add AI to room
-        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed, initial_hand) VALUES (?, ?, 1, 1, '[]')");
-        $stmt->bind_param("ii", $roomId, $aiId);
-        $stmt->execute();
-        $stmt->close();
+        if ($aiId) {
+            $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed, initial_hand) VALUES (?, ?, 1, 1, '[]')");
+            $stmt->bind_param("ii", $roomId, $aiId);
+            $stmt->execute();
+            $stmt->close();
+        }
     }
 }
 
