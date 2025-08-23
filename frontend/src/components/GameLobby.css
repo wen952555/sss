@@ -1,32 +1,99 @@
 .lobby-container {
-  width: 100%; min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 40px 20px; box-sizing: border-box; position: relative; overflow: hidden; color: #f5f6fa;
-  background: linear-gradient(135deg, #23243c 0%, #171730 80%, #121223 100%);
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  color: #004d40;
+  background: transparent;
 }
 .lobby-header { text-align: center; margin-bottom: 30px; }
-.lobby-title { font-size: 2.8rem; font-weight: 700; margin: 0; color: #89f0ff; text-shadow: 0 4px 15px #23243c; }
-.lobby-subtitle { font-size: 1.1rem; font-weight: 300; color: #c3c8e6; margin-top: 5px; }
-.announcement-banner {
-  width: 100%; max-width: 500px; padding: 12px 20px;
-  background: linear-gradient(90deg, #fc5c7d22 0%, #6a82fb22 100%);
-  border-radius: 12px; color: #fc5c7d; font-weight: 500; text-align: center; margin-bottom: 30px;
+.lobby-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin: 0;
+  color: #00796b;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-.game-card-grid { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 30px; }
+.lobby-subtitle {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #004d40;
+  margin-top: 5px;
+}
+.announcement-banner {
+  width: 100%;
+  max-width: 500px;
+  padding: 12px 20px;
+  background: #e0f2f1;
+  border: 1px solid #b2dfdb;
+  border-radius: 12px;
+  color: #00796b;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 30px;
+}
+.game-card-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
 .game-card {
-  width: 100%; max-width: 500px; height: 220px; border-radius: 20px; position: relative; overflow: hidden;
-  box-shadow: 0 10px 40px rgba(20,20,40,0.35); background: linear-gradient(120deg, #23243c 0%, #171730 80%);
+  width: 100%;
+  max-width: 500px;
+  height: 220px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
   cursor: default;
 }
-.game-card-overlay { position: absolute; inset: 0; background: none; display: flex; flex-direction: column; justify-content: flex-end; padding: 25px; box-sizing: border-box; }
-.game-title { font-size: 1.8rem; font-weight: 600; margin: 0; color: #89f0ff; }
-.game-description { font-size: 1rem; font-weight: 300; color: #c3c8e6; margin: 5px 0 0 0; }
+.game-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 25px;
+  box-sizing: border-box;
+}
+.game-title { font-size: 1.8rem; font-weight: 600; margin: 0; color: #00796b; }
+.game-description { font-size: 1rem; font-weight: 400; color: #004d40; margin: 5px 0 0 0; }
 .game-actions { display: flex; gap: 15px; margin-top: 20px; }
 .btn {
-  flex: 1; padding: 12px 20px; border-radius: 10px; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all .25s ease;
-  background: linear-gradient(45deg, #42436c 0%, #1a1a3e 100%); color: #e3e6ff;
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: 1px solid #b2dfdb;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all .25s ease;
+  background: #e0f2f1;
+  color: #00796b;
 }
 .btn:disabled { cursor: not-allowed; opacity: 0.6; }
-.btn-primary { background: linear-gradient(45deg, #fc5c7d 0%, #6a82fb 100%); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: linear-gradient(45deg, #89f0ff 0%, #fc5c7d 100%); color: #23243c; }
-.btn-secondary { background: #34365c; color: #89f0ff; }
-.btn-secondary:hover:not(:disabled) { background: #89f0ff; color: #23243c; }
+.btn-primary {
+  background: #00796b;
+  color: #ffffff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #004d40;
+}
+.btn-secondary {
+  background: #ffffff;
+  color: #00796b;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #b2dfdb;
+  color: #004d40;
+}

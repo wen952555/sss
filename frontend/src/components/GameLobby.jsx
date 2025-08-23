@@ -35,8 +35,8 @@ const GameLobby = ({ onSelectGame, matchingStatus, onPractice }) => {
     <div className="lobby-container">
       <header className="lobby-header">
         <h1 className="lobby-title">游戏大厅</h1>
-        <p className="lobby-subtitle">选择你的战场，开启荣耀之旅</p>
-        <div style={{ marginTop: 8, fontSize: '1rem', color: '#ff8a80', fontWeight: 500 }}>
+        <p className="lobby-subtitle">云端牌局，随心畅玩</p>
+        <div style={{ marginTop: 8, fontSize: '1rem', color: '#00796b', fontWeight: 500 }}>
           当前在线人数：{onlineCount !== null ? onlineCount : '...'}
         </div>
       </header>
