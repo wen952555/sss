@@ -27,10 +27,12 @@ try {
     $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
     $stmt->close();
 
-    $stmt = $conn->prepare("SELECT players_count FROM game_rooms WHERE id = ?");
+    $stmt = $conn->prepare("SELECT players_count, game_type FROM game_rooms WHERE id = ?");
     $stmt->bind_param("i", $roomId);
     $stmt->execute();
-    $playersNeeded = $stmt->get_result()->fetch_assoc()['players_count'];
+    $roomInfo = $stmt->get_result()->fetch_assoc();
+    $playersNeeded = $roomInfo['players_count'];
+    $gameType = $roomInfo['game_type'];
     $stmt->close();
 
     // --- 4. 如果全部准备，执行发牌，存入 initial_hand ---
@@ -42,20 +44,23 @@ try {
             $deck = [];
             foreach ($suits as $suit) foreach ($ranks as $rank) $deck[] = ['rank'=>$rank, 'suit'=>$suit];
             shuffle($deck);
-            $cards_per_player = 13;
+            $cards_per_player = $gameType === 'eight' ? 8 : 13;
             $all_hands = [];
             for ($i=0; $i<$playerCount; $i++) {
                 $hand = array_slice($deck, $i*$cards_per_player, $cards_per_player);
-                usort($hand, function($a, $b)use($ranks){return array_search($b['rank'],$ranks)-array_search($a['rank'],$ranks);});
-                $all_hands[$i] = [
-                    'top'=>array_slice($hand,10,3),
-                    'middle'=>array_slice($hand,5,5),
-                    'bottom'=>array_slice($hand,0,5),
-                ];
+                if ($gameType === 'eight') {
+                    $all_hands[$i] = ['top' => [], 'middle' => $hand, 'bottom' => []];
+                } else {
+                    usort($hand, function($a, $b)use($ranks){return array_search($b['rank'],$ranks)-array_search($a['rank'],$ranks);});
+                    $all_hands[$i] = [
+                        'top'=>array_slice($hand,10,3),
+                        'middle'=>array_slice($hand,5,5),
+                        'bottom'=>array_slice($hand,0,5),
+                    ];
+                }
             }
             return $all_hands;
         }
-        $gameType = 'thirteen'; // 可以从房间读取实际类型
         $hands = dealCards($gameType, $playersNeeded);
 
         $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id = ? ORDER BY id ASC");
