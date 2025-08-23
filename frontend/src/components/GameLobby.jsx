@@ -37,11 +37,8 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
     <div className="lobby-container">
       <header className="lobby-header">
         <div className="lobby-header-top-row">
-          <div className="welcome-message">欢迎, {user.phone}</div>
-          <div className="header-actions">
-            <button className="header-btn" onClick={onProfile}>我的资料</button>
-            <button className="header-btn" onClick={onLogout}>退出登录</button>
-          </div>
+          <button className="header-btn profile-btn" onClick={onProfile}>我的资料</button>
+          <button className="header-btn logout-btn" onClick={onLogout}>退出登录</button>
         </div>
         <h1 className="lobby-title">游戏大厅</h1>
         <p className="lobby-subtitle">云端牌局，随心畅玩</p>
