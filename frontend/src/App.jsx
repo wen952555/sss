@@ -194,8 +194,6 @@ function App() {
     );
   }
 
-  const isInGame = !!gameState.roomId;
-
   return (
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
