@@ -139,7 +139,7 @@ function App() {
 
     switch (currentView) {
       case 'profile':
-        return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} />;
+        return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
       case 'modeSelection':
         return <GameModeSelection gameType={viewingGame} onSelectMode={handleSelectMode} onBack={handleBackToLobby} />;
       case 'lobby':
