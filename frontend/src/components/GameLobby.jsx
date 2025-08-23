@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './GameLobby.css';
 
-const GameLobby = ({ onSelectGame, matchingStatus, onPractice }) => {
+const GameLobby = ({ onSelectGameType, matchingStatus }) => {
   const [announcement, setAnnouncement] = useState('');
   const [onlineCount, setOnlineCount] = useState(null);
 
@@ -31,6 +31,8 @@ const GameLobby = ({ onSelectGame, matchingStatus, onPractice }) => {
     return () => clearInterval(intervalId);
   }, []);
 
+  const isMatching = matchingStatus.thirteen || matchingStatus.eight;
+
   return (
     <div className="lobby-container">
       <header className="lobby-header">
@@ -49,63 +51,29 @@ const GameLobby = ({ onSelectGame, matchingStatus, onPractice }) => {
 
       <main className="game-card-grid">
         {/* 十三张卡片 */}
-        <div className="game-card thirteen-bg">
+        <div
+          className={`game-card thirteen-bg ${isMatching ? 'disabled' : ''}`}
+          onClick={() => !isMatching && onSelectGameType('thirteen')}
+        >
           <div className="game-card-overlay">
             <div className="game-content">
               <h2 className="game-title">经典十三张</h2>
               <p className="game-description">策略与运气的巅峰对决</p>
             </div>
-            <div className="game-actions">
-              <button className="btn btn-secondary"
-                onClick={() => onSelectGame('thirteen', 'normal')}
-                disabled={matchingStatus.thirteen}
-              >
-                {matchingStatus.thirteen ? '匹配中' : '普通场'}
-              </button>
-              <button className="btn btn-primary"
-                onClick={() => onSelectGame('thirteen', 'double')}
-                disabled={matchingStatus.thirteen}
-              >
-                {matchingStatus.thirteen ? '匹配中' : '翻倍场'}
-              </button>
-              <button className="btn btn-secondary"
-                style={{ background: '#7ed6df', color: '#222' }}
-                onClick={() => onPractice('thirteen', 3)}
-                disabled={matchingStatus.thirteen}
-              >
-                试玩
-              </button>
-            </div>
+            {matchingStatus.thirteen && <div className="matching-indicator">匹配中...</div>}
           </div>
         </div>
         {/* 八张卡片 */}
-        <div className="game-card eight-bg">
+        <div
+          className={`game-card eight-bg ${isMatching ? 'disabled' : ''}`}
+          onClick={() => !isMatching && onSelectGameType('eight')}
+        >
           <div className="game-card-overlay">
             <div className="game-content">
               <h2 className="game-title">急速八张</h2>
               <p className="game-description">快节奏的竞技体验</p>
             </div>
-            <div className="game-actions">
-              <button className="btn btn-secondary"
-                onClick={() => onSelectGame('eight', 'normal')}
-                disabled={matchingStatus.eight}
-              >
-                {matchingStatus.eight ? '匹配中' : '普通场'}
-              </button>
-              <button className="btn btn-primary"
-                onClick={() => onSelectGame('eight', 'special')}
-                disabled={matchingStatus.eight}
-              >
-                {matchingStatus.eight ? '匹配中' : '独头场'}
-              </button>
-              <button className="btn btn-secondary"
-                style={{ background: '#7ed6df', color: '#222' }}
-                onClick={() => onPractice('eight', 5)}
-                disabled={matchingStatus.eight}
-              >
-                试玩
-              </button>
-            </div>
+            {matchingStatus.eight && <div className="matching-indicator">匹配中...</div>}
           </div>
         </div>
       </main>

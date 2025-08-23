@@ -54,46 +54,49 @@
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   background: #ffffff;
-  cursor: default;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+.game-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 77, 64, 0.15);
+}
+
+.game-card:active {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 77, 64, 0.12);
+}
+
+.game-card.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.game-card.disabled:hover {
+  transform: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
 .game-card-overlay {
   position: absolute;
   inset: 0;
   background: none;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 25px;
   box-sizing: border-box;
 }
 .game-title { font-size: 1.8rem; font-weight: 600; margin: 0; color: #00796b; }
 .game-description { font-size: 1rem; font-weight: 400; color: #004d40; margin: 5px 0 0 0; }
-.game-actions { display: flex; gap: 15px; margin-top: 20px; }
-.btn {
-  flex: 1;
-  padding: 12px 20px;
-  border-radius: 10px;
-  border: 1px solid #b2dfdb;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all .25s ease;
-  background: #e0f2f1;
-  color: #00796b;
-}
-.btn:disabled { cursor: not-allowed; opacity: 0.6; }
-.btn-primary {
+
+.matching-indicator {
+  align-self: flex-end;
   background: #00796b;
   color: #ffffff;
-}
-.btn-primary:hover:not(:disabled) {
-  background: #004d40;
-}
-.btn-secondary {
-  background: #ffffff;
-  color: #00796b;
-}
-.btn-secondary:hover:not(:disabled) {
-  background: #b2dfdb;
-  color: #004d40;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
