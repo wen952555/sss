@@ -5,117 +5,126 @@ import Card from './Card';
 import Lane from './Lane';
 import './ThirteenGame.css';
 import { getSmartSortedHand } from '../utils/autoSorter';
+import { sortCards } from '../utils/pokerEvaluator';
 import GameResultModal from './GameResultModal';
-import { useGameEngine } from '../hooks/useGameEngine';
 
 const areCardsEqual = (card1, card2) => {
-    if (!card1 || !card2) return false;
-    return card1.rank === card2.rank && card1.suit === card2.suit;
+  if (!card1 || !card2) return false;
+  return card1.rank === card1.rank && card1.suit === card2.suit;
 };
 
 const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
-    const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
-    const { gameStatus, players, hand, gameResult, errorMessage, setGameResult } = useGameEngine(roomId, user.id, onGameEnd);
+  const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
 
-    const [topLane, setTopLane] = useState([]);
-    const [middleLane, setMiddleLane] = useState([]);
-    const [bottomLane, setBottomLane] = useState([]);
-    const [selectedCards, setSelectedCards] = useState([]);
-    const [handCards, setHandCards] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isReady, setIsReady] = useState(false);
+  // --- 本地状态 ---
+  const [topLane, setTopLane] = useState([]);
+  const [middleLane, setMiddleLane] = useState([]);
+  const [bottomLane, setBottomLane] = useState([]);
+  const [selectedCards, setSelectedCards] = useState([]);
+  const [hasDealt, setHasDealt] = useState(false); // 是否已发牌
+  const [isPreparing, setIsPreparing] = useState(false); // 是否已点击准备
+  const [isReady, setIsReady] = useState(false); // 是否已提交理牌
+  const [players, setPlayers] = useState([]);
+  const [gameStatus, setGameStatus] = useState('matching'); // 牌桌状态
+  const [gameResult, setGameResult] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        if (hand) {
-            const initialHand = [...hand.top, ...hand.middle, ...hand.bottom];
-            setHandCards(initialHand);
+  // --- 轮询游戏状态 ---
+  useEffect(() => {
+    if (gameStatus === 'finished') return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/game_status.php?roomId=${roomId}&userId=${user.id}`);
+        const data = await response.json();
+        if (data.success) {
+          setGameStatus(data.gameStatus);
+          setPlayers(data.players);
+
+          // --- 1. 检查自己是否已准备 ---
+          const me = data.players.find(p => p.id === user.id);
+          setIsPreparing(me ? !!me.is_ready : false);
+
+          // --- 2. 检查是否已发牌 ---
+          if (data.hand && !hasDealt) {
+            setTopLane(data.hand.top);
+            setMiddleLane(data.hand.middle);
+            setBottomLane(data.hand.bottom);
+            setHasDealt(true);
+            setIsReady(false); // 理牌还没提交
+          }
+
+          // --- 3. 结果展示 ---
+          if (data.gameStatus === 'finished' && data.result) {
+            setGameResult(data.result);
+            clearInterval(intervalId);
+          }
         }
-    }, [hand]);
+      } catch (error) {
+        setErrorMessage("与服务器断开连接");
+        clearInterval(intervalId);
+      }
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [roomId, user.id, gameStatus, hasDealt]);
 
-    useEffect(() => {
-        const me = players.find(p => p.id === user.id);
-        if (me) {
-            setIsReady(!!me.is_ready);
-        }
-    }, [players, user.id]);
+  // --- 1. 点击准备 ---
+  const handlePrepare = async () => {
+    if (isPreparing) return;
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const resp = await fetch('/api/player_ready.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, roomId })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setIsPreparing(true); // 已准备，等发牌
+      } else {
+        setErrorMessage(data.message || '准备失败');
+      }
+    } catch (err) {
+      setErrorMessage('与服务器通信失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const handleCardClick = (card) => {
-        setSelectedCards(prev =>
-            prev.some(c => areCardsEqual(c, card))
-                ? prev.filter(c => !areCardsEqual(c, card))
-                : [...prev, card]
-        );
-    };
-
-    const handleLaneClick = (targetLane) => {
-        if (selectedCards.length === 0) return;
-
-        let newLanes = {
-            hand: [...handCards],
-            top: [...topLane],
-            middle: [...middleLane],
-            bottom: [...bottomLane],
-        };
-
-        const cardsToMove = [...selectedCards];
-        setSelectedCards([]);
-
-        for (const card of cardsToMove) {
-            newLanes.hand = newLanes.hand.filter(c => !areCardsEqual(c, card));
-            newLanes.top = newLanes.top.filter(c => !areCardsEqual(c, card));
-            newLanes.middle = newLanes.middle.filter(c => !areCardsEqual(c, card));
-            newLanes.bottom = newLanes.bottom.filter(c => !areCardsEqual(c, card));
-        }
-
-        if (targetLane === 'hand') {
-            newLanes.hand = [...newLanes.hand, ...cardsToMove];
-        } else {
-            const currentLaneSize = newLanes[targetLane].length;
-            const limit = LANE_LIMITS[targetLane];
-            if (currentLaneSize + cardsToMove.length > limit) {
-                setSelectedCards(cardsToMove);
-                return;
-            }
-            newLanes[targetLane] = [...newLanes[targetLane], ...cardsToMove];
-        }
-
-        setHandCards(newLanes.hand);
-        setTopLane(newLanes.top);
-        setMiddleLane(newLanes.middle);
-        setBottomLane(newLanes.bottom);
-    };
-
-    const handleConfirm = async () => {
-        if (isLoading || isReady) return;
-        if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
-            setErrorMessage(`牌道数量错误！`);
-            return;
-        }
-        setIsLoading(true);
-        setErrorMessage('');
-        try {
-            const payload = {
-                userId: user.id,
-                roomId: roomId,
-                hand: { top: topLane, middle: middleLane, bottom: bottomLane },
-            };
-            const response = await fetch('/api/submit_hand.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            const data = await response.json();
-            if (data.success) {
-                setIsReady(true);
-            } else {
-                setErrorMessage(data.message || '提交失败');
-            }
-        } catch (err) {
-            setErrorMessage('与服务器通信失败');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  // --- 2. 理牌提交 ---
+  const handleConfirm = async () => {
+    if (isLoading || isReady) return;
+    if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
+      setErrorMessage(`牌道数量错误！`);
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const payload = {
+        userId: user.id,
+        roomId: roomId,
+        hand: { top: topLane, middle: middleLane, bottom: bottomLane },
+      };
+      const response = await fetch('/api/player_ready.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setIsReady(true);
+      } else {
+        setErrorMessage(data.message || '提交失败');
+      }
+    } catch (err) {
+      setErrorMessage('与服务器通信失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // --- 自动理牌 ---
   const handleAutoSort = () => {
@@ -176,28 +185,11 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
           <button onClick={onBackToLobby} className="table-quit-btn">退出游戏</button>
           <div className="table-score-box">{gameMode === 'double' ? '十三张翻倍场' : '十三张普通场'}</div>
         </div>
-        <div
-          className="players-status-bar"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-            gap: '10px',
-            padding: '10px'
-          }}
-        >
+        <div className="players-status-bar">
           {players.map(p => (
-            <div
-              key={p.id}
-              className={`player-status-item ${p.is_ready ? 'ready' : ''} ${p.id === user.id ? 'you' : ''}`}
-              style={{
-                background: 'rgba(0,0,0,0.3)',
-                borderRadius: '8px',
-                padding: '10px',
-                textAlign: 'center'
-              }}
-            >
-              <span className="player-name" style={{display: 'block', fontWeight: 'bold'}}>{p.id === user.id ? `你` : `玩家 ${p.phone.slice(-4)}`}</span>
-              <span className="status-text" style={{fontSize: '0.9em'}}>{p.is_ready ? '已提交' : '理牌中...'}</span>
+            <div key={p.id} className={`player-status-item ${p.is_ready ? 'ready' : ''} ${p.id === user.id ? 'you' : ''}`}>
+              <span className="player-name">{p.id === user.id ? `你` : `玩家 ${p.phone.slice(-4)}`}</span>
+              <span className="status-text">{p.is_ready ? '已提交' : '理牌中...'}</span>
             </div>
           ))}
         </div>

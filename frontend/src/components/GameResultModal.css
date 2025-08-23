@@ -9,34 +9,30 @@
   max-height: 90vh;
   background: linear-gradient(120deg, #23243c 0%, #171730 80%);
   border-radius: 28px;
-  border: 1px solid #00f6ff;
-  box-shadow: 0 0 20px #00f6ff;
+  box-shadow: 0 12px 45px rgba(20,20,40,0.25);
   color: #e3e6ff;
 }
 .game-result-grid-item {
-  background: rgba(0, 246, 255, 0.1);
-  border: 1px solid #00f6ff;
+  background: #171730;
   border-radius: 18px;
   padding: 12px;
   box-shadow: 0 4px 15px rgba(20,20,40,0.09);
 }
 .close-button {
   padding: 14px 0;
-  border: 1px solid #ff0096;
+  border: none;
   border-radius: 12px;
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
-  background: rgba(255, 0, 150, 0.1);
-  color: #ff0096;
+  background: linear-gradient(45deg, #6a82fb, #fc5c7d);
+  color: white;
   margin-top: 5px;
   transition: all 0.2s;
 }
 .close-button:hover {
-  background: #ff0096;
-  color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 0 15px #ff0096;
+  box-shadow: 0 6px 20px #6a82fb44;
 }
 .result-player-name {
   color: #89f0ff;

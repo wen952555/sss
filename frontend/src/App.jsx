@@ -7,7 +7,8 @@ import UserProfile from './components/UserProfile';
 import TransferPoints from './components/TransferPoints';
 import ThirteenGame from './components/ThirteenGame';
 import EightCardGame from './components/EightCardGame';
-import ModeSelection from './components/ModeSelection';
+import PracticeThirteenGame from './components/PracticeThirteenGame';
+import PracticeEightCardGame from './components/PracticeEightCardGame';
 import './App.css';
 import { Browser } from '@capacitor/browser';
 
@@ -45,10 +46,13 @@ function App() {
   const [user, setUser] = useState(null);
   const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null });
   const [currentView, setCurrentView] = useState('lobby');
-  const [selectedGameType, setSelectedGameType] = useState(null);
+  // --- 独立匹配状态 ---
   const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, eight: false });
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
+  // 试玩模式相关
+  const [practiceMode, setPracticeMode] = useState(false);
+  const [practiceConfig, setPracticeConfig] = useState(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -70,17 +74,13 @@ function App() {
     localStorage.removeItem('user');
     setUser(null);
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
+    setPracticeMode(false);
+    setPracticeConfig(null);
     setMatchingStatus({ thirteen: false, eight: false });
-    setCurrentView('lobby');
-    setSelectedGameType(null);
   };
 
-  const handleSelectGame = (gameType) => {
-    setSelectedGameType(gameType);
-    setCurrentView('modeSelection');
-  };
-
-  const handleSelectMode = async (gameType, gameMode) => {
+  // --- 独立匹配入口 ---
+  const handleSelectGame = async (gameType, gameMode) => {
     if (matchingStatus[gameType] || !user) return;
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
     setGameState({ ...gameState, gameType, gameMode, error: null });
@@ -89,7 +89,6 @@ function App() {
       const data = await response.json();
       if (data.success && data.roomId) {
         setGameState({ gameType: gameType, gameMode: gameMode, roomId: data.roomId, error: null });
-        setCurrentView('game');
       } else {
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
         setGameState({ ...gameState, error: data.message || '匹配失败，请重试' });
@@ -100,6 +99,7 @@ function App() {
     }
   };
 
+  // --- 匹配轮询，仅针对当前游戏 ---
   useEffect(() => {
     const currentGame = gameState.gameType;
     if (!currentGame || !matchingStatus[currentGame] || !user) return;
@@ -113,7 +113,7 @@ function App() {
         clearInterval(intervalId);
         return;
       }
-      await handleSelectMode(currentGame, gameState.gameMode);
+      await handleSelectGame(currentGame, gameState.gameMode);
     }, 2000);
     return () => clearInterval(intervalId);
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
@@ -122,7 +122,8 @@ function App() {
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
     setCurrentView('lobby');
     setMatchingStatus({ thirteen: false, eight: false });
-    setSelectedGameType(null);
+    setPracticeMode(false);
+    setPracticeConfig(null);
   };
 
   const handleUpdate = async () => {
@@ -148,8 +149,10 @@ function App() {
     setCurrentView('lobby');
   };
 
+  const isInGame = !!gameState.roomId;
+
   const renderMainContent = () => {
-    if (currentView === 'game' && gameState.roomId) {
+    if (isInGame) {
       const gameProps = {
         roomId: gameState.roomId,
         gameMode: gameState.gameMode,
@@ -160,14 +163,14 @@ function App() {
       if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
       if (gameState.gameType === 'eight') return <EightCardGame {...gameProps} />;
     }
-
-    if (currentView === 'modeSelection' && selectedGameType) {
-        return <ModeSelection gameType={selectedGameType} onSelectMode={handleSelectMode} onBack={handleBackToLobby} />;
+    if (practiceMode && practiceConfig && user) {
+      if (practiceConfig.gameType === 'thirteen')
+        return <PracticeThirteenGame aiCount={practiceConfig.aiCount} onBackToLobby={handlePracticeEnd} user={user} />;
+      if (practiceConfig.gameType === 'eight')
+        return <PracticeEightCardGame aiCount={practiceConfig.aiCount} onBackToLobby={handlePracticeEnd} user={user} />;
     }
-
     if (gameState.error) return <p className="error-message">{gameState.error}</p>;
     if (showTransfer && user) return <TransferPoints fromId={user.id} onClose={() => setShowTransfer(false)} onSuccess={handleTransferSuccess} />;
-
     switch (currentView) {
       case 'profile': return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} />;
       case 'lobby':
@@ -176,6 +179,7 @@ function App() {
           <GameLobby
             onSelectGame={handleSelectGame}
             matchingStatus={matchingStatus}
+            onPractice={handlePracticeStart}
           />
         );
     }
@@ -190,10 +194,12 @@ function App() {
     );
   }
 
+  const isInGame = !!gameState.roomId;
+
   return (
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
-      {!isInGame && !practiceMode && (
+      {!isInGame && (
         <TopBanner user={user} onLobby={() => { setCurrentView('lobby'); handleBackToLobby(); }} onProfile={() => setCurrentView('profile')} onLogout={handleLogout} />
       )}
       <main className="app-main">

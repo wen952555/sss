@@ -5,17 +5,17 @@
   width: 100%; max-width: 450px;
   background: linear-gradient(120deg, #23243c 0%, #171730 80%);
   border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(20, 20, 40, 0.20);
-  padding: 25px 20px; color: #e3e6ff;
+  padding: 35px 25px; color: #e3e6ff;
 }
 .user-profile-panel h2 {
-  text-align: center; font-size: 1.6rem; margin: 0 0 25px 0;
+  text-align: center; font-size: 1.8rem; margin: 0 0 35px 0;
   color: #89f0ff; text-shadow: 0 0 8px #23243c;
 }
-.profile-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; font-size: 1rem; border-bottom: 1px solid #34365c; }
+.profile-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; font-size: 1rem; border-bottom: 1px solid #34365c; }
 .profile-item:last-of-type { border-bottom: none; }
 .profile-item-label { font-weight: 500; color: #c3c8e6; }
 .profile-item-value { font-weight: 400; color: #e3e6ff; }
-.user-profile-btns { margin-top: 30px; display: flex; flex-direction: column; gap: 12px; }
+.user-profile-btns { margin-top: 40px; display: flex; flex-direction: column; gap: 15px; }
 .user-profile-btns button {
   width: 100%; min-height: 48px; border-radius: 12px; border: none;
   font-size: 1.05rem; font-weight: bold; cursor: pointer; transition: all 0.2s ease;

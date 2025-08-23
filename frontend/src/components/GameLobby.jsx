@@ -56,10 +56,24 @@ const GameLobby = ({ onSelectGame, matchingStatus, onPractice }) => {
               <p className="game-description">策略与运气的巅峰对决</p>
             </div>
             <div className="game-actions">
-              <button className="btn btn-primary"
-                onClick={() => onSelectGame('thirteen')}
+              <button className="btn btn-secondary"
+                onClick={() => onSelectGame('thirteen', 'normal')}
+                disabled={matchingStatus.thirteen}
               >
-                进入游戏
+                {matchingStatus.thirteen ? '匹配中' : '普通场'}
+              </button>
+              <button className="btn btn-primary"
+                onClick={() => onSelectGame('thirteen', 'double')}
+                disabled={matchingStatus.thirteen}
+              >
+                {matchingStatus.thirteen ? '匹配中' : '翻倍场'}
+              </button>
+              <button className="btn btn-secondary"
+                style={{ background: '#7ed6df', color: '#222' }}
+                onClick={() => onPractice('thirteen', 3)}
+                disabled={matchingStatus.thirteen}
+              >
+                试玩
               </button>
             </div>
           </div>
@@ -72,10 +86,24 @@ const GameLobby = ({ onSelectGame, matchingStatus, onPractice }) => {
               <p className="game-description">快节奏的竞技体验</p>
             </div>
             <div className="game-actions">
-              <button className="btn btn-primary"
-                onClick={() => onSelectGame('eight')}
+              <button className="btn btn-secondary"
+                onClick={() => onSelectGame('eight', 'normal')}
+                disabled={matchingStatus.eight}
               >
-                进入游戏
+                {matchingStatus.eight ? '匹配中' : '普通场'}
+              </button>
+              <button className="btn btn-primary"
+                onClick={() => onSelectGame('eight', 'special')}
+                disabled={matchingStatus.eight}
+              >
+                {matchingStatus.eight ? '匹配中' : '独头场'}
+              </button>
+              <button className="btn btn-secondary"
+                style={{ background: '#7ed6df', color: '#222' }}
+                onClick={() => onPractice('eight', 5)}
+                disabled={matchingStatus.eight}
+              >
+                试玩
               </button>
             </div>
           </div>
