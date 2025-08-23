@@ -116,9 +116,6 @@ try {
         $stmt->close();
     }
 
-    // Short wait for other human players
-    sleep(2);
-
     // AI Fill Logic
     if ($gameMode === 'normal' || $gameMode === 'double') {
         fillWithAI($conn, $roomId, $gameType, $playersNeeded);
