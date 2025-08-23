@@ -142,69 +142,60 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
     onBackToLobby();
   };
 
-  // --- 未发牌时 UI（准备区） ---
+  // --- UI Rendering ---
+  const renderPlayerStatus = () => (
+    <div className="players-status-container">
+      {players.map(p => (
+        <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
+          <div className="player-avatar">{p.phone.slice(-2)}</div>
+          <div className="player-info">
+            <div className="player-name">{p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`}</div>
+            <div className="player-ready-text">{isPreparing ? (p.is_ready ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   if (!hasDealt) {
     return (
-      <div className="table-root">
-        <div className="table-panel">
-          <div className="table-top-bar">
-            <button onClick={onBackToLobby} className="table-quit-btn">退出游戏</button>
-            <div className="table-score-box">十三张</div>
-          </div>
-          <div className="players-status-bar">
-            {players.map(p => (
-              <div key={p.id} className={`player-status-item ${p.is_ready ? 'ready' : ''} ${p.id === user.id ? 'you' : ''}`}>
-                <span className="player-name">{p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`}</span>
-                <span className="status-text">{p.is_ready ? '已准备' : '未准备'}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ textAlign: 'center', margin: '24px 0', fontSize: '1.25rem', color: '#3b3b8e' }}>
-            等待所有玩家准备后开始游戏...
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            {!isPreparing ? (
-              <button className="action-btn green" onClick={handlePrepare} disabled={isLoading}>
-                {isLoading ? '准备中...' : '点击准备'}
-              </button>
-            ) : (
-              <div style={{ color: '#27ae60', fontWeight: 'bold' }}>你已准备，等待其他玩家...</div>
-            )}
-          </div>
-          {errorMessage && <p className="error-message">{errorMessage}</p>}
+      <div className="game-table-container pre-deal">
+        <div className="game-table-header">
+          <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
+          <div className="game-table-title">十三张 {gameMode === 'double' ? '翻倍场' : '普通场'}</div>
+        </div>
+        <div className="pre-deal-content">
+          {renderPlayerStatus()}
+          <div className="waiting-text">等待玩家准备...</div>
+          {!isPreparing && (
+            <button className="table-action-btn confirm-btn" onClick={handlePrepare} disabled={isLoading}>
+              {isLoading ? '请稍候...' : '点击准备'}
+            </button>
+          )}
+          {errorMessage && <p className="error-text">{errorMessage}</p>}
         </div>
       </div>
     );
   }
 
-  // --- 已发牌后，显示理牌区 ---
   return (
-    <div className="table-root">
-      <div className="table-panel">
-        <div className="table-top-bar">
-          <button onClick={onBackToLobby} className="table-quit-btn">退出游戏</button>
-          <div className="table-score-box">{gameMode === 'double' ? '十三张翻倍场' : '十三张普通场'}</div>
-        </div>
-        <div className="players-status-bar">
-          {players.map(p => (
-            <div key={p.id} className={`player-status-item ${p.is_ready ? 'ready' : ''} ${p.id === user.id ? 'you' : ''}`}>
-              <span className="player-name">{p.id === user.id ? `你` : `玩家 ${p.phone.slice(-4)}`}</span>
-              <span className="status-text">{p.is_ready ? '已提交' : '理牌中...'}</span>
-            </div>
-          ))}
-        </div>
-        <div className="table-lanes-area">
-          <Lane title="头道" cards={topLane} onCardClick={null} onLaneClick={null} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
-          <Lane title="中道" cards={middleLane} onCardClick={null} onLaneClick={null} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
-          <Lane title="尾道" cards={bottomLane} onCardClick={null} onLaneClick={null} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
-        </div>
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
-        <div className="table-actions-bar">
-          <button onClick={handleAutoSort} className="action-btn orange" disabled={isReady}>自动理牌</button>
-          <button onClick={handleConfirm} disabled={isLoading || isReady} className="action-btn green">
-            {isReady ? '等待其他玩家...' : (isLoading ? '提交中...' : '确认牌型')}
-          </button>
-        </div>
+    <div className="game-table-container">
+      <div className="game-table-header">
+        <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
+        <div className="game-table-title">十三张 {gameMode === 'double' ? '翻倍场' : '普通场'}</div>
+      </div>
+      {renderPlayerStatus()}
+      <div className="lanes-container">
+        <Lane title="头道" cards={topLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
+        <Lane title="中道" cards={middleLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
+        <Lane title="尾道" cards={bottomLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
+      </div>
+      {errorMessage && <p className="error-text">{errorMessage}</p>}
+      <div className="game-table-footer">
+        <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isReady}>自动理牌</button>
+        <button onClick={handleConfirm} disabled={isLoading || isReady} className="table-action-btn confirm-btn">
+          {isReady ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
+        </button>
       </div>
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
     </div>
