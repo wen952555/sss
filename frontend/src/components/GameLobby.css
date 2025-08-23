@@ -1,157 +1,32 @@
-/* Cyberpunk Neon Theme for Game Lobby */
 .lobby-container {
-    width: 100%;
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start; /* 从顶部开始 */
-    padding: 20px;
-    box-sizing: border-box;
-    background-color: #0d0d2b; /* 深蓝紫色背景 */
-    color: #e0e0ff;
+  width: 100%; min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px 20px; box-sizing: border-box; position: relative; overflow: hidden; color: #f5f6fa;
+  background: linear-gradient(135deg, #23243c 0%, #171730 80%, #121223 100%);
 }
-
-.lobby-header {
-    text-align: center;
-    margin-bottom: 25px;
-    padding-top: 10px;
-}
-
-.lobby-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #00f6ff; /* 霓虹青色 */
-    text-shadow: 0 0 5px #00f6ff, 0 0 10px #00f6ff, 0 0 20px #00f6ff, 0 0 40px #23243c;
-    margin: 0;
-}
-
-.lobby-subtitle {
-    font-size: 1rem;
-    color: #a9a9c4;
-    margin-top: 5px;
-    letter-spacing: 1px;
-}
-
+.lobby-header { text-align: center; margin-bottom: 30px; }
+.lobby-title { font-size: 2.8rem; font-weight: 700; margin: 0; color: #89f0ff; text-shadow: 0 4px 15px #23243c; }
+.lobby-subtitle { font-size: 1.1rem; font-weight: 300; color: #c3c8e6; margin-top: 5px; }
 .announcement-banner {
-    width: 100%;
-    max-width: 550px;
-    padding: 12px 18px;
-    background: rgba(255, 0, 150, 0.1); /* 洋红色半透明背景 */
-    border: 1px solid rgba(255, 0, 150, 0.5);
-    border-radius: 10px;
-    color: #ff0096; /* 洋红色 */
-    font-weight: 500;
-    text-align: center;
-    margin-bottom: 25px;
-    box-shadow: 0 0 10px rgba(255, 0, 150, 0.3);
+  width: 100%; max-width: 500px; padding: 12px 20px;
+  background: linear-gradient(90deg, #fc5c7d22 0%, #6a82fb22 100%);
+  border-radius: 12px; color: #fc5c7d; font-weight: 500; text-align: center; margin-bottom: 30px;
 }
-
-.game-card-grid {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 25px;
-}
-
+.game-card-grid { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 30px; }
 .game-card {
-    width: 100%;
-    max-width: 550px;
-    height: 230px;
-    border-radius: 15px;
-    position: relative;
-    overflow: hidden;
-    background-size: cover;
-    background-position: center;
-    border: 2px solid #00f6ff;
-    box-shadow: 0 0 15px #00f6ff, inset 0 0 15px #00f6ff;
-    transition: all 0.3s ease;
+  width: 100%; max-width: 500px; height: 220px; border-radius: 20px; position: relative; overflow: hidden;
+  box-shadow: 0 10px 40px rgba(20,20,40,0.35); background: linear-gradient(120deg, #23243c 0%, #171730 80%);
+  cursor: default;
 }
-
-.game-card:hover {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 0 25px #00f6ff, inset 0 0 25px #00f6ff;
-}
-
-.thirteen-bg {
-    background-image: url('/cards/background_thirteen.jpg'); /* 替换为合适的背景图 */
-}
-
-.eight-bg {
-    background-image: url('/cards/background_eight.jpg'); /* 替换为合适的背景图 */
-}
-
-.game-card-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(13, 13, 43, 0.95) 20%, rgba(13, 13, 43, 0.3) 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-.game-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
-    color: #e0e0ff;
-    text-shadow: 0 0 8px #ff0096;
-}
-
-.game-description {
-    font-size: 1rem;
-    color: #a9a9c4;
-    margin: 5px 0 0 0;
-}
-
-.game-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 18px;
-}
-
+.game-card-overlay { position: absolute; inset: 0; background: none; display: flex; flex-direction: column; justify-content: flex-end; padding: 25px; box-sizing: border-box; }
+.game-title { font-size: 1.8rem; font-weight: 600; margin: 0; color: #89f0ff; }
+.game-description { font-size: 1rem; font-weight: 300; color: #c3c8e6; margin: 5px 0 0 0; }
+.game-actions { display: flex; gap: 15px; margin-top: 20px; }
 .btn {
-    flex-grow: 1;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #00f6ff;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all .2s ease;
-    background: rgba(0, 246, 255, 0.1);
-    color: #00f6ff;
-    text-shadow: 0 0 5px #00f6ff;
+  flex: 1; padding: 12px 20px; border-radius: 10px; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all .25s ease;
+  background: linear-gradient(45deg, #42436c 0%, #1a1a3e 100%); color: #e3e6ff;
 }
-
-.btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    border-color: #a9a9c4;
-    color: #a9a9c4;
-    text-shadow: none;
-    background: rgba(169, 169, 196, 0.1);
-}
-
-.btn:hover:not(:disabled) {
-    background: #00f6ff;
-    color: #0d0d2b;
-    text-shadow: none;
-    box-shadow: 0 0 15px #00f6ff;
-}
-
-.btn-primary {
-    border-color: #ff0096;
-    background: rgba(255, 0, 150, 0.1);
-    color: #ff0096;
-    text-shadow: 0 0 5px #ff0096;
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: #ff0096;
-    color: #fff;
-    text-shadow: none;
-    box-shadow: 0 0 15px #ff0096;
-}
+.btn:disabled { cursor: not-allowed; opacity: 0.6; }
+.btn-primary { background: linear-gradient(45deg, #fc5c7d 0%, #6a82fb 100%); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: linear-gradient(45deg, #89f0ff 0%, #fc5c7d 100%); color: #23243c; }
+.btn-secondary { background: #34365c; color: #89f0ff; }
+.btn-secondary:hover:not(:disabled) { background: #89f0ff; color: #23243c; }

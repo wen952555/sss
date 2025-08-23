@@ -2,22 +2,36 @@
 header("Content-Type: application/json; charset=UTF-8");
 require_once 'db_connect.php';
 
-require_once '../utils/GameUtils.php';
+// 发牌逻辑
+function dealCards($gameType, $playerCount) {
+    $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
+    $suits = ['spades', 'hearts', 'clubs', 'diamonds'];
+    $deck = [];
+    foreach ($suits as $suit) foreach ($ranks as $rank) $deck[] = ['rank'=>$rank, 'suit'=>$suit];
+    shuffle($deck);
+    $cards_per_player = $gameType === 'eight' ? 8 : 13;
+    $all_hands = [];
+    for ($i=0; $i<$playerCount; $i++) {
+        $hand = array_slice($deck, $i*$cards_per_player, $cards_per_player);
+        if ($gameType === 'eight') {
+            $all_hands[$i] = ['top'=>[], 'middle'=>$hand, 'bottom'=>[]];
+        } else {
+            usort($hand, function($a, $b)use($ranks){return array_search($b['rank'],$ranks)-array_search($a['rank'],$ranks);});
+            $all_hands[$i] = [
+                'top'=>array_slice($hand,10,3),
+                'middle'=>array_slice($hand,5,5),
+                'bottom'=>array_slice($hand,0,5),
+            ];
+        }
+    }
+    return $all_hands;
+}
 
 $gameType = $_GET['gameType'] ?? 'thirteen';
 $gameMode = $_GET['gameMode'] ?? 'normal';
 $userId = (int)($_GET['userId'] ?? 0);
 if (!$userId) { http_response_code(400); echo json_encode(['success'=>false,'message'=>'缺少用户ID。']); exit; }
-
-if ($gameType === 'thirteen') {
-    if ($gameMode === 'multiplayer') {
-        $playersNeeded = 6; // Multiplayer mode for 6 players
-    } else {
-        $playersNeeded = 4;
-    }
-} else {
-    $playersNeeded = 2;
-}
+$playersNeeded = $gameType === 'thirteen' ? 4 : 2;
 
 $conn->begin_transaction();
 try {
@@ -63,7 +77,7 @@ try {
 
     // --- 人满时发牌并切换状态 ---
     if ($currentPlayers == $playersNeeded) {
-        $hands = dealCards($gameType, $playersNeeded, $gameMode);
+        $hands = dealCards($gameType, $playersNeeded);
         $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id=? ORDER BY id ASC");
         $stmt->bind_param("i", $roomId);
         $stmt->execute();

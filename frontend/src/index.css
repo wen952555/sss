@@ -9,10 +9,11 @@ html, body, #root {
   background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
   font-family: 'Noto Sans SC', 'Arial', sans-serif;
   overscroll-behavior: none;
+  overflow: hidden;
 }
 
 body {
-  background: green;
+  background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
 }
 
 body::before { display: none; }

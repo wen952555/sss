@@ -5,7 +5,7 @@
   display: flex; flex-direction: column;
   align-items: center;
   background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
-  color: #f5f6fa; padding: 0; box-sizing: border-box;
+  color: #f5f6fa; padding: 0; box-sizing: border-box; overflow: hidden;
 }
 
 .app-main {
@@ -16,7 +16,7 @@
   color: #f5f6fa;
   border-radius: 18px;
   box-shadow: 0 4px 32px rgba(20,20,40,0.25);
-  padding: 10px 0; margin-top: 10px;
+  padding: 20px 0; margin-top: 16px;
 }
 
 .top-banner {
@@ -82,31 +82,3 @@
 .update-btn { background: #89f0ff; color: #23243c; font-weight: bold; }
 .update-btn:hover { background: #6ad6e2; color: #23243c; box-shadow: 0 8px 24px #89f0ff44; }
 .error-message { color: #ff6b81; background: #23243c; border-radius: 8px; padding: 10px; font-weight: bold; text-align: center; margin-top: 10px; }
-
-@media (max-width: 480px) {
-  .app-main {
-    padding: 5px 0;
-    margin-top: 5px;
-    border-radius: 10px;
-  }
-  .top-banner {
-    padding: 12px;
-    border-radius: 10px;
-  }
-  .banner-title {
-    font-size: 1.2rem;
-  }
-  .banner-actions {
-    gap: 8px;
-  }
-  .action-button, .banner-btn {
-    padding: 10px;
-    font-size: 0.9rem;
-  }
-  .modal-content {
-    padding: 20px;
-  }
-  .modal-content h3 {
-    font-size: 1.1rem;
-  }
-}
