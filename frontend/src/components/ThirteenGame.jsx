@@ -1,5 +1,3 @@
-// --- START OF FILE frontend/src/components/ThirteenGame.jsx (准备后发牌版) ---
-
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
@@ -203,5 +201,3 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
 };
 
 export default ThirteenGame;
-
-// --- END OF FILE frontend/src/components/ThirteenGame.jsx (准备后发牌版) ---
