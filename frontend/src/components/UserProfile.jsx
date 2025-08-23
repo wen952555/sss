@@ -2,10 +2,11 @@
 import React from 'react';
 import './UserProfile.css';
 
-const UserProfile = ({ userId, user, onLogout, onTransferClick }) => {
+const UserProfile = ({ userId, user, onLogout, onTransferClick, onBack }) => {
   return (
     <div className="user-profile-container">
       <div className="user-profile-panel">
+        <button className="back-button" onClick={onBack}>&larr; 返回</button>
         <h2>我的资料</h2>
         <div className="profile-item">
           <span className="profile-item-label">ID</span>

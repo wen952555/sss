@@ -2,11 +2,30 @@
   width: 100%; display: flex; justify-content: center;
 }
 .user-profile-panel {
+  position: relative;
   width: 100%; max-width: 450px;
   background: linear-gradient(120deg, #23243c 0%, #171730 80%);
   border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(20, 20, 40, 0.20);
   padding: 35px 25px; color: #e3e6ff;
 }
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: none;
+  border: none;
+  color: #89f0ff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.back-button:hover {
+  text-decoration: underline;
+}
+
 .user-profile-panel h2 {
   text-align: center; font-size: 1.8rem; margin: 0 0 35px 0;
   color: #89f0ff; text-shadow: 0 0 8px #23243c;
