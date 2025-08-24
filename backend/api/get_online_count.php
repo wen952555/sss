@@ -7,7 +7,7 @@ $result = $conn->query("
     SELECT COUNT(DISTINCT rp.user_id) AS online_count
     FROM room_players rp
     JOIN game_rooms gr ON rp.room_id = gr.id
-    WHERE gr.status IN ('matching', 'playing')
+    WHERE gr.status IN ('matching', 'playing') AND rp.is_auto_managed = 0
 ");
 
 if ($result && $row = $result->fetch_assoc()) {
