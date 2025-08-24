@@ -26,9 +26,8 @@ const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
 };
 
 function App() {
-  const [user, setUser] = useState(null); // The permanently logged-in user
-  const [sessionUser, setSessionUser] = useState(null); // User for the current game session (can be guest)
-  const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null });
+  const [user, setUser] = useState(null);
+  const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
   const [currentView, setCurrentView] = useState('lobby');
   const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, eight: false });
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
@@ -38,11 +37,7 @@ function App() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const loggedInUser = JSON.parse(storedUser);
-      setUser(loggedInUser);
-      setSessionUser(loggedInUser);
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
   const updateUserData = (newUser) => {
@@ -54,15 +49,13 @@ function App() {
     const fullUserData = { id: userId, ...userData };
     localStorage.setItem('user', JSON.stringify(fullUserData));
     setUser(fullUserData);
-    setSessionUser(fullUserData); // Also set session user on login
     setShowAuthModal(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    setSessionUser(null); // Clear session user on logout
-    setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
+    setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setMatchingStatus({ thirteen: false, eight: false });
     setViewingGame(null);
   };
@@ -76,35 +69,38 @@ function App() {
     const gameType = viewingGame;
     if (matchingStatus[gameType]) return;
 
-    setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
-    setGameState({ ...gameState, gameType, gameMode, error: null });
+    const currentUser = user; // Capture user state at time of call
+    const userId = currentUser ? currentUser.id : 0;
 
-    const userId = user ? user.id : 0;
-    if (userId === 0) setSessionUser(null); // Clear previous guest session if any
+    setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
+    // Reset game state but keep mode info
+    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser });
 
     try {
       const response = await fetch(`/api/match.php?gameType=${gameType}&gameMode=${gameMode}&userId=${userId}`);
       const data = await response.json();
       if (data.success && data.roomId) {
+        let finalGameUser = currentUser;
         if (data.guestUserId) {
-          // This is a guest user, create a temporary session user
-          setSessionUser({ id: data.guestUserId, phone: 'Guest' });
+          finalGameUser = { id: data.guestUserId, phone: 'Guest' };
         }
-        setGameState({ gameType: gameType, gameMode: gameMode, roomId: data.roomId, error: null });
+        // Set all game state in one go to prevent race conditions
+        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: finalGameUser });
         setViewingGame(null);
       } else {
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
-        setGameState({ ...gameState, error: data.message || '匹配失败，请重试' });
+        setGameState(prev => ({ ...prev, error: data.message || '匹配失败，请重试' }));
       }
     } catch (err) {
       setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
-      setGameState({ ...gameState, error: '无法连接到匹配服务器' });
+      setGameState(prev => ({ ...prev, error: '无法连接到匹配服务器' }));
     }
   };
 
+  // This effect is for polling for a match for logged-in users.
   useEffect(() => {
     const currentGame = gameState.gameType;
-    if (!currentGame || !matchingStatus[currentGame] || !sessionUser) return; // Use sessionUser
+    if (!currentGame || !matchingStatus[currentGame] || !user || (user && user.id === 0)) return; // Only for logged in users
     const intervalId = setInterval(async () => {
       if (gameState.roomId) {
         setMatchingStatus(prev => ({ ...prev, [currentGame]: false }));
@@ -118,15 +114,10 @@ function App() {
       await handleSelectMode(gameState.gameMode);
     }, 2000);
     return () => clearInterval(intervalId);
-  }, [matchingStatus, sessionUser, gameState.roomId, gameState.gameType, gameState.gameMode]);
+  }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
 
   const handleBackToLobby = () => {
-    if (user) { // if a real user is logged in
-      setSessionUser(user);
-    } else {
-      setSessionUser(null);
-    }
-    setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
+    setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setCurrentView('lobby');
     setMatchingStatus({ thirteen: false, eight: false });
     setViewingGame(null);
@@ -151,7 +142,7 @@ function App() {
         roomId: gameState.roomId,
         gameMode: gameState.gameMode,
         onBackToLobby: handleBackToLobby,
-        user: sessionUser, // Pass sessionUser to games
+        user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
       };
       if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
