@@ -90,7 +90,6 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
     }
   };
 
-  // --- 2. 理牌提交 ---
   const handleConfirm = async () => {
     if (isLoading || isReady) return;
     if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
@@ -103,9 +102,10 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
       const payload = {
         userId: user.id,
         roomId: roomId,
+        action: 'submit_hand',
         hand: { top: topLane, middle: middleLane, bottom: bottomLane },
       };
-      const response = await fetch('/api/player_ready.php', {
+      const response = await fetch('/api/player_action.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

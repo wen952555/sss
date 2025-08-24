@@ -76,7 +76,36 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
   };
 
   const handleConfirm = async () => {
-    // Similar to ThirteenGame, but only submits middle lane
+    if (isLoading || isReady) return;
+    if (middleLane.length !== LANE_LIMITS.middle) {
+      setErrorMessage(`牌道数量错误！`);
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const payload = {
+        userId: user.id,
+        roomId: roomId,
+        action: 'submit_hand',
+        hand: { top: [], middle: middleLane, bottom: [] },
+      };
+      const response = await fetch('/api/player_action.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setIsReady(true);
+      } else {
+        setErrorMessage(data.message || '提交失败');
+      }
+    } catch (err) {
+      setErrorMessage('与服务器通信失败');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAutoSort = () => {
