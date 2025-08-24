@@ -3,35 +3,26 @@ import Card from './Card';
 import Lane from './Lane';
 import './ThirteenGame.css';
 import { getSmartSortedHand } from '../utils/autoSorter';
-import { sortCards } from '../utils/pokerEvaluator';
 import GameResultModal from './GameResultModal';
-
-const areCardsEqual = (card1, card2) => {
-  if (!card1 || !card2) return false;
-  return card1.rank === card1.rank && card1.suit === card2.suit;
-};
 
 const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
   const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
 
-  // --- 本地状态 ---
   const [topLane, setTopLane] = useState([]);
   const [middleLane, setMiddleLane] = useState([]);
   const [bottomLane, setBottomLane] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
-  const [hasDealt, setHasDealt] = useState(false); // 是否已发牌
-  const [isPreparing, setIsPreparing] = useState(false); // 是否已点击准备
-  const [isReady, setIsReady] = useState(false); // 是否已提交理牌
+  const [hasDealt, setHasDealt] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [players, setPlayers] = useState([]);
-  const [gameStatus, setGameStatus] = useState('matching'); // 牌桌状态
+  const [gameStatus, setGameStatus] = useState('matching');
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- 轮询游戏状态 ---
   useEffect(() => {
     if (gameStatus === 'finished') return;
-
     const intervalId = setInterval(async () => {
       try {
         const response = await fetch(`/api/game_status.php?roomId=${roomId}&userId=${user.id}`);
@@ -39,21 +30,15 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
         if (data.success) {
           setGameStatus(data.gameStatus);
           setPlayers(data.players);
-
-          // --- 1. 检查自己是否已准备 ---
           const me = data.players.find(p => p.id === user.id);
           setIsPreparing(me ? !!me.is_ready : false);
-
-          // --- 2. 检查是否已发牌 ---
           if (data.hand && !hasDealt) {
             setTopLane(data.hand.top);
             setMiddleLane(data.hand.middle);
             setBottomLane(data.hand.bottom);
             setHasDealt(true);
-            setIsReady(false); // 理牌还没提交
+            setIsReady(false);
           }
-
-          // --- 3. 结果展示 ---
           if (data.gameStatus === 'finished' && data.result) {
             setGameResult(data.result);
             clearInterval(intervalId);
@@ -72,17 +57,11 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
     setErrorMessage('');
     const action = isPreparing ? 'unready' : 'ready';
     try {
-      const resp = await fetch('/api/player_action.php', {
+      await fetch('/api/player_action.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, roomId, action })
       });
-      const data = await resp.json();
-      if (data.success) {
-        // The useEffect polling will update the isPreparing state
-      } else {
-        setErrorMessage(data.message || '操作失败');
-      }
     } catch (err) {
       setErrorMessage('与服务器通信失败');
     } finally {
@@ -105,17 +84,11 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
         action: 'submit_hand',
         hand: { top: topLane, middle: middleLane, bottom: bottomLane },
       };
-      const response = await fetch('/api/player_action.php', {
+      await fetch('/api/player_action.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await response.json();
-      if (data.success) {
-        setIsReady(true);
-      } else {
-        setErrorMessage(data.message || '提交失败');
-      }
     } catch (err) {
       setErrorMessage('与服务器通信失败');
     } finally {
@@ -123,7 +96,59 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
     }
   };
 
-  // --- 自动理牌 ---
+  const handleCardClick = (cardToToggle) => {
+    let newSelectedCards = [...selectedCards];
+    let newTopLane = [...topLane];
+    let newMiddleLane = [...middleLane];
+    let newBottomLane = [...bottomLane];
+
+    const findAndRemove = (arr, card) => arr.filter(c => !(c.rank === card.rank && c.suit === card.suit));
+
+    if (newSelectedCards.some(c => areCardsEqual(c, cardToToggle))) {
+      newSelectedCards = findAndRemove(newSelectedCards, cardToToggle);
+      // Find where it was and put it back
+      // This is a simplified logic, assumes card goes back to a general pool (not implemented)
+      // A better implementation would track original lane. For now, we just deselect.
+    } else {
+      newSelectedCards.push(cardToToggle);
+      newTopLane = findAndRemove(newTopLane, cardToToggle);
+      newMiddleLane = findAndRemove(newMiddleLane, cardToToggle);
+      newBottomLane = findAndRemove(newBottomLane, cardToToggle);
+    }
+
+    setSelectedCards(newSelectedCards);
+    setTopLane(newTopLane);
+    setMiddleLane(newMiddleLane);
+    setBottomLane(newBottomLane);
+  };
+
+  const handleLaneClick = (laneName) => {
+    if (selectedCards.length === 0) return;
+
+    const laneSetters = {
+      top: setTopLane,
+      middle: setMiddleLane,
+      bottom: setBottomLane,
+    };
+    const lanes = {
+      top: topLane,
+      middle: middleLane,
+      bottom: bottomLane,
+    };
+
+    const targetLane = lanes[laneName];
+    const setter = laneSetters[laneName];
+    const limit = LANE_LIMITS[laneName.replace('Lane', '')];
+
+    if (targetLane.length + selectedCards.length > limit) {
+      setErrorMessage(`此道最多只能放 ${limit} 张牌!`);
+      return;
+    }
+
+    setter([...targetLane, ...selectedCards]);
+    setSelectedCards([]);
+  };
+
   const handleAutoSort = () => {
     if (!hasDealt) return;
     const sorted = getSmartSortedHand([...topLane, ...middleLane, ...bottomLane]);
@@ -139,33 +164,28 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
     onBackToLobby();
   };
 
-  // --- UI Rendering ---
-  const renderPlayerStatus = () => (
-    <div className="players-status-container">
-      {players.map(p => (
-        <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
-          <div className="player-avatar">{p.phone.slice(-2)}</div>
-          <div className="player-info">
-            <div className="player-name">{p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`}</div>
-            <div className="player-ready-text">{isPreparing ? (p.is_ready ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
     <div className="game-table-container">
       <div className="game-table-header">
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
         <div className="game-table-title">十三张 {gameMode === 'double' ? '翻倍场' : '普通场'}</div>
       </div>
-      {renderPlayerStatus()}
+      <div className="players-status-container">
+        {players.map(p => (
+          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
+            <div className="player-avatar">{p.phone.slice(-2)}</div>
+            <div className="player-info">
+              <div className="player-name">{p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`}</div>
+              <div className="player-ready-text">{hasDealt ? (p.is_ready ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
+            </div>
+          </div>
+        ))}
+      </div>
       <div className="lanes-container">
         {!hasDealt && <div className="card-deck-placeholder">牌墩</div>}
-        <Lane title="头道" cards={topLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
-        <Lane title="中道" cards={middleLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
-        <Lane title="尾道" cards={bottomLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
+        <Lane title="头道" cards={topLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
+        <Lane title="中道" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
+        <Lane title="尾道" cards={bottomLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('bottom')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
       </div>
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">

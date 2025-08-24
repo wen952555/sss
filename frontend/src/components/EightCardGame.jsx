@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
-import './EightCardGame.css'; // Use EightCardGame.css
+import './EightCardGame.css';
 import { getSmartSortedHandForEight } from '../utils/eightCardAutoSorter';
 import GameResultModal from './GameResultModal';
 
 const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
-  const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 }; // 8-card game has one lane
+  const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 };
 
   const [middleLane, setMiddleLane] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
@@ -21,7 +21,6 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
 
   useEffect(() => {
     if (gameStatus === 'finished') return;
-
     const intervalId = setInterval(async () => {
       try {
         const response = await fetch(`/api/game_status.php?roomId=${roomId}&userId=${user.id}`);
@@ -29,16 +28,13 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
         if (data.success) {
           setGameStatus(data.gameStatus);
           setPlayers(data.players);
-
           const me = data.players.find(p => p.id === user.id);
           setIsPreparing(me ? !!me.is_ready : false);
-
           if (data.hand && !hasDealt) {
-            setMiddleLane(data.hand.middle); // 8-card game uses middle lane
+            setMiddleLane(data.hand.middle);
             setHasDealt(true);
             setIsReady(false);
           }
-
           if (data.gameStatus === 'finished' && data.result) {
             setGameResult(data.result);
             clearInterval(intervalId);
@@ -57,17 +53,11 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
     setErrorMessage('');
     const action = isPreparing ? 'unready' : 'ready';
     try {
-      const resp = await fetch('/api/player_action.php', {
+      await fetch('/api/player_action.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, roomId, action })
       });
-      const data = await resp.json();
-      if (data.success) {
-        // The useEffect polling will update the isPreparing state
-      } else {
-        setErrorMessage(data.message || '操作失败');
-      }
     } catch (err) {
       setErrorMessage('与服务器通信失败');
     } finally {
@@ -90,22 +80,47 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
         action: 'submit_hand',
         hand: { top: [], middle: middleLane, bottom: [] },
       };
-      const response = await fetch('/api/player_action.php', {
+      await fetch('/api/player_action.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await response.json();
-      if (data.success) {
-        setIsReady(true);
-      } else {
-        setErrorMessage(data.message || '提交失败');
-      }
     } catch (err) {
       setErrorMessage('与服务器通信失败');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const areCardsEqual = (card1, card2) =>
+    card1 && card2 && card1.rank === card2.rank && card1.suit === card2.suit;
+
+  const handleCardClick = (cardToToggle) => {
+    let newSelectedCards = [...selectedCards];
+    let newMiddleLane = [...middleLane];
+
+    const findAndRemove = (arr, card) => arr.filter(c => !areCardsEqual(c, card));
+
+    if (newSelectedCards.some(c => areCardsEqual(c, cardToToggle))) {
+      newSelectedCards = findAndRemove(newSelectedCards, cardToToggle);
+      newMiddleLane.push(cardToToggle); // Put it back in the only lane
+    } else {
+      newSelectedCards.push(cardToToggle);
+      newMiddleLane = findAndRemove(newMiddleLane, cardToToggle);
+    }
+
+    setSelectedCards(newSelectedCards);
+    setMiddleLane(newMiddleLane);
+  };
+
+  const handleLaneClick = (laneName) => {
+    if (selectedCards.length === 0) return;
+    if (middleLane.length + selectedCards.length > LANE_LIMITS.middle) {
+      setErrorMessage(`此道最多只能放 ${LANE_LIMITS.middle} 张牌!`);
+      return;
+    }
+    setMiddleLane([...middleLane, ...selectedCards]);
+    setSelectedCards([]);
   };
 
   const handleAutoSort = () => {
@@ -121,30 +136,26 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
     onBackToLobby();
   };
 
-  const renderPlayerStatus = () => (
-    <div className="players-status-container">
-      {players.map(p => (
-        <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
-          <div className="player-avatar">{p.phone.slice(-2)}</div>
-          <div className="player-info">
-            <div className="player-name">{p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`}</div>
-            <div className="player-ready-text">{isPreparing ? (p.is_ready ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
     <div className="game-table-container">
       <div className="game-table-header">
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
         <div className="game-table-title">急速八张 {gameMode === 'special' ? '独头场' : '普通场'}</div>
       </div>
-      {renderPlayerStatus()}
+      <div className="players-status-container">
+        {players.map(p => (
+          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
+            <div className="player-avatar">{p.phone.slice(-2)}</div>
+            <div className="player-info">
+              <div className="player-name">{p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`}</div>
+              <div className="player-ready-text">{hasDealt ? (p.is_ready ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
+            </div>
+          </div>
+        ))}
+      </div>
       <div className="lanes-container">
         {!hasDealt && <div className="card-deck-placeholder">牌墩</div>}
-        <Lane title="牌" cards={middleLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
+        <Lane title="牌" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
       </div>
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
