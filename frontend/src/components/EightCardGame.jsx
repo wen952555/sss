@@ -52,8 +52,27 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
     return () => clearInterval(intervalId);
   }, [roomId, user.id, gameStatus, hasDealt]);
 
-  const handlePrepare = async () => {
-    // Similar to ThirteenGame
+  const handleReadyToggle = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+    const action = isPreparing ? 'unready' : 'ready';
+    try {
+      const resp = await fetch('/api/player_action.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, roomId, action })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        // The useEffect polling will update the isPreparing state
+      } else {
+        setErrorMessage(data.message || '操作失败');
+      }
+    } catch (err) {
+      setErrorMessage('与服务器通信失败');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleConfirm = async () => {
@@ -97,11 +116,9 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
         <div className="pre-deal-content">
           {renderPlayerStatus()}
           <div className="waiting-text">等待玩家准备...</div>
-          {!isPreparing && (
-            <button className="table-action-btn confirm-btn" onClick={handlePrepare} disabled={isLoading}>
-              {isLoading ? '请稍候...' : '点击准备'}
-            </button>
-          )}
+          <button className="table-action-btn confirm-btn" onClick={handleReadyToggle} disabled={isLoading}>
+            {isLoading ? '请稍候...' : (isPreparing ? '取消准备' : '点击准备')}
+          </button>
           {errorMessage && <p className="error-text">{errorMessage}</p>}
         </div>
       </div>
