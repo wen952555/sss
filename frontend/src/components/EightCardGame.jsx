@@ -92,6 +92,37 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
     }
   };
 
+  const areCardsEqual = (card1, card2) =>
+    card1 && card2 && card1.rank === card2.rank && card1.suit === card2.suit;
+
+  const handleCardClick = (cardToToggle) => {
+    let newSelectedCards = [...selectedCards];
+    let newMiddleLane = [...middleLane];
+
+    const findAndRemove = (arr, card) => arr.filter(c => !areCardsEqual(c, card));
+
+    if (newSelectedCards.some(c => areCardsEqual(c, cardToToggle))) {
+      newSelectedCards = findAndRemove(newSelectedCards, cardToToggle);
+      newMiddleLane.push(cardToToggle); // Put it back in the only lane
+    } else {
+      newSelectedCards.push(cardToToggle);
+      newMiddleLane = findAndRemove(newMiddleLane, cardToToggle);
+    }
+
+    setSelectedCards(newSelectedCards);
+    setMiddleLane(newMiddleLane);
+  };
+
+  const handleLaneClick = (laneName) => {
+    if (selectedCards.length === 0) return;
+    if (middleLane.length + selectedCards.length > LANE_LIMITS.middle) {
+      setErrorMessage(`此道最多只能放 ${LANE_LIMITS.middle} 张牌!`);
+      return;
+    }
+    setMiddleLane([...middleLane, ...selectedCards]);
+    setSelectedCards([]);
+  };
+
   const handleAutoSort = () => {
     if (!hasDealt) return;
     const sorted = getSmartSortedHandForEight([...middleLane]);
@@ -124,7 +155,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
       </div>
       <div className="lanes-container">
         {!hasDealt && <div className="card-deck-placeholder">牌墩</div>}
-        <Lane title="牌" cards={middleLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
+        <Lane title="牌" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
       </div>
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">

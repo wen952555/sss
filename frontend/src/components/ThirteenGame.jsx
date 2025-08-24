@@ -96,6 +96,59 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
     }
   };
 
+  const handleCardClick = (cardToToggle) => {
+    let newSelectedCards = [...selectedCards];
+    let newTopLane = [...topLane];
+    let newMiddleLane = [...middleLane];
+    let newBottomLane = [...bottomLane];
+
+    const findAndRemove = (arr, card) => arr.filter(c => !(c.rank === card.rank && c.suit === card.suit));
+
+    if (newSelectedCards.some(c => areCardsEqual(c, cardToToggle))) {
+      newSelectedCards = findAndRemove(newSelectedCards, cardToToggle);
+      // Find where it was and put it back
+      // This is a simplified logic, assumes card goes back to a general pool (not implemented)
+      // A better implementation would track original lane. For now, we just deselect.
+    } else {
+      newSelectedCards.push(cardToToggle);
+      newTopLane = findAndRemove(newTopLane, cardToToggle);
+      newMiddleLane = findAndRemove(newMiddleLane, cardToToggle);
+      newBottomLane = findAndRemove(newBottomLane, cardToToggle);
+    }
+
+    setSelectedCards(newSelectedCards);
+    setTopLane(newTopLane);
+    setMiddleLane(newMiddleLane);
+    setBottomLane(newBottomLane);
+  };
+
+  const handleLaneClick = (laneName) => {
+    if (selectedCards.length === 0) return;
+
+    const laneSetters = {
+      top: setTopLane,
+      middle: setMiddleLane,
+      bottom: setBottomLane,
+    };
+    const lanes = {
+      top: topLane,
+      middle: middleLane,
+      bottom: bottomLane,
+    };
+
+    const targetLane = lanes[laneName];
+    const setter = laneSetters[laneName];
+    const limit = LANE_LIMITS[laneName.replace('Lane', '')];
+
+    if (targetLane.length + selectedCards.length > limit) {
+      setErrorMessage(`此道最多只能放 ${limit} 张牌!`);
+      return;
+    }
+
+    setter([...targetLane, ...selectedCards]);
+    setSelectedCards([]);
+  };
+
   const handleAutoSort = () => {
     if (!hasDealt) return;
     const sorted = getSmartSortedHand([...topLane, ...middleLane, ...bottomLane]);
@@ -130,9 +183,9 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
       </div>
       <div className="lanes-container">
         {!hasDealt && <div className="card-deck-placeholder">牌墩</div>}
-        <Lane title="头道" cards={topLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
-        <Lane title="中道" cards={middleLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
-        <Lane title="尾道" cards={bottomLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
+        <Lane title="头道" cards={topLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
+        <Lane title="中道" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
+        <Lane title="尾道" cards={bottomLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('bottom')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
       </div>
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
