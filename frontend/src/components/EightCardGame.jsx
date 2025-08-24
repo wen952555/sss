@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css'; // Use EightCardGame.css
-import { eightCardAutoSort } from '../utils/eightCardAutoSorter';
+import { getSmartSortedHandForEight } from '../utils/eightCardAutoSorter';
 import GameResultModal from './GameResultModal';
 
 const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
@@ -62,9 +62,9 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
 
   const handleAutoSort = () => {
     if (!hasDealt) return;
-    const sorted = eightCardAutoSort([...middleLane]);
+    const sorted = getSmartSortedHandForEight([...middleLane]);
     if (sorted) {
-      setMiddleLane(sorted);
+      setMiddleLane(sorted.middle);
     }
   };
 
