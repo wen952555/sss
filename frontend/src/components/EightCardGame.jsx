@@ -166,6 +166,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
         ) : (
           <>
             <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isReady}>自动理牌</button>
+            <button className="table-action-btn auto-manage-btn">智能托管</button>
             <button onClick={handleConfirm} disabled={isLoading || isReady} className="table-action-btn confirm-btn">
               {isReady ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
             </button>
