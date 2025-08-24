@@ -3,6 +3,7 @@
 header("Content-Type: application/json; charset=UTF-8");
 require_once 'db_connect.php';
 require_once 'utils.php';
+require_once 'scorer.php';
 
 $input = json_decode(file_get_contents('php://input'), true);
 $userId = (int)($input['userId'] ?? 0);
@@ -72,8 +73,66 @@ try {
         $stmt->execute();
         $stmt->close();
 
-        // After submission, you might want to check if all players have submitted
-        // and then transition the game state to 'finished'. This logic can be added here.
+        // Check if all players have submitted their hands
+        $stmt = $conn->prepare("SELECT COUNT(*) as submitted_players FROM room_players WHERE room_id = ? AND submitted_hand IS NOT NULL");
+        $stmt->bind_param("i", $roomId);
+        $stmt->execute();
+        $submittedPlayers = $stmt->get_result()->fetch_assoc()['submitted_players'];
+        $stmt->close();
+
+        $stmt = $conn->prepare("SELECT players_count FROM game_rooms WHERE id = ?");
+        $stmt->bind_param("i", $roomId);
+        $stmt->execute();
+        $playersNeeded = $stmt->get_result()->fetch_assoc()['players_count'];
+        $stmt->close();
+
+        if ($submittedPlayers == $playersNeeded) {
+            // All players have submitted, let's score the game
+            $stmt = $conn->prepare("SELECT user_id, submitted_hand FROM room_players WHERE room_id = ?");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $players_data = [];
+            while($row = $result->fetch_assoc()) {
+                $players_data[] = [
+                    'id' => $row['user_id'],
+                    'hand' => json_decode($row['submitted_hand'], true)
+                ];
+            }
+            $stmt->close();
+
+            // This is a simplified scoring logic. It calculates scores but doesn't handle different game types yet.
+            $scores = [];
+            for ($i = 0; $i < count($players_data); $i++) {
+                $total_score = 0;
+                for ($j = 0; $j < count($players_data); $j++) {
+                    if ($i === $j) continue;
+                    $total_score += calculateSinglePairScore($players_data[$i]['hand'], $players_data[$j]['hand']);
+                }
+                $scores[$players_data[$i]['id']] = $total_score;
+            }
+
+            // Update scores and points
+            foreach($scores as $pId => $score) {
+                $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?");
+                $stmt->bind_param("iii", $score, $roomId, $pId);
+                $stmt->execute();
+                $stmt->close();
+
+                if ($pId > 0) { // Only update points for real users
+                    $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?");
+                    $stmt->bind_param("ii", $score, $pId);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+            }
+
+            // Finish the game
+            $stmt = $conn->prepare("UPDATE game_rooms SET status = 'finished' WHERE id = ?");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $stmt->close();
+        }
     }
 
     $conn->commit();
