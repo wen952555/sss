@@ -1,7 +1,7 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
 require_once 'db_connect.php';
-require_once 'utils.php'; // Contains dealCards() and fillWithAI()
+require_once __DIR__ . '/../utils/utils.php'; // Contains dealCards() and fillWithAI()
 
 $gameType = $_GET['gameType'] ?? 'thirteen';
 $gameMode = $_GET['gameMode'] ?? 'normal';

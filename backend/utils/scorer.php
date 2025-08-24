@@ -158,4 +158,132 @@ function compareSssArea($a, $b, $area) {
     return 0;
 }
 
+
+// --- EIGHT CARD GAME SCORING LOGIC ---
+
+const EIGHT_CARD_HAND_RANK = ['同花顺' => 5, '三条' => 4, '顺子' => 3, '对子' => 2, '高牌' => 1];
+
+function getEightCardHandType($cards) {
+    if (empty($cards)) return '高牌';
+    $n = count($cards);
+    $parsedCards = array_map('parseCard', $cards);
+
+    $ranks = array_map(function($c) { return VALUE_ORDER[$c['rank']]; }, $parsedCards);
+    sort($ranks);
+
+    $suits = array_map(function($c) { return $c['suit']; }, $parsedCards);
+
+    $isFlush = count(array_unique($suits)) === 1;
+    $uniqueRanks = array_unique($ranks);
+    $isStraight = (count($uniqueRanks) === $n) && ($ranks[$n - 1] - $ranks[0] === $n - 1 || $uniqueRanks === [2, 3, 14]);
+
+    if ($isStraight && $isFlush) return '同花顺';
+
+    $rankCounts = array_count_values($ranks);
+    if (in_array(3, $rankCounts)) return '三条';
+    if ($isStraight) return '顺子';
+    if (in_array(2, $rankCounts)) return '对子';
+
+    return '高牌';
+}
+
+function getEightCardStraightValue($cards) {
+    $ranks = array_map(function($c) { return VALUE_ORDER[parseCard($c)['rank']]; }, $cards);
+    sort($ranks);
+    if (in_array(14, $ranks) && in_array(13, $ranks)) return 14;
+    if (in_array(14, $ranks) && in_array(2, $ranks)) return 13.5;
+    return end($ranks);
+}
+
+function compareEightCardSameTypeHands($cardsA, $cardsB) {
+    // This is a simplified comparison, focusing on rank then suit
+    $parsedA = array_map('parseCard', $cardsA);
+    $parsedB = array_map('parseCard', $cardsB);
+
+    usort($parsedA, function($a, $b) {
+        $rankComparison = VALUE_ORDER[$b['rank']] - VALUE_ORDER[$a['rank']];
+        if ($rankComparison !== 0) return $rankComparison;
+        return SUIT_ORDER[$b['suit']] - SUIT_ORDER[$a['suit']];
+    });
+    usort($parsedB, function($a, $b) {
+        $rankComparison = VALUE_ORDER[$b['rank']] - VALUE_ORDER[$a['rank']];
+        if ($rankComparison !== 0) return $rankComparison;
+        return SUIT_ORDER[$b['suit']] - SUIT_ORDER[$a['suit']];
+    });
+
+    for ($i = 0; $i < count($parsedA); $i++) {
+        $rankComparison = VALUE_ORDER[$parsedA[$i]['rank']] - VALUE_ORDER[$parsedB[$i]['rank']];
+        if ($rankComparison !== 0) return $rankComparison;
+    }
+     for ($i = 0; $i < count($parsedA); $i++) {
+        $suitComparison = SUIT_ORDER[$parsedA[$i]['suit']] - SUIT_ORDER[$parsedB[$i]['suit']];
+        if ($suitComparison !== 0) return $suitComparison;
+    }
+
+    return 0;
+}
+
+
+function compareEightCardLanes($laneA, $laneB) {
+    if (empty($laneA) && empty($laneB)) return 0;
+    if (empty($laneA)) return -1;
+    if (empty($laneB)) return 1;
+
+    $typeA = getEightCardHandType($laneA);
+    $typeB = getEightCardHandType($laneB);
+
+    if (EIGHT_CARD_HAND_RANK[$typeA] !== EIGHT_CARD_HAND_RANK[$typeB]) {
+        return EIGHT_CARD_HAND_RANK[$typeA] - EIGHT_CARD_HAND_RANK[$typeB];
+    }
+
+    if ($typeA === '同花顺') {
+        $suitA = SUIT_ORDER[parseCard($laneA[0])['suit']];
+        $suitB = SUIT_ORDER[parseCard($laneB[0])['suit']];
+        if ($suitA !== $suitB) return $suitA - $suitB;
+    }
+
+    if ($typeA === '同花顺' || $typeA === '顺子') {
+        $straightValueA = getEightCardStraightValue($laneA);
+        $straightValueB = getEightCardStraightValue($laneB);
+        if ($straightValueA !== $straightValueB) return $straightValueA - $straightValueB;
+    }
+
+    return compareEightCardSameTypeHands($laneA, $laneB);
+}
+
+function isEightCardFoul($hand) {
+    // Eight card game in this implementation only uses middle lane.
+    // Foul logic might apply differently if rules change.
+    // For now, no foul state is possible with a single lane.
+    return false;
+}
+
+function getEightCardLaneScore($cards, $laneName) {
+    $type = getEightCardHandType($cards);
+    if ($laneName === 'middle') {
+        if ($type === '同花顺') return 10;
+        if ($type === '三条') return 6;
+    }
+    return 1; // Default score for other types
+}
+
+function calculateEightCardSinglePairScore($p1, $p2) {
+    $p1Foul = isEightCardFoul($p1);
+    $p2Foul = isEightCardFoul($p2);
+
+    if ($p1Foul && !$p2Foul) return -3;
+    if (!$p1Foul && $p2Foul) return 3;
+    if ($p1Foul && $p2Foul) return 0;
+
+    $pairScore = 0;
+    // Only middle lane is used in 8-card game
+    $middleComparison = compareEightCardLanes($p1['middle'], $p2['middle']);
+    if ($middleComparison > 0) {
+        $pairScore += getEightCardLaneScore($p1['middle'], 'middle');
+    } elseif ($middleComparison < 0) {
+        $pairScore -= getEightCardLaneScore($p2['middle'], 'middle');
+    }
+
+    return $pairScore;
+}
 ?>
