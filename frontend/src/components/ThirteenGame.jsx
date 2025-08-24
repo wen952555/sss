@@ -202,7 +202,7 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
           </>
         )}
       </div>
-      {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
+      {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} gameType="thirteen" />}
     </div>
   );
 };

@@ -1,9 +1,9 @@
 // --- START OF FILE frontend/src/components/Auth.jsx (FINAL DB VERSION) ---
 
 import React, { useState } from 'react';
-import './Auth.css'; // 确保您有对应的CSS文件
+import './Auth.css';
 
-const Auth = ({ onLoginSuccess }) => {
+const Auth = ({ onLoginSuccess, onClose }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -52,8 +52,9 @@ const Auth = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card glass-panel">
+    <div className="auth-modal-backdrop" onClick={onClose}>
+      <div className="auth-modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="auth-close-btn" onClick={onClose}>&times;</button>
         <h2 className="auth-title">{isLoginView ? '欢迎回来' : '加入我们'}</h2>
         <p className="auth-subtitle">{isLoginView ? '登录以继续游戏' : '创建新账户开始冒险'}</p>
         

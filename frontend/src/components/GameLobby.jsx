@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './GameLobby.css';
 
-const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout }) => {
+const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick }) => {
   const [announcement, setAnnouncement] = useState('');
   const [onlineCount, setOnlineCount] = useState(null);
 
@@ -37,8 +37,14 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
     <div className="lobby-container">
       <header className="lobby-header">
         <div className="lobby-header-top-row">
-          <button className="header-btn profile-btn" onClick={onProfile}>我的资料</button>
-          <button className="header-btn logout-btn" onClick={onLogout}>退出登录</button>
+          {user ? (
+            <>
+              <button className="header-btn profile-btn" onClick={onProfile}>我的资料</button>
+              <button className="header-btn logout-btn" onClick={onLogout}>退出登录</button>
+            </>
+          ) : (
+            <button className="header-btn login-btn" onClick={onLoginClick}>注册/登录</button>
+          )}
         </div>
         <h1 className="lobby-title">游戏大厅</h1>
         <p className="lobby-subtitle">云端牌局，随心畅玩</p>

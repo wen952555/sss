@@ -1,9 +1,9 @@
 <?php
 // Simplified player_action.php
 header("Content-Type: application/json; charset=UTF-8");
-require_once 'db_connect.php';
-require_once 'utils.php';
-require_once 'scorer.php';
+require_once __DIR__ . '/db_connect.php';
+require_once __DIR__ . '/../utils/utils.php';
+require_once __DIR__ . '/../utils/scorer.php';
 
 $input = json_decode(file_get_contents('php://input'), true);
 $userId = (int)($input['userId'] ?? 0);
@@ -101,13 +101,24 @@ try {
             }
             $stmt->close();
 
-            // This is a simplified scoring logic. It calculates scores but doesn't handle different game types yet.
+            // Determine game type to call the correct scorer
+            $stmt = $conn->prepare("SELECT game_type FROM game_rooms WHERE id = ?");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $game_type = $stmt->get_result()->fetch_assoc()['game_type'];
+            $stmt->close();
+
             $scores = [];
             for ($i = 0; $i < count($players_data); $i++) {
                 $total_score = 0;
                 for ($j = 0; $j < count($players_data); $j++) {
                     if ($i === $j) continue;
-                    $total_score += calculateSinglePairScore($players_data[$i]['hand'], $players_data[$j]['hand']);
+
+                    if ($game_type === 'eight') {
+                        $total_score += calculateEightCardSinglePairScore($players_data[$i]['hand'], $players_data[$j]['hand']);
+                    } else { // Default to thirteen (SSS)
+                        $total_score += calculateSinglePairScore($players_data[$i]['hand'], $players_data[$j]['hand']);
+                    }
                 }
                 $scores[$players_data[$i]['id']] = $total_score;
             }

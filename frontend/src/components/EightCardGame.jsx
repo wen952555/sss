@@ -172,7 +172,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
           </>
         )}
       </div>
-      {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
+      {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} gameType="eight" />}
     </div>
   );
 };

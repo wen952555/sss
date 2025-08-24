@@ -27,12 +27,13 @@ const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
 
 function App() {
   const [user, setUser] = useState(null);
-  const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null });
+  const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
   const [currentView, setCurrentView] = useState('lobby');
   const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, eight: false });
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
   const [viewingGame, setViewingGame] = useState(null); // null, 'thirteen', or 'eight'
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -48,12 +49,13 @@ function App() {
     const fullUserData = { id: userId, ...userData };
     localStorage.setItem('user', JSON.stringify(fullUserData));
     setUser(fullUserData);
+    setShowAuthModal(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
+    setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setMatchingStatus({ thirteen: false, eight: false });
     setViewingGame(null);
   };
@@ -65,28 +67,40 @@ function App() {
 
   const handleSelectMode = async (gameMode) => {
     const gameType = viewingGame;
-    if (matchingStatus[gameType] || !user) return;
+    if (matchingStatus[gameType]) return;
+
+    const currentUser = user; // Capture user state at time of call
+    const userId = currentUser ? currentUser.id : 0;
+
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
-    setGameState({ ...gameState, gameType, gameMode, error: null });
+    // Reset game state but keep mode info
+    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser });
+
     try {
-      const response = await fetch(`/api/match.php?gameType=${gameType}&gameMode=${gameMode}&userId=${user.id}`);
+      const response = await fetch(`/api/match.php?gameType=${gameType}&gameMode=${gameMode}&userId=${userId}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        setGameState({ gameType: gameType, gameMode: gameMode, roomId: data.roomId, error: null });
-        setViewingGame(null); // Exit mode selection on success
+        let finalGameUser = currentUser;
+        if (data.guestUserId) {
+          finalGameUser = { id: data.guestUserId, phone: 'Guest' };
+        }
+        // Set all game state in one go to prevent race conditions
+        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: finalGameUser });
+        setViewingGame(null);
       } else {
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
-        setGameState({ ...gameState, error: data.message || '匹配失败，请重试' });
+        setGameState(prev => ({ ...prev, error: data.message || '匹配失败，请重试' }));
       }
     } catch (err) {
       setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
-      setGameState({ ...gameState, error: '无法连接到匹配服务器' });
+      setGameState(prev => ({ ...prev, error: '无法连接到匹配服务器' }));
     }
   };
 
+  // This effect is for polling for a match for logged-in users.
   useEffect(() => {
     const currentGame = gameState.gameType;
-    if (!currentGame || !matchingStatus[currentGame] || !user) return;
+    if (!currentGame || !matchingStatus[currentGame] || !user || (user && user.id === 0)) return; // Only for logged in users
     const intervalId = setInterval(async () => {
       if (gameState.roomId) {
         setMatchingStatus(prev => ({ ...prev, [currentGame]: false }));
@@ -103,7 +117,7 @@ function App() {
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
 
   const handleBackToLobby = () => {
-    setGameState({ gameType: null, gameMode: null, roomId: null, error: null });
+    setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setCurrentView('lobby');
     setMatchingStatus({ thirteen: false, eight: false });
     setViewingGame(null);
@@ -128,7 +142,7 @@ function App() {
         roomId: gameState.roomId,
         gameMode: gameState.gameMode,
         onBackToLobby: handleBackToLobby,
-        user: user,
+        user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
       };
       if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
@@ -151,23 +165,16 @@ function App() {
             user={user}
             onProfile={() => setCurrentView('profile')}
             onLogout={handleLogout}
+            onLoginClick={() => setShowAuthModal(true)}
           />
         );
     }
   };
 
-  if (!user) {
-    return (
-      <>
-        <Auth onLoginSuccess={handleLoginSuccess} />
-        <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
-      </>
-    );
-  }
-
   return (
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
+      {showAuthModal && <Auth onLoginSuccess={handleLoginSuccess} onClose={() => setShowAuthModal(false)} />}
       <main className="app-main">
         {renderMainContent()}
       </main>
