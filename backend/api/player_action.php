@@ -1,9 +1,9 @@
 <?php
+// Simplified player_action.php
 header("Content-Type: application/json; charset=UTF-8");
 require_once 'db_connect.php';
 require_once 'utils.php';
 
-// --- Main Logic ---
 $input = json_decode(file_get_contents('php://input'), true);
 $userId = (int)($input['userId'] ?? 0);
 $roomId = (int)($input['roomId'] ?? 0);
@@ -25,7 +25,7 @@ try {
         $stmt->close();
 
         // Get room info
-        $stmt = $conn->prepare("SELECT game_type, game_mode, players_count FROM game_rooms WHERE id = ?");
+        $stmt = $conn->prepare("SELECT game_type, players_count FROM game_rooms WHERE id = ?");
         $stmt->bind_param("i", $roomId);
         $stmt->execute();
         $room = $stmt->get_result()->fetch_assoc();
@@ -33,15 +33,15 @@ try {
 
         if (!$room) throw new Exception("Room not found.");
 
-        // Check for other idle human players
-        $stmt = $conn->prepare("SELECT COUNT(DISTINCT rp.user_id) as waiting_players FROM room_players rp JOIN game_rooms r ON rp.room_id = r.id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? AND rp.user_id > 0 AND rp.room_id != ?");
-        $stmt->bind_param("ssi", $room['game_type'], $room['game_mode'], $roomId);
+        // Check current number of players in this room
+        $stmt = $conn->prepare("SELECT COUNT(*) as current_players FROM room_players WHERE room_id = ?");
+        $stmt->bind_param("i", $roomId);
         $stmt->execute();
-        $waitingPlayers = $stmt->get_result()->fetch_assoc()['waiting_players'];
+        $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
         $stmt->close();
 
-        if ($waitingPlayers == 0) {
-            // No one else is waiting, fill with AI
+        // If this room is not full, fill it with AI
+        if ($currentPlayers < $room['players_count']) {
             fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
         }
 
@@ -62,6 +62,18 @@ try {
         $stmt->bind_param("ii", $roomId, $userId);
         $stmt->execute();
         $stmt->close();
+    } elseif ($action === 'submit_hand') {
+        $hand = $input['hand'] ?? null;
+        if (!$hand) throw new Exception("Hand data is missing.");
+        $handJson = json_encode($hand);
+
+        $stmt = $conn->prepare("UPDATE room_players SET submitted_hand = ?, is_ready = 1 WHERE room_id = ? AND user_id = ?");
+        $stmt->bind_param("sii", $handJson, $roomId, $userId);
+        $stmt->execute();
+        $stmt->close();
+
+        // After submission, you might want to check if all players have submitted
+        // and then transition the game state to 'finished'. This logic can be added here.
     }
 
     $conn->commit();
