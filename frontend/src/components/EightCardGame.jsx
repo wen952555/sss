@@ -135,25 +135,6 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
     </div>
   );
 
-  if (!hasDealt) {
-    return (
-      <div className="game-table-container pre-deal">
-        <div className="game-table-header">
-          <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
-          <div className="game-table-title">急速八张 {gameMode === 'special' ? '独头场' : '普通场'}</div>
-        </div>
-        <div className="pre-deal-content">
-          {renderPlayerStatus()}
-          <div className="waiting-text">等待玩家准备...</div>
-          <button className="table-action-btn confirm-btn" onClick={handleReadyToggle} disabled={isLoading}>
-            {isLoading ? '请稍候...' : (isPreparing ? '取消准备' : '点击准备')}
-          </button>
-          {errorMessage && <p className="error-text">{errorMessage}</p>}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="game-table-container">
       <div className="game-table-header">
@@ -162,14 +143,23 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
       </div>
       {renderPlayerStatus()}
       <div className="lanes-container">
+        {!hasDealt && <div className="card-deck-placeholder">牌墩</div>}
         <Lane title="牌" cards={middleLane} onCardClick={() => {}} onLaneClick={() => {}} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
       </div>
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
-        <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isReady}>自动理牌</button>
-        <button onClick={handleConfirm} disabled={isLoading || isReady} className="table-action-btn confirm-btn">
-          {isReady ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
-        </button>
+        {!hasDealt ? (
+          <button className="table-action-btn confirm-btn" onClick={handleReadyToggle} disabled={isLoading}>
+            {isLoading ? '请稍候...' : (isPreparing ? '取消准备' : '点击准备')}
+          </button>
+        ) : (
+          <>
+            <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isReady}>自动理牌</button>
+            <button onClick={handleConfirm} disabled={isLoading || isReady} className="table-action-btn confirm-btn">
+              {isReady ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
+            </button>
+          </>
+        )}
       </div>
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} />}
     </div>
