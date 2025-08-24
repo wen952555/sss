@@ -91,6 +91,14 @@
   background-color: #f57c00;
 }
 
+.auto-manage-btn {
+  background-color: #2196f3;
+  color: white;
+}
+.auto-manage-btn:hover:not(:disabled) {
+  background-color: #1976d2;
+}
+
 .players-status-container {
   display: flex;
   justify-content: space-around;
@@ -162,13 +170,13 @@
   transform: translate(-50%, -50%);
   width: 80px;
   height: 110px;
-  background-color: rgba(0, 0, 0, 0.1);
-  border: 2px dashed rgba(0, 0, 0, 0.2);
+  background-color: #f0f0f0;
+  border: 2px dashed #cccccc;
   border-radius: 8px;
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.3);
+  color: #aaaaaa;
   z-index: 0;
 }
