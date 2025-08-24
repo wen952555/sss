@@ -33,6 +33,7 @@ function App() {
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
   const [viewingGame, setViewingGame] = useState(null); // null, 'thirteen', or 'eight'
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -48,6 +49,7 @@ function App() {
     const fullUserData = { id: userId, ...userData };
     localStorage.setItem('user', JSON.stringify(fullUserData));
     setUser(fullUserData);
+    setShowAuthModal(false);
   };
 
   const handleLogout = () => {
@@ -151,23 +153,16 @@ function App() {
             user={user}
             onProfile={() => setCurrentView('profile')}
             onLogout={handleLogout}
+            onLoginClick={() => setShowAuthModal(true)}
           />
         );
     }
   };
 
-  if (!user) {
-    return (
-      <>
-        <Auth onLoginSuccess={handleLoginSuccess} />
-        <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
-      </>
-    );
-  }
-
   return (
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
+      {showAuthModal && <Auth onLoginSuccess={handleLoginSuccess} onClose={() => setShowAuthModal(false)} />}
       <main className="app-main">
         {renderMainContent()}
       </main>
