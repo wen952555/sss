@@ -5,12 +5,6 @@ require_once 'db_connect.php';
 // All API requests will be routed through this file based on the 'action' parameter.
 require_once __DIR__ . '/../utils/utils.php';
 require_once __DIR__ . '/../utils/scorer.php';
-require_once __DIR__ . '/../utils/poker_evaluator.php';
-
-// Helper functions that might be used by multiple actions
-function combinations($arr, $k) { if ($k == 0) return [[]]; if (count($arr) < $k) return []; $first = $arr[0]; $remaining = array_slice($arr, 1); $combs_with_first = []; $combs_without_first = combinations($remaining, $k); $combs_of_remaining = combinations($remaining, $k - 1); foreach ($combs_of_remaining as $comb) { $combs_with_first[] = array_merge([$first], $comb); } return array_merge($combs_with_first, $combs_without_first); }
-function get_best_5_from_8($cards) { if (count($cards) < 5) return null; $best_eval = null; $card_combinations = combinations($cards, 5); foreach ($card_combinations as $hand_str_array) { $current_hand_obj = array_map('parseCard', $hand_str_array); $current_eval = evaluateHand($current_hand_obj); if ($best_eval === null || compareHands($current_eval, $best_eval) > 0) { $best_eval = $current_eval; } } return $best_eval; }
-
 
 $action = $_REQUEST['action'] ?? '';
 
@@ -125,6 +119,9 @@ switch ($action) {
                     $stmt->execute();
                     $game_type = $stmt->get_result()->fetch_assoc()['game_type'];
                     $stmt->close();
+                    require_once __DIR__ . '/../utils/poker_evaluator.php';
+                    function combinations($arr, $k) { if ($k == 0) return [[]]; if (count($arr) < $k) return []; $first = $arr[0]; $remaining = array_slice($arr, 1); $combs_with_first = []; $combs_without_first = combinations($remaining, $k); $combs_of_remaining = combinations($remaining, $k - 1); foreach ($combs_of_remaining as $comb) { $combs_with_first[] = array_merge([$first], $comb); } return array_merge($combs_with_first, $combs_without_first); }
+                    function get_best_5_from_8($cards) { if (count($cards) < 5) return null; $best_eval = null; $card_combinations = combinations($cards, 5); foreach ($card_combinations as $hand_str_array) { $current_hand_obj = array_map('parseCard', $hand_str_array); $current_eval = evaluateHand($current_hand_obj); if ($best_eval === null || compareHands($current_eval, $best_eval) > 0) { $best_eval = $current_eval; } } return $best_eval; }
                     $player_evaluations = [];
                     foreach ($players_data as $player) { if ($game_type === 'eight') { $player_evaluations[$player['id']] = get_best_5_from_8($player['hand']['middle']); } else { $player_evaluations[$player['id']] = null; } }
                     $hand_type_scores = [ '高牌' => 1, '对子' => 2, '两对' => 3, '三条' => 4, '顺子' => 5, '同花' => 6, '葫芦' => 7, '铁支' => 8, '同花顺' => 10, ];
