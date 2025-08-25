@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
-import { getSmartSortedHandForEight, dealOfflineGame, calculateOfflineScores } from '../utils';
+import { getSmartSortedHandForEight, dealOfflineGame, calculateOfflineScores, areCardsEqual } from '../utils';
 import GameResultModal from './GameResultModal';
 
-const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOffline = false, areCardsEqual }) => {
+const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOffline = false }) => {
   const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 };
 
   const [middleLane, setMiddleLane] = useState([]);
@@ -184,7 +184,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOff
       </div>
       <div className="lanes-container">
         {!hasDealt && <div className="card-deck-placeholder">牌墩</div>}
-        <Lane title="牌" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} areCardsEqual={areCardsEqual} />
+        <Lane title="牌" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
       </div>
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">

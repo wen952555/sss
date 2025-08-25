@@ -9,9 +9,6 @@ import GameModeSelection from './components/GameModeSelection';
 import './App.css';
 import { Browser } from '@capacitor/browser';
 
-const areCardsEqual = (card1, card2) =>
-  card1 && card2 && card1.rank === card2.rank && card1.suit === card2.suit;
-
 const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
   if (!show) return null;
   return (
@@ -161,7 +158,6 @@ function App() {
         user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
         isOffline: isOfflineMode,
-        areCardsEqual: areCardsEqual,
       };
       if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
       if (gameState.gameType === 'eight') return <EightCardGame {...gameProps} />;
