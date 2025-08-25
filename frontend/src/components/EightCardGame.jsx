@@ -88,9 +88,11 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOff
     if (isOffline) {
       const scoreResult = calculateOfflineScores(middleLane, aiHands);
       const formattedResult = {
+        myId: user.id,
         players: [
-          { name: user.phone, hand: { middle: middleLane }, score: scoreResult.playerScore },
+          { id: user.id, name: user.phone, hand: { middle: middleLane }, score: scoreResult.playerScore },
           ...aiHands.map((aiHand, index) => ({
+            id: -(index + 2), // Assign a unique negative ID for AI players
             name: `AI ${index + 1}`,
             hand: { middle: aiHand },
             score: scoreResult.aiScores[index],
