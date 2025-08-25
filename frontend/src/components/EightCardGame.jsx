@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
-import { getSmartSortedHandForEight, areCardsEqual, dealOfflineGame, calculateOfflineScores } from '../utils';
+import { getSmartSortedHandForEight, areCardsEqual } from '../utils';
 import GameResultModal from './GameResultModal';
 
-const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOffline = false }) => {
+const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
   const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 };
 
   const [middleLane, setMiddleLane] = useState([]);
@@ -14,25 +14,13 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOff
   const [isReadyForDeal, setIsReadyForDeal] = useState(false);
   const [hasSubmittedHand, setHasSubmittedHand] = useState(false);
   const [players, setPlayers] = useState([]);
-  const [aiHands, setAiHands] = useState([]);
   const [gameStatus, setGameStatus] = useState('matching');
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isOffline) {
-      const { playerHand, aiHands: dealtAiHands } = dealOfflineGame(2);
-      setMiddleLane(playerHand);
-      setAiHands(dealtAiHands);
-      setHasDealt(true);
-      setPlayers([{ id: user.id, phone: 'Player' }, { id: -2, phone: 'AI 1' }]);
-      setGameStatus('playing');
-    }
-  }, [isOffline, user.id]);
-
-  useEffect(() => {
-    if (isOffline || gameStatus === 'finished') return;
+    if (gameStatus === 'finished') return;
     const intervalId = setInterval(async () => {
       try {
         const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
@@ -58,10 +46,9 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOff
       }
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [roomId, user.id, gameStatus, hasDealt, isOffline]);
+  }, [roomId, user.id, gameStatus, hasDealt]);
 
   const handleReadyToggle = async () => {
-    if (isOffline) return;
     setIsLoading(true);
     setErrorMessage('');
     const action = isReadyForDeal ? 'unready' : 'ready';
@@ -84,26 +71,6 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOff
       setErrorMessage(`牌道数量错误！`);
       return;
     }
-
-    if (isOffline) {
-      const scoreResult = calculateOfflineScores(middleLane, aiHands);
-      const formattedResult = {
-        myId: user.id,
-        players: [
-          { id: user.id, name: user.phone, hand: { middle: middleLane }, score: scoreResult.playerScore },
-          ...aiHands.map((aiHand, index) => ({
-            id: -(index + 2),
-            name: `AI ${index + 1}`,
-            hand: { middle: aiHand },
-            score: scoreResult.aiScores[index],
-          })),
-        ]
-      };
-      setGameResult(formattedResult);
-      setHasSubmittedHand(true);
-      return;
-    }
-
     setIsLoading(true);
     setErrorMessage('');
     try {
@@ -175,7 +142,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOff
           <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
             <div className="player-avatar">{p.phone.slice(-2)}</div>
             <div className="player-info">
-              <div className="player-name">{isOffline ? p.phone : (p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`)}</div>
+              <div className="player-name">{p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`}</div>
               <div className="player-ready-text">{hasDealt ? (p.is_ready ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
             </div>
           </div>
