@@ -39,33 +39,32 @@ export const calculateOfflineScores = (playerHand, aiHands) => {
   const playerBestHand = getBestHand(playerHand);
   const aiBestHands = aiHands.map(getBestHand);
 
-  const results = [];
-  let totalScore = 0;
-
   const hand_type_scores = {
     '高牌': 1, '对子': 2, '两对': 3, '三条': 4, '顺子': 5,
     '同花': 6, '葫芦': 7, '铁支': 8, '同花顺': 10,
   };
 
+  let playerTotalScore = 0;
+  const aiScores = Array(aiHands.length).fill(0);
+
   aiBestHands.forEach((aiHand, index) => {
     const comparison = compareHands(playerBestHand, aiHand);
-    let score = 0;
+    let roundScore = 0;
     if (comparison > 0) {
-      score = hand_type_scores[playerBestHand.name] ?? 1;
+      roundScore = hand_type_scores[playerBestHand.name] ?? 1;
     } else if (comparison < 0) {
-      score = -(hand_type_scores[aiHand.name] ?? 1);
+      roundScore = -(hand_type_scores[aiHand.name] ?? 1);
     }
-    totalScore += score;
-    results.push({
-      opponentName: `AI ${index + 1}`,
-      result: comparison > 0 ? 'win' : comparison < 0 ? 'loss' : 'tie',
-      score,
-      playerBestHand,
-      opponentBestHand: aiHand,
-    });
+    playerTotalScore += roundScore;
+    aiScores[index] -= roundScore;
   });
 
-  return { totalScore, results };
+  // Note: AI vs AI scores are not calculated for simplicity.
+
+  return {
+    playerScore: playerTotalScore,
+    aiScores: aiScores,
+  };
 };
 
 // --- Hand Evaluation Logic (Ported from PHP) ---
