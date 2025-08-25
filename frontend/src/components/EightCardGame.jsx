@@ -62,7 +62,7 @@ const EightCardGame = ({
       }
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [roomId, user.id, gameStatus, hasDealt]);
+  }, [roomId, user.id, gameStatus, hasDealt, isOffline]);
 
   useEffect(() => {
     // Auto-play logic
