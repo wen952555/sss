@@ -8,7 +8,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
   useEffect(() => {
     const fetchAnnouncement = async () => {
       try {
-        const response = await fetch('/api/get_announcement.php');
+        const response = await fetch('/api/index.php?action=get_announcement');
         const data = await response.json();
         if (data.success && data.text) setAnnouncement(data.text);
       } catch (error) { /* ignore */ }
@@ -21,7 +21,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
   useEffect(() => {
     const fetchOnlineCount = async () => {
       try {
-        const resp = await fetch('/api/get_online_count.php');
+        const resp = await fetch('/api/index.php?action=get_online_count');
         const data = await resp.json();
         if (data.success) setOnlineCount(data.onlineCount);
       } catch (err) { setOnlineCount(null); }

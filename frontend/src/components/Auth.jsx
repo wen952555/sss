@@ -17,7 +17,8 @@ const Auth = ({ onLoginSuccess, onClose }) => {
     setIsLoading(true);
     setError('');
 
-    const endpoint = isLoginView ? '/api/login.php' : '/api/register.php';
+    const action = isLoginView ? 'login' : 'register';
+    const endpoint = `/api/index.php?action=${action}`;
     
     try {
       const response = await fetch(endpoint, {

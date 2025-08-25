@@ -104,7 +104,7 @@ function App() {
     setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser });
 
     try {
-      const response = await fetch(`/api/match.php?gameType=${gameType}&gameMode=${gameMode}&userId=${userId}`);
+      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${userId}`);
       const data = await response.json();
       if (data.success && data.roomId) {
         let finalGameUser = currentUser;
