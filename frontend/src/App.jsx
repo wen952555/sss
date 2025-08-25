@@ -35,33 +35,6 @@ function App() {
   const [showTransfer, setShowTransfer] = useState(false);
   const [viewingGame, setViewingGame] = useState(null); // null, 'thirteen', or 'eight'
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
-  const [showAutoManageModal, setShowAutoManageModal] = useState(false);
-  const [autoManageConfig, setAutoManageConfig] = useState({ isActive: false, roundsLeft: 0 });
-
-  const handleOpenAutoManageModal = () => setShowAutoManageModal(true);
-  const handleCancelAutoManage = () => setShowAutoManageModal(false);
-
-  const handleStartAutoManage = (rounds) => {
-    setAutoManageConfig({ isActive: true, roundsLeft: rounds });
-    setShowAutoManageModal(false);
-    if (!isInGame) {
-      // Default to starting an online, normal, 8-card game
-      handleSelectMode('normal', 'eight');
-    }
-  };
-
-  const handlePlayOffline = () => {
-    setIsOfflineMode(true);
-    // Directly set game state for an offline eight-card game
-    setGameState({
-      gameType: 'eight',
-      gameMode: 'normal', // or a default mode for offline
-      roomId: 'offline', // Use a special ID for offline games
-      error: null,
-      gameUser: { id: -1, phone: 'Player' } // Dummy user for offline mode
-    });
-  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -144,27 +117,10 @@ function App() {
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
 
   const handleBackToLobby = () => {
-    if (autoManageConfig.isActive && autoManageConfig.roundsLeft > 0) {
-      const newRoundsLeft = autoManageConfig.roundsLeft - 1;
-      if (newRoundsLeft > 0) {
-        setAutoManageConfig({ isActive: true, roundsLeft: newRoundsLeft });
-        // Assuming auto-manage continues with the same game type and mode
-        handleSelectMode(gameState.gameMode, gameState.gameType);
-      } else {
-        setAutoManageConfig({ isActive: false, roundsLeft: 0 });
-        // Reset game state and go to lobby after last round
-        setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
-        setCurrentView('lobby');
-        setMatchingStatus({ thirteen: false, eight: false });
-        setViewingGame(null);
-      }
-    } else {
-      // Default behavior if not auto-managing
-      setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
-      setCurrentView('lobby');
-      setMatchingStatus({ thirteen: false, eight: false });
-      setViewingGame(null);
-    }
+    setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
+    setCurrentView('lobby');
+    setMatchingStatus({ thirteen: false, eight: false });
+    setViewingGame(null);
   };
 
   const handleUpdate = async () => {
@@ -188,10 +144,6 @@ function App() {
         onBackToLobby: handleBackToLobby,
         user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
-        isOffline: isOfflineMode,
-        autoManageConfig: autoManageConfig,
-        onOpenAutoManageModal: handleOpenAutoManageModal,
-        setAutoManageConfig: setAutoManageConfig,
       };
       if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
       if (gameState.gameType === 'eight') return <EightCardGame {...gameProps} />;
@@ -214,7 +166,6 @@ function App() {
             onProfile={() => setCurrentView('profile')}
             onLogout={handleLogout}
             onLoginClick={() => setShowAuthModal(true)}
-            onPlayOffline={handlePlayOffline}
           />
         );
     }
@@ -224,7 +175,6 @@ function App() {
     <div className="app">
       <UpdateModal show={updateInfo.show} version={updateInfo.version} notes={updateInfo.notes} onUpdate={handleUpdate} onCancel={() => setUpdateInfo({ ...updateInfo, show: false })} />
       {showAuthModal && <Auth onLoginSuccess={handleLoginSuccess} onClose={() => setShowAuthModal(false)} />}
-      {showAutoManageModal && <AutoManageModal onSelect={handleStartAutoManage} onCancel={handleCancelAutoManage} />}
       <main className="app-main">
         {renderMainContent()}
       </main>

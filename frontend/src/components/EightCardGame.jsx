@@ -2,14 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
-import { getSmartSortedHandForEight, dealOfflineGame, calculateOfflineScores, areCardsEqual } from '../utils';
+import { getSmartSortedHandForEight, areCardsEqual } from '../utils';
 import GameResultModal from './GameResultModal';
 
-const EightCardGame = ({
-  roomId, gameMode, onBackToLobby, user, onGameEnd,
-  isOffline = false,
-  autoManageConfig, onOpenAutoManageModal, setAutoManageConfig
-}) => {
+const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
   const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 };
 
   const [middleLane, setMiddleLane] = useState([]);
@@ -18,25 +14,13 @@ const EightCardGame = ({
   const [isReadyForDeal, setIsReadyForDeal] = useState(false);
   const [hasSubmittedHand, setHasSubmittedHand] = useState(false);
   const [players, setPlayers] = useState([]);
-  const [aiHands, setAiHands] = useState([]);
   const [gameStatus, setGameStatus] = useState('matching');
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isOffline) {
-      const { playerHand, aiHands: dealtAiHands } = dealOfflineGame(2); // Player vs 1 AI
-      setMiddleLane(playerHand);
-      setAiHands(dealtAiHands);
-      setHasDealt(true);
-      setPlayers([{ id: user.id, phone: 'Player' }, { id: -2, phone: 'AI 1' }]);
-      setGameStatus('playing');
-    }
-  }, [isOffline, user.id]);
-
-  useEffect(() => {
-    if (isOffline || gameStatus === 'finished') return;
+    if (gameStatus === 'finished') return;
     const intervalId = setInterval(async () => {
       try {
         const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
@@ -62,25 +46,9 @@ const EightCardGame = ({
       }
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [roomId, user.id, gameStatus, hasDealt, isOffline]);
-
-  useEffect(() => {
-    // Auto-play logic
-    if (autoManageConfig.isActive && hasDealt && !hasSubmittedHand) {
-      // Use a timeout to make it feel a bit more natural
-      setTimeout(() => {
-        handleAutoSort();
-        // handleAutoSort is synchronous, but we need to wait for the state update
-        // A second timeout ensures handleConfirm sees the sorted hand
-        setTimeout(() => {
-          handleConfirm();
-        }, 500);
-      }, 1000);
-    }
-  }, [autoManageConfig.isActive, hasDealt, hasSubmittedHand]);
+  }, [roomId, user.id, gameStatus, hasDealt]);
 
   const handleReadyToggle = async () => {
-    if (isOffline) return;
     setIsLoading(true);
     setErrorMessage('');
     const action = isReadyForDeal ? 'unready' : 'ready';
@@ -101,25 +69,6 @@ const EightCardGame = ({
     if (isLoading || hasSubmittedHand) return;
     if (middleLane.length !== LANE_LIMITS.middle) {
       setErrorMessage(`牌道数量错误！`);
-      return;
-    }
-
-    if (isOffline) {
-      const scoreResult = calculateOfflineScores(middleLane, aiHands);
-      const formattedResult = {
-        myId: user.id,
-        players: [
-          { id: user.id, name: user.phone, hand: { middle: middleLane }, score: scoreResult.playerScore },
-          ...aiHands.map((aiHand, index) => ({
-            id: -(index + 2), // Assign a unique negative ID for AI players
-            name: `AI ${index + 1}`,
-            hand: { middle: aiHand },
-            score: scoreResult.aiScores[index],
-          })),
-        ]
-      };
-      setGameResult(formattedResult);
-      setHasSubmittedHand(true);
       return;
     }
 
@@ -182,25 +131,8 @@ const EightCardGame = ({
   };
 
   const handleCloseResult = () => {
-    if (isOffline && autoManageConfig.isActive && autoManageConfig.roundsLeft > 0) {
-      const newRoundsLeft = autoManageConfig.roundsLeft - 1;
-      setAutoManageConfig({ isActive: true, roundsLeft: newRoundsLeft });
-      if (newRoundsLeft > 0) {
-        // Reset for next offline round
-        setGameResult(null);
-        setHasSubmittedHand(false);
-        const { playerHand, aiHands: dealtAiHands } = dealOfflineGame(2);
-        setMiddleLane(playerHand);
-        setAiHands(dealtAiHands);
-      } else {
-        // Last round finished, go back to lobby
-        setAutoManageConfig({ isActive: false, roundsLeft: 0 });
-        onBackToLobby();
-      }
-    } else {
-      setGameResult(null);
-      onBackToLobby();
-    }
+    setGameResult(null);
+    onBackToLobby();
   };
 
   return (
@@ -214,7 +146,7 @@ const EightCardGame = ({
           <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
             <div className="player-avatar">{p.phone.slice(-2)}</div>
             <div className="player-info">
-              <div className="player-name">{isOffline ? p.phone : (p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`)}</div>
+              <div className="player-name">{p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`}</div>
               <div className="player-ready-text">{hasDealt ? (p.is_ready ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
             </div>
           </div>
@@ -233,7 +165,7 @@ const EightCardGame = ({
         ) : (
           <>
             <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={hasSubmittedHand}>自动理牌</button>
-            {!isOffline && <button className="table-action-btn auto-manage-btn">智能托管</button>}
+            <button className="table-action-btn auto-manage-btn">智能托管</button>
             <button onClick={handleConfirm} disabled={isLoading || hasSubmittedHand} className="table-action-btn confirm-btn">
               {hasSubmittedHand ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
             </button>
