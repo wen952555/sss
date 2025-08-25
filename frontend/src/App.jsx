@@ -35,6 +35,18 @@ function App() {
   const [showTransfer, setShowTransfer] = useState(false);
   const [viewingGame, setViewingGame] = useState(null); // null, 'thirteen', or 'eight'
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+
+  const handlePlayOffline = () => {
+    setIsOfflineMode(true);
+    setGameState({
+      gameType: 'eight',
+      gameMode: 'normal',
+      roomId: 'offline',
+      error: null,
+      gameUser: { id: -1, phone: 'Player' }
+    });
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -144,6 +156,7 @@ function App() {
         onBackToLobby: handleBackToLobby,
         user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
+        isOffline: isOfflineMode,
       };
       if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
       if (gameState.gameType === 'eight') return <EightCardGame {...gameProps} />;
@@ -166,6 +179,7 @@ function App() {
             onProfile={() => setCurrentView('profile')}
             onLogout={handleLogout}
             onLoginClick={() => setShowAuthModal(true)}
+            onPlayOffline={handlePlayOffline}
           />
         );
     }
