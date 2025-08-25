@@ -4,17 +4,12 @@
 	"webDir": "frontend/dist",
 	"bundledWebRuntime": false,
 	"server": {
-		"url": "https://yyxx.dpdns.org",
+		"url": "https://9522.ip-ddns.com",
 		"allowNavigation": [
-			"yyxx.dpdns.org"
+			"9522.ip-ddns.com"
 		]
 	},
 	"android": {
 		"allowMixedContent": true
-	},
-	"plugins": {
-		"CapacitorHttp": {
-			"enabled": true
-		}
 	}
 }
