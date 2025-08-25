@@ -16,7 +16,7 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
     setIsLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/find_user.php', {
+      const response = await fetch('/api/index.php?action=find_user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone }),
@@ -41,7 +41,7 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
     setIsLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/transfer_points.php', {
+      const response = await fetch('/api/index.php?action=transfer_points', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fromId, toId: foundUserId, amount: parsedAmount }),

@@ -25,7 +25,7 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
     if (gameStatus === 'finished') return;
     const intervalId = setInterval(async () => {
       try {
-        const response = await fetch(`/api/game_status.php?roomId=${roomId}&userId=${user.id}`);
+        const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
         const data = await response.json();
         if (data.success) {
           setGameStatus(data.gameStatus);
@@ -57,7 +57,7 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
     setErrorMessage('');
     const action = isPreparing ? 'unready' : 'ready';
     try {
-      await fetch('/api/player_action.php', {
+      await fetch('/api/index.php?action=player_action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, roomId, action })
@@ -84,7 +84,7 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
         action: 'submit_hand',
         hand: { top: topLane, middle: middleLane, bottom: bottomLane },
       };
-      await fetch('/api/player_action.php', {
+      await fetch('/api/index.php?action=player_action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
