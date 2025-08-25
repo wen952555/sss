@@ -1,7 +1,7 @@
 import React from 'react';
 import Card from './Card';
 import './Lane.css';
-import { areCardsEqual } from '../utils/cardUtils';
+import { areCardsEqual } from '../utils';
 
 const Lane = ({
   title, cards, onCardClick, onLaneClick,

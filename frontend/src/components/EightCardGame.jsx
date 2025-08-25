@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
-import { getSmartSortedHandForEight } from '../utils/eightCardAutoSorter';
+import { getSmartSortedHandForEight, areCardsEqual, dealOfflineGame, calculateOfflineScores } from '../utils';
 import GameResultModal from './GameResultModal';
-import { areCardsEqual } from '../utils/cardUtils';
-import { dealOfflineGame, calculateOfflineScores } from '../utils/offlineGameLogic';
 
 const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOffline = false }) => {
   const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 };
