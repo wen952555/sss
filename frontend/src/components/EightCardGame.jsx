@@ -5,8 +5,9 @@ import './EightCardGame.css';
 import { getSmartSortedHandForEight } from '../utils/eightCardAutoSorter';
 import GameResultModal from './GameResultModal';
 import { areCardsEqual } from '../utils/cardUtils';
+import { dealOfflineGame, calculateOfflineScores } from '../utils/offlineGameLogic';
 
-const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
+const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOffline = false }) => {
   const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 };
 
   const [middleLane, setMiddleLane] = useState([]);
@@ -15,13 +16,25 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
   const [isReadyForDeal, setIsReadyForDeal] = useState(false);
   const [hasSubmittedHand, setHasSubmittedHand] = useState(false);
   const [players, setPlayers] = useState([]);
+  const [aiHands, setAiHands] = useState([]);
   const [gameStatus, setGameStatus] = useState('matching');
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (gameStatus === 'finished') return;
+    if (isOffline) {
+      const { playerHand, aiHands: dealtAiHands } = dealOfflineGame(2); // Player vs 1 AI
+      setMiddleLane(playerHand);
+      setAiHands(dealtAiHands);
+      setHasDealt(true);
+      setPlayers([{ id: user.id, phone: 'Player' }, { id: -2, phone: 'AI 1' }]);
+      setGameStatus('playing');
+    }
+  }, [isOffline, user.id]);
+
+  useEffect(() => {
+    if (isOffline || gameStatus === 'finished') return;
     const intervalId = setInterval(async () => {
       try {
         const response = await fetch(`/api/game_status.php?roomId=${roomId}&userId=${user.id}`);
@@ -50,6 +63,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
   }, [roomId, user.id, gameStatus, hasDealt]);
 
   const handleReadyToggle = async () => {
+    if (isOffline) return;
     setIsLoading(true);
     setErrorMessage('');
     const action = isReadyForDeal ? 'unready' : 'ready';
@@ -72,6 +86,24 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
       setErrorMessage(`牌道数量错误！`);
       return;
     }
+
+    if (isOffline) {
+      const scoreResult = calculateOfflineScores(middleLane, aiHands);
+      const formattedResult = {
+        players: [
+          { name: user.phone, hand: { middle: middleLane }, score: scoreResult.totalScore },
+          ...aiHands.map((aiHand, index) => ({
+            name: `AI ${index + 1}`,
+            hand: { middle: aiHand },
+            score: -scoreResult.results[index].score,
+          })),
+        ]
+      };
+      setGameResult(formattedResult);
+      setHasSubmittedHand(true);
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage('');
     try {
@@ -146,7 +178,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
           <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
             <div className="player-avatar">{p.phone.slice(-2)}</div>
             <div className="player-info">
-              <div className="player-name">{p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`}</div>
+              <div className="player-name">{isOffline ? p.phone : (p.id === user.id ? '你' : `玩家${p.phone.slice(-4)}`)}</div>
               <div className="player-ready-text">{hasDealt ? (p.is_ready ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
             </div>
           </div>
@@ -165,7 +197,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
         ) : (
           <>
             <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={hasSubmittedHand}>自动理牌</button>
-            <button className="table-action-btn auto-manage-btn">智能托管</button>
+            {!isOffline && <button className="table-action-btn auto-manage-btn">智能托管</button>}
             <button onClick={handleConfirm} disabled={isLoading || hasSubmittedHand} className="table-action-btn confirm-btn">
               {hasSubmittedHand ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
             </button>
