@@ -4,6 +4,7 @@ import Lane from './Lane';
 import './EightCardGame.css';
 import { getSmartSortedHandForEight } from '../utils/eightCardAutoSorter';
 import GameResultModal from './GameResultModal';
+import { areCardsEqual } from '../utils/cardUtils';
 
 const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => {
   const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 };
@@ -11,8 +12,8 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
   const [middleLane, setMiddleLane] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
   const [hasDealt, setHasDealt] = useState(false);
-  const [isPreparing, setIsPreparing] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  const [isReadyForDeal, setIsReadyForDeal] = useState(false);
+  const [hasSubmittedHand, setHasSubmittedHand] = useState(false);
   const [players, setPlayers] = useState([]);
   const [gameStatus, setGameStatus] = useState('matching');
   const [gameResult, setGameResult] = useState(null);
@@ -29,11 +30,11 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
           setGameStatus(data.gameStatus);
           setPlayers(data.players);
           const me = data.players.find(p => p.id === user.id);
-          setIsPreparing(me ? !!me.is_ready : false);
+          setIsReadyForDeal(me ? !!me.is_ready : false);
           if (data.hand && !hasDealt) {
             setMiddleLane(data.hand.middle);
             setHasDealt(true);
-            setIsReady(false);
+            setHasSubmittedHand(false);
           }
           if (data.gameStatus === 'finished' && data.result) {
             setGameResult(data.result);
@@ -51,7 +52,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
   const handleReadyToggle = async () => {
     setIsLoading(true);
     setErrorMessage('');
-    const action = isPreparing ? 'unready' : 'ready';
+    const action = isReadyForDeal ? 'unready' : 'ready';
     try {
       await fetch('/api/player_action.php', {
         method: 'POST',
@@ -66,7 +67,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
   };
 
   const handleConfirm = async () => {
-    if (isLoading || isReady) return;
+    if (isLoading || hasSubmittedHand) return;
     if (middleLane.length !== LANE_LIMITS.middle) {
       setErrorMessage(`牌道数量错误！`);
       return;
@@ -85,16 +86,13 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      setIsReady(true);
+      setHasSubmittedHand(true);
     } catch (err) {
       setErrorMessage('与服务器通信失败');
     } finally {
       setIsLoading(false);
     }
   };
-
-  const areCardsEqual = (card1, card2) =>
-    card1 && card2 && card1.rank === card2.rank && card1.suit === card2.suit;
 
   const handleCardClick = (cardToToggle) => {
     let newSelectedCards = [...selectedCards];
@@ -162,14 +160,14 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
       <div className="game-table-footer">
         {!hasDealt ? (
           <button className="table-action-btn confirm-btn" onClick={handleReadyToggle} disabled={isLoading}>
-            {isLoading ? '请稍候...' : (isPreparing ? '取消准备' : '点击准备')}
+            {isLoading ? '请稍候...' : (isReadyForDeal ? '取消准备' : '点击准备')}
           </button>
         ) : (
           <>
-            <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isReady}>自动理牌</button>
+            <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={hasSubmittedHand}>自动理牌</button>
             <button className="table-action-btn auto-manage-btn">智能托管</button>
-            <button onClick={handleConfirm} disabled={isLoading || isReady} className="table-action-btn confirm-btn">
-              {isReady ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
+            <button onClick={handleConfirm} disabled={isLoading || hasSubmittedHand} className="table-action-btn confirm-btn">
+              {hasSubmittedHand ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
             </button>
           </>
         )}

@@ -1,9 +1,7 @@
 import React from 'react';
 import Card from './Card';
 import './Lane.css';
-
-const areCardsEqual = (card1, card2) =>
-  card1 && card2 && card1.rank === card2.rank && card1.suit === card2.suit;
+import { areCardsEqual } from '../utils/cardUtils';
 
 const Lane = ({
   title, cards, onCardClick, onLaneClick,

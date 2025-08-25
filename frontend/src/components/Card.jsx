@@ -24,7 +24,6 @@ const Card = ({ card, onClick, isSelected }) => {
         border: 'none',
         borderRadius: '9px',
         boxShadow: 'none',
-        background: '#fff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
