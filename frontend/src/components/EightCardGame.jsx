@@ -85,6 +85,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd }) => 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      setIsReady(true);
     } catch (err) {
       setErrorMessage('与服务器通信失败');
     } finally {

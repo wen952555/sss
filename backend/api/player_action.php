@@ -108,19 +108,73 @@ try {
             $game_type = $stmt->get_result()->fetch_assoc()['game_type'];
             $stmt->close();
 
-            $scores = [];
-            for ($i = 0; $i < count($players_data); $i++) {
-                $total_score = 0;
-                for ($j = 0; $j < count($players_data); $j++) {
-                    if ($i === $j) continue;
+            // THIS IS THE NEW LOGIC
+            require_once __DIR__ . '/../utils/poker_evaluator.php';
 
-                    if ($game_type === 'eight') {
-                        $total_score += calculateEightCardSinglePairScore($players_data[$i]['hand'], $players_data[$j]['hand']);
-                    } else { // Default to thirteen (SSS)
-                        $total_score += calculateSinglePairScore($players_data[$i]['hand'], $players_data[$j]['hand']);
+            function get_best_5_from_8($cards) {
+                if (count($cards) < 5) return null;
+                $best_hand = null;
+                $best_eval = null;
+
+                // Simple combination logic for brevity in this context
+                $combinations = [
+                    [0,1,2,3,4], [0,1,2,3,5], [0,1,2,3,6], [0,1,2,3,7],
+                    [0,1,2,4,5], [0,1,2,4,6], [0,1,2,4,7], [0,1,2,5,6],
+                    [0,1,2,5,7], [0,1,2,6,7], [0,1,3,4,5], [0,1,3,4,6],
+                    [0,1,3,4,7], [0,1,3,5,6], [0,1,3,5,7], [0,1,3,6,7],
+                    [0,1,4,5,6], [0,1,4,5,7], [0,1,4,6,7], [0,1,5,6,7],
+                    [0,2,3,4,5], [0,2,3,4,6], [0,2,3,4,7], [0,2,3,5,6],
+                    [0,2,3,5,7], [0,2,3,6,7], [0,2,4,5,6], [0,2,4,5,7],
+                    [0,2,4,6,7], [0,2,5,6,7], [0,3,4,5,6], [0,3,4,5,7],
+                    [0,3,4,6,7], [0,3,5,6,7], [0,4,5,6,7], [1,2,3,4,5],
+                    [1,2,3,4,6], [1,2,3,4,7], [1,2,3,5,6], [1,2,3,5,7],
+                    [1,2,3,6,7], [1,2,4,5,6], [1,2,4,5,7], [1,2,4,6,7],
+                    [1,2,5,6,7], [1,3,4,5,6], [1,3,4,5,7], [1,3,4,6,7],
+                    [1,3,5,6,7], [1,4,5,6,7], [2,3,4,5,6], [2,3,4,5,7],
+                    [2,3,4,6,7], [2,3,5,6,7], [2,4,5,6,7], [3,4,5,6,7]
+                ];
+
+                foreach ($combinations as $indices) {
+                    $current_hand_str = array_map(function($i) use ($cards) { return $cards[$i]; }, $indices);
+                    $current_hand_obj = array_map('parseCard', $current_hand_str);
+                    $current_eval = evaluateHand($current_hand_obj);
+
+                    if ($best_eval === null || compareHands($current_eval, $best_eval) > 0) {
+                        $best_eval = $current_eval;
                     }
                 }
-                $scores[$players_data[$i]['id']] = $total_score;
+                return $best_eval;
+            }
+
+            $player_evaluations = [];
+            foreach ($players_data as $player) {
+                if ($game_type === 'eight') {
+                    $player_evaluations[$player['id']] = get_best_5_from_8($player['hand']['middle']);
+                } else {
+                    // SSS logic would be more complex
+                    $player_evaluations[$player['id']] = null;
+                }
+            }
+
+            $scores = [];
+            $player_ids = array_keys($player_evaluations);
+            for ($i = 0; $i < count($player_ids); $i++) {
+                $p1_id = $player_ids[$i];
+                $total_score = 0;
+                for ($j = 0; $j < count($player_ids); $j++) {
+                    if ($i === $j) continue;
+                    $p2_id = $player_ids[$j];
+
+                    $p1_eval = $player_evaluations[$p1_id];
+                    $p2_eval = $player_evaluations[$p2_id];
+
+                    if ($p1_eval && $p2_eval) {
+                        $comparison = compareHands($p1_eval, $p2_eval);
+                        if ($comparison > 0) $total_score++;
+                        if ($comparison < 0) $total_score--;
+                    }
+                }
+                $scores[$p1_id] = $total_score;
             }
 
             // Update scores and points
