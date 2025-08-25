@@ -1,11 +1,10 @@
 import React from 'react';
 import Card from './Card';
 import './Lane.css';
-import { areCardsEqual } from '../utils';
 
 const Lane = ({
   title, cards, onCardClick, onLaneClick,
-  expectedCount, selectedCards = [],
+  expectedCount, selectedCards = [], areCardsEqual,
 }) => {
   const handleAreaClick = () => {
     if (selectedCards.length > 0 && onLaneClick) {
