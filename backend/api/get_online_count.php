@@ -2,31 +2,31 @@
 header("Content-Type: application/json; charset=UTF-8");
 require_once 'db_connect.php';
 
-// DEBUG: Return the list of players being counted
-$result = $conn->query("
-    SELECT DISTINCT rp.user_id, u.phone, rp.is_auto_managed, gr.status
-    FROM room_players rp
-    JOIN game_rooms gr ON rp.room_id = gr.id
-    JOIN users u ON rp.user_id = u.id
-");
+// This query defines an "online user" as someone who is not a guest or an AI,
+// and has made a request to the server (specifically, game_status.php)
+// within the last 5 minutes.
 
-$players = [];
-while($row = $result->fetch_assoc()) {
-    $players[] = $row;
+$onlineCount = 0;
+$query = "
+    SELECT COUNT(DISTINCT id) as onlineCount
+    FROM users
+    WHERE last_active > NOW() - INTERVAL 5 MINUTE
+      AND phone NOT LIKE 'guest_%'
+      AND phone NOT LIKE 'ai_player_%'
+";
+
+$result = $conn->query($query);
+
+if ($result) {
+    $row = $result->fetch_assoc();
+    $onlineCount = (int)$row['onlineCount'];
+    $result->free();
 }
-
-// The original filtering logic, now done in PHP for debugging
-$filtered_players = array_filter($players, function($p) {
-    return in_array($p['status'], ['matching', 'playing'])
-           && $p['is_auto_managed'] == 0
-           && strpos($p['phone'], 'guest_') !== 0;
-});
 
 echo json_encode([
     'success' => true,
-    'onlineCount' => count($filtered_players),
-    'debug_all_players_in_rooms' => $players,
-    'debug_filtered_players' => array_values($filtered_players)
+    'onlineCount' => $onlineCount
 ]);
+
 $conn->close();
 ?>

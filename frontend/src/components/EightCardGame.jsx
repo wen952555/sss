@@ -5,7 +5,11 @@ import './EightCardGame.css';
 import { getSmartSortedHandForEight, dealOfflineGame, calculateOfflineScores, areCardsEqual } from '../utils';
 import GameResultModal from './GameResultModal';
 
-const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOffline = false }) => {
+const EightCardGame = ({
+  roomId, gameMode, onBackToLobby, user, onGameEnd,
+  isOffline = false,
+  autoManageConfig, onOpenAutoManageModal, setAutoManageConfig
+}) => {
   const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 };
 
   const [middleLane, setMiddleLane] = useState([]);
@@ -59,6 +63,21 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOff
     }, 1000);
     return () => clearInterval(intervalId);
   }, [roomId, user.id, gameStatus, hasDealt]);
+
+  useEffect(() => {
+    // Auto-play logic
+    if (autoManageConfig.isActive && hasDealt && !hasSubmittedHand) {
+      // Use a timeout to make it feel a bit more natural
+      setTimeout(() => {
+        handleAutoSort();
+        // handleAutoSort is synchronous, but we need to wait for the state update
+        // A second timeout ensures handleConfirm sees the sorted hand
+        setTimeout(() => {
+          handleConfirm();
+        }, 500);
+      }, 1000);
+    }
+  }, [autoManageConfig.isActive, hasDealt, hasSubmittedHand]);
 
   const handleReadyToggle = async () => {
     if (isOffline) return;
@@ -163,8 +182,25 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isOff
   };
 
   const handleCloseResult = () => {
-    setGameResult(null);
-    onBackToLobby();
+    if (isOffline && autoManageConfig.isActive && autoManageConfig.roundsLeft > 0) {
+      const newRoundsLeft = autoManageConfig.roundsLeft - 1;
+      setAutoManageConfig({ isActive: true, roundsLeft: newRoundsLeft });
+      if (newRoundsLeft > 0) {
+        // Reset for next offline round
+        setGameResult(null);
+        setHasSubmittedHand(false);
+        const { playerHand, aiHands: dealtAiHands } = dealOfflineGame(2);
+        setMiddleLane(playerHand);
+        setAiHands(dealtAiHands);
+      } else {
+        // Last round finished, go back to lobby
+        setAutoManageConfig({ isActive: false, roundsLeft: 0 });
+        onBackToLobby();
+      }
+    } else {
+      setGameResult(null);
+      onBackToLobby();
+    }
   };
 
   return (

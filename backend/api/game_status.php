@@ -9,6 +9,14 @@ $userId = (int)($_GET['userId'] ?? 0);
 
 if (!$roomId || !$userId) { echo json_encode(['success'=>false]); exit; }
 
+// Update user's last active timestamp
+if ($userId > 0) {
+    $updateStmt = $conn->prepare("UPDATE users SET last_active = NOW() WHERE id = ?");
+    $updateStmt->bind_param("i", $userId);
+    $updateStmt->execute();
+    $updateStmt->close();
+}
+
 $stmt = $conn->prepare("SELECT status FROM game_rooms WHERE id = ?");
 $stmt->bind_param("i", $roomId);
 $stmt->execute();

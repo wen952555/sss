@@ -1,0 +1,74 @@
+.auto-manage-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.auto-manage-modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.auto-manage-modal-title {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.auto-manage-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.auto-manage-option-btn {
+  background-color: #e0f7fa;
+  border: 1px solid #b2ebf2;
+  color: #00796b;
+  padding: 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.auto-manage-option-btn:hover {
+  background-color: #b2ebf2;
+  border-color: #80deea;
+  transform: translateY(-2px);
+}
+
+.auto-manage-modal-footer {
+  margin-top: 10px;
+}
+
+.auto-manage-cancel-btn {
+  background-color: #f1f1f1;
+  border: 1px solid #ddd;
+  color: #555;
+  padding: 10px 25px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.auto-manage-cancel-btn:hover {
+  background-color: #e7e7e7;
+}
