@@ -6,7 +6,6 @@ import TransferPoints from './components/TransferPoints';
 import ThirteenGame from './components/ThirteenGame';
 import EightCardGame from './components/EightCardGame';
 import GameModeSelection from './components/GameModeSelection';
-import AutoManageModal from './components/AutoManageModal';
 import './App.css';
 import { Browser } from '@capacitor/browser';
 
