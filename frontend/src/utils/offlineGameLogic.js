@@ -71,43 +71,23 @@ function getBest5From8(eightCards) {
  * Calculates the result of a trial game between a player and an AI.
  * @param {Array<string>} playerEightCards - The player's 8 cards.
  * @param {Array<string>} playerEightCards - The player's 8 cards.
- * @param {Object} playerHand - Player's hand {top, middle}.
- * @param {Array<Object>} aiHands - Array of AI hands {top, middle}.
+ * @param {Array<string>} playerEightCards - The player's 8-card hand.
+ * @param {Array<Array<string>>} aiHands - An array of AI 8-card hands.
  * @returns {Object} A result object.
  */
-export const calculateEightCardTrialResult = (playerHand, aiHands) => {
-  const playerHandObj = {
-      top: playerHand.top.map(parseCard),
-      middle: playerHand.middle.map(parseCard),
-  };
-  const aiHandObjs = aiHands.map(h => ({
-      top: h.top.map(parseCard),
-      middle: h.middle.map(parseCard),
-  }));
-
-  const isPlayerFoul = compareSssLanes(playerHandObj.top, playerHandObj.middle) > 0;
-
+export const calculateEightCardTrialResult = (playerEightCards, aiHands) => {
+  const playerBestHand = getBest5From8(playerEightCards);
+  const aiBestHands = aiHands.map(getBest5From8);
   let totalScore = 0;
+  const hand_type_score_map = { '高牌': 1, '对子': 2, '两对': 3, '三条': 4, '顺子': 5, '同花': 6, '葫芦': 7, '铁支': 8, '同花顺': 10 };
 
-  aiHandObjs.forEach(aiHand => {
-      const isAiFoul = compareSssLanes(aiHand.top, aiHand.middle) > 0;
-      if (isPlayerFoul && !isAiFoul) {
-          totalScore -= 2; // Lose 1 point for each lane
-          return;
-      }
-      if (!isPlayerFoul && isAiFoul) {
-          totalScore += 2; // Win 1 point for each lane
-          return;
-      }
-      if (isPlayerFoul && isAiFoul) {
-          return; // Tie
-      }
-
-      // Compare lanes
-      if (compareSssLanes(playerHandObj.top, aiHand.top) > 0) totalScore++;
-      if (compareSssLanes(playerHandObj.top, aiHand.top) < 0) totalScore--;
-      if (compareSssLanes(playerHandObj.middle, aiHand.middle) > 0) totalScore++;
-      if (compareSssLanes(playerHandObj.middle, aiHand.middle) < 0) totalScore--;
+  aiBestHands.forEach(aiHand => {
+    const comparison = compareHands(playerBestHand, aiHand);
+    if (comparison > 0) {
+      totalScore += hand_type_score_map[playerBestHand.name] || 1;
+    } else if (comparison < 0) {
+      totalScore -= hand_type_score_map[aiHand.name] || 1;
+    }
   });
 
   return {
@@ -115,31 +95,25 @@ export const calculateEightCardTrialResult = (playerHand, aiHands) => {
   };
 };
 
-/**
- * A simple AI for the trial mode. For the 8-card game, the AI doesn't need
- * to "sort" its hand into lanes, so it just presents the cards it was dealt.
- * The "skill" is in the evaluation of the best 5-card hand, which happens at showdown.
- * @param {Array<string>} aiEightCards - The AI's 8 cards.
- * @returns {Array<string>} The same 8 cards.
- */
-export const getAiEightCardHand = (aiEightCards) => {
-  // In a 1-lane game, there's no complex arrangement logic needed for the AI.
-  // We could try to sort them for visual appeal, but it's not necessary for the game logic.
-  return aiEightCards;
-};
-
 
 // 3. --- Game Logic for 13-Card Game (SSS) ---
 
-export const dealOfflineThirteenGame = () => {
+export const dealOfflineThirteenGame = (playerCount = 4) => {
   const deck = shuffleDeck(createDeck());
-  const playerHand = [];
-  const aiHand = [];
+  if (playerCount * 13 > 52) throw new Error("Not enough cards for this many players");
+
+  const hands = Array(playerCount).fill(0).map(() => []);
+
   for (let i = 0; i < 13; i++) {
-    playerHand.push(deck.pop());
-    aiHand.push(deck.pop());
+    for (let j = 0; j < playerCount; j++) {
+      hands[j].push(deck.pop());
+    }
   }
-  return { playerHand, aiHand };
+
+  return {
+    playerHand: hands[0],
+    aiHands: hands.slice(1),
+  };
 };
 
 export const getAiThirteenHand = (thirteenCards) => {
@@ -193,29 +167,33 @@ function isSssFoul(hand) {
     return false;
 }
 
-export const calculateThirteenTrialResult = (playerHand, aiHand) => {
+export const calculateThirteenTrialResult = (playerHand, aiHands) => {
     const playerIsFoul = isSssFoul(playerHand);
-    const aiIsFoul = isSssFoul(aiHand);
+    let totalScore = 0;
 
-    if (playerIsFoul && !aiIsFoul) return { winner: 'ai', reason: '玩家相公' };
-    if (!playerIsFoul && aiIsFoul) return { winner: 'player', reason: 'AI相公' };
-    if (playerIsFoul && aiIsFoul) return { winner: 'tie', reason: '双方相公' };
+    aiHands.forEach(aiHand => {
+        const aiIsFoul = isSssFoul(aiHand);
+        let pairScore = 0;
 
-    let playerScore = 0;
-    const topComparison = compareSssLanes(playerHand.top, aiHand.top);
-    const middleComparison = compareSssLanes(playerHand.middle, aiHand.middle);
-    const bottomComparison = compareSssLanes(playerHand.bottom, aiHand.bottom);
+        if (playerIsFoul && !aiIsFoul) {
+            pairScore = -3; // Auto-lose 3 points
+        } else if (!playerIsFoul && aiIsFoul) {
+            pairScore = 3; // Auto-win 3 points
+        } else if (!playerIsFoul && !aiIsFoul) {
+            const topComparison = compareSssLanes(playerHand.top, aiHand.top);
+            if (topComparison > 0) pairScore++;
+            if (topComparison < 0) pairScore--;
 
-    if (topComparison > 0) playerScore++;
-    if (topComparison < 0) playerScore--;
-    if (middleComparison > 0) playerScore++;
-    if (middleComparison < 0) playerScore--;
-    if (bottomComparison > 0) playerScore++;
-    if (bottomComparison < 0) playerScore--;
+            const middleComparison = compareSssLanes(playerHand.middle, aiHand.middle);
+            if (middleComparison > 0) pairScore++;
+            if (middleComparison < 0) pairScore--;
 
-    let winner = 'tie';
-    if (playerScore > 0) winner = 'player';
-    if (playerScore < 0) winner = 'ai';
+            const bottomComparison = compareSssLanes(playerHand.bottom, aiHand.bottom);
+            if (bottomComparison > 0) pairScore++;
+            if (bottomComparison < 0) pairScore--;
+        }
+        totalScore += pairScore;
+    });
 
-    return { winner, playerScore };
+    return { playerScore: totalScore };
 };

@@ -59,25 +59,24 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
   useEffect(() => {
     if (!isTrialMode) return;
 
-    // Deal hands for player and AI
-    const { playerHand, aiHand: initialAiHand } = dealOfflineThirteenGame();
+    const { playerHand, aiHands: initialAiHands } = dealOfflineThirteenGame(4);
 
-    // Auto-sort both hands
-    const sortedPlayerHand = getAiThirteenHand(playerHand); // Re-use AI logic for player
-    const sortedAiHand = getAiThirteenHand(initialAiHand);
+    const sortedPlayerHand = getAiThirteenHand(playerHand);
+    const sortedAiHands = initialAiHands.map(getAiThirteenHand);
 
-    if (sortedPlayerHand && sortedAiHand) {
+    if (sortedPlayerHand) {
         setTopLane(sortedPlayerHand.top.map(parseCard));
         setMiddleLane(sortedPlayerHand.middle.map(parseCard));
         setBottomLane(sortedPlayerHand.bottom.map(parseCard));
-        setAiHand(sortedAiHand);
     }
+    setAiHand(sortedAiHands); // Note: this is now an array of hands
 
     setHasDealt(true);
-    setPlayers([
-      { id: user.id, phone: user.phone, is_ready: true },
-      { id: 'ai', phone: 'AI Player', is_ready: true }
-    ]);
+    const allPlayers = [
+        { id: user.id, phone: user.phone, is_ready: true },
+        ...sortedAiHands.map((_, index) => ({ id: `ai_${index}`, phone: `AI ${index + 1}`, is_ready: true }))
+    ];
+    setPlayers(allPlayers);
     setGameStatus('playing');
   }, [isTrialMode, user]);
 
@@ -111,15 +110,22 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
     setErrorMessage('');
 
     if (isTrialMode) {
-      const playerHand = { top: topLane, middle: middleLane, bottom: bottomLane };
-      const result = calculateThirteenTrialResult(playerHand, aiHand);
-      const modalResult = {
-        players: [
-          { name: user.phone, hand: playerHand, score: result.playerScore },
-          { name: 'AI', hand: aiHand, score: -result.playerScore }
-        ],
-        winner: result.winner
+      const playerHand = {
+        top: topLane.map(c => `${c.rank}_of_${c.suit}`),
+        middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
+        bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
       };
+      const result = calculateThirteenTrialResult(playerHand, aiHand);
+
+      const modalPlayers = [
+        { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
+        ...aiHand.map((hand, index) => ({
+          name: `AI ${index + 1}`,
+          hand: hand,
+          score: 'N/A'
+        }))
+      ];
+      const modalResult = { players: modalPlayers };
       setGameResult(modalResult);
       setIsReady(true);
       setIsLoading(false);
@@ -164,7 +170,7 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
   };
 
   const renderPlayerName = (p) => {
-    if (p.id === 'ai') return '电脑AI';
+    if (String(p.id).startsWith('ai')) return p.phone; // e.g., "AI 1"
     if (!p.id || !user || p.id === user.id) return '你';
     return `玩家${p.phone.slice(-4)}`;
   };
