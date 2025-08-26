@@ -44,8 +44,9 @@ export const getSmartSortedHandForEight = (allCards) => {
     };
   }
 
-  // If no valid non-foul hand can be made, return a default arrangement
-  // (e.g., 3 weakest cards top, 5 strongest middle) to avoid crashing.
+  // If no valid non-foul hand can be made, this is a "相公" (foul) hand.
+  // For the AI, we can just return a default arrangement to avoid crashing.
+  // A better AI might try to minimize losses.
   const sorted = cardObjects.sort((a, b) => evaluateHand([a]).values[0] - evaluateHand([b]).values[0]);
   return {
       top: sorted.slice(0, 3),

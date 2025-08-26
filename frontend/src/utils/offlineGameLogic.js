@@ -43,56 +43,48 @@ export const dealOfflineEightCardGame = (playerCount = 6) => {
 };
 
 
-// 2. --- Core Game Logic for 8-Card Game ---
+// 2. --- Core Game Logic for 8-Card Game (3-5 structure) ---
 
-/**
- * Finds the best possible 5-card poker hand from a given set of 8 cards.
- * This is the crucial rule for the 8-card game.
- * @param {Array<string>} eightCards - An array of 8 card strings (e.g., 'ace_of_spades').
- * @returns {Object} The evaluation object of the best 5-card hand found.
- */
-function getBest5From8(eightCards) {
-  if (!eightCards || eightCards.length < 5) return null;
+function compareSssLanes(laneA, laneB) {
+    // This helper is also needed for 8-card game with 3-5 structure
+    const typeA = getSssLaneType(laneA);
+    const typeB = getSssLaneType(laneB);
+    const rankA = SSS_HAND_RANKS[typeA] || 1;
+    const rankB = SSS_HAND_RANKS[typeB] || 1;
 
-  const cardCombinations = combinations(eightCards, 5);
-  let bestEval = null;
+    if (rankA !== rankB) return rankA - rankB;
 
-  for (const fiveCardHand of cardCombinations) {
-    const handObjects = fiveCardHand.map(parseCard);
-    const currentEval = evaluateHand(handObjects);
-    if (!bestEval || compareHands(currentEval, bestEval) > 0) {
-      bestEval = currentEval;
-    }
-  }
-  return bestEval;
+    const handA = evaluateHand(laneA.map(parseCard));
+    const handB = evaluateHand(laneB.map(parseCard));
+    return compareHands(handA, handB);
 }
 
-/**
- * Calculates the result of a trial game between a player and an AI.
- * @param {Array<string>} playerEightCards - The player's 8 cards.
- * @param {Array<string>} playerEightCards - The player's 8 cards.
- * @param {Array<string>} playerEightCards - The player's 8-card hand.
- * @param {Array<Array<string>>} aiHands - An array of AI 8-card hands.
- * @returns {Object} A result object.
- */
-export const calculateEightCardTrialResult = (playerEightCards, aiHands) => {
-  const playerBestHand = getBest5From8(playerEightCards);
-  const aiBestHands = aiHands.map(getBest5From8);
+export const calculateEightCardTrialResult = (playerHand, aiHands) => {
+  const isPlayerFoul = compareSssLanes(playerHand.top, playerHand.middle) > 0;
   let totalScore = 0;
-  const hand_type_score_map = { '高牌': 1, '对子': 2, '两对': 3, '三条': 4, '顺子': 5, '同花': 6, '葫芦': 7, '铁支': 8, '同花顺': 10 };
 
-  aiBestHands.forEach(aiHand => {
-    const comparison = compareHands(playerBestHand, aiHand);
-    if (comparison > 0) {
-      totalScore += hand_type_score_map[playerBestHand.name] || 1;
-    } else if (comparison < 0) {
-      totalScore -= hand_type_score_map[aiHand.name] || 1;
-    }
+  aiHands.forEach(aiHand => {
+      if (!aiHand) return; // Skip if AI hand is invalid
+      const isAiFoul = compareSssLanes(aiHand.top, aiHand.middle) > 0;
+      let pairScore = 0;
+
+      if (isPlayerFoul && !isAiFoul) {
+          pairScore = -2; // Lose 1 point for each lane
+      } else if (!isPlayerFoul && isAiFoul) {
+          pairScore = 2; // Win 1 point for each lane
+      } else if (!isPlayerFoul && !isAiFoul) {
+          const topComparison = compareSssLanes(playerHand.top, aiHand.top);
+          if (topComparison > 0) pairScore++;
+          if (topComparison < 0) pairScore--;
+
+          const middleComparison = compareSssLanes(playerHand.middle, aiHand.middle);
+          if (middleComparison > 0) pairScore++;
+          if (middleComparison < 0) pairScore--;
+      }
+      totalScore += pairScore;
   });
 
-  return {
-    playerScore: totalScore,
-  };
+  return { playerScore: totalScore };
 };
 
 
@@ -119,7 +111,6 @@ export const dealOfflineThirteenGame = (playerCount = 4) => {
 export const getAiThirteenHand = (thirteenCards) => {
   const cardObjects = thirteenCards.map(parseCard);
   const sortedHand = getSmartSortedHand(cardObjects);
-  // Convert back to string arrays for consistency
   if (sortedHand) {
     return {
       top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`),
@@ -127,7 +118,7 @@ export const getAiThirteenHand = (thirteenCards) => {
       bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`),
     };
   }
-  return null; // Should not happen in a standard game
+  return null;
 };
 
 // --- SSS Scoring Logic (ported from scorer.php) ---
@@ -143,22 +134,7 @@ function getSssLaneType(cards) {
         if (hand.rank === HAND_TYPES.PAIR.rank) return "对子";
         return "高牌";
     }
-    // For 5-card hands, the name is already correct
     return evaluateHand(cardObjects).name;
-}
-
-function compareSssLanes(laneA, laneB) {
-    const typeA = getSssLaneType(laneA);
-    const typeB = getSssLaneType(laneB);
-    const rankA = SSS_HAND_RANKS[typeA] || 1;
-    const rankB = SSS_HAND_RANKS[typeB] || 1;
-
-    if (rankA !== rankB) return rankA - rankB;
-
-    // If ranks are the same, use the detailed 5-card evaluator
-    const handA = evaluateHand(laneA.map(parseCard));
-    const handB = evaluateHand(laneB.map(parseCard));
-    return compareHands(handA, handB);
 }
 
 function isSssFoul(hand) {
@@ -176,10 +152,10 @@ export const calculateThirteenTrialResult = (playerHand, aiHands) => {
         let pairScore = 0;
 
         if (playerIsFoul && !aiIsFoul) {
-            pairScore = -3; // Auto-lose 3 points
+            pairScore = -3;
         } else if (!playerIsFoul && aiIsFoul) {
-            pairScore = 3; // Auto-win 3 points
-        } else if (!playerIsFoul && !aiIsFoul) {
+            pairScore = 3;
+        } else if (!isPlayerFoul && !aiIsFoul) {
             const topComparison = compareSssLanes(playerHand.top, aiHand.top);
             if (topComparison > 0) pairScore++;
             if (topComparison < 0) pairScore--;

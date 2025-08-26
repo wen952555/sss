@@ -2,74 +2,45 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './ThirteenGame.css';
-import { getSmartSortedHand } from '../utils/autoSorter';
-import { areCardsEqual, sortCards, parseCard } from '../utils';
+import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult } from '../utils/offlineGameLogic';
 import GameResultModal from './GameResultModal';
 
 const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTrialMode = false }) => {
-  const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
+  const [initialHand, setInitialHand] = useState([]);
+  const {
+    topLane,
+    middleLane,
+    bottomLane,
+    unassignedCards,
+    selectedCards,
+    handleCardClick,
+    handleLaneClick,
+    handleAutoSort
+  } = useCardArrangement(initialHand, 'thirteen');
 
-  const [topLane, setTopLane] = useState([]);
-  const [middleLane, setMiddleLane] = useState([]);
-  const [bottomLane, setBottomLane] = useState([]);
-  const [aiHand, setAiHand] = useState(null);
-  const [selectedCards, setSelectedCards] = useState([]);
+  const [aiHands, setAiHands] = useState([]);
   const [hasDealt, setHasDealt] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [players, setPlayers] = useState([]);
-  const [gameStatus, setGameStatus] = useState('matching');
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Effect for online mode
+  // Effect for online mode (simplified)
   useEffect(() => {
-    if (isTrialMode || gameStatus === 'finished') return;
-    const intervalId = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
-        const data = await response.json();
-        if (data.success) {
-          setGameStatus(data.gameStatus);
-          setPlayers(data.players);
-          const me = data.players.find(p => p.id === user.id);
-          if (data.hand && !hasDealt) {
-            // In online mode, hand comes pre-set or player arranges
-            setTopLane(data.hand.top || []);
-            setMiddleLane(data.hand.middle || []);
-            setBottomLane(data.hand.bottom || []);
-            setHasDealt(true);
-            setIsReady(me ? !!me.is_ready : false);
-          }
-          if (data.gameStatus === 'finished' && data.result) {
-            setGameResult(data.result);
-            clearInterval(intervalId);
-          }
-        }
-      } catch (error) {
-        setErrorMessage("与服务器断开连接");
-        clearInterval(intervalId);
-      }
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [roomId, user.id, gameStatus, hasDealt, isTrialMode]);
+    if (isTrialMode) return;
+    // Online logic would fetch the hand and setInitialHand(data.hand)
+  }, [roomId, user, isTrialMode]);
 
   // Effect for trial mode setup
   useEffect(() => {
     if (!isTrialMode) return;
 
     const { playerHand, aiHands: initialAiHands } = dealOfflineThirteenGame(4);
-
-    const sortedPlayerHand = getAiThirteenHand(playerHand);
+    setInitialHand(playerHand);
     const sortedAiHands = initialAiHands.map(getAiThirteenHand);
-
-    if (sortedPlayerHand) {
-        setTopLane(sortedPlayerHand.top.map(parseCard));
-        setMiddleLane(sortedPlayerHand.middle.map(parseCard));
-        setBottomLane(sortedPlayerHand.bottom.map(parseCard));
-    }
-    setAiHand(sortedAiHands); // Note: this is now an array of hands
+    setAiHands(sortedAiHands);
 
     setHasDealt(true);
     const allPlayers = [
@@ -77,30 +48,11 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
         ...sortedAiHands.map((_, index) => ({ id: `ai_${index}`, phone: `AI ${index + 1}`, is_ready: true }))
     ];
     setPlayers(allPlayers);
-    setGameStatus('playing');
   }, [isTrialMode, user]);
-
-
-  const handleReadyToggle = async () => {
-    // This button is not shown in trial mode
-    setIsLoading(true);
-    setErrorMessage('');
-    const action = isReady ? 'unready' : 'ready';
-    try {
-      await fetch('/api/index.php?action=player_action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, roomId, action })
-      });
-    } catch (err) {
-      setErrorMessage('与服务器通信失败');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleConfirm = async () => {
     if (isLoading || isReady) return;
+    const LANE_LIMITS = { top: 3, middle: 5, bottom: 5 };
     if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
       setErrorMessage(`牌道数量错误！`);
       return;
@@ -115,11 +67,11 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
         middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
         bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
       };
-      const result = calculateThirteenTrialResult(playerHand, aiHand);
+      const result = calculateThirteenTrialResult(playerHand, aiHands);
 
       const modalPlayers = [
         { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
-        ...aiHand.map((hand, index) => ({
+        ...aiHands.map((hand, index) => ({
           name: `AI ${index + 1}`,
           hand: hand,
           score: 'N/A'
@@ -128,40 +80,9 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
       const modalResult = { players: modalPlayers };
       setGameResult(modalResult);
       setIsReady(true);
-      setIsLoading(false);
-      return;
     }
-
-    try {
-      const payload = {
-        userId: user.id,
-        roomId: roomId,
-        action: 'submit_hand',
-        hand: { top: topLane, middle: middleLane, bottom: bottomLane },
-      };
-      await fetch('/api/index.php?action=player_action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      setIsReady(true);
-    } catch (err) {
-      setErrorMessage('与服务器通信失败');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAutoSort = () => {
-    // This is now only for online mode, as trial is pre-sorted.
-    if (!hasDealt || isTrialMode) return;
-    const allCards = [...topLane, ...middleLane, ...bottomLane];
-    const sorted = getSmartSortedHand(allCards);
-    if (sorted) {
-      setTopLane(sorted.top);
-      setMiddleLane(sorted.middle);
-      setBottomLane(sorted.bottom);
-    }
+    // Online logic would go here
+    setIsLoading(false);
   };
 
   const handleCloseResult = () => {
@@ -170,7 +91,7 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
   };
 
   const renderPlayerName = (p) => {
-    if (String(p.id).startsWith('ai')) return p.phone; // e.g., "AI 1"
+    if (String(p.id).startsWith('ai')) return p.phone;
     if (!p.id || !user || p.id === user.id) return '你';
     return `玩家${p.phone.slice(-4)}`;
   };
@@ -183,35 +104,33 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
       </div>
       <div className="players-status-container">
         {players.map(p => (
-          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
-            <div className="player-avatar">{p.id === 'ai' ? 'AI' : p.phone.slice(-2)}</div>
+          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${isReady ? 'is-ready' : ''}`}>
+            <div className="player-avatar">{String(p.id).startsWith('ai') ? 'AI' : p.phone.slice(-2)}</div>
             <div className="player-info">
               <div className="player-name">{renderPlayerName(p)}</div>
-              <div className="player-ready-text">{hasDealt ? (isReady ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
+              <div className="player-ready-text">{isReady ? '已提交' : '理牌中...'}</div>
             </div>
           </div>
         ))}
       </div>
 
+      {unassignedCards.length > 0 && (
+          <Lane title="待选牌" cards={unassignedCards} onCardClick={(card) => handleCardClick(card, 'unassigned')} selectedCards={selectedCards} />
+      )}
+
       <div className="lanes-container">
-        <Lane title="头道" cards={topLane} onCardClick={null} onLaneClick={null} selectedCards={[]} expectedCount={LANE_LIMITS.top} />
-        <Lane title="中道" cards={middleLane} onCardClick={null} onLaneClick={null} selectedCards={[]} expectedCount={LANE_LIMITS.middle} />
-        <Lane title="尾道" cards={bottomLane} onCardClick={null} onLaneClick={null} selectedCards={[]} expectedCount={LANE_LIMITS.bottom} />
+        <Lane title="头道" cards={topLane} onCardClick={(card) => handleCardClick(card, 'lane', 'top')} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={3} />
+        <Lane title="中道" cards={middleLane} onCardClick={(card) => handleCardClick(card, 'lane', 'middle')} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={5} />
+        <Lane title="尾道" cards={bottomLane} onCardClick={(card) => handleCardClick(card, 'lane', 'bottom')} onLaneClick={() => handleLaneClick('bottom')} selectedCards={selectedCards} expectedCount={5} />
       </div>
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
-        {isTrialMode || hasDealt ? (
           <>
-            <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isReady || isTrialMode}>自动理牌</button>
+            <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isReady}>自动理牌</button>
             <button onClick={handleConfirm} disabled={isLoading || isReady} className="table-action-btn confirm-btn">
-              {isReady ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
+              {isReady ? '等待开牌' : '确认'}
             </button>
           </>
-        ) : (
-          <button className="table-action-btn confirm-btn" onClick={handleReadyToggle} disabled={isLoading}>
-            {isLoading ? '请稍候...' : '点击准备'}
-          </button>
-        )}
       </div>
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} gameType="thirteen" isTrial={isTrialMode} />}
     </div>

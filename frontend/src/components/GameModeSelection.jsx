@@ -31,8 +31,7 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack, onSelectTrialMode }
 
       {showTrialMode && (
         <>
-          <p className="mode-selection-subtitle" style={{ marginTop: '2rem' }}>或</p>
-          <div className="mode-options">
+          <div className="mode-options" style={{ marginTop: '1rem' }}>
             <div className="mode-card trial-mode" onClick={() => onSelectTrialMode()}>
               <h2 className="mode-card-title">试玩模式</h2>
               <p className="mode-card-description">与AI练习，不消耗积分</p>

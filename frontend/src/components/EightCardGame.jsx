@@ -2,14 +2,22 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
-import { areCardsEqual, parseCard, sortCards } from '../utils';
-import { dealOfflineEightCardGame, calculateEightCardTrialResult } from '../utils/offlineGameLogic';
+import { useCardArrangement } from '../hooks/useCardArrangement';
+import { dealOfflineEightCardGame, calculateEightCardTrialResult, getAiThirteenHand, getSmartSortedHandForEight } from '../utils/offlineGameLogic';
 import GameResultModal from './GameResultModal';
 
 const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTrialMode = false }) => {
-  const LANE_LIMITS = { middle: 8 };
+  const [initialHand, setInitialHand] = useState([]);
+  const {
+    topLane,
+    middleLane,
+    unassignedCards,
+    selectedCards,
+    handleCardClick,
+    handleLaneClick,
+    handleAutoSort
+  } = useCardArrangement(initialHand, 'eight');
 
-  const [middleLane, setMiddleLane] = useState([]);
   const [aiHands, setAiHands] = useState([]);
   const [hasDealt, setHasDealt] = useState(false);
   const [hasSubmittedHand, setHasSubmittedHand] = useState(false);
@@ -18,19 +26,15 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Effect for online mode (currently not implemented for 8-card)
-  useEffect(() => {
-    if (isTrialMode) return;
-    // Online logic would go here
-  }, [roomId, user, hasDealt]);
-
   // Effect for trial mode setup
   useEffect(() => {
     if (!isTrialMode) return;
 
     const { playerHand, aiHands: initialAiHands } = dealOfflineEightCardGame(6);
-    setMiddleLane(playerHand.map(parseCard));
-    setAiHands(initialAiHands);
+    setInitialHand(playerHand);
+
+    const processedAiHands = initialAiHands.map(hand => getSmartSortedHandForEight(hand));
+    setAiHands(processedAiHands);
     setHasDealt(true);
 
     const allPlayers = [
@@ -42,7 +46,8 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
 
   const handleConfirm = () => {
     if (isLoading || hasSubmittedHand) return;
-    if (middleLane.length !== LANE_LIMITS.middle) {
+    const LANE_LIMITS = { top: 3, middle: 5 };
+    if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle) {
       setErrorMessage(`牌道数量错误！`);
       return;
     }
@@ -50,14 +55,17 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
     setIsLoading(true);
     setErrorMessage('');
 
-    const middleLaneStrings = middleLane.map(c => `${c.rank}_of_${c.suit}`);
-    const result = calculateEightCardTrialResult(middleLaneStrings, aiHands);
+    const playerHand = {
+      top: topLane.map(c => `${c.rank}_of_${c.suit}`),
+      middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
+    };
+    const result = calculateEightCardTrialResult(playerHand, aiHands);
 
     const modalPlayers = [
-      { name: user.phone, hand: { middle: middleLane }, score: result.playerScore, is_me: true },
+      { name: user.phone, hand: { ...playerHand, bottom: [] }, score: result.playerScore, is_me: true },
       ...aiHands.map((hand, index) => ({
         name: `AI ${index + 1}`,
-        hand: { middle: hand.map(parseCard) },
+        hand: { ...hand, bottom: [] },
         score: 'N/A'
       }))
     ];
@@ -65,11 +73,6 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
     setGameResult(modalResult);
     setHasSubmittedHand(true);
     setIsLoading(false);
-  };
-
-  const handleAutoSort = () => {
-    // For 1-lane game, auto-sort just sorts by rank/suit for visual appeal.
-    setMiddleLane(sortCards(middleLane));
   };
 
   const handleCloseResult = () => {
@@ -91,7 +94,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
       </div>
       <div className="players-status-container six-player">
         {players.map(p => (
-          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
+          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''}`}>
             <div className="player-avatar">{String(p.id).startsWith('ai') ? 'AI' : p.phone.slice(-2)}</div>
             <div className="player-info">
               <div className="player-name">{renderPlayerName(p)}</div>
@@ -101,8 +104,14 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
         ))}
       </div>
 
+      {unassignedCards.length > 0 && (
+          <Lane title="待选牌" cards={unassignedCards} onCardClick={(card) => handleCardClick(card, 'unassigned')} selectedCards={selectedCards} />
+      )}
+
       <div className="lanes-container">
-        <Lane title="牌" cards={middleLane} onCardClick={() => {}} selectedCards={[]} expectedCount={LANE_LIMITS.middle} />
+        <Lane title="头道" cards={topLane} onCardClick={(card) => handleCardClick(card, 'lane', 'top')} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={3} />
+        <Lane title="中道" cards={middleLane} onCardClick={(card) => handleCardClick(card, 'lane', 'middle')} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={5} />
+        <Lane title="尾道" cards={[]} onLaneClick={null} selectedCards={[]} expectedCount={0} isDisabled={true} />
       </div>
 
       {errorMessage && <p className="error-text">{errorMessage}</p>}
