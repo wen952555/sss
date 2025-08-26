@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { sortCards, areCardsEqual, getSmartSortedHand, getSmartSortedHandForEight } from '../utils';
+import { useState, useCallback, useEffect } from 'react';
+import { sortCards, areCardsEqual, getSmartSortedHand, getSmartSortedHandForEight, parseCard } from '../utils';
 
 const getLaneLimits = (gameType) => {
   if (gameType === 'thirteen') return { top: 3, middle: 5, bottom: 5 };
@@ -13,8 +13,17 @@ export const useCardArrangement = (initialCards, gameType) => {
   const [topLane, setTopLane] = useState([]);
   const [middleLane, setMiddleLane] = useState([]);
   const [bottomLane, setBottomLane] = useState([]);
-  const [unassignedCards, setUnassignedCards] = useState(initialCards);
+  const [unassignedCards, setUnassignedCards] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
+
+  useEffect(() => {
+    // When the initialCards prop changes (i.e., cards are dealt), reset the state.
+    setUnassignedCards(initialCards.map(c => (typeof c === 'string' ? parseCard(c) : c)));
+    setTopLane([]);
+    setMiddleLane([]);
+    setBottomLane([]);
+    setSelectedCards([]);
+  }, [initialCards]);
 
   const handleCardClick = useCallback((card, source, sourceLaneName = null) => {
     const cardIsSelected = selectedCards.some(c => areCardsEqual(c, card));
