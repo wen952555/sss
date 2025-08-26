@@ -43,48 +43,38 @@ export const dealOfflineEightCardGame = (playerCount = 6) => {
 };
 
 
-// 2. --- Core Game Logic for 8-Card Game (3-5 structure) ---
-
-function compareSssLanes(laneA, laneB) {
-    // This helper is also needed for 8-card game with 3-5 structure
-    const typeA = getSssLaneType(laneA);
-    const typeB = getSssLaneType(laneB);
-    const rankA = SSS_HAND_RANKS[typeA] || 1;
-    const rankB = SSS_HAND_RANKS[typeB] || 1;
-
-    if (rankA !== rankB) return rankA - rankB;
-
-    const handA = evaluateHand(laneA.map(parseCard));
-    const handB = evaluateHand(laneB.map(parseCard));
-    return compareHands(handA, handB);
-}
+// 2. --- Core Game Logic for 8-Card Game (2-3-3 structure) ---
 
 export const calculateEightCardTrialResult = (playerHand, aiHands) => {
-  const isPlayerFoul = compareSssLanes(playerHand.top, playerHand.middle) > 0;
-  let totalScore = 0;
+    const isPlayerFoul = isSssFoul(playerHand);
+    let totalScore = 0;
 
-  aiHands.forEach(aiHand => {
-      if (!aiHand) return; // Skip if AI hand is invalid
-      const isAiFoul = compareSssLanes(aiHand.top, aiHand.middle) > 0;
-      let pairScore = 0;
+    aiHands.forEach(aiHand => {
+        if (!aiHand) return;
+        const isAiFoul = isSssFoul(aiHand);
+        let pairScore = 0;
 
-      if (isPlayerFoul && !isAiFoul) {
-          pairScore = -2; // Lose 1 point for each lane
-      } else if (!isPlayerFoul && isAiFoul) {
-          pairScore = 2; // Win 1 point for each lane
-      } else if (!isPlayerFoul && !isAiFoul) {
-          const topComparison = compareSssLanes(playerHand.top, aiHand.top);
-          if (topComparison > 0) pairScore++;
-          if (topComparison < 0) pairScore--;
+        if (isPlayerFoul && !isAiFoul) {
+            pairScore = -3;
+        } else if (!isPlayerFoul && isAiFoul) {
+            pairScore = 3;
+        } else if (!isPlayerFoul && !isAiFoul) {
+            const topComparison = compareSssLanes(playerHand.top, aiHand.top);
+            if (topComparison > 0) pairScore++;
+            if (topComparison < 0) pairScore--;
 
-          const middleComparison = compareSssLanes(playerHand.middle, aiHand.middle);
-          if (middleComparison > 0) pairScore++;
-          if (middleComparison < 0) pairScore--;
-      }
-      totalScore += pairScore;
-  });
+            const middleComparison = compareSssLanes(playerHand.middle, aiHand.middle);
+            if (middleComparison > 0) pairScore++;
+            if (middleComparison < 0) pairScore--;
 
-  return { playerScore: totalScore };
+            const bottomComparison = compareSssLanes(playerHand.bottom, aiHand.bottom);
+            if (bottomComparison > 0) pairScore++;
+            if (bottomComparison < 0) pairScore--;
+        }
+        totalScore += pairScore;
+    });
+
+    return { playerScore: totalScore };
 };
 
 

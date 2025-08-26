@@ -1,9 +1,10 @@
 import { evaluateHand, compareHands, combinations, parseCard } from './pokerEvaluator';
 
 /**
- * Creates a new 8-card auto-sorter for a 3-5 hand structure.
+ * Auto-sorter for the 8-card game (2-3-3 structure).
+ * Finds the best possible valid hand arrangement.
  * @param {Array<Object>} allCards - Player's 8 cards (as objects or strings).
- * @returns {{top: Array, middle: Array} | null} A valid 2-lane hand or null.
+ * @returns {{top: Array, middle: Array, bottom: Array} | null} A valid 3-lane hand.
  */
 export const getSmartSortedHandForEight = (allCards) => {
   if (!allCards || allCards.length !== 8) {

@@ -115,14 +115,14 @@
   flex-basis: 28%; /* Allow 3 items per row with gaps */
   flex-grow: 1;
   justify-content: flex-start; /* Align items to the start */
-  padding: 4px;
+  padding: 2px 4px;
   gap: 5px;
 }
 
 .six-player .player-avatar {
-  width: 30px;
-  height: 30px;
-  font-size: 0.9rem;
+  width: 25px;
+  height: 25px;
+  font-size: 0.8rem;
 }
 
 .six-player .player-name {
