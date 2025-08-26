@@ -77,6 +77,11 @@ export const useCardArrangement = (initialCards, gameType) => {
     selectedCards,
     handleCardClick,
     handleLaneClick,
-    handleAutoSort
+    handleAutoSort,
+    // Expose setters for direct manipulation
+    setTopLane,
+    setMiddleLane,
+    setBottomLane,
+    setUnassignedCards
   };
 };

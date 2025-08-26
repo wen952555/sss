@@ -7,7 +7,6 @@ import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResul
 import GameResultModal from './GameResultModal';
 
 const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTrialMode = false }) => {
-  const [initialHand, setInitialHand] = useState([]);
   const {
     topLane,
     middleLane,
@@ -16,8 +15,12 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
     selectedCards,
     handleCardClick,
     handleLaneClick,
-    handleAutoSort
-  } = useCardArrangement(initialHand, 'thirteen');
+    handleAutoSort,
+    setTopLane,
+    setMiddleLane,
+    setBottomLane,
+    setUnassignedCards
+  } = useCardArrangement([], 'thirteen'); // Start with empty initial hand
 
   const [aiHands, setAiHands] = useState([]);
   const [hasDealt, setHasDealt] = useState(false);
@@ -38,7 +41,16 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
     if (!isTrialMode) return;
 
     const { playerHand, aiHands: initialAiHands } = dealOfflineThirteenGame(4);
-    setInitialHand(playerHand);
+
+    // Auto-sort player's hand and set lanes directly
+    const sortedPlayerHand = getAiThirteenHand(playerHand);
+    if (sortedPlayerHand) {
+        setTopLane(sortedPlayerHand.top.map(parseCard));
+        setMiddleLane(sortedPlayerHand.middle.map(parseCard));
+        setBottomLane(sortedPlayerHand.bottom.map(parseCard));
+    }
+    setUnassignedCards([]); // Ensure no unassigned cards are shown
+
     const sortedAiHands = initialAiHands.map(getAiThirteenHand);
     setAiHands(sortedAiHands);
 
@@ -48,7 +60,7 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
         ...sortedAiHands.map((_, index) => ({ id: `ai_${index}`, phone: `AI ${index + 1}`, is_ready: true }))
     ];
     setPlayers(allPlayers);
-  }, [isTrialMode, user]);
+  }, [isTrialMode, user, setTopLane, setMiddleLane, setBottomLane, setUnassignedCards]);
 
   const handleConfirm = async () => {
     if (isLoading || isReady) return;
@@ -113,10 +125,6 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
           </div>
         ))}
       </div>
-
-      {unassignedCards.length > 0 && (
-          <Lane title="待选牌" cards={unassignedCards} onCardClick={(card) => handleCardClick(card, 'unassigned')} selectedCards={selectedCards} />
-      )}
 
       <div className="lanes-container">
         <Lane title="头道" cards={topLane} onCardClick={(card) => handleCardClick(card, 'lane', 'top')} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={3} />
