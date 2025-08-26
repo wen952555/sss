@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
-import { areCardsEqual, parseCard, sortCards, combinations, evaluateHand, compareHands } from '../utils';
+import { combinations, parseCard, evaluateHand, compareHands } from '../utils';
 import { dealOfflineEightCardGame, calculateEightCardTrialResult } from '../utils/offlineGameLogic';
 import GameResultModal from './GameResultModal';
 
-// --- Helper logic moved from unwritable utils file ---
+// --- Helper logic is now self-contained to prevent any external file issues ---
+const areCardsEqual = (cardA, cardB) => {
+  if (!cardA || !cardB) return false;
+  return cardA.rank === cardB.rank && cardA.suit === cardB.suit;
+};
 const SSS_HAND_RANKS = { "高牌": 1, "对子": 2, "三条": 4 };
 function getSssLaneType(cards) {
     if (!cards || cards.length === 0) return "高牌";
@@ -56,76 +60,42 @@ const getSmartSortedHandForEight = (allCards) => {
 // --- End of helper logic ---
 
 
-const EightCardGame = ({ isTrialMode = true, onBackToLobby, user }) => {
+const EightCardGame = ({ onBackToLobby, user }) => {
   const LANE_LIMITS = { top: 2, middle: 3, bottom: 3 };
 
   const [topLane, setTopLane] = useState([]);
   const [middleLane, setMiddleLane] = useState([]);
   const [bottomLane, setBottomLane] = useState([]);
-  const [unassignedCards, setUnassignedCards] = useState([]);
-  const [selectedCards, setSelectedCards] = useState([]);
-
   const [aiHands, setAiHands] = useState([]);
-  const [hasDealt, setHasDealt] = useState(false);
-  const [hasSubmittedHand, setHasSubmittedHand] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
-  const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const { playerHand, aiHands: initialAiHands } = dealOfflineEightCardGame(6);
-    setUnassignedCards(playerHand.map(parseCard));
+
+    const sortedPlayerHand = getSmartSortedHandForEight(playerHand);
+    if (sortedPlayerHand) {
+        setTopLane(sortedPlayerHand.top);
+        setMiddleLane(sortedPlayerHand.middle);
+        setBottomLane(sortedPlayerHand.bottom);
+    }
+
     const processedAiHands = initialAiHands.map(hand => getSmartSortedHandForEight(hand));
     setAiHands(processedAiHands);
-    setHasDealt(true);
+
     const allPlayers = [
       { id: user.id, phone: user.phone, is_ready: true },
       ...initialAiHands.map((_, index) => ({ id: `ai_${index}`, phone: `AI ${index + 1}`, is_ready: true }))
     ];
     setPlayers(allPlayers);
-  }, [isTrialMode, user]);
-
-  const handleCardClick = (card) => {
-    setSelectedCards(prev => prev.some(c => areCardsEqual(c, card)) ? prev.filter(c => !areCardsEqual(c, card)) : [...prev, card]);
-  };
-
-  const handleLaneClick = (laneName) => {
-    if (selectedCards.length === 0) return;
-    const laneSetterMap = { top: setTopLane, middle: setMiddleLane, bottom: setBottomLane };
-    const currentLanes = { top: topLane, middle: middleLane, bottom: bottomLane };
-    const targetSetter = laneSetterMap[laneName];
-    if (currentLanes[laneName].length + selectedCards.length > LANE_LIMITS[laneName]) {
-      setErrorMessage(`此道最多只能放 ${LANE_LIMITS[laneName]} 张牌!`);
-      return;
-    }
-    targetSetter(prev => sortCards([...prev, ...selectedCards]));
-    setUnassignedCards(prev => prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc))));
-    setTopLane(prev => (laneName === 'top' ? prev : prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)))));
-    setMiddleLane(prev => (laneName === 'middle' ? prev : prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)))));
-    setBottomLane(prev => (laneName === 'bottom' ? prev : prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)))));
-    setSelectedCards([]);
-  };
-
-  const handleAutoSort = () => {
-    if (!hasDealt || hasSubmittedHand) return;
-    const sorted = getSmartSortedHandForEight(unassignedCards);
-    if (sorted) {
-      setTopLane(sorted.top);
-      setMiddleLane(sorted.middle);
-      setBottomLane(sorted.bottom);
-      setUnassignedCards([]);
-    }
-  };
+    setIsReady(true);
+  }, [user]);
 
   const handleConfirm = () => {
-    if (isLoading || hasSubmittedHand) return;
-    if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
-      setErrorMessage(`牌道数量错误！`);
-      return;
-    }
+    if (isLoading || !isReady) return;
     setIsLoading(true);
-    setErrorMessage('');
     const playerHand = {
       top: topLane.map(c => `${c.rank}_of_${c.suit}`),
       middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
@@ -137,7 +107,6 @@ const EightCardGame = ({ isTrialMode = true, onBackToLobby, user }) => {
       ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
     ];
     setGameResult({ players: modalPlayers });
-    setHasSubmittedHand(true);
     setIsLoading(false);
   };
 
@@ -160,34 +129,26 @@ const EightCardGame = ({ isTrialMode = true, onBackToLobby, user }) => {
       </div>
       <div className="players-status-container six-player">
         {players.map(p => (
-          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''}`}>
+          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} is-ready`}>
             <div className="player-avatar">{String(p.id).startsWith('ai') ? 'AI' : p.phone.slice(-2)}</div>
             <div className="player-info">
               <div className="player-name">{renderPlayerName(p)}</div>
-              <div className="player-ready-text">{hasSubmittedHand ? '已提交' : '理牌中...'}</div>
+              <div className="player-ready-text">已提交</div>
             </div>
           </div>
         ))}
       </div>
 
-      {unassignedCards.length > 0 && (
-          <Lane title="待选牌" cards={unassignedCards} onCardClick={handleCardClick} selectedCards={selectedCards} />
-      )}
-
       <div className="lanes-container">
-        <Lane title="头道" cards={topLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
-        <Lane title="中道" cards={middleLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
-        <Lane title="尾道" cards={bottomLane} onCardClick={handleCardClick} onLaneClick={() => handleLaneClick('bottom')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
+        <Lane title="头道" cards={topLane} onCardClick={null} selectedCards={[]} expectedCount={LANE_LIMITS.top} />
+        <Lane title="中道" cards={middleLane} onCardClick={null} selectedCards={[]} expectedCount={LANE_LIMITS.middle} />
+        <Lane title="尾道" cards={bottomLane} onCardClick={null} selectedCards={[]} expectedCount={LANE_LIMITS.bottom} />
       </div>
 
-      {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
-          <>
-            <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={hasSubmittedHand}>自动理牌</button>
-            <button onClick={handleConfirm} disabled={isLoading || hasSubmittedHand} className="table-action-btn confirm-btn">
-              {hasSubmittedHand ? '等待开牌' : '确认'}
-            </button>
-          </>
+          <button onClick={handleConfirm} disabled={isLoading || gameResult} className="table-action-btn confirm-btn">
+            {gameResult ? '游戏结束' : '确认看牌'}
+          </button>
       </div>
       {gameResult && <GameResultModal result={gameResult} onClose={handleCloseResult} gameType="eight" isTrial={true} />}
     </div>
