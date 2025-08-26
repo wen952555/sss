@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
-import { getSmartSortedHandForEight, areCardsEqual } from '../utils';
+import { getSmartSortedHandForEight, areCardsEqual, parseCard } from '../utils';
 import { dealOfflineEightCardGame, calculateTrialResult } from '../utils/offlineGameLogic';
 import GameResultModal from './GameResultModal';
 
@@ -58,8 +58,9 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
     if (!isTrialMode) return;
 
     const { playerHand, aiHand } = dealOfflineEightCardGame();
-    setMiddleLane(playerHand);
-    setAiHand(aiHand);
+    // Convert card strings to objects for rendering
+    setMiddleLane(playerHand.map(parseCard));
+    setAiHand(aiHand); // Keep AI hand as strings for the logic function
     setHasDealt(true);
     setPlayers([
       { id: user.id, phone: user.phone, is_ready: true },
@@ -96,12 +97,15 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
     setErrorMessage('');
 
     if (isTrialMode) {
-      const result = calculateTrialResult(middleLane, aiHand);
+      // Convert card objects back to strings for the logic function
+      const middleLaneStrings = middleLane.map(c => `${c.rank}_of_${c.suit}`);
+      const result = calculateTrialResult(middleLaneStrings, aiHand);
+
       // Remap the result structure to what GameResultModal expects
       const modalResult = {
         players: [
-          { name: user.phone, hand: { middle: result.playerHand }, score: result.winner === 'player' ? 1 : (result.winner === 'tie' ? 0 : -1) },
-          { name: 'AI', hand: { middle: result.aiHand }, score: result.winner === 'ai' ? 1 : (result.winner === 'tie' ? 0 : -1) }
+          { name: user.phone, hand: { middle: middleLane }, score: result.winner === 'player' ? 1 : (result.winner === 'tie' ? 0 : -1) },
+          { name: 'AI', hand: { middle: result.aiHand.map(parseCard) }, score: result.winner === 'ai' ? 1 : (result.winner === 'tie' ? 0 : -1) }
         ],
         playerResult: result.playerResult,
         aiResult: result.aiResult,
