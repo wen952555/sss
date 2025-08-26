@@ -4,8 +4,8 @@ import './GameModeSelection.css';
 const GameModeSelection = ({ gameType, onSelectMode, onBack, onSelectTrialMode }) => {
   const gameTitle = gameType === 'thirteen' ? '经典十三张' : '急速八张';
 
-  // 只有急速八张显示试玩模式
-  const showTrialMode = gameType === 'eight';
+  // 两个游戏都显示试玩模式
+  const showTrialMode = gameType === 'eight' || gameType === 'thirteen';
 
   return (
     <div className="mode-selection-container">

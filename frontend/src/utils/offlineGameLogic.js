@@ -1,4 +1,5 @@
-import { compareHands, combinations, parseCard, evaluateHand } from './pokerEvaluator';
+import { compareHands, combinations, parseCard, evaluateHand, HAND_TYPES } from './pokerEvaluator';
+import { getSmartSortedHand } from './autoSorter';
 
 const SUITS = ['spades', 'hearts', 'clubs', 'diamonds'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
@@ -101,4 +102,96 @@ export const getAiEightCardHand = (aiEightCards) => {
   // In a 1-lane game, there's no complex arrangement logic needed for the AI.
   // We could try to sort them for visual appeal, but it's not necessary for the game logic.
   return aiEightCards;
+};
+
+
+// 3. --- Game Logic for 13-Card Game (SSS) ---
+
+export const dealOfflineThirteenGame = () => {
+  const deck = shuffleDeck(createDeck());
+  const playerHand = [];
+  const aiHand = [];
+  for (let i = 0; i < 13; i++) {
+    playerHand.push(deck.pop());
+    aiHand.push(deck.pop());
+  }
+  return { playerHand, aiHand };
+};
+
+export const getAiThirteenHand = (thirteenCards) => {
+  const cardObjects = thirteenCards.map(parseCard);
+  const sortedHand = getSmartSortedHand(cardObjects);
+  // Convert back to string arrays for consistency
+  if (sortedHand) {
+    return {
+      top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`),
+      middle: sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`),
+      bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`),
+    };
+  }
+  return null; // Should not happen in a standard game
+};
+
+// --- SSS Scoring Logic (ported from scorer.php) ---
+
+const SSS_HAND_RANKS = { "高牌": 1, "对子": 2, "两对": 3, "三条": 4, "顺子": 5, "同花": 6, "葫芦": 7, "铁支": 8, "同花顺": 9 };
+
+function getSssLaneType(cards) {
+    if (!cards || cards.length === 0) return "高牌";
+    const cardObjects = cards.map(parseCard);
+    if (cards.length === 3) {
+        const hand = evaluateHand(cardObjects);
+        if (hand.rank === HAND_TYPES.THREE_OF_A_KIND.rank) return "三条";
+        if (hand.rank === HAND_TYPES.PAIR.rank) return "对子";
+        return "高牌";
+    }
+    // For 5-card hands, the name is already correct
+    return evaluateHand(cardObjects).name;
+}
+
+function compareSssLanes(laneA, laneB) {
+    const typeA = getSssLaneType(laneA);
+    const typeB = getSssLaneType(laneB);
+    const rankA = SSS_HAND_RANKS[typeA] || 1;
+    const rankB = SSS_HAND_RANKS[typeB] || 1;
+
+    if (rankA !== rankB) return rankA - rankB;
+
+    // If ranks are the same, use the detailed 5-card evaluator
+    const handA = evaluateHand(laneA.map(parseCard));
+    const handB = evaluateHand(laneB.map(parseCard));
+    return compareHands(handA, handB);
+}
+
+function isSssFoul(hand) {
+    if (compareSssLanes(hand.middle, hand.bottom) > 0) return true;
+    if (compareSssLanes(hand.top, hand.middle) > 0) return true;
+    return false;
+}
+
+export const calculateThirteenTrialResult = (playerHand, aiHand) => {
+    const playerIsFoul = isSssFoul(playerHand);
+    const aiIsFoul = isSssFoul(aiHand);
+
+    if (playerIsFoul && !aiIsFoul) return { winner: 'ai', reason: '玩家相公' };
+    if (!playerIsFoul && aiIsFoul) return { winner: 'player', reason: 'AI相公' };
+    if (playerIsFoul && aiIsFoul) return { winner: 'tie', reason: '双方相公' };
+
+    let playerScore = 0;
+    const topComparison = compareSssLanes(playerHand.top, aiHand.top);
+    const middleComparison = compareSssLanes(playerHand.middle, aiHand.middle);
+    const bottomComparison = compareSssLanes(playerHand.bottom, aiHand.bottom);
+
+    if (topComparison > 0) playerScore++;
+    if (topComparison < 0) playerScore--;
+    if (middleComparison > 0) playerScore++;
+    if (middleComparison < 0) playerScore--;
+    if (bottomComparison > 0) playerScore++;
+    if (bottomComparison < 0) playerScore--;
+
+    let winner = 'tie';
+    if (playerScore > 0) winner = 'player';
+    if (playerScore < 0) winner = 'ai';
+
+    return { winner, playerScore };
 };

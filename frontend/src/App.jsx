@@ -36,11 +36,10 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isTrialMode, setIsTrialMode] = useState(false);
 
-  const handleSelectTrialMode = () => {
+  const handleSelectTrialMode = (gameType) => {
     setIsTrialMode(true);
-    // Set a simplified game state for trial mode
     setGameState({
-      gameType: 'eight',
+      gameType: gameType,
       gameMode: 'trial',
       roomId: 'trial_room', // A dummy room ID for trial mode
       error: null,
@@ -153,12 +152,16 @@ function App() {
 
   const renderMainContent = () => {
     if (isInTrial) {
-      return <EightCardGame
-        isTrialMode={true}
-        onBackToLobby={handleBackToLobby}
-        user={gameState.gameUser}
-        gameMode={gameState.gameMode}
-      />;
+      const trialProps = {
+        isTrialMode: true,
+        onBackToLobby: handleBackToLobby,
+        user: gameState.gameUser,
+        gameMode: gameState.gameMode,
+      };
+      if (gameState.gameType === 'thirteen') {
+        return <ThirteenGame {...trialProps} />;
+      }
+      return <EightCardGame {...trialProps} />;
     }
     if (isInGame) {
       const gameProps = {
@@ -178,7 +181,7 @@ function App() {
       case 'profile':
         return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
       case 'modeSelection':
-        return <GameModeSelection gameType={viewingGame} onSelectMode={handleSelectMode} onBack={handleBackToLobby} onSelectTrialMode={handleSelectTrialMode} />;
+        return <GameModeSelection gameType={viewingGame} onSelectMode={handleSelectMode} onBack={handleBackToLobby} onSelectTrialMode={() => handleSelectTrialMode(viewingGame)} />;
       case 'lobby':
       default:
         return (
