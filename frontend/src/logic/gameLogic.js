@@ -1,5 +1,6 @@
 // frontend_react/src/logic/gameLogic.js
 import { createDeck, shuffleDeck, evaluateHand, compareEvaluatedHands } from './cardUtils'; // Removed isValidArrangement
+import { t } from '../i18n';
 
 export const GameStates = {
   INIT: 'INIT',
@@ -84,7 +85,7 @@ export function compareAllHands(currentState) {
 
   if (numPlayers < 2) {
     console.warn("Not enough confirmed players with hands to compare.");
-    return { ...currentState, gameState: GameStates.RESULTS, roundResults: { summary: "等待玩家...", details: [] } };
+    return { ...currentState, gameState: GameStates.RESULTS, roundResults: { summary: t("等待玩家..."), details: [] } };
   }
 
   const playerScoresMap = new Map(currentState.players.map(p => [p.id, p.score]));
@@ -104,19 +105,19 @@ export function compareAllHands(currentState) {
       };
 
       const touCompare = compareEvaluatedHands(playerA.evalHands.tou, playerB.evalHands.tou);
-      if (touCompare > 0) { scorePlayerA_vs_B++; comparisonDetail.tou = `${playerA.name} 胜`; }
-      else if (touCompare < 0) { scorePlayerB_vs_A++; comparisonDetail.tou = `${playerB.name} 胜`; }
-      else { comparisonDetail.tou = '平'; }
+      if (touCompare > 0) { scorePlayerA_vs_B++; comparisonDetail.tou = t("%s 胜", playerA.name); }
+      else if (touCompare < 0) { scorePlayerB_vs_A++; comparisonDetail.tou = t("%s 胜", playerB.name); }
+      else { comparisonDetail.tou = t('平'); }
 
       const zhongCompare = compareEvaluatedHands(playerA.evalHands.zhong, playerB.evalHands.zhong);
-      if (zhongCompare > 0) { scorePlayerA_vs_B++; comparisonDetail.zhong = `${playerA.name} 胜`; }
-      else if (zhongCompare < 0) { scorePlayerB_vs_A++; comparisonDetail.zhong = `${playerB.name} 胜`; }
-      else { comparisonDetail.zhong = '平'; }
+      if (zhongCompare > 0) { scorePlayerA_vs_B++; comparisonDetail.zhong = t("%s 胜", playerA.name); }
+      else if (zhongCompare < 0) { scorePlayerB_vs_A++; comparisonDetail.zhong = t("%s 胜", playerB.name); }
+      else { comparisonDetail.zhong = t('平'); }
 
       const weiCompare = compareEvaluatedHands(playerA.evalHands.wei, playerB.evalHands.wei);
-      if (weiCompare > 0) { scorePlayerA_vs_B++; comparisonDetail.wei = `${playerA.name} 胜`; }
-      else if (weiCompare < 0) { scorePlayerB_vs_A++; comparisonDetail.wei = `${playerB.name} 胜`; }
-      else { comparisonDetail.wei = '平'; }
+      if (weiCompare > 0) { scorePlayerA_vs_B++; comparisonDetail.wei = t("%s 胜", playerA.name); }
+      else if (weiCompare < 0) { scorePlayerB_vs_A++; comparisonDetail.wei = t("%s 胜", playerB.name); }
+      else { comparisonDetail.wei = t('平'); }
 
       let pointsEarned = 0;
       if (scorePlayerA_vs_B > scorePlayerB_vs_A) {
@@ -149,7 +150,7 @@ export function compareAllHands(currentState) {
     players: updatedPlayers,
     gameState: GameStates.RESULTS,
     roundResults: {
-        summary: `比牌结束! 各玩家得分已更新。`,
+        summary: t(`比牌结束! 各玩家得分已更新。`),
         details: roundResultsDetails
     }
   };
