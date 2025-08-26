@@ -3,10 +3,11 @@ import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-import { dealOfflineEightCardGame, calculateEightCardTrialResult, getSmartSortedHandForEight } from '../utils/offlineGameLogic';
+import { dealOfflineEightCardGame, calculateEightCardTrialResult, getSmartSortedHandForEight } from '../utils';
 import GameResultModal from './GameResultModal';
 
-const EightCardGame = ({ onBackToLobby, user, isTrialMode = true }) => {
+// This component is now a mirror of ThirteenGame, but for 8 cards
+const EightCardGame = ({ onBackToLobby, user }) => {
   const {
     topLane,
     middleLane,
