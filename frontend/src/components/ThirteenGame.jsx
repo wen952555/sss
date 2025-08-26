@@ -68,6 +68,11 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
     setIsLoading(false);
   };
 
+  const handleAutoSort = () => {
+    // In trial mode, this button is visible but disabled.
+    // In a real online game, this would trigger client-side sorting.
+  };
+
   const handleCloseResult = () => {
     setGameResult(null);
     onBackToLobby();
@@ -105,9 +110,9 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
           <>
-            {/* In auto-sorted trial, there's no manual sort. Confirm is the only action. */}
-            <button onClick={handleConfirm} disabled={isLoading || gameResult} className="table-action-btn confirm-btn">
-              {gameResult ? '游戏结束' : '确认看牌'}
+            <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isTrialMode || isReady}>自动理牌</button>
+            <button onClick={handleConfirm} disabled={isLoading || isReady || gameResult} className="table-action-btn confirm-btn">
+              {isReady ? '等待开牌' : '确认'}
             </button>
           </>
       </div>
