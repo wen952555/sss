@@ -3,7 +3,8 @@ import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-import { dealOfflineEightCardGame, calculateEightCardTrialResult, getAiThirteenHand, getSmartSortedHandForEight } from '../utils/offlineGameLogic';
+import { dealOfflineEightCardGame, calculateEightCardTrialResult } from '../utils/offlineGameLogic';
+import { getSmartSortedHandForEight } from '../utils/eightCardAutoSorter';
 import GameResultModal from './GameResultModal';
 
 const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTrialMode = false }) => {
