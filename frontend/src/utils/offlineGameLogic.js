@@ -24,15 +24,22 @@ export const shuffleDeck = (deck) => {
   return shuffled;
 };
 
-export const dealOfflineEightCardGame = () => {
+export const dealOfflineEightCardGame = (playerCount = 6) => {
   const deck = shuffleDeck(createDeck());
-  const playerHand = [];
-  const aiHand = [];
+  if (playerCount * 8 > 52) throw new Error("Not enough cards for this many players");
+
+  const hands = Array(playerCount).fill(0).map(() => []);
+
   for (let i = 0; i < 8; i++) {
-    playerHand.push(deck.pop());
-    aiHand.push(deck.pop());
+    for (let j = 0; j < playerCount; j++) {
+      hands[j].push(deck.pop());
+    }
   }
-  return { playerHand, aiHand };
+
+  return {
+    playerHand: hands[0],
+    aiHands: hands.slice(1),
+  };
 };
 
 
@@ -63,31 +70,32 @@ function getBest5From8(eightCards) {
 /**
  * Calculates the result of a trial game between a player and an AI.
  * @param {Array<string>} playerEightCards - The player's 8 cards.
- * @param {Array<string>} aiEightCards - The AI's 8 cards.
+ * @param {Array<string>} playerEightCards - The player's 8 cards.
+ * @param {Array<Array<string>>} aiHands - An array of AI hands.
  * @returns {Object} A result object.
  */
-export const calculateTrialResult = (playerEightCards, aiEightCards) => {
+export const calculateEightCardTrialResult = (playerEightCards, aiHands) => {
   const playerBestHand = getBest5From8(playerEightCards);
-  const aiBestHand = getBest5From8(aiEightCards);
+  const aiBestHands = aiHands.map(getBest5From8);
 
-  const comparison = compareHands(playerBestHand, aiBestHand);
+  let totalScore = 0;
+  const hand_type_score_map = { '高牌': 1, '对子': 2, '两对': 3, '三条': 4, '顺子': 5, '同花': 6, '葫芦': 7, '铁支': 8, '同花顺': 10 };
 
-  let winner = 'tie';
-  if (comparison > 0) winner = 'player';
-  if (comparison < 0) winner = 'ai';
+  aiBestHands.forEach(aiHand => {
+    const comparison = compareHands(playerBestHand, aiHand);
+    if (comparison > 0) {
+      totalScore += hand_type_score_map[playerBestHand.name] || 1;
+    } else if (comparison < 0) {
+      totalScore -= hand_type_score_map[aiHand.name] || 1;
+    }
+  });
 
   return {
-    winner,
+    playerScore: totalScore,
     playerHand: playerEightCards,
-    aiHand: aiEightCards,
-    playerResult: {
-      name: playerBestHand.name,
-      values: playerBestHand.values
-    },
-    aiResult: {
-      name: aiBestHand.name,
-      values: aiBestHand.values
-    }
+    aiHands: aiHands,
+    playerResult: playerBestHand,
+    aiResults: aiBestHands,
   };
 };
 

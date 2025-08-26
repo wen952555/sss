@@ -3,14 +3,14 @@ import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
 import { getSmartSortedHandForEight, areCardsEqual, parseCard } from '../utils';
-import { dealOfflineEightCardGame, calculateTrialResult } from '../utils/offlineGameLogic';
+import { dealOfflineEightCardGame, calculateEightCardTrialResult } from '../utils/offlineGameLogic';
 import GameResultModal from './GameResultModal';
 
 const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTrialMode = false }) => {
   const LANE_LIMITS = { top: 0, middle: 8, bottom: 0 };
 
   const [middleLane, setMiddleLane] = useState([]);
-  const [aiHand, setAiHand] = useState([]); // For trial mode
+  const [aiHands, setAiHands] = useState([]); // For trial mode, array of hands
   const [selectedCards, setSelectedCards] = useState([]);
   const [hasDealt, setHasDealt] = useState(false);
   const [isReadyForDeal, setIsReadyForDeal] = useState(false);
@@ -57,15 +57,17 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
   useEffect(() => {
     if (!isTrialMode) return;
 
-    const { playerHand, aiHand } = dealOfflineEightCardGame();
+    const { playerHand, aiHands } = dealOfflineEightCardGame(6);
     // Convert card strings to objects for rendering
     setMiddleLane(playerHand.map(parseCard));
-    setAiHand(aiHand); // Keep AI hand as strings for the logic function
+    setAiHands(aiHands); // Keep AI hands as strings for the logic function
     setHasDealt(true);
-    setPlayers([
+
+    const allPlayers = [
       { id: user.id, phone: user.phone, is_ready: true },
-      { id: 'ai', phone: 'AI Player', is_ready: true }
-    ]);
+      ...aiHands.map((_, index) => ({ id: `ai_${index}`, phone: `AI ${index + 1}`, is_ready: true }))
+    ];
+    setPlayers(allPlayers);
     setGameStatus('playing');
   }, [isTrialMode, user]);
 
@@ -99,18 +101,18 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
     if (isTrialMode) {
       // Convert card objects back to strings for the logic function
       const middleLaneStrings = middleLane.map(c => `${c.rank}_of_${c.suit}`);
-      const result = calculateTrialResult(middleLaneStrings, aiHand);
+      const result = calculateEightCardTrialResult(middleLaneStrings, aiHands);
 
       // Remap the result structure to what GameResultModal expects
-      const modalResult = {
-        players: [
-          { name: user.phone, hand: { middle: middleLane }, score: result.winner === 'player' ? 1 : (result.winner === 'tie' ? 0 : -1) },
-          { name: 'AI', hand: { middle: result.aiHand.map(parseCard) }, score: result.winner === 'ai' ? 1 : (result.winner === 'tie' ? 0 : -1) }
-        ],
-        playerResult: result.playerResult,
-        aiResult: result.aiResult,
-        winner: result.winner
-      };
+      const modalPlayers = [
+        { name: user.phone, hand: { middle: middleLane }, score: result.playerScore, is_me: true },
+        ...result.aiHands.map((hand, index) => ({
+          name: `AI ${index + 1}`,
+          hand: { middle: hand.map(parseCard) },
+          score: 'N/A' // Individual AI scores are not calculated, only player's total
+        }))
+      ];
+      const modalResult = { players: modalPlayers };
       setGameResult(modalResult);
       setHasSubmittedHand(true);
       setIsLoading(false);
@@ -181,7 +183,7 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
   };
 
   const renderPlayerName = (p) => {
-    if (p.id === 'ai') return '电脑AI';
+    if (String(p.id).startsWith('ai')) return p.phone; // e.g., "AI 1"
     if (p.id === user.id) return '你';
     return `玩家${p.phone.slice(-4)}`;
   };
@@ -192,10 +194,10 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
         <div className="game-table-title">{renderGameTitle()}</div>
       </div>
-      <div className="players-status-container">
+      <div className="players-status-container six-player">
         {players.map(p => (
           <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${p.is_ready ? 'is-ready' : ''}`}>
-            <div className="player-avatar">{p.id === 'ai' ? 'AI' : p.phone.slice(-2)}</div>
+            <div className="player-avatar">{String(p.id).startsWith('ai') ? 'AI' : p.phone.slice(-2)}</div>
             <div className="player-info">
               <div className="player-name">{renderPlayerName(p)}</div>
               <div className="player-ready-text">{hasDealt ? (hasSubmittedHand ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>

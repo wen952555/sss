@@ -3,7 +3,7 @@ import Card from './Card';
 import Lane from './Lane';
 import './ThirteenGame.css';
 import { getSmartSortedHand } from '../utils/autoSorter';
-import { areCardsEqual, sortCards } from '../utils';
+import { areCardsEqual, sortCards, parseCard } from '../utils';
 import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult } from '../utils/offlineGameLogic';
 import GameResultModal from './GameResultModal';
 
@@ -13,7 +13,6 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
   const [topLane, setTopLane] = useState([]);
   const [middleLane, setMiddleLane] = useState([]);
   const [bottomLane, setBottomLane] = useState([]);
-  const [unassignedCards, setUnassignedCards] = useState([]);
   const [aiHand, setAiHand] = useState(null);
   const [selectedCards, setSelectedCards] = useState([]);
   const [hasDealt, setHasDealt] = useState(false);
@@ -59,9 +58,21 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
   // Effect for trial mode setup
   useEffect(() => {
     if (!isTrialMode) return;
+
+    // Deal hands for player and AI
     const { playerHand, aiHand: initialAiHand } = dealOfflineThirteenGame();
-    setUnassignedCards(playerHand);
-    setAiHand(getAiThirteenHand(initialAiHand));
+
+    // Auto-sort both hands
+    const sortedPlayerHand = getAiThirteenHand(playerHand); // Re-use AI logic for player
+    const sortedAiHand = getAiThirteenHand(initialAiHand);
+
+    if (sortedPlayerHand && sortedAiHand) {
+        setTopLane(sortedPlayerHand.top.map(parseCard));
+        setMiddleLane(sortedPlayerHand.middle.map(parseCard));
+        setBottomLane(sortedPlayerHand.bottom.map(parseCard));
+        setAiHand(sortedAiHand);
+    }
+
     setHasDealt(true);
     setPlayers([
       { id: user.id, phone: user.phone, is_ready: true },
@@ -135,78 +146,15 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
     }
   };
 
-  const handleCardClick = (card, source, sourceLaneName = null) => {
-    const cardIsSelected = selectedCards.some(c => areCardsEqual(c, card));
-
-    // Create copies of state arrays
-    let newSelectedCards = [...selectedCards];
-    let newUnassigned = [...unassignedCards];
-    let newTop = [...topLane];
-    let newMiddle = [...middleLane];
-    let newBottom = [...bottomLane];
-
-    const laneMap = { top: newTop, middle: newMiddle, bottom: newBottom };
-
-    if (cardIsSelected) {
-      // -- DESELECTING a card --
-      // Remove from selected
-      newSelectedCards = newSelectedCards.filter(c => !areCardsEqual(c, card));
-      // Add back to its original source
-      if (source === 'unassigned') newUnassigned.push(card);
-      else if (sourceLaneName) laneMap[sourceLaneName].push(card);
-    } else {
-      // -- SELECTING a card --
-      // Add to selected
-      newSelectedCards.push(card);
-      // Remove from its source
-      if (source === 'unassigned') newUnassigned = newUnassigned.filter(c => !areCardsEqual(c, card));
-      else if (sourceLaneName) laneMap[sourceLaneName] = laneMap[sourceLaneName].filter(c => !areCardsEqual(c, card));
-    }
-
-    // Update all states
-    setSelectedCards(newSelectedCards);
-    setUnassignedCards(sortCards(newUnassigned));
-    setTopLane(sortCards(newTop));
-    setMiddleLane(sortCards(newMiddle));
-    setBottomLane(sortCards(newBottom));
-  };
-
-  const handleLaneClick = (laneName) => {
-    if (selectedCards.length === 0) return;
-
-    const laneSetters = {
-      top: setTopLane,
-      middle: setMiddleLane,
-      bottom: setBottomLane,
-    };
-    const lanes = {
-      top: topLane,
-      middle: middleLane,
-      bottom: bottomLane,
-    };
-
-    const targetLane = lanes[laneName];
-    const setter = laneSetters[laneName];
-    const limit = LANE_LIMITS[laneName.replace('Lane', '')];
-
-    if (targetLane.length + selectedCards.length > limit) {
-      setErrorMessage(`此道最多只能放 ${limit} 张牌!`);
-      return;
-    }
-
-    setter([...targetLane, ...selectedCards]);
-    setSelectedCards([]);
-  };
-
   const handleAutoSort = () => {
-    if (!hasDealt) return;
-    const allCards = isTrialMode ? unassignedCards : [...topLane, ...middleLane, ...bottomLane];
-    const sorted = getSmartSortedHand(allCards.map(c => typeof c === 'string' ? parseCard(c) : c));
+    // This is now only for online mode, as trial is pre-sorted.
+    if (!hasDealt || isTrialMode) return;
+    const allCards = [...topLane, ...middleLane, ...bottomLane];
+    const sorted = getSmartSortedHand(allCards);
     if (sorted) {
       setTopLane(sorted.top);
       setMiddleLane(sorted.middle);
       setBottomLane(sorted.bottom);
-      setUnassignedCards([]);
     }
   };
 
@@ -239,20 +187,16 @@ const ThirteenGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTria
         ))}
       </div>
 
-      {isTrialMode && unassignedCards.length > 0 && (
-          <Lane title="待选牌" cards={unassignedCards} onCardClick={(card) => handleCardClick(card, 'unassigned')} selectedCards={selectedCards} />
-      )}
-
       <div className="lanes-container">
-        <Lane title="头道" cards={topLane} onCardClick={(card) => handleCardClick(card, 'lane', 'top')} onLaneClick={() => handleLaneClick('top')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
-        <Lane title="中道" cards={middleLane} onCardClick={(card) => handleCardClick(card, 'lane', 'middle')} onLaneClick={() => handleLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
-        <Lane title="尾道" cards={bottomLane} onCardClick={(card) => handleCardClick(card, 'lane', 'bottom')} onLaneClick={() => handleLaneClick('bottom')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} />
+        <Lane title="头道" cards={topLane} onCardClick={null} onLaneClick={null} selectedCards={[]} expectedCount={LANE_LIMITS.top} />
+        <Lane title="中道" cards={middleLane} onCardClick={null} onLaneClick={null} selectedCards={[]} expectedCount={LANE_LIMITS.middle} />
+        <Lane title="尾道" cards={bottomLane} onCardClick={null} onLaneClick={null} selectedCards={[]} expectedCount={LANE_LIMITS.bottom} />
       </div>
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
         {isTrialMode || hasDealt ? (
           <>
-            <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isReady}>自动理牌</button>
+            <button onClick={handleAutoSort} className="table-action-btn sort-btn" disabled={isReady || isTrialMode}>自动理牌</button>
             <button onClick={handleConfirm} disabled={isLoading || isReady} className="table-action-btn confirm-btn">
               {isReady ? '等待开牌' : (isLoading ? '提交中...' : '确认')}
             </button>
