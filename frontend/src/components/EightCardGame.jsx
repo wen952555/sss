@@ -2,13 +2,63 @@ import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import './EightCardGame.css';
-import { areCardsEqual, parseCard, sortCards, getSmartSortedHandForEight, calculateEightCardTrialResult, dealOfflineEightCardGame } from '../utils';
+import { areCardsEqual, parseCard, sortCards, combinations, evaluateHand, compareHands } from '../utils';
+import { dealOfflineEightCardGame, calculateEightCardTrialResult } from '../utils/offlineGameLogic';
 import GameResultModal from './GameResultModal';
 
-const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTrialMode = false }) => {
+// --- Helper logic moved from unwritable utils file ---
+const SSS_HAND_RANKS = { "高牌": 1, "对子": 2, "三条": 4 };
+function getSssLaneType(cards) {
+    if (!cards || cards.length === 0) return "高牌";
+    const hand = evaluateHand(cards);
+    if (cards.length <= 3) {
+        if (hand.rank === 3) return "三条";
+        if (hand.rank === 1) return "对子";
+        return "高牌";
+    }
+    return evaluateHand(cards).name;
+}
+function compareSssLanes(laneA, laneB) {
+    const typeA = getSssLaneType(laneA);
+    const typeB = getSssLaneType(laneB);
+    const rankA = SSS_HAND_RANKS[typeA] || 1;
+    const rankB = SSS_HAND_RANKS[typeB] || 1;
+    if (rankA !== rankB) return rankA - rankB;
+    const handA = evaluateHand(laneA);
+    const handB = evaluateHand(laneB);
+    return compareHands(handA, handB);
+}
+const getSmartSortedHandForEight = (allCards) => {
+  if (!allCards || allCards.length !== 8) return null;
+  const cardObjects = allCards.map(c => (typeof c === 'string' ? parseCard(c) : c));
+  let bestHand = null, bestHandScore = -1;
+  const bottomCombinations = combinations(cardObjects, 3);
+  for (const bottom of bottomCombinations) {
+    const remainingAfterBottom = cardObjects.filter(c => !bottom.find(bc => areCardsEqual(bc, c)));
+    const middleCombinations = combinations(remainingAfterBottom, 3);
+    for (const middle of middleCombinations) {
+      const top = remainingAfterBottom.filter(c => !middle.find(mc => areCardsEqual(mc, c)));
+      if (top.length !== 2) continue;
+      const bottomEval = evaluateHand(bottom), middleEval = evaluateHand(middle), topEval = evaluateHand(top);
+      if (compareSssLanes(bottom, middle) >= 0 && compareSssLanes(middle, top) >= 0) {
+        const totalRank = (bottomEval.rank * 100) + (middleEval.rank * 10) + topEval.rank;
+        if (totalRank > bestHandScore) {
+          bestHandScore = totalRank;
+          bestHand = { top, middle, bottom };
+        }
+      }
+    }
+  }
+  if (bestHand) return bestHand;
+  const sorted = cardObjects.sort((a, b) => evaluateHand([a]).values[0] - evaluateHand([b]).values[0]);
+  return { top: sorted.slice(0, 2), middle: sorted.slice(2, 5), bottom: sorted.slice(5, 8) };
+};
+// --- End of helper logic ---
+
+
+const EightCardGame = ({ isTrialMode = true, onBackToLobby, user }) => {
   const LANE_LIMITS = { top: 2, middle: 3, bottom: 3 };
 
-  // All state is now local to the component
   const [topLane, setTopLane] = useState([]);
   const [middleLane, setMiddleLane] = useState([]);
   const [bottomLane, setBottomLane] = useState([]);
@@ -23,17 +73,12 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Effect for trial mode setup
   useEffect(() => {
-    if (!isTrialMode) return;
-
     const { playerHand, aiHands: initialAiHands } = dealOfflineEightCardGame(6);
     setUnassignedCards(playerHand.map(parseCard));
-
     const processedAiHands = initialAiHands.map(hand => getSmartSortedHandForEight(hand));
     setAiHands(processedAiHands);
     setHasDealt(true);
-
     const allPlayers = [
       { id: user.id, phone: user.phone, is_ready: true },
       ...initialAiHands.map((_, index) => ({ id: `ai_${index}`, phone: `AI ${index + 1}`, is_ready: true }))
@@ -42,35 +87,23 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
   }, [isTrialMode, user]);
 
   const handleCardClick = (card) => {
-    setSelectedCards(prevSelected => {
-      const isSelected = prevSelected.some(c => areCardsEqual(c, card));
-      if (isSelected) {
-        return prevSelected.filter(c => !areCardsEqual(c, card));
-      } else {
-        return [...prevSelected, card];
-      }
-    });
+    setSelectedCards(prev => prev.some(c => areCardsEqual(c, card)) ? prev.filter(c => !areCardsEqual(c, card)) : [...prev, card]);
   };
 
   const handleLaneClick = (laneName) => {
     if (selectedCards.length === 0) return;
-
     const laneSetterMap = { top: setTopLane, middle: setMiddleLane, bottom: setBottomLane };
     const currentLanes = { top: topLane, middle: middleLane, bottom: bottomLane };
     const targetSetter = laneSetterMap[laneName];
-
     if (currentLanes[laneName].length + selectedCards.length > LANE_LIMITS[laneName]) {
       setErrorMessage(`此道最多只能放 ${LANE_LIMITS[laneName]} 张牌!`);
       return;
     }
-
-    targetSetter(prevLane => sortCards([...prevLane, ...selectedCards]));
-
+    targetSetter(prev => sortCards([...prev, ...selectedCards]));
     setUnassignedCards(prev => prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc))));
     setTopLane(prev => (laneName === 'top' ? prev : prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)))));
     setMiddleLane(prev => (laneName === 'middle' ? prev : prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)))));
     setBottomLane(prev => (laneName === 'bottom' ? prev : prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)))));
-
     setSelectedCards([]);
   };
 
@@ -91,27 +124,19 @@ const EightCardGame = ({ roomId, gameMode, onBackToLobby, user, onGameEnd, isTri
       setErrorMessage(`牌道数量错误！`);
       return;
     }
-
     setIsLoading(true);
     setErrorMessage('');
-
     const playerHand = {
       top: topLane.map(c => `${c.rank}_of_${c.suit}`),
       middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
       bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`),
     };
     const result = calculateEightCardTrialResult(playerHand, aiHands);
-
     const modalPlayers = [
       { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
-      ...aiHands.map((hand, index) => ({
-        name: `AI ${index + 1}`,
-        hand: hand,
-        score: 'N/A'
-      }))
+      ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
     ];
-    const modalResult = { players: modalPlayers };
-    setGameResult(modalResult);
+    setGameResult({ players: modalPlayers });
     setHasSubmittedHand(true);
     setIsLoading(false);
   };
