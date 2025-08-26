@@ -18,7 +18,7 @@
   align-items: flex-end;
   overflow-x: auto;
   overflow-y: visible !important; /* 强力保证弹起不裁切 */
-  padding: 0 12px;
+  padding: 8px 16px; /* 增加内边距 */
   cursor: pointer;
   position: relative;
 }

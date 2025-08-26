@@ -1,85 +1,54 @@
-// --- START OF FILE frontend/src/utils/eightCardAutoSorter.js ---
+import { evaluateHand, compareHands, combinations, parseCard } from './pokerEvaluator';
 
 /**
- * eightCardAutoSorter.js - 八张游戏专用智能理牌模块
- * 使用 eightCardScorer.js 中的比较逻辑
- */
-
-import { compareLanes, getHandType } from './eightCardScorer';
-
-/**
- * 辅助函数：从一个数组中获取所有指定大小的组合
- * @param {Array} array - 原始数组
- * @param {number} size - 组合的大小
- * @returns {Array<Array>} 所有可能的组合
- */
-const getCombinations = (array, size) => {
-  if (size === 0) return [[]];
-  if (!array || array.length < size) return [];
-  const first = array[0];
-  const rest = array.slice(1);
-  const combsWithFirst = getCombinations(rest, size - 1).map(comb => [first, ...comb]);
-  const combsWithoutFirst = getCombinations(rest, size);
-  return [...combsWithFirst, ...combsWithoutFirst];
-};
-
-/**
- * 辅助函数：在一组牌中找到所有能组成的牌型组合，并按强度排序
- * @param {Array} cards - 卡牌数组
- * @param {number} handSize - 需要几张牌组成一手
- * @returns {Array<Array>} 返回所有牌型组合的数组，从强到弱排序
- */
-const findAllHandCombinations = (cards, handSize) => {
-  const allCombinations = getCombinations(cards, handSize);
-  if (allCombinations.length === 0) return [];
-
-  // 使用八张的比较逻辑进行排序
-  return allCombinations.sort((a, b) => compareLanes(b, a));
-};
-
-/**
- * 主函数：执行八张游戏的智能理牌算法
- * @param {Array<Object>} allCards - 玩家的所有8张手牌
- * @returns {{top: Array, middle: Array, bottom: Array} | null} 返回理好的三道牌，如果无解则返回null
+ * Creates a new 8-card auto-sorter for a 3-5 hand structure.
+ * @param {Array<Object>} allCards - Player's 8 cards (as objects or strings).
+ * @returns {{top: Array, middle: Array} | null} A valid 2-lane hand or null.
  */
 export const getSmartSortedHandForEight = (allCards) => {
-  if (allCards.length !== 8) {
-    console.error("八张智能理牌需要8张牌");
+  if (!allCards || allCards.length !== 8) {
+    console.error("8-card sorting requires exactly 8 cards.");
     return null;
   }
 
-  // 1. 找出所有可能的尾道组合 (3张)，并按强度排序
-  const allPossibleBottoms = findAllHandCombinations(allCards, 3);
+  const cardObjects = allCards.map(c => (typeof c === 'string' ? parseCard(c) : c));
 
-  // 2. 遍历所有可能的尾道，尝试寻找一个合法的组合
-  for (const bottom of allPossibleBottoms) {
-    const remainingAfterBottom = allCards.filter(c => !bottom.some(bc => bc.rank === c.rank && bc.suit === c.suit));
-    
-    // 3. 在剩下的5张牌中，找出所有可能的中道组合 (3张)
-    const allPossibleMiddles = findAllHandCombinations(remainingAfterBottom, 3);
+  const allPossibleMiddles = combinations(cardObjects, 5);
 
-    for (const middle of allPossibleMiddles) {
-      // 4. 检查合法性：尾道必须 >= 中道
-      if (compareLanes(bottom, middle) >= 0) {
-        const top = remainingAfterBottom.filter(c => !middle.some(mc => mc.rank === c.rank && mc.suit === c.suit));
-        
-        // 5. 检查合法性：中道必须 >= 头道 (头道是2张)
-        if (compareLanes(middle, top) >= 0) {
-          // 找到了一个完全合法的组合，立即返回！
-          // 八张不需要对内部进行排序，保持组合即可
-          return {
-            top: top,
-            middle: middle,
-            bottom: bottom,
-          };
-        }
+  let bestMiddleHand = null;
+  let bestTopHand = null;
+  let bestMiddleEval = null;
+
+  for (const middle of allPossibleMiddles) {
+    const top = cardObjects.filter(c => !middle.find(mc => mc.rank === c.rank && mc.suit === c.suit));
+    if (top.length !== 3) continue;
+
+    const middleEval = evaluateHand(middle);
+    const topEval = evaluateHand(top);
+
+    // Check for foul (middle must be stronger than top)
+    if (compareHands(middleEval, topEval) >= 0) {
+      // This is a valid hand. We want to find the one with the best middle.
+      if (bestMiddleEval === null || compareHands(middleEval, bestMiddleEval) > 0) {
+        bestMiddleEval = middleEval;
+        bestMiddleHand = middle;
+        bestTopHand = top;
       }
     }
   }
 
-  // 如果找不到解，返回null
-  console.warn("八张智能理牌未能找到任何有效组合。");
-  return null;
-};
+  if (bestMiddleHand && bestTopHand) {
+    return {
+      top: bestTopHand,
+      middle: bestMiddleHand,
+    };
+  }
 
-// --- END OF FILE frontend/src/utils/eightCardAutoSorter.js ---
+  // If no valid non-foul hand can be made, return a default arrangement
+  // (e.g., 3 weakest cards top, 5 strongest middle) to avoid crashing.
+  const sorted = cardObjects.sort((a, b) => evaluateHand([a]).values[0] - evaluateHand([b]).values[0]);
+  return {
+      top: sorted.slice(0, 3),
+      middle: sorted.slice(3),
+  };
+};

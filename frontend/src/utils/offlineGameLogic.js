@@ -71,31 +71,47 @@ function getBest5From8(eightCards) {
  * Calculates the result of a trial game between a player and an AI.
  * @param {Array<string>} playerEightCards - The player's 8 cards.
  * @param {Array<string>} playerEightCards - The player's 8 cards.
- * @param {Array<Array<string>>} aiHands - An array of AI hands.
+ * @param {Object} playerHand - Player's hand {top, middle}.
+ * @param {Array<Object>} aiHands - Array of AI hands {top, middle}.
  * @returns {Object} A result object.
  */
-export const calculateEightCardTrialResult = (playerEightCards, aiHands) => {
-  const playerBestHand = getBest5From8(playerEightCards);
-  const aiBestHands = aiHands.map(getBest5From8);
+export const calculateEightCardTrialResult = (playerHand, aiHands) => {
+  const playerHandObj = {
+      top: playerHand.top.map(parseCard),
+      middle: playerHand.middle.map(parseCard),
+  };
+  const aiHandObjs = aiHands.map(h => ({
+      top: h.top.map(parseCard),
+      middle: h.middle.map(parseCard),
+  }));
+
+  const isPlayerFoul = compareSssLanes(playerHandObj.top, playerHandObj.middle) > 0;
 
   let totalScore = 0;
-  const hand_type_score_map = { '高牌': 1, '对子': 2, '两对': 3, '三条': 4, '顺子': 5, '同花': 6, '葫芦': 7, '铁支': 8, '同花顺': 10 };
 
-  aiBestHands.forEach(aiHand => {
-    const comparison = compareHands(playerBestHand, aiHand);
-    if (comparison > 0) {
-      totalScore += hand_type_score_map[playerBestHand.name] || 1;
-    } else if (comparison < 0) {
-      totalScore -= hand_type_score_map[aiHand.name] || 1;
-    }
+  aiHandObjs.forEach(aiHand => {
+      const isAiFoul = compareSssLanes(aiHand.top, aiHand.middle) > 0;
+      if (isPlayerFoul && !isAiFoul) {
+          totalScore -= 2; // Lose 1 point for each lane
+          return;
+      }
+      if (!isPlayerFoul && isAiFoul) {
+          totalScore += 2; // Win 1 point for each lane
+          return;
+      }
+      if (isPlayerFoul && isAiFoul) {
+          return; // Tie
+      }
+
+      // Compare lanes
+      if (compareSssLanes(playerHandObj.top, aiHand.top) > 0) totalScore++;
+      if (compareSssLanes(playerHandObj.top, aiHand.top) < 0) totalScore--;
+      if (compareSssLanes(playerHandObj.middle, aiHand.middle) > 0) totalScore++;
+      if (compareSssLanes(playerHandObj.middle, aiHand.middle) < 0) totalScore--;
   });
 
   return {
     playerScore: totalScore,
-    playerHand: playerEightCards,
-    aiHands: aiHands,
-    playerResult: playerBestHand,
-    aiResults: aiBestHands,
   };
 };
 

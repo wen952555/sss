@@ -106,6 +106,17 @@
   gap: 10px;
 }
 
+.players-status-container.six-player {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.six-player .player-status {
+  flex-basis: 28%; /* Allow 3 items per row with gaps */
+  flex-grow: 1;
+  justify-content: center;
+}
+
 .player-status {
   display: flex;
   align-items: center;
