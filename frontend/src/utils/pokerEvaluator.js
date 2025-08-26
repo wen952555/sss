@@ -21,6 +21,17 @@ export const HAND_TYPES = {
   STRAIGHT_FLUSH: { rank: 8, name: '同花顺' },
 };
 
+/**
+ * Parses a card string (e.g., 'ace_of_spades') into an object.
+ * @param {string} cardStr The card string.
+ * @returns {{rank: string, suit: string}}
+ */
+export const parseCard = (cardStr) => {
+    if (!cardStr) return null;
+    const parts = cardStr.split('_');
+    return { rank: parts[0], suit: parts[2] };
+};
+
 // --- ↓↓↓ 这是新添加并导出的函数 ↓↓↓ ---
 /**
  * 对一组卡牌进行排序
@@ -39,6 +50,22 @@ export const sortCards = (cards) => {
   });
 };
 // --- ↑↑↑ 添加结束 ↑↑↑ ---
+
+/**
+ * Gets all combinations of a certain size from an array.
+ * @param {Array} array The source array.
+ * @param {number} size The size of the combinations.
+ * @returns {Array<Array>} An array of all combinations.
+ */
+export const combinations = (array, size) => {
+  if (size === 0) return [[]];
+  if (!array || array.length < size) return [];
+  const first = array[0];
+  const rest = array.slice(1);
+  const combsWithFirst = combinations(rest, size - 1).map(comb => [first, ...comb]);
+  const combsWithoutFirst = combinations(rest, size);
+  return [...combsWithFirst, ...combsWithoutFirst];
+};
 
 
 /**

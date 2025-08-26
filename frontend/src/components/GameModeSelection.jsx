@@ -1,8 +1,11 @@
 import React from 'react';
 import './GameModeSelection.css';
 
-const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
+const GameModeSelection = ({ gameType, onSelectMode, onBack, onSelectTrialMode }) => {
   const gameTitle = gameType === 'thirteen' ? '经典十三张' : '急速八张';
+
+  // 只有急速八张显示试玩模式
+  const showTrialMode = gameType === 'eight';
 
   return (
     <div className="mode-selection-container">
@@ -10,7 +13,7 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
         &larr; 返回大厅
       </button>
       <h1 className="mode-selection-title">{gameTitle}</h1>
-      <p className="mode-selection-subtitle">请选择游戏模式</p>
+      <p className="mode-selection-subtitle">请选择在线游戏模式</p>
       <div className="mode-options">
         <div className="mode-card" onClick={() => onSelectMode('normal')}>
           <h2 className="mode-card-title">普通场</h2>
@@ -25,6 +28,18 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
           <p className="mode-card-description">与更多玩家同场竞技</p>
         </div>
       </div>
+
+      {showTrialMode && (
+        <>
+          <p className="mode-selection-subtitle" style={{ marginTop: '2rem' }}>或</p>
+          <div className="mode-options">
+            <div className="mode-card trial-mode" onClick={() => onSelectTrialMode()}>
+              <h2 className="mode-card-title">试玩模式</h2>
+              <p className="mode-card-description">与AI练习，不消耗积分</p>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

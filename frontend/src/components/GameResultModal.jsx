@@ -21,32 +21,46 @@ const PlayerHandDisplay = ({ hand, gameType }) => {
     );
 };
 
-const GameResultModal = ({ result, onClose, gameType }) => {
+const GameResultModal = ({ result, onClose, gameType, isTrial = false }) => {
     if (!result || !result.players || result.players.length === 0) return null;
 
-    // Find the main player ("me")
-    const me = result.players.find(p => p.id === result.myId) || result.players[0];
-    const myTotalScore = me.score || 0;
+    // In trial mode, the winner is passed directly. In online mode, we check score.
+    const winner = isTrial ? result.winner : (result.players[0].score > 0 ? 'player' : (result.players[0].score < 0 ? 'opponent' : 'tie'));
+
+    const getTitle = () => {
+        if (isTrial) {
+            if (winner === 'player') return '恭喜胜利';
+            if (winner === 'ai') return '惜败';
+            return '平局';
+        }
+        // Assuming the first player is "me" in online results for title purposes
+        return result.players[0].score > 0 ? '恭喜胜利' : (result.players[0].score < 0 ? '惜败' : '平局');
+    };
 
     return (
         <div className="result-modal-backdrop">
             <div className="result-modal-container">
                 <div className="result-modal-header">
-                    <h2>{myTotalScore > 0 ? '恭喜胜利' : (myTotalScore < 0 ? '惜败' : '平局')}</h2>
-                    <p>总分: <span className={myTotalScore > 0 ? 'score-win' : (myTotalScore < 0 ? 'score-loss' : '')}>{myTotalScore > 0 ? `+${myTotalScore}` : myTotalScore}</span></p>
+                    <h2>{getTitle()}</h2>
+                    {!isTrial && <p>总分: <span className={result.players[0].score > 0 ? 'score-win' : (result.players[0].score < 0 ? 'score-loss' : '')}>{result.players[0].score > 0 ? `+${result.players[0].score}` : result.players[0].score}</span></p>}
                 </div>
 
                 <div className="result-players-container">
-                    {result.players.map((player) => {
+                    {result.players.map((player, index) => {
                         const playerScore = player.score || 0;
-                        const isMe = player.id === me.id;
+                        // In trial mode, we don't have a reliable 'me'. The first player is the user.
+                        const isMe = isTrial ? index === 0 : (player.id === result.myId);
+                        const playerName = isTrial ? (index === 0 ? '你' : '电脑AI') : (isMe ? '你' : `玩家 ${player.name.slice(-4)}`);
+
                         return (
-                            <div key={player.id} className={`player-result-row ${isMe ? 'is-me' : ''}`}>
+                            <div key={index} className={`player-result-row ${isMe ? 'is-me' : ''}`}>
                                 <div className="player-info">
-                                    <span className="player-name">{isMe ? '你' : `玩家 ${player.name.slice(-4)}`}</span>
-                                    <span className={`player-score ${playerScore > 0 ? 'score-win' : (playerScore < 0 ? 'score-loss' : '')}`}>
-                                        {playerScore > 0 ? `+${playerScore}` : playerScore}
-                                    </span>
+                                    <span className="player-name">{playerName}</span>
+                                    {!isTrial && (
+                                        <span className={`player-score ${playerScore > 0 ? 'score-win' : (playerScore < 0 ? 'score-loss' : '')}`}>
+                                            {playerScore > 0 ? `+${playerScore}` : playerScore}
+                                        </span>
+                                    )}
                                 </div>
                                 <PlayerHandDisplay hand={player.hand} gameType={gameType} />
                             </div>
