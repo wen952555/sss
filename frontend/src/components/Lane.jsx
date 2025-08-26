@@ -27,7 +27,6 @@ const Lane = ({
               className={`card-wrapper${isSelected ? ' selected' : ''}`}
               style={{
                 zIndex: isSelected ? 99 : idx + 2,
-                transform: isSelected ? 'translateY(-20px) scale(1.08)' : 'none',
               }}
             >
               <Card

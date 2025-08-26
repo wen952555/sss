@@ -18,9 +18,15 @@
   align-items: flex-end;
   overflow-x: auto;
   overflow-y: visible !important; /* 强力保证弹起不裁切 */
-  padding: 8px 16px; /* 增加内边距 */
+  padding: 8px 16px 8px 0; /* Remove left padding */
   cursor: pointer;
   position: relative;
+}
+
+.card-placement-box::before {
+  content: '';
+  display: block;
+  min-width: 16px; /* This creates the left padding */
 }
 
 .lane-title-indicator {
