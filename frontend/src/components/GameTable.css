@@ -152,9 +152,9 @@
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  gap: 0;
+  gap: 2px;
   min-height: 0;
-  padding-top: 0;
+  padding-top: 2px;
   box-sizing: border-box;
 }
 
@@ -181,4 +181,32 @@
   font-weight: 600;
   color: #aaaaaa;
   z-index: 0;
+}
+
+/* Styles for 6-player layout in EightCardGame */
+.players-status-container.six-player {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.six-player .player-status {
+  flex-basis: 28%; /* Allow 3 items per row with gaps */
+  flex-grow: 1;
+  justify-content: flex-start; /* Align items to the start */
+  padding: 2px 4px;
+  gap: 5px;
+}
+
+.six-player .player-avatar {
+  width: 25px;
+  height: 25px;
+  font-size: 0.8rem;
+}
+
+.six-player .player-name {
+  font-size: 0.9rem;
+}
+
+.six-player .player-ready-text {
+  font-size: 0.7rem;
 }

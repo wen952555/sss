@@ -2,6 +2,7 @@ import React from 'react';
 import Card from './Card';
 import Lane from './Lane';
 import GameResultModal from './GameResultModal';
+import './GameTable.css';
 
 // This is a presentational component. It receives all state and handlers as props.
 const GameTable = ({
