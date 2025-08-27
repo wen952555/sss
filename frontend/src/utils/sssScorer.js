@@ -199,7 +199,7 @@ function getStraightRank(cards) {
   return vals[vals.length - 1];
 }
 
-function getSpecialType(p) {
+export function getSpecialType(p) {
   const all = [...p.head, ...p.middle, ...p.tail];
   const uniqVals = new Set(all.map(c => c.split('_')[0]));
   if (uniqVals.size === 13) return '一条龙';

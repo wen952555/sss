@@ -1,5 +1,5 @@
 import { evaluateHand, compareHands, sortCards, combinations, parseCard } from './pokerEvaluator';
-import { getAreaScore, getAreaType, isFoul } from './sssScorer';
+import { getAreaScore, isFoul } from './sssScorer';
 
 /**
  * Calculates the base score of a 3-lane hand arrangement.
@@ -18,7 +18,7 @@ function calculateHandBaseScore(hand) {
 
 /**
  * A comprehensive 13-card smart sort algorithm.
- * It finds the BEST valid hand arrangement by checking all combinations.
+ * It finds the BEST valid hand arrangement, prioritizing special hands.
  * @param {Array<Object>} allCards - Player's 13 cards.
  * @returns {{top: Array, middle: Array, bottom: Array} | null} The best valid 3-lane hand.
  */
@@ -28,6 +28,18 @@ export const getSmartSortedHand = (allCards) => {
   }
   const cardObjects = allCards.map(c => (typeof c === 'string' ? parseCard(c) : c));
 
+  // --- Check for Dragon (一条龙) Special Hand ---
+  const ranks = new Set(cardObjects.map(c => c.rank));
+  if (ranks.size === 13) {
+    const sorted = sortCards(cardObjects);
+    return {
+      top: sorted.slice(0, 3),
+      middle: sorted.slice(3, 8),
+      bottom: sorted.slice(8, 13),
+    };
+  }
+
+  // --- Find Best Normal Hand ---
   let bestHand = null;
   let bestScore = -1;
 
@@ -66,6 +78,5 @@ export const getSmartSortedHand = (allCards) => {
     };
   }
 
-  // Fallback if no valid hand is found (should be impossible)
   return null;
 };

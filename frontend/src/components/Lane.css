@@ -2,7 +2,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px; /* 增大区间隔，防止拥挤 */
+  gap: 0;
   flex: 1;
   min-height: 0;
 }
@@ -10,7 +10,7 @@
 .card-placement-box {
   width: 100%;
   box-sizing: border-box;
-  min-height: 265px;
+  min-height: 280px;
   background: #ffffff;
   border-radius: 14px;
   box-shadow: 0 1px 4px #23243c22;
@@ -42,15 +42,15 @@
 }
 
 .card-wrapper {
-  margin-left: -35px;
+  margin-left: -40px;
   z-index: 1;
   position: relative;
   transition: box-shadow 0.2s, transform 0.18s;
   overflow: visible;
-  width: 120px;
-  min-width: 110px;
-  max-width: 120px;
-  height: 235px;
+  width: 130px;
+  min-width: 120px;
+  max-width: 130px;
+  height: 250px;
 }
 
 /* 堆叠z-index：后面的牌层级高，弹起牌层级最高 */
@@ -75,7 +75,7 @@
 
 @media (max-width: 450px) {
   .card-wrapper {
-    width: 54px; min-width: 42px; max-width: 54px; height: 78px; margin-left: -11px;
+    width: 80px; min-width: 70px; max-width: 80px; height: 112px; margin-left: -25px;
   }
-  .card-placement-box { min-height: 85px; padding: 0 6px; }
+  .card-placement-box { min-height: 120px; padding: 0 6px; }
 }
