@@ -94,9 +94,9 @@ const EightCardGame = ({ onBackToLobby, user }) => {
     setTimeout(() => {
       try {
         const playerHand = {
-          top: topLane.map(c => `${c.rank}_of_${c.suit}`),
-          middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
-          bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
+          top: topLane,
+          middle: middleLane,
+          bottom: bottomLane
         };
         const result = calculateEightCardTrialResult(playerHand, aiHands);
         const modalPlayers = [

@@ -46,8 +46,21 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       };
       setInitialLanes(randomInitialHand);
 
-      // For the AIs, pre-sort their hands
-      const sortedAiHands = initialAiHands.map(getAiThirteenHand);
+      // For the AIs, pre-sort their hands and convert to string format for the scorer
+      const sortedAiHands = initialAiHands.map(hand => {
+        const sortedHand = getAiThirteenHand(hand);
+        if (!sortedHand) return null;
+        return {
+          top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`),
+          middle: sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`),
+          bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`),
+        };
+      });
+
+      if (sortedAiHands.some(h => !h)) {
+        setErrorMessage('为AI玩家理牌时发生错误。');
+        return;
+      }
       setAiHands(sortedAiHands);
 
       setPlayerState('arranging');
