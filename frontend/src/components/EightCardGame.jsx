@@ -58,7 +58,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
       console.error(e);
       setErrorMessage(`发生意外错误: ${e.message}`);
     }
-  }, [setInitialLanes]);
+  }, [setInitialLanes, setAllPlayerCards, setAiHands, setPlayerState, setPlayers, setErrorMessage]);
 
   const handleAutoSort = useCallback(() => {
     setIsLoading(true);
@@ -80,7 +80,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
         setIsLoading(false);
       }
     }, 10); // 10ms delay is enough for the UI to repaint
-  }, [allPlayerCards, setInitialLanes]);
+  }, [allPlayerCards, setInitialLanes, setIsLoading, setErrorMessage]);
 
   const handleConfirm = useCallback(() => {
     if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
@@ -112,7 +112,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
         setIsLoading(false);
       }
     }, 10);
-  }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone]);
+  }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone, setIsLoading, setErrorMessage, setGameResult, setPlayerState]);
 
   return (
     <GameTable
