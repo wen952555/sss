@@ -16,7 +16,6 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
   } = useCardArrangement('thirteen');
 
   const [allPlayerCards, setAllPlayerCards] = useState([]);
-  const [allPlayerCards, setAllPlayerCards] = useState([]);
   const [aiRawHands, setAiRawHands] = useState([]); // Store the dealt AI cards
   const [aiHands, setAiHands] = useState([]); // Store the sorted AI hands (or null if sorting)
   const [playerState, setPlayerState] = useState('waiting');
@@ -69,7 +68,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       console.error(e);
       setErrorMessage(`发生意外错误: ${e.message}`);
     }
-  }, [setInitialLanes]);
+  }, [setInitialLanes, setAllPlayerCards, setAiRawHands, setPlayerState, setPlayers, setErrorMessage]);
 
   const handleAutoSort = useCallback(() => {
     setIsLoading(true);
