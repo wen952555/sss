@@ -30,15 +30,25 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
   }, [user]);
 
   const handleReady = () => {
-    const { playerHand, aiHands: initialAiHands } = dealOfflineThirteenGame(4);
-    const sortedPlayerHand = getSmartSortedHand(playerHand);
-    setInitialLanes(sortedPlayerHand);
-    setAllPlayerCards(playerHand); // Keep track of the original 13 cards for auto-sort
+    try {
+      setErrorMessage('');
+      const { playerHand, aiHands: initialAiHands } = dealOfflineThirteenGame(4);
+      const sortedPlayerHand = getSmartSortedHand(playerHand);
+      if (!sortedPlayerHand) {
+        setErrorMessage('无法为您的手牌生成有效的牌型。');
+        return;
+      }
+      setInitialLanes(sortedPlayerHand);
+      setAllPlayerCards(playerHand); // Keep track of the original 13 cards for auto-sort
 
-    const sortedAiHands = initialAiHands.map(getAiThirteenHand);
-    setAiHands(sortedAiHands);
-    setPlayerState('arranging');
-    setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
+      const sortedAiHands = initialAiHands.map(getAiThirteenHand);
+      setAiHands(sortedAiHands);
+      setPlayerState('arranging');
+      setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
+    } catch (e) {
+      console.error(e);
+      setErrorMessage(`发生意外错误: ${e.message}`);
+    }
   };
 
   const handleAutoSort = () => {
@@ -68,18 +78,31 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       setErrorMessage(`牌道数量错误！`);
       return;
     }
-    const playerHand = {
-      top: topLane.map(c => `${c.rank}_of_${c.suit}`),
-      middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
-      bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
-    };
-    const result = calculateThirteenTrialResult(playerHand, aiHands);
-    const modalPlayers = [
-      { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
-      ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
-    ];
-    setGameResult({ players: modalPlayers });
-    setPlayerState('submitted');
+
+    setIsLoading(true);
+    setErrorMessage('正在计算比牌结果...');
+
+    setTimeout(() => {
+      try {
+        const playerHand = {
+          top: topLane.map(c => `${c.rank}_of_${c.suit}`),
+          middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
+          bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
+        };
+        const result = calculateThirteenTrialResult(playerHand, aiHands);
+        const modalPlayers = [
+          { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
+          ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
+        ];
+        setGameResult({ players: modalPlayers });
+        setPlayerState('submitted');
+        setErrorMessage('');
+      } catch (e) {
+        setErrorMessage(`计算结果时发生错误: ${e.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 10);
   };
 
   return (

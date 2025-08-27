@@ -30,15 +30,29 @@ const EightCardGame = ({ onBackToLobby, user }) => {
   }, [user]);
 
   const handleReady = () => {
-    const { playerHand, aiHands: initialAiHands } = dealOfflineEightCardGame(6);
-    const sortedPlayerHand = getSmartSortedHandForEight(playerHand);
-    setInitialLanes(sortedPlayerHand);
-    setAllPlayerCards(playerHand);
+    try {
+      setErrorMessage(''); // Clear previous errors
+      const { playerHand, aiHands: initialAiHands } = dealOfflineEightCardGame(6);
+      const sortedPlayerHand = getSmartSortedHandForEight(playerHand);
+      if (!sortedPlayerHand) {
+        setErrorMessage('无法为您的手牌生成有效的牌型。');
+        return;
+      }
+      setInitialLanes(sortedPlayerHand);
+      setAllPlayerCards(playerHand);
 
-    const sortedAiHands = initialAiHands.map(getSmartSortedHandForEight);
-    setAiHands(sortedAiHands);
-    setPlayerState('arranging');
-    setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
+      const sortedAiHands = initialAiHands.map(getSmartSortedHandForEight);
+       if (sortedAiHands.some(h => !h)) {
+        setErrorMessage('为AI玩家理牌时发生错误。');
+        return;
+      }
+      setAiHands(sortedAiHands);
+      setPlayerState('arranging');
+      setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
+    } catch (e) {
+      console.error(e);
+      setErrorMessage(`发生意外错误: ${e.message}`);
+    }
   };
 
   const handleAutoSort = () => {
