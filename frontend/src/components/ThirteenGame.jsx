@@ -63,8 +63,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       LANE_LIMITS={arrangement.LANE_LIMITS}
 
       // Other state
-      hasDealt={hasDealt}
-      hasSubmittedHand={hasSubmittedHand}
+      playerState={playerState}
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}

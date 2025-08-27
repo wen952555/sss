@@ -3,10 +3,8 @@ import Card from './Card';
 import './GameResultModal.css';
 const PlayerHandDisplay = ({ hand, gameType }) => {
     if (!hand) return null;
-    // SSS has 3 lanes, Eight-card has only one
-    const lanes = gameType === 'eight'
-        ? [hand.middle]
-        : [hand.top, hand.middle, hand.bottom];
+    // Both games now use the same 3-lane structure for display
+    const lanes = [hand.top, hand.middle, hand.bottom];
 
     return (
         <div className="result-hand-container">
