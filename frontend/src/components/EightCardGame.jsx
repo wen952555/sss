@@ -58,7 +58,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
       console.error(e);
       setErrorMessage(`发生意外错误: ${e.message}`);
     }
-  }, [setInitialLanes]);
+  }, [setInitialLanes, setAllPlayerCards, setAiHands, setPlayerState, setPlayers, setErrorMessage]);
 
   const handleAutoSort = useCallback(() => {
     setIsLoading(true);
@@ -80,7 +80,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
         setIsLoading(false);
       }
     }, 10); // 10ms delay is enough for the UI to repaint
-  }, [allPlayerCards, setInitialLanes]);
+  }, [allPlayerCards, setInitialLanes, setIsLoading, setErrorMessage]);
 
   const handleConfirm = useCallback(() => {
     if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
@@ -93,14 +93,25 @@ const EightCardGame = ({ onBackToLobby, user }) => {
 
     setTimeout(() => {
       try {
-        const playerHand = {
+        // For the modal display, we use the card objects from state
+        const playerHandObjects = { top: topLane, middle: middleLane, bottom: bottomLane };
+
+        // For the scorer, we need to convert the hands to string format
+        const playerHandStrings = {
           top: topLane.map(c => `${c.rank}_of_${c.suit}`),
           middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
           bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
         };
-        const result = calculateEightCardTrialResult(playerHand, aiHands);
+        const aiHandStrings = aiHands.map(hand => ({
+          top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
+          middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
+          bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
+        }));
+
+        const result = calculateEightCardTrialResult(playerHandStrings, aiHandStrings);
+
         const modalPlayers = [
-          { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
+          { name: user.phone, hand: playerHandObjects, score: result.playerScore, is_me: true },
           ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
         ];
         setGameResult({ players: modalPlayers });
@@ -112,7 +123,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
         setIsLoading(false);
       }
     }, 10);
-  }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone]);
+  }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone, setIsLoading, setErrorMessage, setGameResult, setPlayerState]);
 
   return (
     <GameTable

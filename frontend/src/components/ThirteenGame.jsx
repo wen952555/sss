@@ -46,8 +46,21 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       };
       setInitialLanes(randomInitialHand);
 
-      // For the AIs, pre-sort their hands
-      const sortedAiHands = initialAiHands.map(getAiThirteenHand);
+      // For the AIs, pre-sort their hands and convert to string format for the scorer
+      const sortedAiHands = initialAiHands.map(hand => {
+        const sortedHand = getAiThirteenHand(hand);
+        if (!sortedHand) return null;
+        return {
+          top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`),
+          middle: sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`),
+          bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`),
+        };
+      });
+
+      if (sortedAiHands.some(h => !h)) {
+        setErrorMessage('为AI玩家理牌时发生错误。');
+        return;
+      }
       setAiHands(sortedAiHands);
 
       setPlayerState('arranging');
@@ -56,7 +69,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       console.error(e);
       setErrorMessage(`发生意外错误: ${e.message}`);
     }
-  }, [setInitialLanes]);
+  }, [setInitialLanes, setAllPlayerCards, setAiHands, setPlayerState, setPlayers, setErrorMessage]);
 
   const handleAutoSort = useCallback(() => {
     setIsLoading(true);
@@ -78,7 +91,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
         setIsLoading(false);
       }
     }, 10); // 10ms delay is enough for the UI to repaint
-  }, [allPlayerCards, setInitialLanes]);
+  }, [allPlayerCards, setInitialLanes, setIsLoading, setErrorMessage]);
 
   const handleConfirm = useCallback(() => {
     if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
@@ -91,15 +104,25 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
 
     setTimeout(() => {
       try {
-        const playerHand = {
+        // Create a string version of the player's hand for the scorer
+        const playerHandStrings = {
           top: topLane.map(c => `${c.rank}_of_${c.suit}`),
           middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
           bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
         };
-        const result = calculateThirteenTrialResult(playerHand, aiHands);
+        const result = calculateThirteenTrialResult(playerHandStrings, aiHands);
+
+        // For the modal display, we need card objects
+        const playerHandObjects = { top: topLane, middle: middleLane, bottom: bottomLane };
+        const aiHandObjects = aiHands.map(hand => ({
+          top: hand.top.map(parseCard),
+          middle: hand.middle.map(parseCard),
+          bottom: hand.bottom.map(parseCard),
+        }));
+
         const modalPlayers = [
-          { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
-          ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
+          { name: user.phone, hand: playerHandObjects, score: result.playerScore, is_me: true },
+          ...aiHandObjects.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
         ];
         setGameResult({ players: modalPlayers });
         setPlayerState('submitted');
@@ -110,7 +133,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
         setIsLoading(false);
       }
     }, 10);
-  }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone]);
+  }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone, setIsLoading, setErrorMessage, setGameResult, setPlayerState]);
 
   return (
     <GameTable
