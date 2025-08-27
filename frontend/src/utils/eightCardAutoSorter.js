@@ -1,8 +1,22 @@
 import { evaluateHand, compareHands, combinations, parseCard } from './pokerEvaluator';
 
+// Fisher-Yates (aka Knuth) Shuffle
+const shuffle = (array) => {
+  let currentIndex = array.length,  randomIndex;
+
+  while (currentIndex > 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+
+
 /**
- * Auto-sorter for the 8-card game (2-3-3 structure).
- * Finds the best possible valid hand arrangement.
+ * Auto-sorter for the 8-card game (3-5 structure).
+ * Finds a random valid hand arrangement.
  * @param {Array<Object>} allCards - Player's 8 cards (as objects or strings).
  * @returns {{top: Array, middle: Array, bottom: Array} | null} A valid 3-lane hand.
  */
@@ -14,11 +28,8 @@ export const getSmartSortedHandForEight = (allCards) => {
 
   const cardObjects = allCards.map(c => (typeof c === 'string' ? parseCard(c) : c));
 
-  const allPossibleMiddles = combinations(cardObjects, 5);
-
-  let bestMiddleHand = null;
-  let bestTopHand = null;
-  let bestMiddleEval = null;
+  // Shuffle the combinations to get a random valid hand
+  const allPossibleMiddles = shuffle(combinations(cardObjects, 5));
 
   for (const middle of allPossibleMiddles) {
     const top = cardObjects.filter(c => !middle.find(mc => mc.rank === c.rank && mc.suit === c.suit));
@@ -29,28 +40,21 @@ export const getSmartSortedHandForEight = (allCards) => {
 
     // Check for foul (middle must be stronger than top)
     if (compareHands(middleEval, topEval) >= 0) {
-      // This is a valid hand. We want to find the one with the best middle.
-      if (bestMiddleEval === null || compareHands(middleEval, bestMiddleEval) > 0) {
-        bestMiddleEval = middleEval;
-        bestMiddleHand = middle;
-        bestTopHand = top;
-      }
+      // Found a valid hand, return it immediately.
+      return {
+        top: top,
+        middle: middle,
+        bottom: [], // 8-card game has no bottom lane
+      };
     }
   }
 
-  if (bestMiddleHand && bestTopHand) {
-    return {
-      top: bestTopHand,
-      middle: bestMiddleHand,
-    };
-  }
-
-  // If no valid non-foul hand can be made, this is a "相公" (foul) hand.
-  // For the AI, we can just return a default arrangement to avoid crashing.
-  // A better AI might try to minimize losses.
+  // This part should not be reached if a valid hand is always possible.
+  // Fallback for the "相公" (foul) case.
   const sorted = cardObjects.sort((a, b) => evaluateHand([a]).values[0] - evaluateHand([b]).values[0]);
   return {
       top: sorted.slice(0, 3),
       middle: sorted.slice(3),
+      bottom: [],
   };
 };

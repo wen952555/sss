@@ -42,8 +42,25 @@ const EightCardGame = ({ onBackToLobby, user }) => {
   };
 
   const handleAutoSort = () => {
-    const sorted = getSmartSortedHandForEight(allPlayerCards);
-    setInitialLanes(sorted);
+    setIsLoading(true);
+    setErrorMessage('智能理牌中，请稍候...'); // Set a message
+
+    // Use setTimeout to allow the UI to update before the heavy calculation
+    setTimeout(() => {
+      try {
+        const sorted = getSmartSortedHandForEight(allPlayerCards);
+        if (sorted) {
+          setInitialLanes(sorted);
+          setErrorMessage(''); // Clear message on success
+        } else {
+          setErrorMessage('无法找到有效的牌型组合。');
+        }
+      } catch (e) {
+        setErrorMessage(`理牌时发生错误: ${e.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 10); // 10ms delay is enough for the UI to repaint
   };
 
   const handleConfirm = () => {
