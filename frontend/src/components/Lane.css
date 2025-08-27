@@ -10,7 +10,7 @@
 .card-placement-box {
   width: 100%;
   box-sizing: border-box;
-  min-height: 160px; /* Further increased height */
+  min-height: 180px; /* Final increase */
   background: #ffffff;
   border-radius: 14px;
   box-shadow: 0 1px 4px #23243c22;
@@ -47,10 +47,10 @@
   position: relative;
   transition: box-shadow 0.2s, transform 0.18s;
   overflow: visible;
-  width: 80px;      /* Increased width */
-  min-width: 70px;
-  max-width: 80px;
-  height: 140px;    /* Further increased height */
+  width: 90px;      /* Final width increase */
+  min-width: 80px;
+  max-width: 90px;
+  height: 158px;    /* Final height increase */
 }
 
 /* 堆叠z-index：后面的牌层级高，弹起牌层级最高 */
