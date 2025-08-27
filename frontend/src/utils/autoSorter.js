@@ -1,5 +1,23 @@
 import { evaluateHand, compareHands, sortCards, combinations, parseCard } from '../utils';
 
+// Fisher-Yates (aka Knuth) Shuffle
+const shuffle = (array) => {
+  let currentIndex = array.length,  randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex > 0) {
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+
 /**
  * A faster, non-blocking version of the 13-card smart sort algorithm.
  * It finds the FIRST valid hand arrangement instead of the absolute best one.
@@ -13,15 +31,15 @@ export const getSmartSortedHand = (allCards) => {
   }
   const cardObjects = allCards.map(c => (typeof c === 'string' ? parseCard(c) : c));
 
-  // Get all 5-card combinations for the bottom lane. No need to pre-sort them.
-  const bottomCombinations = combinations(cardObjects, 5);
+  // Get all 5-card combinations for the bottom lane, and shuffle them.
+  const bottomCombinations = shuffle(combinations(cardObjects, 5));
 
   for (const bottom of bottomCombinations) {
     const bottomEval = evaluateHand(bottom);
     const remainingAfterBottom = cardObjects.filter(c => !bottom.find(bc => bc.rank === c.rank && bc.suit === c.suit));
     
-    // Get all 5-card combinations for the middle lane.
-    const middleCombinations = combinations(remainingAfterBottom, 5);
+    // Get all 5-card combinations for the middle lane, and shuffle them.
+    const middleCombinations = shuffle(combinations(remainingAfterBottom, 5));
 
     for (const middle of middleCombinations) {
       const middleEval = evaluateHand(middle);
