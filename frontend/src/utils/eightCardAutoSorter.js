@@ -1,4 +1,4 @@
-import { evaluateHand, compareHands, combinations, parseCard } from './pokerEvaluator';
+import { evaluateHand, compareHands, combinations, parseCard, sortCards } from './pokerEvaluator';
 
 // Fisher-Yates (aka Knuth) Shuffle
 const shuffle = (array) => {
@@ -15,7 +15,7 @@ const shuffle = (array) => {
 
 
 /**
- * Auto-sorter for the 8-card game (3-5 structure).
+ * Auto-sorter for the 8-card game (2-3-3 structure).
  * Finds a random valid hand arrangement.
  * @param {Array<Object>} allCards - Player's 8 cards (as objects or strings).
  * @returns {{top: Array, middle: Array, bottom: Array} | null} A valid 3-lane hand.
@@ -28,33 +28,35 @@ export const getSmartSortedHandForEight = (allCards) => {
 
   const cardObjects = allCards.map(c => (typeof c === 'string' ? parseCard(c) : c));
 
-  // Shuffle the combinations to get a random valid hand
-  const allPossibleMiddles = shuffle(combinations(cardObjects, 5));
+  const bottomCombinations = shuffle(combinations(cardObjects, 3));
 
-  for (const middle of allPossibleMiddles) {
-    const top = cardObjects.filter(c => !middle.find(mc => mc.rank === c.rank && mc.suit === c.suit));
-    if (top.length !== 3) continue;
+  for (const bottom of bottomCombinations) {
+    const bottomEval = evaluateHand(bottom);
+    const remainingAfterBottom = cardObjects.filter(c => !bottom.find(bc => bc.rank === c.rank && bc.suit === c.suit));
 
-    const middleEval = evaluateHand(middle);
-    const topEval = evaluateHand(top);
+    const middleCombinations = shuffle(combinations(remainingAfterBottom, 3));
 
-    // Check for foul (middle must be stronger than top)
-    if (compareHands(middleEval, topEval) >= 0) {
-      // Found a valid hand, return it immediately.
-      return {
-        top: top,
-        middle: middle,
-        bottom: [], // 8-card game has no bottom lane
-      };
+    for (const middle of middleCombinations) {
+      const middleEval = evaluateHand(middle);
+
+      if (compareHands(bottomEval, middleEval) >= 0) {
+        const top = remainingAfterBottom.filter(c => !middle.find(mc => mc.rank === c.rank && mc.suit === c.suit));
+        if (top.length !== 2) continue;
+
+        const topEval = evaluateHand(top);
+
+        if (compareHands(middleEval, topEval) >= 0) {
+          // Found the first valid arrangement, return it.
+          return {
+            top: sortCards(top),
+            middle: sortCards(middle),
+            bottom: sortCards(bottom),
+          };
+        }
+      }
     }
   }
 
-  // This part should not be reached if a valid hand is always possible.
-  // Fallback for the "相公" (foul) case.
-  const sorted = cardObjects.sort((a, b) => evaluateHand([a]).values[0] - evaluateHand([b]).values[0]);
-  return {
-      top: sorted.slice(0, 3),
-      middle: sorted.slice(3),
-      bottom: [],
-  };
+  // This part should not be reached if a valid hand can always be made.
+  return null;
 };
