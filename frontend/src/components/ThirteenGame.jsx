@@ -16,7 +16,9 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
   } = useCardArrangement('thirteen');
 
   const [allPlayerCards, setAllPlayerCards] = useState([]);
-  const [aiHands, setAiHands] = useState([]);
+  const [allPlayerCards, setAllPlayerCards] = useState([]);
+  const [aiRawHands, setAiRawHands] = useState([]); // Store the dealt AI cards
+  const [aiHands, setAiHands] = useState([]); // Store the sorted AI hands (or null if sorting)
   const [playerState, setPlayerState] = useState('waiting');
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
@@ -28,16 +30,29 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
     setPlayers([{ id: user.id, phone: user.phone, is_ready: false }, ...aiPlayerInfo]);
   }, [user]);
 
+  // Effect to sort AI hands in the background after dealing
+  useEffect(() => {
+    if (aiRawHands.length > 0 && playerState === 'arranging') {
+      // Set AI hands to a loading state
+      setAiHands(new Array(aiRawHands.length).fill(null));
+
+      // Use setTimeout to avoid blocking the render thread
+      setTimeout(() => {
+        const sorted = aiRawHands.map(getAiThirteenHand);
+        setAiHands(sorted);
+      }, 50);
+    }
+  }, [aiRawHands, playerState]);
+
   const handleReady = useCallback(() => {
     try {
       setErrorMessage('');
       const { playerHand, aiHands: initialAiHands } = dealOfflineThirteenGame(4);
-      setAllPlayerCards(playerHand); // Keep the original hand for sorting later
 
-      // For the player, create a random initial arrangement by shuffling the cards
+      // For the player, deal immediately
+      setAllPlayerCards(playerHand);
       const playerCardObjects = playerHand.map(c => typeof c === 'string' ? parseCard(c) : c);
       const shuffledPlayerHand = [...playerCardObjects].sort(() => Math.random() - 0.5);
-
       const randomInitialHand = {
         top: shuffledPlayerHand.slice(0, 3),
         middle: shuffledPlayerHand.slice(3, 8),
@@ -45,22 +60,8 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       };
       setInitialLanes(randomInitialHand);
 
-      // For the AIs, pre-sort their hands and convert to string format for the scorer
-      const sortedAiHands = initialAiHands.map(hand => {
-        const sortedHand = getAiThirteenHand(hand);
-        if (!sortedHand) return null;
-        return {
-          top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`),
-          middle: sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`),
-          bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`),
-        };
-      });
-
-      if (sortedAiHands.some(h => !h)) {
-        setErrorMessage('为AI玩家理牌时发生错误。');
-        return;
-      }
-      setAiHands(sortedAiHands);
+      // Store the raw AI hands to be processed by the useEffect hook
+      setAiRawHands(initialAiHands);
 
       setPlayerState('arranging');
       setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
@@ -68,10 +69,9 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       console.error(e);
       setErrorMessage(`发生意外错误: ${e.message}`);
     }
-  }, [setInitialLanes, setAllPlayerCards, setAiHands, setPlayerState, setPlayers, setErrorMessage]);
+  }, [setInitialLanes]);
 
   const handleAutoSort = useCallback(() => {
-    // This calculation is now very expensive, so loading state is crucial.
     setIsLoading(true);
     setErrorMessage('正在计算最优牌型...');
 
@@ -97,31 +97,35 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       setErrorMessage(`牌道数量错误！`);
       return;
     }
+    if (aiHands.some(h => h === null)) {
+      setErrorMessage('AI仍在理牌中，请稍候...');
+      return;
+    }
 
     setIsLoading(true);
     setErrorMessage('正在计算比牌结果...');
 
     setTimeout(() => {
       try {
-        // Create a string version of the player's hand for the scorer
+        // Convert both player and AI hands to string format for the scorer
         const playerHandStrings = {
           top: topLane.map(c => `${c.rank}_of_${c.suit}`),
           middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
           bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
         };
-        const result = calculateThirteenTrialResult(playerHandStrings, aiHands);
-
-        // For the modal display, we need card objects
-        const playerHandObjects = { top: topLane, middle: middleLane, bottom: bottomLane };
-        const aiHandObjects = aiHands.map(hand => ({
-          top: hand.top.map(parseCard),
-          middle: hand.middle.map(parseCard),
-          bottom: hand.bottom.map(parseCard),
+        const aiHandStrings = aiHands.map(hand => ({
+            top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
+            middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
+            bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
         }));
 
+        const result = calculateThirteenTrialResult(playerHandStrings, aiHandStrings);
+
+        // For the modal display, we need the original card objects
+        const playerHandObjects = { top: topLane, middle: middleLane, bottom: bottomLane };
         const modalPlayers = [
           { name: user.phone, hand: playerHandObjects, score: result.playerScore, is_me: true },
-          ...aiHandObjects.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
+          ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
         ];
         setGameResult({ players: modalPlayers });
         setPlayerState('submitted');
