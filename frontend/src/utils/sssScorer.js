@@ -68,7 +68,7 @@ export function calcSSSAllScores(players) {
   return marks;
 }
 
-function calculateTotalBaseScore(p) {
+export function calculateTotalBaseScore(p) {
   if (p.specialType) return SCORES.SPECIAL[p.specialType] || 0;
   return getAreaScore(p.head, 'head') + getAreaScore(p.middle, 'middle') + getAreaScore(p.tail, 'tail');
 }
@@ -83,7 +83,7 @@ export function isFoul(head, middle, tail) {
   return false;
 }
 
-function getAreaType(cards, area) {
+export function getAreaType(cards, area) {
   if (!cards || cards.length === 0) return "高牌";
   const grouped = getGroupedValues(cards);
   const isF = isFlush(cards);
@@ -122,7 +122,7 @@ function areaTypeRank(type, area) {
   return 1;
 }
 
-function getAreaScore(cards, area) {
+export function getAreaScore(cards, area) {
   const type = getAreaType(cards, area);
   const areaUpper = area.toUpperCase();
   return SCORES[areaUpper]?.[type] || 1;

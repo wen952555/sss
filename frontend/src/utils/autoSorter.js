@@ -1,29 +1,26 @@
-import { evaluateHand, compareHands, sortCards, combinations, parseCard } from '../utils';
-
-// Fisher-Yates (aka Knuth) Shuffle
-const shuffle = (array) => {
-  let currentIndex = array.length,  randomIndex;
-
-  // While there remain elements to shuffle.
-  while (currentIndex > 0) {
-    // Pick a remaining element.
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-
-    // And swap it with the current element.
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]];
-  }
-
-  return array;
-}
+import { evaluateHand, compareHands, sortCards, combinations, parseCard } from './pokerEvaluator';
+import { getAreaScore, getAreaType, isFoul } from './sssScorer';
 
 /**
- * A faster, non-blocking version of the 13-card smart sort algorithm.
- * It finds the FIRST valid hand arrangement instead of the absolute best one.
- * This prevents the browser from freezing on expensive calculations.
+ * Calculates the base score of a 3-lane hand arrangement.
+ * @param {Object} hand - A hand object with top, middle, and bottom lanes.
+ * @returns {number} The total base score.
+ */
+function calculateHandBaseScore(hand) {
+    const handStrings = {
+        head: hand.top.map(c => `${c.rank}_of_${c.suit}`),
+        middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
+        tail: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
+    };
+    return getAreaScore(handStrings.head, 'head') + getAreaScore(handStrings.middle, 'middle') + getAreaScore(handStrings.tail, 'tail');
+}
+
+
+/**
+ * A comprehensive 13-card smart sort algorithm.
+ * It finds the BEST valid hand arrangement by checking all combinations.
  * @param {Array<Object>} allCards - Player's 13 cards.
- * @returns {{top: Array, middle: Array, bottom: Array} | null} A valid 3-lane hand.
+ * @returns {{top: Array, middle: Array, bottom: Array} | null} The best valid 3-lane hand.
  */
 export const getSmartSortedHand = (allCards) => {
   if (!allCards || allCards.length !== 13) {
@@ -31,39 +28,44 @@ export const getSmartSortedHand = (allCards) => {
   }
   const cardObjects = allCards.map(c => (typeof c === 'string' ? parseCard(c) : c));
 
-  // Get all 5-card combinations for the bottom lane, and shuffle them.
-  const bottomCombinations = shuffle(combinations(cardObjects, 5));
+  let bestHand = null;
+  let bestScore = -1;
+
+  const bottomCombinations = combinations(cardObjects, 5);
 
   for (const bottom of bottomCombinations) {
-    const bottomEval = evaluateHand(bottom);
     const remainingAfterBottom = cardObjects.filter(c => !bottom.find(bc => bc.rank === c.rank && bc.suit === c.suit));
-    
-    // Get all 5-card combinations for the middle lane, and shuffle them.
-    const middleCombinations = shuffle(combinations(remainingAfterBottom, 5));
+    const middleCombinations = combinations(remainingAfterBottom, 5);
 
     for (const middle of middleCombinations) {
-      const middleEval = evaluateHand(middle);
+      const top = remainingAfterBottom.filter(c => !middle.find(mc => mc.rank === c.rank && mc.suit === c.suit));
+      if (top.length !== 3) continue;
 
-      // Check for foul early: bottom must be >= middle.
-      if (compareHands(bottomEval, middleEval) >= 0) {
-        const top = remainingAfterBottom.filter(c => !middle.find(mc => mc.rank === c.rank && mc.suit === c.suit));
-        if (top.length !== 3) continue;
-        
-        const topEval = evaluateHand(top);
+      const hand = { top, middle, bottom };
+      const handStrings = {
+        head: top.map(c => `${c.rank}_of_${c.suit}`),
+        middle: middle.map(c => `${c.rank}_of_${c.suit}`),
+        tail: bottom.map(c => `${c.rank}_of_${c.suit}`),
+      };
 
-        // Check for foul early: middle must be >= top.
-        if (compareHands(middleEval, topEval) >= 0) {
-          // Found the FIRST valid combination. Return it immediately.
-          return {
-            top: sortCards(top),
-            middle: sortCards(middle),
-            bottom: sortCards(bottom),
-          };
+      if (!isFoul(handStrings.head, handStrings.middle, handStrings.tail)) {
+        const currentScore = calculateHandBaseScore(hand);
+        if (currentScore > bestScore) {
+          bestScore = currentScore;
+          bestHand = hand;
         }
       }
     }
   }
 
-  // This part should theoretically never be reached in a standard game.
+  if (bestHand) {
+    return {
+      top: sortCards(bestHand.top),
+      middle: sortCards(bestHand.middle),
+      bottom: sortCards(bestHand.bottom),
+    };
+  }
+
+  // Fallback if no valid hand is found (should be impossible)
   return null;
 };

@@ -96,7 +96,7 @@ function isFoul(head, middle, tail) {
     return false;
 }
 
-function getLaneScore(cards, laneName) {
+export function getLaneScore(cards, laneName) {
     const type = getHandType(cards);
     switch (laneName) {
         case 'head':
