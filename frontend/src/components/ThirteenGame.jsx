@@ -156,6 +156,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       onCardClick={handleCardClick}
       onLaneClick={handleLaneClick}
       onCloseResult={() => setGameResult(null)}
+      onPlayAgain={handleReady}
     />
   );
 };
