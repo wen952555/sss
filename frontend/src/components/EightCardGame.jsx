@@ -31,22 +31,27 @@ const EightCardGame = ({ onBackToLobby, user }) => {
 
   const handleReady = () => {
     try {
-      setErrorMessage(''); // Clear previous errors
+      setErrorMessage('');
       const { playerHand, aiHands: initialAiHands } = dealOfflineEightCardGame(6);
-      const sortedPlayerHand = getSmartSortedHandForEight(playerHand);
-      if (!sortedPlayerHand) {
-        setErrorMessage('无法为您的手牌生成有效的牌型。');
-        return;
-      }
-      setInitialLanes(sortedPlayerHand);
-      setAllPlayerCards(playerHand);
+      setAllPlayerCards(playerHand); // Keep original hand for sorting
 
+      // Put all 8 of the player's cards into the middle lane initially
+      const playerCardObjects = playerHand.map(c => typeof c === 'string' ? parseCard(c) : c);
+      const initialHand = {
+        top: [],
+        middle: playerCardObjects,
+        bottom: []
+      };
+      setInitialLanes(initialHand);
+
+      // Sort AI hands
       const sortedAiHands = initialAiHands.map(getSmartSortedHandForEight);
        if (sortedAiHands.some(h => !h)) {
         setErrorMessage('为AI玩家理牌时发生错误。');
         return;
       }
       setAiHands(sortedAiHands);
+
       setPlayerState('arranging');
       setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
     } catch (e) {
