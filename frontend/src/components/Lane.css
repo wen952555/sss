@@ -2,7 +2,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px; /* 增大区间隔，防止拥挤 */
+  gap: 2px; /* Keep a minimal gap for visual separation */
   flex: 1;
   min-height: 0;
 }
@@ -75,7 +75,7 @@
 
 @media (max-width: 450px) {
   .card-wrapper {
-    width: 54px; min-width: 42px; max-width: 54px; height: 78px; margin-left: -11px;
+    width: 70px; min-width: 60px; max-width: 70px; height: 100px; margin-left: -20px;
   }
-  .card-placement-box { min-height: 85px; padding: 0 6px; }
+  .card-placement-box { min-height: 110px; padding: 0 6px; }
 }
