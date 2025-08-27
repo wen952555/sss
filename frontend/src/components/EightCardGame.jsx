@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './EightCardGame.css';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult } from '../utils';
+import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult, parseCard } from '../utils';
 import GameTable from './GameTable';
 
 const EightCardGame = ({ onBackToLobby, user }) => {
@@ -29,7 +29,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
     setPlayers([{ id: user.id, phone: user.phone, is_ready: false }, ...aiPlayerInfo]);
   }, [user]);
 
-  const handleReady = () => {
+  const handleReady = useCallback(() => {
     try {
       setErrorMessage('');
       const { playerHand, aiHands: initialAiHands } = dealOfflineEightCardGame(6);
@@ -58,9 +58,9 @@ const EightCardGame = ({ onBackToLobby, user }) => {
       console.error(e);
       setErrorMessage(`发生意外错误: ${e.message}`);
     }
-  };
+  }, [setInitialLanes]);
 
-  const handleAutoSort = () => {
+  const handleAutoSort = useCallback(() => {
     setIsLoading(true);
     setErrorMessage('智能理牌中，请稍候...'); // Set a message
 
@@ -80,26 +80,39 @@ const EightCardGame = ({ onBackToLobby, user }) => {
         setIsLoading(false);
       }
     }, 10); // 10ms delay is enough for the UI to repaint
-  };
+  }, [allPlayerCards, setInitialLanes]);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
       setErrorMessage(`牌道数量错误！`);
       return;
     }
-    const playerHand = {
-      top: topLane.map(c => `${c.rank}_of_${c.suit}`),
-      middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
-      bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
-    };
-    const result = calculateEightCardTrialResult(playerHand, aiHands);
-    const modalPlayers = [
-      { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
-      ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
-    ];
-    setGameResult({ players: modalPlayers });
-    setPlayerState('submitted');
-  };
+
+    setIsLoading(true);
+    setErrorMessage('正在计算比牌结果...');
+
+    setTimeout(() => {
+      try {
+        const playerHand = {
+          top: topLane.map(c => `${c.rank}_of_${c.suit}`),
+          middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
+          bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
+        };
+        const result = calculateEightCardTrialResult(playerHand, aiHands);
+        const modalPlayers = [
+          { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
+          ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
+        ];
+        setGameResult({ players: modalPlayers });
+        setPlayerState('submitted');
+        setErrorMessage('');
+      } catch (e) {
+        setErrorMessage(`计算结果时发生错误: ${e.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 10);
+  }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone]);
 
   return (
     <GameTable

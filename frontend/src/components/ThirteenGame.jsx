@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './ThirteenGame.css';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand } from '../utils';
+import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand, parseCard } from '../utils';
 import GameTable from './GameTable';
 
 const ThirteenGame = ({ onBackToLobby, user }) => {
@@ -29,7 +29,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
     setPlayers([{ id: user.id, phone: user.phone, is_ready: false }, ...aiPlayerInfo]);
   }, [user]);
 
-  const handleReady = () => {
+  const handleReady = useCallback(() => {
     try {
       setErrorMessage('');
       const { playerHand, aiHands: initialAiHands } = dealOfflineThirteenGame(4);
@@ -56,9 +56,9 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       console.error(e);
       setErrorMessage(`发生意外错误: ${e.message}`);
     }
-  };
+  }, [setInitialLanes]);
 
-  const handleAutoSort = () => {
+  const handleAutoSort = useCallback(() => {
     setIsLoading(true);
     setErrorMessage('智能理牌中，请稍候...'); // Set a message
 
@@ -78,9 +78,9 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
         setIsLoading(false);
       }
     }, 10); // 10ms delay is enough for the UI to repaint
-  };
+  }, [allPlayerCards, setInitialLanes]);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
       setErrorMessage(`牌道数量错误！`);
       return;
@@ -110,7 +110,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
         setIsLoading(false);
       }
     }, 10);
-  };
+  }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone]);
 
   return (
     <GameTable
