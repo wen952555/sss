@@ -1,26 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './EightCardGame.css';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-import { dealOfflineEightCardGame, calculateEightCardTrialResult, getSmartSortedHandForEight } from '../utils';
+import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult } from '../utils';
 import GameTable from './GameTable';
 
 const EightCardGame = ({ onBackToLobby, user }) => {
-  const {
-    topLane,
-    middleLane,
-    bottomLane,
-    unassignedCards,
-    selectedCards,
-    LANE_LIMITS,
-    setInitialCards,
-    handleCardClick,
-    handleLaneClick,
-    handleAutoSort
-  } = useCardArrangement('eight');
+  const arrangement = useCardArrangement('eight');
 
   const [aiHands, setAiHands] = useState([]);
-  const [hasDealt, setHasDealt] = useState(false);
-  const [hasSubmittedHand, setHasSubmittedHand] = useState(false);
+  const [playerState, setPlayerState] = useState('waiting'); // 'waiting', 'arranging', 'submitted'
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -33,22 +21,22 @@ const EightCardGame = ({ onBackToLobby, user }) => {
 
   const handleReady = () => {
     const { playerHand, aiHands: initialAiHands } = dealOfflineEightCardGame(6);
-    setInitialCards(playerHand);
+    arrangement.setInitialCards(playerHand);
     const sortedAiHands = initialAiHands.map(getSmartSortedHandForEight);
     setAiHands(sortedAiHands);
-    setHasDealt(true);
+    setPlayerState('arranging');
     setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
   };
 
   const handleConfirm = () => {
-    if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
+    if (arrangement.topLane.length !== arrangement.LANE_LIMITS.top || arrangement.middleLane.length !== arrangement.LANE_LIMITS.middle || arrangement.bottomLane.length !== arrangement.LANE_LIMITS.bottom) {
       setErrorMessage(`牌道数量错误！`);
       return;
     }
     const playerHand = {
-      top: topLane.map(c => `${c.rank}_of_${c.suit}`),
-      middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
-      bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
+      top: arrangement.topLane.map(c => `${c.rank}_of_${c.suit}`),
+      middle: arrangement.middleLane.map(c => `${c.rank}_of_${c.suit}`),
+      bottom: arrangement.bottomLane.map(c => `${c.rank}_of_${c.suit}`)
     };
     const result = calculateEightCardTrialResult(playerHand, aiHands);
     const modalPlayers = [
@@ -56,7 +44,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
       ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
     ];
     setGameResult({ players: modalPlayers });
-    setHasSubmittedHand(true);
+    setPlayerState('submitted');
   };
 
   return (
@@ -66,15 +54,14 @@ const EightCardGame = ({ onBackToLobby, user }) => {
       players={players}
       user={user}
 
-      topLane={topLane}
-      middleLane={middleLane}
-      bottomLane={bottomLane}
-      unassignedCards={unassignedCards}
-      selectedCards={selectedCards}
-      LANE_LIMITS={LANE_LIMITS}
+      topLane={arrangement.topLane}
+      middleLane={arrangement.middleLane}
+      bottomLane={arrangement.bottomLane}
+      unassignedCards={arrangement.unassignedCards}
+      selectedCards={arrangement.selectedCards}
+      LANE_LIMITS={arrangement.LANE_LIMITS}
 
-      hasDealt={hasDealt}
-      hasSubmittedHand={hasSubmittedHand}
+      playerState={playerState}
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}
@@ -82,9 +69,9 @@ const EightCardGame = ({ onBackToLobby, user }) => {
       onBackToLobby={onBackToLobby}
       onReady={handleReady}
       onConfirm={handleConfirm}
-      onAutoSort={handleAutoSort}
-      onCardClick={handleCardClick}
-      onLaneClick={handleLaneClick}
+      onAutoSort={arrangement.handleAutoSort}
+      onCardClick={arrangement.handleCardClick}
+      onLaneClick={arrangement.handleLaneClick}
       onCloseResult={() => setGameResult(null)}
     />
   );

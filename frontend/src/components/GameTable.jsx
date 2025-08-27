@@ -18,8 +18,7 @@ const GameTable = ({
   unassignedCards,
   selectedCards,
   LANE_LIMITS,
-  hasDealt,
-  hasSubmittedHand,
+  playerState, // 'waiting', 'arranging', 'submitted'
   isLoading,
   gameResult,
   errorMessage,
@@ -47,11 +46,15 @@ const GameTable = ({
       </div>
       <div className={`players-status-container ${players.length > 4 ? 'six-player' : ''}`}>
         {players.map(p => (
-          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${hasDealt ? 'is-ready' : ''}`}>
+          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${playerState !== 'waiting' ? 'is-ready' : ''}`}>
             <div className="player-avatar">{String(p.id).startsWith('ai') ? 'AI' : p.phone.slice(-2)}</div>
             <div className="player-info">
               <div className="player-name">{renderPlayerName(p)}</div>
-              <div className="player-ready-text">{hasDealt ? (hasSubmittedHand ? '已提交' : '理牌中...') : (p.is_ready ? '已准备' : '未准备')}</div>
+              <div className="player-ready-text">
+                {playerState === 'waiting' && '未准备'}
+                {playerState === 'arranging' && '理牌中...'}
+                {playerState === 'submitted' && '已提交'}
+              </div>
             </div>
           </div>
         ))}
@@ -69,15 +72,21 @@ const GameTable = ({
 
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
-        {!hasDealt ? (
+        {playerState === 'waiting' && (
           <button className="table-action-btn confirm-btn" onClick={onReady}>点击准备</button>
-        ) : (
+        )}
+        {playerState === 'arranging' && (
           <>
-            <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={hasSubmittedHand}>智能理牌</button>
-            <button className="table-action-btn auto-manage-btn" disabled={hasSubmittedHand}>智能托管</button>
-            <button onClick={onConfirm} disabled={isLoading || hasSubmittedHand} className="table-action-btn confirm-btn">
-              {hasSubmittedHand ? '等待开牌' : '确认比牌'}
-            </button>
+            <button onClick={onAutoSort} className="table-action-btn sort-btn">智能理牌</button>
+            <button className="table-action-btn auto-manage-btn">智能托管</button>
+            <button onClick={onConfirm} disabled={isLoading} className="table-action-btn confirm-btn">确认比牌</button>
+          </>
+        )}
+        {playerState === 'submitted' && (
+           <>
+            <button className="table-action-btn sort-btn" disabled>智能理牌</button>
+            <button className="table-action-btn auto-manage-btn" disabled>智能托管</button>
+            <button className="table-action-btn confirm-btn" disabled>等待开牌</button>
           </>
         )}
       </div>

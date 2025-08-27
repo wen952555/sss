@@ -8,8 +8,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
   const arrangement = useCardArrangement('thirteen');
 
   const [aiHands, setAiHands] = useState([]);
-  const [hasDealt, setHasDealt] = useState(false);
-  const [hasSubmittedHand, setHasSubmittedHand] = useState(false);
+  const [playerState, setPlayerState] = useState('waiting'); // 'waiting', 'arranging', 'submitted'
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -25,7 +24,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
     arrangement.setInitialCards(playerHand);
     const sortedAiHands = initialAiHands.map(getAiThirteenHand);
     setAiHands(sortedAiHands);
-    setHasDealt(true);
+    setPlayerState('arranging');
     setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
   };
 
@@ -45,7 +44,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
     ];
     setGameResult({ players: modalPlayers });
-    setHasSubmittedHand(true);
+    setPlayerState('submitted');
   };
 
   return (
