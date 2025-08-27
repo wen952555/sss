@@ -104,15 +104,25 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
 
     setTimeout(() => {
       try {
-        const playerHand = {
+        // Create a string version of the player's hand for the scorer
+        const playerHandStrings = {
           top: topLane.map(c => `${c.rank}_of_${c.suit}`),
           middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
           bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
         };
-        const result = calculateThirteenTrialResult(playerHand, aiHands);
+        const result = calculateThirteenTrialResult(playerHandStrings, aiHands);
+
+        // For the modal display, we need card objects
+        const playerHandObjects = { top: topLane, middle: middleLane, bottom: bottomLane };
+        const aiHandObjects = aiHands.map(hand => ({
+          top: hand.top.map(parseCard),
+          middle: hand.middle.map(parseCard),
+          bottom: hand.bottom.map(parseCard),
+        }));
+
         const modalPlayers = [
-          { name: user.phone, hand: playerHand, score: result.playerScore, is_me: true },
-          ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
+          { name: user.phone, hand: playerHandObjects, score: result.playerScore, is_me: true },
+          ...aiHandObjects.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
         ];
         setGameResult({ players: modalPlayers });
         setPlayerState('submitted');
