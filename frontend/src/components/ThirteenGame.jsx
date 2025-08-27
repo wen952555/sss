@@ -72,16 +72,16 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
   }, [setInitialLanes, setAllPlayerCards, setAiHands, setPlayerState, setPlayers, setErrorMessage]);
 
   const handleAutoSort = useCallback(() => {
+    // This calculation is now very expensive, so loading state is crucial.
     setIsLoading(true);
-    setErrorMessage('智能理牌中，请稍候...'); // Set a message
+    setErrorMessage('正在计算最优牌型...');
 
-    // Use setTimeout to allow the UI to update before the heavy calculation
     setTimeout(() => {
       try {
         const sorted = getSmartSortedHand(allPlayerCards);
         if (sorted) {
           setInitialLanes(sorted);
-          setErrorMessage(''); // Clear message on success
+          setErrorMessage('');
         } else {
           setErrorMessage('无法找到有效的牌型组合。');
         }
@@ -90,7 +90,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       } finally {
         setIsLoading(false);
       }
-    }, 10); // 10ms delay is enough for the UI to repaint
+    }, 10);
   }, [allPlayerCards, setInitialLanes, setIsLoading, setErrorMessage]);
 
   const handleConfirm = useCallback(() => {
@@ -161,6 +161,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       onCardClick={handleCardClick}
       onLaneClick={handleLaneClick}
       onCloseResult={() => setGameResult(null)}
+      onPlayAgain={handleReady}
     />
   );
 };

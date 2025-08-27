@@ -11,7 +11,10 @@ const PlayerHandDisplay = ({ hand, gameType }) => {
             {lanes.map((laneCards, idx) => (
                 <div key={idx} className="result-cards-row">
                     {laneCards && laneCards.map((card, cardIdx) => (
-                        <Card key={`${card.rank}-${card.suit}-${cardIdx}`} card={card} />
+                        // Add a wrapper div to constrain the card size
+                        <div key={cardIdx} style={{ width: '50px', height: '70px', margin: '0 2px' }}>
+                            <Card card={card} />
+                        </div>
                     ))}
                 </div>
             ))}
@@ -19,7 +22,7 @@ const PlayerHandDisplay = ({ hand, gameType }) => {
     );
 };
 
-const GameResultModal = ({ result, onClose, gameType, isTrial = false }) => {
+const GameResultModal = ({ result, onClose, onPlayAgain, gameType, isTrial = false }) => {
     if (!result || !result.players || result.players.length === 0) return null;
 
     const me = result.players.find(p => p.is_me) || result.players.find(p => p.id === result.myId) || result.players[0];
@@ -29,6 +32,13 @@ const GameResultModal = ({ result, onClose, gameType, isTrial = false }) => {
         if (myTotalScore > 0) return '恭喜胜利';
         if (myTotalScore < 0) return '惜败';
         return '平局';
+    };
+
+    const handlePlayAgain = () => {
+        onClose(); // Close the modal first
+        if (onPlayAgain) {
+            onPlayAgain(); // Then trigger the next round
+        }
     };
 
     return (
@@ -63,7 +73,7 @@ const GameResultModal = ({ result, onClose, gameType, isTrial = false }) => {
 
                 <div className="result-modal-footer">
                     <button onClick={onClose} className="result-btn exit-btn">退出游戏</button>
-                    <button onClick={onClose} className="result-btn continue-btn">继续游戏</button>
+                    <button onClick={handlePlayAgain} className="result-btn continue-btn">继续游戏</button>
                 </div>
             </div>
         </div>
