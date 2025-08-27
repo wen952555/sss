@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { sortCards, areCardsEqual, getSmartSortedHand, getSmartSortedHandForEight, parseCard } from '../utils';
 
 const getLaneLimits = (gameType) => {
@@ -13,14 +13,14 @@ export const useCardArrangement = (gameType) => {
   const [topLane, setTopLane] = useState([]);
   const [middleLane, setMiddleLane] = useState([]);
   const [bottomLane, setBottomLane] = useState([]);
-  const [unassignedCards, setUnassignedCards] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
 
-  const setInitialCards = useCallback((cards) => {
-    setUnassignedCards(cards.map(c => (typeof c === 'string' ? parseCard(c) : c)));
-    setTopLane([]);
-    setMiddleLane([]);
-    setBottomLane([]);
+  const setInitialLanes = useCallback((sortedHand) => {
+    if (sortedHand) {
+      setTopLane(sortedHand.top.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
+      setMiddleLane(sortedHand.middle.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
+      setBottomLane(sortedHand.bottom.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
+    }
     setSelectedCards([]);
   }, []);
 
@@ -36,46 +36,56 @@ export const useCardArrangement = (gameType) => {
   }, []);
 
   const handleLaneClick = useCallback((laneName) => {
-    if (selectedCards.length === 0) return false;
+    if (selectedCards.length === 0) return;
 
     const laneSetterMap = { top: setTopLane, middle: setMiddleLane, bottom: setBottomLane };
     const currentLanes = { top: topLane, middle: middleLane, bottom: bottomLane };
-    const targetSetter = laneSetterMap[laneName];
 
-    if (currentLanes[laneName].length + selectedCards.length > LANE_LIMITS[laneName]) {
-      return false; // Indicate failure
+    // Logic for moving cards between lanes
+    const newLanes = { ...currentLanes };
+    let cardsToMove = [...selectedCards];
+
+    // Remove selected cards from all lanes
+    Object.keys(newLanes).forEach(key => {
+      newLanes[key] = newLanes[key].filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)));
+    });
+
+    // Add selected cards to the target lane
+    newLanes[laneName] = [...newLanes[laneName], ...cardsToMove];
+
+    // Handle overflow by swapping
+    if (newLanes[laneName].length > LANE_LIMITS[laneName]) {
+      // This is a complex case. For now, we'll just prevent the move.
+      // A full implementation would require swapping logic.
+      // Let's revert to a simpler "add only if space" logic for stability.
+      return; // Prevent move
     }
 
-    targetSetter(prevLane => sortCards([...prevLane, ...selectedCards]));
-
-    setUnassignedCards(prev => prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc))));
-    setTopLane(prev => (laneName === 'top' ? prev : prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)))));
-    setMiddleLane(prev => (laneName === 'middle' ? prev : prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)))));
-    setBottomLane(prev => (laneName === 'bottom' ? prev : prev.filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)))));
-
+    setTopLane(sortCards(newLanes.top));
+    setMiddleLane(sortCards(newLanes.middle));
+    setBottomLane(sortCards(newLanes.bottom));
     setSelectedCards([]);
-    return true; // Indicate success
+
   }, [selectedCards, topLane, middleLane, bottomLane, LANE_LIMITS]);
 
-  const handleAutoSort = useCallback(() => {
+  const handleAutoSort = useCallback((allCards) => {
     const sorter = gameType === 'thirteen' ? getSmartSortedHand : getSmartSortedHandForEight;
-    const sorted = sorter(unassignedCards);
+    const sorted = sorter(allCards);
     if (sorted) {
       setTopLane(sorted.top || []);
       setMiddleLane(sorted.middle || []);
       setBottomLane(sorted.bottom || []);
-      setUnassignedCards([]);
+      setSelectedCards([]);
     }
-  }, [unassignedCards, gameType]);
+  }, [gameType]);
 
   return {
     topLane,
     middleLane,
     bottomLane,
-    unassignedCards,
     selectedCards,
     LANE_LIMITS,
-    setInitialCards,
+    setInitialLanes,
     handleCardClick,
     handleLaneClick,
     handleAutoSort
