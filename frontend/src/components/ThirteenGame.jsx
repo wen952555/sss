@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './ThirteenGame.css';
 import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand, parseCard } from '../utils';
 import GameTable from './GameTable';

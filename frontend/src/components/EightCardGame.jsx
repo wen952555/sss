@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './EightCardGame.css';
 import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult, parseCard } from '../utils';
 import GameTable from './GameTable';
