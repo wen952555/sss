@@ -33,16 +33,23 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
     try {
       setErrorMessage('');
       const { playerHand, aiHands: initialAiHands } = dealOfflineThirteenGame(4);
-      const sortedPlayerHand = getSmartSortedHand(playerHand);
-      if (!sortedPlayerHand) {
-        setErrorMessage('无法为您的手牌生成有效的牌型。');
-        return;
-      }
-      setInitialLanes(sortedPlayerHand);
-      setAllPlayerCards(playerHand); // Keep track of the original 13 cards for auto-sort
+      setAllPlayerCards(playerHand); // Keep the original hand for sorting later
 
+      // For the player, create a random initial arrangement by shuffling the cards
+      const playerCardObjects = playerHand.map(c => typeof c === 'string' ? parseCard(c) : c);
+      const shuffledPlayerHand = [...playerCardObjects].sort(() => Math.random() - 0.5);
+
+      const randomInitialHand = {
+        top: shuffledPlayerHand.slice(0, 3),
+        middle: shuffledPlayerHand.slice(3, 8),
+        bottom: shuffledPlayerHand.slice(8, 13)
+      };
+      setInitialLanes(randomInitialHand);
+
+      // For the AIs, pre-sort their hands
       const sortedAiHands = initialAiHands.map(getAiThirteenHand);
       setAiHands(sortedAiHands);
+
       setPlayerState('arranging');
       setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
     } catch (e) {
