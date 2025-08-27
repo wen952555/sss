@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './EightCardGame.css';
-import { useCardArrangement } from '../hooks/useCardArrangement';
-import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult } from '../utils';
+import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult, parseCard } from '../utils';
 import GameTable from './GameTable';
 
+// This component is now a mirror of ThirteenGame, auto-sorted.
 const EightCardGame = ({ onBackToLobby, user }) => {
-  const arrangement = useCardArrangement('eight');
-
+  const [topLane, setTopLane] = useState([]);
+  const [middleLane, setMiddleLane] = useState([]);
+  const [bottomLane, setBottomLane] = useState([]);
   const [aiHands, setAiHands] = useState([]);
-  const [playerState, setPlayerState] = useState('waiting'); // 'waiting', 'arranging', 'submitted'
+  const [playerState, setPlayerState] = useState('waiting');
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -21,7 +22,14 @@ const EightCardGame = ({ onBackToLobby, user }) => {
 
   const handleReady = () => {
     const { playerHand, aiHands: initialAiHands } = dealOfflineEightCardGame(6);
-    arrangement.setInitialCards(playerHand);
+
+    const sortedPlayerHand = getSmartSortedHandForEight(playerHand);
+    if (sortedPlayerHand) {
+        setTopLane(sortedPlayerHand.top.map(parseCard));
+        setMiddleLane(sortedPlayerHand.middle.map(parseCard));
+        setBottomLane(sortedPlayerHand.bottom.map(parseCard));
+    }
+
     const sortedAiHands = initialAiHands.map(getSmartSortedHandForEight);
     setAiHands(sortedAiHands);
     setPlayerState('arranging');
@@ -29,14 +37,10 @@ const EightCardGame = ({ onBackToLobby, user }) => {
   };
 
   const handleConfirm = () => {
-    if (arrangement.topLane.length !== arrangement.LANE_LIMITS.top || arrangement.middleLane.length !== arrangement.LANE_LIMITS.middle || arrangement.bottomLane.length !== arrangement.LANE_LIMITS.bottom) {
-      setErrorMessage(`牌道数量错误！`);
-      return;
-    }
     const playerHand = {
-      top: arrangement.topLane.map(c => `${c.rank}_of_${c.suit}`),
-      middle: arrangement.middleLane.map(c => `${c.rank}_of_${c.suit}`),
-      bottom: arrangement.bottomLane.map(c => `${c.rank}_of_${c.suit}`)
+      top: topLane.map(c => `${c.rank}_of_${c.suit}`),
+      middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
+      bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
     };
     const result = calculateEightCardTrialResult(playerHand, aiHands);
     const modalPlayers = [
@@ -54,12 +58,12 @@ const EightCardGame = ({ onBackToLobby, user }) => {
       players={players}
       user={user}
 
-      topLane={arrangement.topLane}
-      middleLane={arrangement.middleLane}
-      bottomLane={arrangement.bottomLane}
-      unassignedCards={arrangement.unassignedCards}
-      selectedCards={arrangement.selectedCards}
-      LANE_LIMITS={arrangement.LANE_LIMITS}
+      topLane={topLane}
+      middleLane={middleLane}
+      bottomLane={bottomLane}
+      unassignedCards={[]}
+      selectedCards={[]}
+      LANE_LIMITS={{ top: 2, middle: 3, bottom: 3 }}
 
       playerState={playerState}
       isLoading={isLoading}
@@ -69,9 +73,9 @@ const EightCardGame = ({ onBackToLobby, user }) => {
       onBackToLobby={onBackToLobby}
       onReady={handleReady}
       onConfirm={handleConfirm}
-      onAutoSort={arrangement.handleAutoSort}
-      onCardClick={arrangement.handleCardClick}
-      onLaneClick={arrangement.handleLaneClick}
+      onAutoSort={() => {}} // Dummy handler, button is disabled
+      onCardClick={() => {}} // Dummy handler, cards are not clickable
+      onLaneClick={() => {}}  // Dummy handler, lanes are not clickable
       onCloseResult={() => setGameResult(null)}
     />
   );

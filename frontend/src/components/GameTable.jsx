@@ -77,16 +77,16 @@ const GameTable = ({
         )}
         {playerState === 'arranging' && (
           <>
-            <button onClick={onAutoSort} className="table-action-btn sort-btn">智能理牌</button>
-            <button className="table-action-btn auto-manage-btn">智能托管</button>
-            <button onClick={onConfirm} disabled={isLoading} className="table-action-btn confirm-btn">确认比牌</button>
+            <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={isLoading || playerState !== 'arranging'}>智能理牌</button>
+            <button className="table-action-btn auto-manage-btn" disabled={isLoading || playerState !== 'arranging'}>智能托管</button>
+            <button onClick={onConfirm} disabled={isLoading || playerState !== 'arranging'} className="table-action-btn confirm-btn">确认比牌</button>
           </>
         )}
         {playerState === 'submitted' && (
            <>
-            <button className="table-action-btn sort-btn" disabled>智能理牌</button>
-            <button className="table-action-btn auto-manage-btn" disabled>智能托管</button>
-            <button className="table-action-btn confirm-btn" disabled>等待开牌</button>
+            <button className="table-action-btn sort-btn" disabled={true}>智能理牌</button>
+            <button className="table-action-btn auto-manage-btn" disabled={true}>智能托管</button>
+            <button className="table-action-btn confirm-btn" disabled={true}>等待开牌</button>
           </>
         )}
       </div>
