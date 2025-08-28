@@ -16,7 +16,9 @@
 
 .game-table-container {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
+  height: auto;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, var(--table-bg-start), var(--table-bg-end));
