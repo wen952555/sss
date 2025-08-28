@@ -61,7 +61,6 @@ const EightCardGame = ({ onBackToLobby, user }) => {
 
   const handleAutoSort = useCallback(() => {
     setIsLoading(true);
-    setErrorMessage('智能理牌中，请稍候...'); // Set a message
 
     // Use setTimeout to allow the UI to update before the heavy calculation
     setTimeout(() => {

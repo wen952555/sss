@@ -18,7 +18,7 @@
   align-items: flex-end;
   overflow-x: hidden;
   overflow-y: visible !important; /* 强力保证弹起不裁切 */
-  padding: 8px 16px 8px 20px;
+  padding: 8px 16px;
   cursor: pointer;
   position: relative;
 }
@@ -58,7 +58,7 @@
   filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
 }
 
-.card-wrapper:first-child { margin-left: 0; }
+.card-wrapper:first-child { margin-left: 10px; }
 
 .card {
   box-sizing: border-box;
