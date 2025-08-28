@@ -72,7 +72,6 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
 
   const handleAutoSort = useCallback(() => {
     setIsLoading(true);
-    setErrorMessage('正在计算最优牌型...');
 
     setTimeout(() => {
       try {
