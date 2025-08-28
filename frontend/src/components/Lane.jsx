@@ -13,8 +13,6 @@ const Lane = ({
     }
   };
 
-  // 修复堆叠遮挡：
-  // - 所有牌 zIndex = idx + 2，弹起牌 zIndex = 99（永远最高，但只弹起不遮盖右侧）
   return (
     <div className="lane-wrapper">
       <div className="card-placement-box" onClick={handleAreaClick}>
