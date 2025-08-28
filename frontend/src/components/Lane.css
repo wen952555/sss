@@ -12,21 +12,15 @@
   box-sizing: border-box;
   min-height: 285px;
   background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 1px 4px #23243c22;
+  border-radius: 0;
+  box-shadow: none;
   display: flex;
   align-items: flex-end;
   overflow-x: auto;
   overflow-y: visible !important; /* 强力保证弹起不裁切 */
-  padding: 8px 16px 8px 0; /* Remove left padding */
+  padding: 8px 16px;
   cursor: pointer;
   position: relative;
-}
-
-.card-placement-box::before {
-  content: '';
-  display: block;
-  min-width: 16px; /* This creates the left padding */
 }
 
 .lane-title-indicator {
