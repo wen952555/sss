@@ -8,9 +8,9 @@
 }
 
 .card-placement-box {
-  --card-width: 38px;
-  --card-height: 72px;
-  --card-overlap-px: 19px;
+  --card-width: 84px;
+  --card-height: 160px;
+  --card-overlap-px: 42px;
   --left-buffer: 20px;
 
   width: 100%;
@@ -65,9 +65,9 @@
 
 @media (max-width: 450px) {
   .card-placement-box {
-    --card-width: 28px;
-    --card-height: 40px;
-    --card-overlap-px: 14px;
+    --card-width: 64px;
+    --card-height: 90px;
+    --card-overlap-px: 32px;
     --left-buffer: 10px;
   }
 }
