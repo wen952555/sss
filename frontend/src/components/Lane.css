@@ -8,19 +8,22 @@
 }
 
 .card-placement-box {
+  --card-width: 130px;
+  --card-height: 250px;
+  --card-overlap-px: 65px;
+  --left-buffer: 20px;
+
   width: 100%;
   box-sizing: border-box;
-  min-height: 285px;
   background: transparent;
   border-radius: 0;
   box-shadow: none;
-  display: flex;
-  align-items: flex-end;
-  overflow-x: hidden;
-  overflow-y: visible !important; /* 强力保证弹起不裁切 */
-  padding: 8px 16px;
+  overflow-x: auto;
+  overflow-y: visible !important;
+  padding: 8px 0;
   cursor: pointer;
   position: relative;
+  height: calc(var(--card-height) + 16px);
 }
 
 .lane-title-indicator {
@@ -36,40 +39,35 @@
 }
 
 .card-wrapper {
-  margin-left: -65px;
-  z-index: 1;
-  position: relative;
+  position: absolute;
+  top: 8px;
+  left: calc(var(--left-buffer) + var(--card-index) * var(--card-overlap-px));
+  z-index: var(--card-index);
   transition: box-shadow 0.2s, transform 0.18s;
   overflow: visible;
-  width: 130px;
-  min-width: 120px;
-  max-width: 130px;
-  height: 250px;
+  width: var(--card-width);
+  height: var(--card-height);
 }
 
-/* 堆叠z-index：后面的牌层级高，弹起牌层级最高 */
 .card-wrapper.selected {
   z-index: 99 !important;
   box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
   transform: translateY(-20px) scale(1.08);
 }
-.card-wrapper.selected .card {
-  box-shadow: 0 4px 18px #00cec9b3;
-  filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
-}
-
-.card-wrapper:first-child { margin-left: 10px; }
 
 .card {
   box-sizing: border-box;
   border-radius: 9px;
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 
 @media (max-width: 450px) {
-  .card-wrapper {
-    width: 80px; min-width: 70px; max-width: 80px; height: 112px; margin-left: -40px;
+  .card-placement-box {
+    --card-width: 80px;
+    --card-height: 112px;
+    --card-overlap-px: 40px;
+    --left-buffer: 10px;
   }
-  .card-placement-box { min-height: 120px; padding: 0 6px; }
 }

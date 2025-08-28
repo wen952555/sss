@@ -26,6 +26,7 @@ const Lane = ({
               key={`${card.rank}-${card.suit}-${idx}`}
               className={`card-wrapper${isSelected ? ' selected' : ''}`}
               style={{
+                '--card-index': idx,
                 zIndex: isSelected ? 99 : idx + 2,
               }}
             >
