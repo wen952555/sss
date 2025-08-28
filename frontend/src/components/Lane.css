@@ -42,7 +42,7 @@
 }
 
 .card-wrapper {
-  margin-left: -40px;
+  margin-left: -65px;
   z-index: 1;
   position: relative;
   transition: box-shadow 0.2s, transform 0.18s;
@@ -75,7 +75,7 @@
 
 @media (max-width: 450px) {
   .card-wrapper {
-    width: 80px; min-width: 70px; max-width: 80px; height: 112px; margin-left: -25px;
+    width: 80px; min-width: 70px; max-width: 80px; height: 112px; margin-left: -40px;
   }
   .card-placement-box { min-height: 120px; padding: 0 6px; }
 }
