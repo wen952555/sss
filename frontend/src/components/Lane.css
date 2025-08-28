@@ -58,7 +58,7 @@
   filter: brightness(1.15) drop-shadow(0 0 4px #00cec9);
 }
 
-.card-wrapper:first-child { margin-left: 10px; }
+.card-wrapper:first-child { margin-left: 20px; }
 
 .card {
   box-sizing: border-box;
