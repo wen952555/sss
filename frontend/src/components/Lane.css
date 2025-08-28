@@ -11,14 +11,14 @@
   width: 100%;
   box-sizing: border-box;
   min-height: 285px;
-  background: #ffffff;
+  background: transparent;
   border-radius: 0;
   box-shadow: none;
   display: flex;
   align-items: flex-end;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: visible !important; /* 强力保证弹起不裁切 */
-  padding: 8px 16px;
+  padding: 8px 16px 8px 20px;
   cursor: pointer;
   position: relative;
 }
