@@ -70,15 +70,7 @@ export const dealOfflineThirteenGame = (playerCount = 4) => {
 
 export const getAiThirteenHand = (thirteenCards) => {
   const cardObjects = thirteenCards.map(parseCard);
-  const sortedHand = getSmartSortedHand(cardObjects);
-  if (sortedHand) {
-    return {
-      top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`),
-      middle: sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`),
-      bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`),
-    };
-  }
-  return null;
+  return getSmartSortedHand(cardObjects);
 };
 
 import { calculateSinglePairScore } from './sssScorer';
