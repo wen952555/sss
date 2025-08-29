@@ -1,17 +1,17 @@
 :root {
-  --table-bg-start: #e0f7fa;
-  --table-bg-end: #b2ebf2;
-  --table-header-bg: rgba(255, 255, 255, 0.7);
-  --table-footer-bg: rgba(255, 255, 255, 0.7);
-  --player-status-bg: rgba(255, 255, 255, 0.5);
-  --player-status-ready-bg: #c8e6c9;
-  --player-status-me-bg: #fff9c4;
-  --text-color: #004d40;
-  --primary-color: #00796b;
-  --confirm-btn-bg: #4caf50;
+  --table-bg-start: #2E463D;
+  --table-bg-end: #1E2E27;
+  --table-header-bg: rgba(0, 0, 0, 0.2);
+  --table-footer-bg: rgba(0, 0, 0, 0.2);
+  --player-status-bg: rgba(0, 0, 0, 0.1);
+  --player-status-ready-bg: #1B5E20;
+  --player-status-me-bg: #4A4A4A;
+  --text-color: #E0E0E0;
+  --primary-color: #1B5E20;
+  --confirm-btn-bg: #4CAF50;
   --sort-btn-bg: #ff9800;
-  --back-btn-color: #00796b;
-  --error-color: #c62828;
+  --back-btn-color: #E0E0E0;
+  --error-color: #ef5350;
 }
 
 .game-table-container {
@@ -50,7 +50,7 @@
 .game-table-title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--text-color);
 }
 
 .table-action-btn {
@@ -121,10 +121,12 @@
 
 .player-status.is-ready {
   background-color: var(--player-status-ready-bg);
+  color: white;
 }
 
 .player-status.is-me {
   background-color: var(--player-status-me-bg);
+  color: white;
 }
 
 .player-avatar {
@@ -157,7 +159,7 @@
   min-height: 0;
   padding: 10px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: #2E7D32;
   border-radius: 14px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
