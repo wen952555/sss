@@ -9,7 +9,7 @@
 
 .card-placement-box {
   --card-width: 84px;
-  --card-height: 160px;
+  --card-height: 128px; /* 160px * 0.8 */
   --card-overlap-px: 42px;
   --left-buffer: 20px;
 
@@ -23,7 +23,7 @@
   padding: 8px 0;
   cursor: pointer;
   position: relative;
-  height: calc((var(--card-height) + 16px) * 0.8);
+  height: calc(var(--card-height) + 16px);
 }
 
 .lane-title-indicator {
