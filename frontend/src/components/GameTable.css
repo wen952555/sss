@@ -1,3 +1,19 @@
+:root {
+  --table-bg-start: #e0f7fa;
+  --table-bg-end: #b2ebf2;
+  --table-header-bg: rgba(255, 255, 255, 0.7);
+  --table-footer-bg: rgba(255, 255, 255, 0.7);
+  --player-status-bg: rgba(255, 255, 255, 0.5);
+  --player-status-ready-bg: #c8e6c9;
+  --player-status-me-bg: #fff9c4;
+  --text-color: #004d40;
+  --primary-color: #00796b;
+  --confirm-btn-bg: #4caf50;
+  --sort-btn-bg: #ff9800;
+  --back-btn-color: #00796b;
+  --error-color: #c62828;
+}
+
 .game-table-container {
   width: 100%;
   min-height: 100vh;
@@ -5,7 +21,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  /* The background is inherited from index.css */
+  background: linear-gradient(135deg, var(--table-bg-start), var(--table-bg-end));
   color: var(--text-color);
   padding: 0 15px 15px 15px;
   box-sizing: border-box;
@@ -35,7 +51,7 @@
 .game-table-title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--text-color);
+  color: var(--primary-color);
 }
 
 .table-action-btn {
@@ -106,12 +122,10 @@
 
 .player-status.is-ready {
   background-color: var(--player-status-ready-bg);
-  color: white;
 }
 
 .player-status.is-me {
   background-color: var(--player-status-me-bg);
-  color: white;
 }
 
 .player-avatar {
@@ -144,7 +158,7 @@
   min-height: 0;
   padding: 10px;
   box-sizing: border-box;
-  background: #2E7D32;
+  background: #ffffff;
   border-radius: 14px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
