@@ -13,13 +13,14 @@
   position: relative;
   width: 100%;
   max-width: 420px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--table-header-bg);
   backdrop-filter: blur(10px);
   border-radius: 24px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   padding: 40px 30px;
-  color: #004d40;
+  color: var(--text-color);
   text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .auth-close-btn {
@@ -29,21 +30,23 @@
   background: none;
   border: none;
   font-size: 2rem;
-  color: #004d40;
+  color: var(--text-color);
   cursor: pointer;
   line-height: 1;
+  opacity: 0.7;
 }
 
 .auth-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #00796b;
+  color: var(--text-color);
   margin: 0 0 10px 0;
 }
 
 .auth-subtitle {
   font-size: 1rem;
-  color: #004d40;
+  color: var(--text-color);
+  opacity: 0.8;
   margin-bottom: 30px;
 }
 
@@ -57,22 +60,23 @@
   width: 100%;
   padding: 14px;
   border-radius: 12px;
-  border: 1px solid #b2dfdb;
+  border: 1px solid var(--primary-color);
   font-size: 1rem;
-  background: #ffffff;
-  color: #004d40;
+  background: rgba(0,0,0,0.2);
+  color: var(--text-color);
   transition: all 0.2s;
   box-sizing: border-box;
 }
 
 .input-group input:focus {
   outline: none;
-  border-color: #00796b;
-  box-shadow: 0 0 10px rgba(0, 121, 107, 0.2);
+  border-color: var(--confirm-btn-bg);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
 }
 
 .input-group input::placeholder {
-  color: #80cbc4;
+  color: var(--text-color);
+  opacity: 0.5;
 }
 
 .auth-button {
@@ -80,18 +84,18 @@
   padding: 15px 0;
   border-radius: 12px;
   border: none;
-  background: #00796b;
+  background: var(--confirm-btn-bg);
   color: #fff;
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.25s ease;
-  box-shadow: 0 4px 15px rgba(0, 121, 107, 0.2);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
 }
 
 .auth-button:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 121, 107, 0.3);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
 }
 
 .auth-button:disabled {
@@ -101,7 +105,8 @@
 }
 
 .auth-toggle {
-  color: #004d40;
+  color: var(--text-color);
+  opacity: 0.8;
   font-size: 0.9rem;
   margin-top: 25px;
 }
@@ -109,16 +114,16 @@
 .toggle-button {
   background: none;
   border: none;
-  color: #00796b;
+  color: var(--confirm-btn-bg);
   cursor: pointer;
   font-weight: bold;
   padding: 0 5px;
 }
 
 .auth-error {
-  color: #c62828;
-  background: #ffebee;
-  border: 1px solid #ef9a9a;
+  color: #ffffff;
+  background: var(--error-color);
+  border: 1px solid var(--error-color);
   border-radius: 8px;
   padding: 10px;
   text-align: center;
