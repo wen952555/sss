@@ -5,6 +5,11 @@
   gap: 0;
   flex: 1;
   min-height: 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.lane-wrapper:last-child {
+  border-bottom: none;
 }
 
 .card-placement-box {
@@ -24,7 +29,7 @@
   padding: 8px 0;
   cursor: pointer;
   position: relative;
-  height: calc(var(--lane-height) * 0.8);
+  height: var(--lane-height);
 }
 
 .lane-title-indicator {
@@ -41,7 +46,7 @@
 
 .card-wrapper {
   position: absolute;
-  top: 8px;
+  bottom: 8px;
   left: calc(var(--left-buffer) + var(--card-index) * var(--card-overlap-px));
   z-index: var(--card-index);
   transition: box-shadow 0.2s, transform 0.18s;
