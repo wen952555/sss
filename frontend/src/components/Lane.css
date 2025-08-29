@@ -24,7 +24,7 @@
   padding: 8px 0;
   cursor: pointer;
   position: relative;
-  height: calc(var(--lane-height) * 0.8);
+  height: calc(var(--lane-height) * 1.3);
 }
 
 .lane-title-indicator {
