@@ -58,7 +58,7 @@
 .card-wrapper.selected {
   z-index: 99 !important;
   box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
-  transform: translateY(-20px) scale(1.08);
+  transform: translateY(-20px) translateX(-4px) scale(1.08);
 }
 
 .card {
