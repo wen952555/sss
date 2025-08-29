@@ -12,6 +12,7 @@
   --card-height: 160px;
   --card-overlap-px: 42px;
   --left-buffer: 20px;
+  --lane-height: calc(var(--card-height) + 16px);
 
   width: 100%;
   box-sizing: border-box;
@@ -23,7 +24,7 @@
   padding: 8px 0;
   cursor: pointer;
   position: relative;
-  height: calc(var(--card-height) + 16px);
+  height: calc(var(--lane-height) * 0.8);
 }
 
 .lane-title-indicator {
