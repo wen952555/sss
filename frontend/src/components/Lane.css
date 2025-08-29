@@ -28,7 +28,7 @@
   padding: 8px 0;
   cursor: pointer;
   position: relative;
-  height: calc(var(--card-height) + 16px);
+  height: 100%;
 }
 
 .lane-title-indicator {
