@@ -1,3 +1,19 @@
+:root {
+  --table-bg-start: #2E463D;
+  --table-bg-end: #1E2E27;
+  --table-header-bg: rgba(0, 0, 0, 0.2);
+  --table-footer-bg: rgba(0, 0, 0, 0.2);
+  --player-status-bg: rgba(0, 0, 0, 0.1);
+  --player-status-ready-bg: #1B5E20;
+  --player-status-me-bg: #4A4A4A;
+  --text-color: #E0E0E0;
+  --primary-color: #1B5E20;
+  --confirm-btn-bg: #4CAF50;
+  --sort-btn-bg: #ff9800;
+  --back-btn-color: #E0E0E0;
+  --error-color: #ef5350;
+}
+
 /* 全局深色渐变主题（无毛玻璃/无半透明） */
 
 html, body, #root {
@@ -5,22 +21,18 @@ html, body, #root {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  color: #f5f6fa;
-  background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
+  color: var(--text-color);
+  background: linear-gradient(135deg, var(--table-bg-start), var(--table-bg-end));
   font-family: 'Noto Sans SC', 'Arial', sans-serif;
   overscroll-behavior: none;
   overflow: hidden;
-}
-
-body {
-  background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
 }
 
 body::before { display: none; }
 
 /* 滚动条深色风格 */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #181829; }
-::-webkit-scrollbar-thumb { background: #2c2e4f; border-radius: 4px; }
+::-webkit-scrollbar-track { background: var(--table-bg-end); }
+::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 4px; }
 
-a { color: #89f0ff; }
+a { color: #81D4FA; }

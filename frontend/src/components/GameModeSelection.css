@@ -7,7 +7,6 @@
   justify-content: center;
   padding: 40px 20px;
   box-sizing: border-box;
-  color: #004d40;
   background: transparent;
   text-align: center;
 }
@@ -18,7 +17,7 @@
   left: 20px;
   background: none;
   border: none;
-  color: #00796b;
+  color: var(--back-btn-color);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -32,14 +31,15 @@
 .mode-selection-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #00796b;
+  color: var(--text-color);
   margin: 0 0 10px 0;
 }
 
 .mode-selection-subtitle {
   font-size: 1.1rem;
   font-weight: 400;
-  color: #004d40;
+  color: var(--text-color);
+  opacity: 0.8;
   margin-bottom: 40px;
 }
 
@@ -52,30 +52,31 @@
 }
 
 .mode-card {
-  background: #ffffff;
+  background: var(--table-header-bg);
   border-radius: 16px;
   padding: 25px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid #b2dfdb;
+  border: 1px solid var(--primary-color);
 }
 
 .mode-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(0, 77, 64, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
 }
 
 .mode-card-title {
   font-size: 1.6rem;
   font-weight: 600;
-  color: #00796b;
+  color: var(--text-color);
   margin: 0 0 5px 0;
 }
 
 .mode-card-description {
   font-size: 1rem;
-  color: #004d40;
+  color: var(--text-color);
+  opacity: 0.7;
   margin: 0;
 }
 

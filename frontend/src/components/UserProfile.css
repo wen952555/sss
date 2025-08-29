@@ -4,9 +4,10 @@
 .user-profile-panel {
   position: relative;
   width: 100%; max-width: 450px;
-  background: linear-gradient(120deg, #23243c 0%, #171730 80%);
-  border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(20, 20, 40, 0.20);
-  padding: 35px 25px; color: #e3e6ff;
+  background: var(--table-header-bg);
+  border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.20);
+  padding: 35px 25px; color: var(--text-color);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .back-button {
@@ -15,7 +16,7 @@
   left: 20px;
   background: none;
   border: none;
-  color: #89f0ff;
+  color: var(--back-btn-color);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -28,19 +29,19 @@
 
 .user-profile-panel h2 {
   text-align: center; font-size: 1.8rem; margin: 0 0 35px 0;
-  color: #89f0ff; text-shadow: 0 0 8px #23243c;
+  color: var(--text-color);
 }
-.profile-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; font-size: 1rem; border-bottom: 1px solid #34365c; }
+.profile-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; font-size: 1rem; border-bottom: 1px solid var(--primary-color); }
 .profile-item:last-of-type { border-bottom: none; }
-.profile-item-label { font-weight: 500; color: #c3c8e6; }
-.profile-item-value { font-weight: 400; color: #e3e6ff; }
+.profile-item-label { font-weight: 500; color: var(--text-color); opacity: 0.7; }
+.profile-item-value { font-weight: 400; color: var(--text-color); }
 .user-profile-btns { margin-top: 40px; display: flex; flex-direction: column; gap: 15px; }
 .user-profile-btns button {
   width: 100%; min-height: 48px; border-radius: 12px; border: none;
   font-size: 1.05rem; font-weight: bold; cursor: pointer; transition: all 0.2s ease;
 }
 .user-profile-btns button:active { transform: scale(0.98); }
-.user-profile-btns .transfer { background: #89f0ff; color: #23243c; }
-.user-profile-btns .transfer:hover { background: #6ad6e2; box-shadow: 0 0 15px #89f0ff44; }
-.user-profile-btns .logout { background: #fc5c7d; color: #fff; }
-.user-profile-btns .logout:hover { background: #ff6b81; box-shadow: 0 0 15px #fc5c7d66; }
+.user-profile-btns .transfer { background: var(--confirm-btn-bg); color: #fff; }
+.user-profile-btns .transfer:hover { filter: brightness(1.1); }
+.user-profile-btns .logout { background: var(--error-color); color: #fff; }
+.user-profile-btns .logout:hover { filter: brightness(1.1); }
