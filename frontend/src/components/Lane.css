@@ -5,6 +5,11 @@
   gap: 0;
   flex: 1;
   min-height: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lane-wrapper:last-child {
+  border-bottom: none;
 }
 
 .card-placement-box {
@@ -33,7 +38,7 @@
   transform: translateY(-50%);
   font-size: 1.5rem;
   font-weight: 700;
-  color: rgba(0, 0, 0, 0.1);
+  color: rgba(255, 255, 255, 0.2);
   z-index: 0;
   pointer-events: none;
 }
