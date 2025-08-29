@@ -5,6 +5,11 @@
   gap: 0;
   flex: 1;
   min-height: 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.lane-wrapper:last-child {
+  border-bottom: none;
 }
 
 .card-placement-box {
