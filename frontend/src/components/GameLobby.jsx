@@ -48,7 +48,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
         </div>
         <h1 className="lobby-title">游戏大厅</h1>
         <p className="lobby-subtitle">云端牌局，随心畅玩</p>
-        <div style={{ marginTop: 8, fontSize: '1rem', color: '#00796b', fontWeight: 500 }}>
+        <div className="online-count">
           当前在线人数：{onlineCount !== null ? onlineCount : '...'}
         </div>
       </header>
