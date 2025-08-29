@@ -59,19 +59,23 @@ switch ($action) {
                 $stmt->bind_param("ii", $roomId, $userId);
                 $stmt->execute();
                 $stmt->close();
-                $stmt = $conn->prepare("SELECT game_type, players_count FROM game_rooms WHERE id = ?");
+                $stmt = $conn->prepare("SELECT game_type, game_mode, players_count FROM game_rooms WHERE id = ?");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
                 $room = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
                 if (!$room) throw new Exception("Room not found.");
-                $stmt = $conn->prepare("SELECT COUNT(*) as current_players FROM room_players WHERE room_id = ?");
-                $stmt->bind_param("i", $roomId);
-                $stmt->execute();
-                $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
-                $stmt->close();
-                if ($currentPlayers < $room['players_count']) {
-                    fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
+
+                // Only fill with AI in trial mode
+                if ($room['game_mode'] === 'trial') {
+                    $stmt = $conn->prepare("SELECT COUNT(*) as current_players FROM room_players WHERE room_id = ?");
+                    $stmt->bind_param("i", $roomId);
+                    $stmt->execute();
+                    $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
+                    $stmt->close();
+                    if ($currentPlayers < $room['players_count']) {
+                        fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
+                    }
                 }
                 $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
                 $stmt->bind_param("i", $roomId);

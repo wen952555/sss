@@ -9,6 +9,7 @@
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
+  color: #004d40;
   background: transparent;
 }
 .lobby-header {
@@ -31,40 +32,39 @@
   font-size: 0.9rem;
   font-weight: 600;
   border-radius: 12px;
-  border: 1px solid var(--primary-color);
+  border: 1px solid #b2dfdb;
   cursor: pointer;
-  background: var(--table-header-bg);
-  color: var(--text-color);
+  background: #ffffff;
+  color: #00796b;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   transition: background 0.2s, color 0.2s;
 }
 
 .header-btn:hover {
-  background: var(--primary-color);
+  background: #e0f2f1;
 }
 
 .lobby-title {
   font-size: 2.8rem;
   font-weight: 700;
   margin: 0;
-  color: var(--text-color);
+  color: #00796b;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .lobby-subtitle {
   font-size: 1.1rem;
   font-weight: 400;
-  color: var(--text-color);
-  opacity: 0.8;
+  color: #004d40;
   margin-top: 5px;
 }
 .announcement-banner {
   width: 100%;
   max-width: 500px;
   padding: 12px 20px;
-  background: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  background: #e0f2f1;
+  border: 1px solid #b2dfdb;
   border-radius: 12px;
-  color: #ffffff;
+  color: #00796b;
   font-weight: 500;
   text-align: center;
   margin-bottom: 30px;
@@ -84,19 +84,19 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  background: var(--table-header-bg);
+  background: #ffffff;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .game-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 77, 64, 0.15);
 }
 
 .game-card:active {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 77, 64, 0.12);
 }
 
 .game-card.disabled {
@@ -119,23 +119,15 @@
   padding: 25px;
   box-sizing: border-box;
 }
-.game-title { font-size: 1.8rem; font-weight: 600; margin: 0; color: var(--text-color); }
-.game-description { font-size: 1rem; font-weight: 400; color: var(--text-color); opacity: 0.7; margin: 5px 0 0 0; }
+.game-title { font-size: 1.8rem; font-weight: 600; margin: 0; color: #00796b; }
+.game-description { font-size: 1rem; font-weight: 400; color: #004d40; margin: 5px 0 0 0; }
 
 .matching-indicator {
   align-self: flex-end;
-  background: var(--confirm-btn-bg);
+  background: #00796b;
   color: #ffffff;
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 600;
-}
-
-.online-count {
-  margin-top: 8px;
-  font-size: 1rem;
-  color: var(--text-color);
-  opacity: 0.9;
-  font-weight: 500;
 }
