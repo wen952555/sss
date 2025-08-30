@@ -36,26 +36,26 @@
   font-size: 1rem;
   font-weight: 600;
   border-radius: 12px;
-  border: 1px solid #b2dfdb;
+  border: 1px solid var(--primary-color);
   cursor: pointer;
-  background: linear-gradient(90deg, #ffffff 0%, #e0f2f1 100%);
-  color: #00796b;
+  background: var(--primary-color);
+  color: var(--text-color);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   transition: background 0.25s, box-shadow 0.25s;
 }
 .action-button:hover {
-  background: linear-gradient(90deg, #00796b 0%, #004d40 100%);
+  background: #005a4a; /* Slightly lighter green */
   color: #ffffff;
   box-shadow: 0 6px 20px rgba(0, 77, 64, 0.15);
 }
 .action-button:active { transform: scale(0.96); }
 
-/* 弹窗统一亮色 */
+/* 弹窗统一暗色 */
 .modal-backdrop {
   position: fixed;
   z-index: 1100;
   inset: 0;
-  background: rgba(178, 235, 242, 0.7);
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,22 +66,23 @@
   max-width: 420px;
   max-height: 90vh;
   overflow-y: auto;
-  background: #ffffff;
+  background: #004d40;
   border-radius: 20px;
   box-shadow: 0 8px 38px 0 rgba(0, 0, 0, 0.15);
   padding: 32px;
-  color: #1a237e;
+  color: var(--text-color);
+  border: 1px solid var(--primary-color);
 }
 .modal-content h3 {
   margin: 0 0 15px 0;
   font-size: 1.3rem;
   font-weight: 700;
-  color: #00796b;
+  color: var(--text-color);
   text-align: center;
 }
 .release-notes li {
   margin-bottom: 8px;
-  color: #004d40;
+  color: var(--text-color);
   font-size: 0.95rem;
 }
 .modal-actions {
@@ -92,21 +93,21 @@
 .modal-actions button {
   flex: 1;
   padding: 13px 0;
-  border: 1px solid #b2dfdb;
+  border: 1px solid var(--primary-color);
   border-radius: 12px;
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  background: #e0f2f1;
-  color: #00796b;
+  background: var(--primary-color);
+  color: var(--text-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: background 0.2s;
 }
 .modal-actions button:active { transform: scale(0.97); }
-.cancel-btn { background: #f1f8e9; color: #558b2f; border-color: #dcedc8; }
-.cancel-btn:hover { background: #dcedc8; }
-.update-btn { background: #00796b; color: #ffffff; border-color: #00796b; }
-.update-btn:hover { background: #004d40; box-shadow: 0 4px 16px rgba(0, 121, 107, 0.3); }
+.cancel-btn { background: #005a4a; color: var(--text-color); border-color: #005a4a; }
+.cancel-btn:hover { background: #00796b; }
+.update-btn { background: var(--confirm-btn-bg); color: #ffffff; border-color: var(--confirm-btn-bg); }
+.update-btn:hover { background: #388e3c; box-shadow: 0 4px 16px rgba(0, 121, 107, 0.3); }
 .error-message {
   color: #c62828;
   background: #ffebee;
