@@ -7,7 +7,7 @@
   justify-content: center;
   padding: 40px 20px;
   box-sizing: border-box;
-  color: #004d40;
+  color: var(--text-color);
   background: transparent;
   text-align: center;
 }
@@ -18,7 +18,7 @@
   left: 20px;
   background: none;
   border: none;
-  color: #00796b;
+  color: var(--text-color);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -32,14 +32,14 @@
 .mode-selection-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #00796b;
+  color: var(--text-color);
   margin: 0 0 10px 0;
 }
 
 .mode-selection-subtitle {
   font-size: 1.1rem;
   font-weight: 400;
-  color: #004d40;
+  color: var(--text-color);
   margin-bottom: 40px;
 }
 
@@ -52,13 +52,13 @@
 }
 
 .mode-card {
-  background: #ffffff;
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 16px;
   padding: 25px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid #b2dfdb;
+  border: 1px solid var(--text-color);
 }
 
 .mode-card:hover {
@@ -69,21 +69,21 @@
 .mode-card-title {
   font-size: 1.6rem;
   font-weight: 600;
-  color: #00796b;
+  color: var(--text-color);
   margin: 0 0 5px 0;
 }
 
 .mode-card-description {
   font-size: 1rem;
-  color: #004d40;
+  color: var(--text-color);
   margin: 0;
 }
 
 .trial-mode .mode-card-title,
 .trial-mode .mode-card-description {
-  color: #1976d2; /* A nice blue color */
+  color: var(--back-btn-color); /* A nice blue color */
 }
 
 .trial-mode {
-  border-color: #1976d2;
+  border-color: var(--back-btn-color);
 }
