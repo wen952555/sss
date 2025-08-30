@@ -11,8 +11,8 @@
 }
 
 .result-modal-container {
-  background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);
-  color: #004d40;
+  background: #004d40;
+  color: var(--text-color);
   border-radius: 24px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
@@ -21,18 +21,19 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: 1px solid var(--text-color);
 }
 
 .result-modal-header {
   padding: 20px;
   text-align: center;
-  border-bottom: 1px solid #b2dfdb;
+  border-bottom: 1px solid var(--text-color);
 }
 
 .result-modal-header h2 {
   margin: 0;
   font-size: 1.8rem;
-  color: #00796b;
+  color: var(--text-color);
 }
 
 .result-modal-header p {
@@ -42,11 +43,11 @@
 }
 
 .score-win {
-  color: #388e3c;
+  color: #4caf50;
 }
 
 .score-loss {
-  color: #d32f2f;
+  color: #ef5350;
 }
 
 .result-players-container {
@@ -58,7 +59,7 @@
 }
 
 .player-result-row {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 16px;
   padding: 15px;
   display: flex;
@@ -68,8 +69,8 @@
 }
 
 .player-result-row.is-me {
-  background: #fffde7;
-  border: 2px solid #fdd835;
+  background: #005a4a;
+  border: 2px solid var(--text-color);
   transform: scale(1.02);
 }
 
@@ -96,7 +97,7 @@
 .result-modal-footer {
   padding: 20px;
   text-align: center;
-  border-top: 1px solid #b2dfdb;
+  border-top: 1px solid var(--text-color);
   display: flex;
   gap: 15px;
   justify-content: center;
@@ -119,21 +120,21 @@
 }
 
 .exit-btn {
-    background-color: #fbe9e7;
-    color: #d84315;
+    background-color: var(--error-color);
+    color: var(--text-color);
 }
 
 .exit-btn:hover {
-    background-color: #ffccbc;
+    background-color: #c62828;
 }
 
 .continue-btn {
-    background-color: #00796b;
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--text-color);
 }
 
 .continue-btn:hover {
-    background-color: #004d40;
+    background-color: #005a4a;
 }
 
 .result-hand-container {
