@@ -36,7 +36,7 @@
   font-size: 1rem;
   font-weight: 600;
   border-radius: 12px;
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--text-color);
   cursor: pointer;
   background: var(--primary-color);
   color: var(--text-color);
@@ -71,7 +71,7 @@
   box-shadow: 0 8px 38px 0 rgba(0, 0, 0, 0.15);
   padding: 32px;
   color: var(--text-color);
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--text-color);
 }
 .modal-content h3 {
   margin: 0 0 15px 0;
@@ -93,7 +93,7 @@
 .modal-actions button {
   flex: 1;
   padding: 13px 0;
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--text-color);
   border-radius: 12px;
   font-size: 1rem;
   font-weight: bold;
@@ -104,14 +104,14 @@
   transition: background 0.2s;
 }
 .modal-actions button:active { transform: scale(0.97); }
-.cancel-btn { background: #005a4a; color: var(--text-color); border-color: #005a4a; }
+.cancel-btn { background: #005a4a; color: var(--text-color); border-color: var(--text-color); }
 .cancel-btn:hover { background: #00796b; }
-.update-btn { background: var(--confirm-btn-bg); color: #ffffff; border-color: var(--confirm-btn-bg); }
+.update-btn { background: var(--confirm-btn-bg); color: #ffffff; border-color: var(--text-color); }
 .update-btn:hover { background: #388e3c; box-shadow: 0 4px 16px rgba(0, 121, 107, 0.3); }
 .error-message {
-  color: #c62828;
-  background: #ffebee;
-  border: 1px solid #ef9a9a;
+  color: var(--text-color);
+  background: #8b0000;
+  border: 1px solid var(--text-color);
   border-radius: 8px;
   padding: 10px;
   font-weight: bold;

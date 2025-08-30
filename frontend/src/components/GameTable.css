@@ -161,14 +161,14 @@
   transform: translate(-50%, -50%);
   width: 80px;
   height: 110px;
-  background-color: #f0f0f0;
-  border: 2px dashed #cccccc;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--text-color);
   border-radius: 8px;
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: 600;
-  color: #aaaaaa;
+  color: var(--text-color);
   z-index: 0;
 }
 
