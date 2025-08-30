@@ -3,29 +3,27 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  flex: 1 1 30%;
+  flex: 1;
   min-height: 0;
 }
 
 .card-placement-box {
-  --card-width: 70px;
-  --card-height: 105px;
-  --card-overlap-px: 35px;
+  --card-width: 63px;
+  --card-height: 96px;
+  --card-overlap-px: 32px;
   --left-buffer: 20px;
 
   width: 100%;
   box-sizing: border-box;
   background: transparent;
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: none;
   overflow-x: auto;
   overflow-y: visible !important;
-  padding: 12px 0;
+  padding: 8px 0;
   cursor: pointer;
   position: relative;
-  height: calc(var(--card-height) + 24px);
-  border: 1px solid var(--text-color);
-  margin-bottom: 10px;
+  height: calc(var(--card-height) + 16px);
 }
 
 .lane-title-indicator {
@@ -67,9 +65,9 @@
 
 @media (max-width: 450px) {
   .card-placement-box {
-    --card-width: 56px;
-    --card-height: 84px;
-    --card-overlap-px: 28px;
+    --card-width: 48px;
+    --card-height: 68px;
+    --card-overlap-px: 24px;
     --left-buffer: 10px;
   }
 }
