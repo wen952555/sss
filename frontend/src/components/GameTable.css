@@ -1,8 +1,6 @@
 .game-table-container {
   width: 100%;
-  min-height: 100vh;
-  height: auto;
-  overflow-y: auto;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: transparent; /* Inherit global background */
