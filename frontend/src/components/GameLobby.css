@@ -61,7 +61,7 @@
   width: 100%;
   max-width: 500px;
   padding: 12px 20px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--container-bg);
   border: 1px solid var(--text-color);
   border-radius: 12px;
   color: var(--text-color);
@@ -84,7 +84,7 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--container-bg);
   border: 1px solid var(--text-color);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;

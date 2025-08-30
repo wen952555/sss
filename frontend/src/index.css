@@ -1,9 +1,8 @@
 /* 全局深绿色主题 */
 :root {
-  --table-bg-start: #e0f7fa; /* This is light, might need adjustment if used globally */
-  --table-bg-end: #b2ebf2; /* This is light, might need adjustment if used globally */
-  --table-header-bg: rgba(0, 0, 0, 0.1); /* Darker transparent background */
-  --table-footer-bg: rgba(0, 0, 0, 0.1); /* Darker transparent background */
+  --container-bg: #004d40; /* Dark green for containers */
+  --header-bg: rgba(0, 0, 0, 0.1); /* Darker transparent background */
+  --footer-bg: rgba(0, 0, 0, 0.1); /* Darker transparent background */
   --player-status-bg: rgba(255, 255, 255, 0.1);
   --player-status-ready-bg: #4caf50; /* Green for ready */
   --player-status-me-bg: #ffc107; /* Amber for me */
