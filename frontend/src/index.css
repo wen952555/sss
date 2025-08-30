@@ -1,26 +1,41 @@
-/* 全局深色渐变主题（无毛玻璃/无半透明） */
+/* 全局深绿色主题 */
+:root {
+  --table-bg-start: #e0f7fa; /* This is light, might need adjustment if used globally */
+  --table-bg-end: #b2ebf2; /* This is light, might need adjustment if used globally */
+  --table-header-bg: rgba(0, 0, 0, 0.1); /* Darker transparent background */
+  --table-footer-bg: rgba(0, 0, 0, 0.1); /* Darker transparent background */
+  --player-status-bg: rgba(255, 255, 255, 0.1);
+  --player-status-ready-bg: #4caf50; /* Green for ready */
+  --player-status-me-bg: #ffc107; /* Amber for me */
+  --text-color: #f5f6fa; /* Light text for dark background */
+  --primary-color: #00796b; /* Dark Green */
+  --confirm-btn-bg: #4caf50; /* Green */
+  --sort-btn-bg: #ff9800; /* Orange */
+  --back-btn-color: #89f0ff; /* Light blue for links/back buttons */
+  --error-color: #ef5350; /* Red for errors */
+}
 
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  color: #f5f6fa;
-  background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
+  color: var(--text-color);
+  background: linear-gradient(135deg, #004d40 0%, #00251a 100%);
   font-family: 'Noto Sans SC', 'Arial', sans-serif;
   overscroll-behavior: none;
   overflow: hidden;
 }
 
 body {
-  background: linear-gradient(135deg, #20243b 0%, #18182f 40%, #121223 100%);
+  background: linear-gradient(135deg, #004d40 0%, #00251a 100%);
 }
 
 body::before { display: none; }
 
 /* 滚动条深色风格 */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #181829; }
-::-webkit-scrollbar-thumb { background: #2c2e4f; border-radius: 4px; }
+::-webkit-scrollbar-track { background: #00251a; }
+::-webkit-scrollbar-thumb { background: #00796b; border-radius: 4px; }
 
-a { color: #89f0ff; }
+a { color: var(--back-btn-color); }
