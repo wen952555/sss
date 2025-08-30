@@ -160,7 +160,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 80px;
-  height: 110px;
+  height: 88px;
   background-color: rgba(0, 0, 0, 0.2);
   border: 2px solid var(--text-color);
   border-radius: 8px;
