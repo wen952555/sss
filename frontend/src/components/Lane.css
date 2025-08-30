@@ -20,9 +20,10 @@
   box-shadow: none;
   overflow-x: auto;
   overflow-y: visible !important;
-  padding: 0;
+  padding: 8px 0;
   cursor: pointer;
   position: relative;
+  height: calc(var(--card-height) + 16px);
 }
 
 .lane-title-indicator {
