@@ -9,7 +9,7 @@
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
-  color: #004d40;
+  color: var(--text-color);
   background: transparent;
 }
 .lobby-header {
@@ -32,39 +32,39 @@
   font-size: 0.9rem;
   font-weight: 600;
   border-radius: 12px;
-  border: 1px solid #b2dfdb;
+  border: 1px solid var(--text-color);
   cursor: pointer;
-  background: #ffffff;
-  color: #00796b;
+  background: var(--primary-color);
+  color: var(--text-color);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   transition: background 0.2s, color 0.2s;
 }
 
 .header-btn:hover {
-  background: #e0f2f1;
+  background: #005a4a;
 }
 
 .lobby-title {
   font-size: 2.8rem;
   font-weight: 700;
   margin: 0;
-  color: #00796b;
+  color: var(--text-color);
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .lobby-subtitle {
   font-size: 1.1rem;
   font-weight: 400;
-  color: #004d40;
+  color: var(--text-color);
   margin-top: 5px;
 }
 .announcement-banner {
   width: 100%;
   max-width: 500px;
   padding: 12px 20px;
-  background: #e0f2f1;
-  border: 1px solid #b2dfdb;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--text-color);
   border-radius: 12px;
-  color: #00796b;
+  color: var(--text-color);
   font-weight: 500;
   text-align: center;
   margin-bottom: 30px;
@@ -84,7 +84,8 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  background: #ffffff;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--text-color);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -119,8 +120,8 @@
   padding: 25px;
   box-sizing: border-box;
 }
-.game-title { font-size: 1.8rem; font-weight: 600; margin: 0; color: #00796b; }
-.game-description { font-size: 1rem; font-weight: 400; color: #004d40; margin: 5px 0 0 0; }
+.game-title { font-size: 1.8rem; font-weight: 600; margin: 0; color: var(--text-color); }
+.game-description { font-size: 1rem; font-weight: 400; color: var(--text-color); margin: 5px 0 0 0; }
 
 .matching-indicator {
   align-self: flex-end;
