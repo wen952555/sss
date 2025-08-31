@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand, parseCard } from '../utils';
+import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand, parseCard, isFoul } from '../utils';
 import GameTable from './GameTable';
 
 const ThirteenGame = ({ onBackToLobby, user }) => {
@@ -106,6 +106,18 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
       setErrorMessage(`牌道数量错误！`);
       return;
     }
+
+    const playerHandStringsForFoulCheck = {
+      top: topLane.map(c => `${c.rank}_of_${c.suit}`),
+      middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
+      bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
+    };
+
+    if (isFoul(playerHandStringsForFoulCheck.top, playerHandStringsForFoulCheck.middle, playerHandStringsForFoulCheck.bottom)) {
+      setErrorMessage(`您的牌型是倒水，请重新摆放！`);
+      return;
+    }
+
     if (aiHands.some(h => h === null)) {
       setErrorMessage('AI仍在理牌中，请稍候...');
       return;

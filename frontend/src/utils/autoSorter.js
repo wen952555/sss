@@ -51,7 +51,7 @@ export const getSmartSortedHand = (allCards) => {
   }
 
   // --- Find Best Normal Hand ---
-  let bestHand = null;
+  let bestHands = [];
   let bestScore = -1;
 
   const bottomCombinations = combinations(cardObjects, 5);
@@ -82,18 +82,23 @@ export const getSmartSortedHand = (allCards) => {
       // This hand is valid, now score it.
       const hand = { top, middle, bottom };
       const currentScore = calculateHandBaseScore(hand);
+
       if (currentScore > bestScore) {
         bestScore = currentScore;
-        bestHand = hand;
+        bestHands = [hand]; // Start a new list of best hands
+      } else if (currentScore === bestScore) {
+        bestHands.push(hand); // Add to the list of equally best hands
       }
     }
   }
 
-  if (bestHand) {
+  if (bestHands.length > 0) {
+    const randomIndex = Math.floor(Math.random() * bestHands.length);
+    const chosenHand = bestHands[randomIndex];
     return {
-      top: sortCards(bestHand.top),
-      middle: sortCards(bestHand.middle),
-      bottom: sortCards(bestHand.bottom),
+      top: sortCards(chosenHand.top),
+      middle: sortCards(chosenHand.middle),
+      bottom: sortCards(chosenHand.bottom),
     };
   }
 
