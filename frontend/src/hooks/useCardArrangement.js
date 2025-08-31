@@ -38,33 +38,47 @@ export const useCardArrangement = (gameType) => {
   const handleLaneClick = useCallback((laneName) => {
     if (selectedCards.length === 0) return;
 
-    const laneSetterMap = { top: setTopLane, middle: setMiddleLane, bottom: setBottomLane };
     const currentLanes = { top: topLane, middle: middleLane, bottom: bottomLane };
 
-    // Logic for moving cards between lanes
-    const newLanes = { ...currentLanes };
-    let cardsToMove = [...selectedCards];
+    // Create a mutable copy of lanes
+    const newLanes = {
+      top: [...currentLanes.top],
+      middle: [...currentLanes.middle],
+      bottom: [...currentLanes.bottom],
+    };
 
-    // Remove selected cards from all lanes
-    Object.keys(newLanes).forEach(key => {
-      newLanes[key] = newLanes[key].filter(c => !selectedCards.some(sc => areCardsEqual(c, sc)));
+    // Remove selected cards from their current lanes
+    selectedCards.forEach(card => {
+        for (const lane of Object.values(newLanes)) {
+            const index = lane.findIndex(c => areCardsEqual(c, card));
+            if (index !== -1) {
+                lane.splice(index, 1);
+                break;
+            }
+        }
     });
 
-    // Add selected cards to the target lane
-    newLanes[laneName] = [...newLanes[laneName], ...cardsToMove];
+    const originalTargetLaneCards = newLanes[laneName];
+    const limit = LANE_LIMITS[laneName];
 
-    // Handle overflow by swapping
-    if (newLanes[laneName].length > LANE_LIMITS[laneName]) {
-      // This is a complex case. For now, we'll just prevent the move.
-      // A full implementation would require swapping logic.
-      // Let's revert to a simpler "add only if space" logic for stability.
-      return; // Prevent move
+    const combined = [...selectedCards, ...originalTargetLaneCards];
+
+    let finalTargetLane;
+    let newSelectedCards = [];
+
+    if (combined.length > limit) {
+        finalTargetLane = combined.slice(0, limit);
+        newSelectedCards = combined.slice(limit);
+    } else {
+        finalTargetLane = combined;
     }
+
+    newLanes[laneName] = finalTargetLane;
 
     setTopLane(sortCards(newLanes.top));
     setMiddleLane(sortCards(newLanes.middle));
     setBottomLane(sortCards(newLanes.bottom));
-    setSelectedCards([]);
+    setSelectedCards(newSelectedCards);
 
   }, [selectedCards, topLane, middleLane, bottomLane, LANE_LIMITS]);
 
