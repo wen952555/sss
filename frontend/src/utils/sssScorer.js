@@ -31,21 +31,42 @@ export function calculateSinglePairScore(p1, p2) {
     const p2Info = { ...p2, isFoul: isFoul(p2.head, p2.middle, p2.tail), specialType: null };
     p2Info.specialType = p2Info.isFoul ? null : getSpecialType(p2Info);
 
-    let pairScore = 0;
-    if (p1Info.isFoul && !p2Info.isFoul) pairScore = -calculateTotalBaseScore(p2Info);
-    else if (!p1Info.isFoul && p2Info.isFoul) pairScore = calculateTotalBaseScore(p1Info);
-    else if (p1Info.isFoul && p2Info.isFoul) pairScore = 0;
-    else if (p1Info.specialType && !p2Info.specialType) pairScore = SCORES.SPECIAL[p1Info.specialType] || 0;
-    else if (!p1Info.specialType && p2Info.specialType) pairScore = -(SCORES.SPECIAL[p2Info.specialType] || 0);
-    else if (p1Info.specialType && p2Info.specialType) pairScore = 0;
-    else {
+    let score = 0;
+    let laneResults = []; // [P1 vs P2 head, middle, tail] -> 'win', 'loss', 'draw'
+
+    if (p1Info.isFoul && !p2Info.isFoul) {
+        score = -calculateTotalBaseScore(p2Info);
+        laneResults = ['loss', 'loss', 'loss']; // Or some other indicator of a foul
+    } else if (!p1Info.isFoul && p2Info.isFoul) {
+        score = calculateTotalBaseScore(p1Info);
+        laneResults = ['win', 'win', 'win'];
+    } else if (p1Info.isFoul && p2Info.isFoul) {
+        score = 0;
+        laneResults = ['draw', 'draw', 'draw'];
+    } else if (p1Info.specialType && !p2Info.specialType) {
+        score = SCORES.SPECIAL[p1Info.specialType] || 0;
+        laneResults = ['win', 'win', 'win']; // Special hand beats normal hand
+    } else if (!p1Info.specialType && p2Info.specialType) {
+        score = -(SCORES.SPECIAL[p2Info.specialType] || 0);
+        laneResults = ['loss', 'loss', 'loss'];
+    } else if (p1Info.specialType && p2Info.specialType) {
+        score = 0; // Or compare special hands, for now, draw
+        laneResults = ['draw', 'draw', 'draw'];
+    } else {
         for (const area of ['head', 'middle', 'tail']) {
             const cmp = compareArea(p1Info[area], p2Info[area], area);
-            if (cmp > 0) pairScore += getAreaScore(p1Info[area], area);
-            else if (cmp < 0) pairScore -= getAreaScore(p2Info[area], area);
+            if (cmp > 0) {
+                score += getAreaScore(p1Info[area], area);
+                laneResults.push('win');
+            } else if (cmp < 0) {
+                score -= getAreaScore(p2Info[area], area);
+                laneResults.push('loss');
+            } else {
+                laneResults.push('draw');
+            }
         }
     }
-    return pairScore;
+    return { score, laneResults };
 }
 
 export function calcSSSAllScores(players) {
@@ -60,9 +81,9 @@ export function calcSSSAllScores(players) {
 
   for (let i = 0; i < N; ++i) {
     for (let j = i + 1; j < N; ++j) {
-      const pairScore = calculateSinglePairScore(playerInfos[i], playerInfos[j]);
-      marks[i] += pairScore;
-      marks[j] -= pairScore;
+      const result = calculateSinglePairScore(playerInfos[i], playerInfos[j]);
+      marks[i] += result.score;
+      marks[j] -= result.score;
     }
   }
   return marks;

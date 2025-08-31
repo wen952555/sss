@@ -1,26 +1,6 @@
 import React from 'react';
 import Card from './Card';
 import './GameResultModal.css';
-const PlayerHandDisplay = ({ hand, gameType }) => {
-    if (!hand) return null;
-    // Both games now use the same 3-lane structure for display
-    const lanes = [hand.top, hand.middle, hand.bottom];
-
-    return (
-        <div className="result-hand-container">
-            {lanes.map((laneCards, idx) => (
-                <div key={idx} className="result-cards-row">
-                    {laneCards && laneCards.map((card, cardIdx) => (
-                        // Add a wrapper div to constrain the card size
-                        <div key={cardIdx} style={{ width: '50px', height: '70px', margin: '0 2px' }}>
-                            <Card card={card} />
-                        </div>
-                    ))}
-                </div>
-            ))}
-        </div>
-    );
-};
 
 const GameResultModal = ({ result, onClose, onPlayAgain, gameType, isTrial = false }) => {
     if (!result || !result.players || result.players.length === 0) return null;
@@ -54,18 +34,39 @@ const GameResultModal = ({ result, onClose, onPlayAgain, gameType, isTrial = fal
                         const playerScore = player.score;
                         const isMe = player.is_me || (result.myId && player.id === result.myId) || (isTrial && index === 0);
                         const playerName = isMe ? '你' : player.name;
+                        const hand = player.hand;
+                        const lanes = hand ? [hand.top, hand.middle, hand.bottom] : [];
 
                         return (
                             <div key={player.name || index} className={`player-result-row ${isMe ? 'is-me' : ''}`}>
-                                <div className="player-info">
-                                    <span className="player-name">{playerName}</span>
-                                    {playerScore !== 'N/A' && (
-                                      <span className={`player-score ${playerScore > 0 ? 'score-win' : (playerScore < 0 ? 'score-loss' : '')}`}>
-                                          {playerScore > 0 ? `+${playerScore}` : playerScore}
-                                      </span>
-                                    )}
+                                <div className="result-hand-container">
+                                    <div className="player-info">
+                                        <span className="player-name">{playerName}</span>
+                                        {playerScore !== 'N/A' && (
+                                          <span className={`player-score ${playerScore > 0 ? 'score-win' : (playerScore < 0 ? 'score-loss' : '')}`}>
+                                              {playerScore > 0 ? `+${playerScore}` : playerScore}
+                                          </span>
+                                        )}
+                                        {!isMe && player.laneResults && (
+                                            <div className="lane-results">
+                                                {player.laneResults.map((res, i) => (
+                                                    <span key={i} className={`lane-result-badge lane-${res}`}>
+                                                        {res === 'win' ? '胜' : res === 'loss' ? '负' : '平'}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {lanes.map((laneCards, idx) => (
+                                        <div key={idx} className="result-cards-row">
+                                            {laneCards && laneCards.map((card, cardIdx) => (
+                                                <div key={cardIdx} className="result-card-wrapper">
+                                                    <Card card={card} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))}
                                 </div>
-                                <PlayerHandDisplay hand={player.hand} gameType={gameType} />
                             </div>
                         );
                     })}

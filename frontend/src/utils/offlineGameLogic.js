@@ -76,14 +76,23 @@ export const getAiThirteenHand = (thirteenCards) => {
 import { calculateSinglePairScore } from './sssScorer';
 
 export const calculateThirteenTrialResult = (playerHand, aiHands) => {
-    let totalScore = 0;
-    aiHands.forEach(aiHand => {
+    let totalPlayerScore = 0;
+    const aiResults = [];
+
+    aiHands.forEach((aiHand, index) => {
         if (aiHand) {
-            // sssScorer expects the hand to have properties head, middle, tail.
             const p1 = { head: playerHand.top, middle: playerHand.middle, tail: playerHand.bottom };
             const p2 = { head: aiHand.top, middle: aiHand.middle, tail: aiHand.bottom };
-            totalScore += calculateSinglePairScore(p1, p2);
+            const result = calculateSinglePairScore(p1, p2); // result is { score, laneResults }
+
+            totalPlayerScore += result.score;
+            aiResults.push({
+                name: `AI ${index + 1}`,
+                score: result.score,
+                laneResults: result.laneResults
+            });
         }
     });
-    return { playerScore: totalScore };
+
+    return { totalPlayerScore, aiResults };
 };
