@@ -132,10 +132,17 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
 
         // For the modal display, we need the original card objects
         const playerHandObjects = { top: topLane, middle: middleLane, bottom: bottomLane };
+
+        const aiPlayerResults = result.aiResults.map((aiResult, index) => ({
+            ...aiResult,
+            hand: aiHands[index] // Add the card objects to the result data
+        }));
+
         const modalPlayers = [
-          { name: user.phone, hand: playerHandObjects, score: result.playerScore, is_me: true },
-          ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
+          { name: user.phone, hand: playerHandObjects, score: result.totalPlayerScore, is_me: true },
+          ...aiPlayerResults
         ];
+
         setGameResult({ players: modalPlayers });
         setPlayerState('submitted');
         setErrorMessage('');

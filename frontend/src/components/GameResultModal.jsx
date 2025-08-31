@@ -47,6 +47,15 @@ const GameResultModal = ({ result, onClose, onPlayAgain, gameType, isTrial = fal
                                               {playerScore > 0 ? `+${playerScore}` : playerScore}
                                           </span>
                                         )}
+                                        {!isMe && player.laneResults && (
+                                            <div className="lane-results">
+                                                {player.laneResults.map((res, i) => (
+                                                    <span key={i} className={`lane-result-badge lane-${res}`}>
+                                                        {res === 'win' ? '胜' : res === 'loss' ? '负' : '平'}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     {lanes.map((laneCards, idx) => (
                                         <div key={idx} className="result-cards-row">
