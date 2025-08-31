@@ -15,12 +15,26 @@ function calculateHandBaseScore(hand) {
         bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
     };
 
-    const topScore = getAreaScore(handStrings.top, 'head');
-    const middleScore = getAreaScore(handStrings.middle, 'middle');
-    const bottomScore = getAreaScore(handStrings.bottom, 'tail');
+    const handRanks = {
+        top: areaTypeRank(getAreaType(handStrings.top, 'head'), 'head'),
+        middle: areaTypeRank(getAreaType(handStrings.middle, 'middle'), 'middle'),
+        bottom: areaTypeRank(getAreaType(handStrings.bottom, 'tail'), 'tail'),
+    };
 
-    // The total score is a direct reflection of the hand's value in the game.
-    return topScore + middleScore + bottomScore;
+    const laneScores = {
+        top: getAreaScore(handStrings.top, 'head'),
+        middle: getAreaScore(handStrings.middle, 'middle'),
+        bottom: getAreaScore(handStrings.bottom, 'tail'),
+    };
+
+    // Primary score is based on the weighted rank of hand types.
+    const rankScore = (handRanks.bottom * 1000) + (handRanks.middle * 100) + handRanks.top;
+
+    // Secondary score is based on the actual point value of the lanes.
+    const pointsScore = laneScores.bottom + laneScores.middle + laneScores.top;
+
+    // Combine them, giving overwhelming priority to the rank score.
+    return rankScore * 100 + pointsScore;
 }
 
 
