@@ -46,26 +46,34 @@ export const getSmartSortedHand = (allCards) => {
   const bottomCombinations = combinations(cardObjects, 5);
 
   for (const bottom of bottomCombinations) {
+    const bottomEval = evaluateHand(bottom);
     const remainingAfterBottom = cardObjects.filter(c => !bottom.find(bc => bc.rank === c.rank && bc.suit === c.suit));
     const middleCombinations = combinations(remainingAfterBottom, 5);
 
     for (const middle of middleCombinations) {
+      const middleEval = evaluateHand(middle);
+
+      // Pruning: if middle is stronger than bottom, it's a foul. Skip.
+      if (compareHands(bottomEval, middleEval) < 0) {
+        continue;
+      }
+
       const top = remainingAfterBottom.filter(c => !middle.find(mc => mc.rank === c.rank && mc.suit === c.suit));
       if (top.length !== 3) continue;
 
-      const hand = { top, middle, bottom };
-      const handStrings = {
-        head: top.map(c => `${c.rank}_of_${c.suit}`),
-        middle: middle.map(c => `${c.rank}_of_${c.suit}`),
-        tail: bottom.map(c => `${c.rank}_of_${c.suit}`),
-      };
+      const topEval = evaluateHand(top);
 
-      if (!isFoul(handStrings.head, handStrings.middle, handStrings.tail)) {
-        const currentScore = calculateHandBaseScore(hand);
-        if (currentScore > bestScore) {
-          bestScore = currentScore;
-          bestHand = hand;
-        }
+      // Pruning: if top is stronger than middle, it's a foul. Skip.
+      if (compareHands(middleEval, topEval) < 0) {
+        continue;
+      }
+
+      // This hand is valid, now score it.
+      const hand = { top, middle, bottom };
+      const currentScore = calculateHandBaseScore(hand);
+      if (currentScore > bestScore) {
+        bestScore = currentScore;
+        bestHand = hand;
       }
     }
   }

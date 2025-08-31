@@ -29,17 +29,28 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
     setPlayers([{ id: user.id, phone: user.phone, is_ready: false }, ...aiPlayerInfo]);
   }, [user]);
 
-  // Effect to sort AI hands in the background after dealing
+  // Effect to sort AI hands sequentially in the background after dealing
   useEffect(() => {
     if (aiRawHands.length > 0 && playerState === 'arranging') {
-      // Set AI hands to a loading state
-      setAiHands(new Array(aiRawHands.length).fill(null));
+      setAiHands(new Array(aiRawHands.length).fill(null)); // Set AI hands to a loading state
 
-      // Use setTimeout to avoid blocking the render thread
-      setTimeout(() => {
-        const sorted = aiRawHands.map(getAiThirteenHand);
-        setAiHands(sorted);
-      }, 50);
+      const sortAiHandSequentially = async () => {
+        const sortedHands = [];
+        for (const aiHand of aiRawHands) {
+          // Wrap the calculation in a promise with a timeout to avoid blocking the main thread
+          // and to allow UI to update between each AI's sort.
+          const sortedHand = await new Promise(resolve => {
+            setTimeout(() => {
+              resolve(getAiThirteenHand(aiHand));
+            }, 100); // A small delay to make the sequential update visible
+          });
+          sortedHands.push(sortedHand);
+          // Update state after each AI is done to show progress
+          setAiHands([...sortedHands, ...new Array(aiRawHands.length - sortedHands.length).fill(null)]);
+        }
+      };
+
+      sortAiHandSequentially();
     }
   }, [aiRawHands, playerState]);
 
