@@ -1,18 +1,29 @@
 import { evaluateHand, compareHands, sortCards, combinations, parseCard } from './pokerEvaluator';
-import { getAreaScore, isFoul } from './sssScorer';
+import { getAreaType, areaTypeRank } from './sssScorer';
 
 /**
- * Calculates the base score of a 3-lane hand arrangement.
+ * Calculates a weighted score for a hand arrangement to determine its strategic value.
+ * Stronger hands in more important lanes (bottom > middle > top) get higher scores.
  * @param {Object} hand - A hand object with top, middle, and bottom lanes.
- * @returns {number} The total base score.
+ * @returns {number} The weighted strategic score.
  */
 function calculateHandBaseScore(hand) {
+    // Note: This evaluation function is for finding the "best" arrangement,
+    // not for calculating points in a matchup.
     const handStrings = {
-        head: hand.top.map(c => `${c.rank}_of_${c.suit}`),
+        top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
         middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
-        tail: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
+        bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
     };
-    return getAreaScore(handStrings.head, 'head') + getAreaScore(handStrings.middle, 'middle') + getAreaScore(handStrings.tail, 'tail');
+
+    const handRanks = {
+        top: areaTypeRank(getAreaType(handStrings.top, 'head'), 'head'),
+        middle: areaTypeRank(getAreaType(handStrings.middle, 'middle'), 'middle'),
+        bottom: areaTypeRank(getAreaType(handStrings.bottom, 'tail'), 'tail'),
+    };
+
+    // Weight the lanes to prioritize stronger hands in bottom and middle.
+    return (handRanks.bottom * 100) + (handRanks.middle * 10) + handRanks.top;
 }
 
 
