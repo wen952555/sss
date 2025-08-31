@@ -7,9 +7,9 @@
 }
 
 .card-placement-box {
-  --card-width: 95px; /* Increased from 84px */
-  --card-height: 144px; /* Increased from 128px */
-  --card-overlap-px: 48px; /* Increased overlap to keep cards tight */
+  --card-width: 114px; /* Increased by 20% */
+  --card-height: 173px; /* Increased by 20% */
+  --card-overlap-px: 67px; /* Adjusted for new width */
   --left-buffer: 20px;
 
   width: 100%;
