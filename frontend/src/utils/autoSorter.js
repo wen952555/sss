@@ -8,22 +8,19 @@ import { getAreaType, areaTypeRank } from './sssScorer';
  * @returns {number} The weighted strategic score.
  */
 function calculateHandBaseScore(hand) {
-    // Note: This evaluation function is for finding the "best" arrangement,
-    // not for calculating points in a matchup.
+    // This evaluation function uses the actual game scoring logic to find the best arrangement.
     const handStrings = {
         top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
         middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
         bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
     };
 
-    const handRanks = {
-        top: areaTypeRank(getAreaType(handStrings.top, 'head'), 'head'),
-        middle: areaTypeRank(getAreaType(handStrings.middle, 'middle'), 'middle'),
-        bottom: areaTypeRank(getAreaType(handStrings.bottom, 'tail'), 'tail'),
-    };
+    const topScore = getAreaScore(handStrings.top, 'head');
+    const middleScore = getAreaScore(handStrings.middle, 'middle');
+    const bottomScore = getAreaScore(handStrings.bottom, 'tail');
 
-    // Weight the lanes to prioritize stronger hands in bottom and middle.
-    return (handRanks.bottom * 100) + (handRanks.middle * 10) + handRanks.top;
+    // The total score is a direct reflection of the hand's value in the game.
+    return topScore + middleScore + bottomScore;
 }
 
 
