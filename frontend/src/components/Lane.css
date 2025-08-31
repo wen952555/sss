@@ -23,7 +23,8 @@
   padding: 8px 0;
   cursor: pointer;
   position: relative;
-  height: calc(var(--card-height) + 16px);
+  flex-grow: 1; /* Allow the box to grow vertically */
+  /* height property removed to allow flex-grow to work */
 }
 
 .lane-title-indicator {
