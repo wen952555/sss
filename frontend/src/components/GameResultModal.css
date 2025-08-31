@@ -15,8 +15,8 @@
   color: var(--text-color);
   border-radius: 24px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  width: 95%; /* Use percentage for better responsiveness */
-  max-width: 800px; /* Keep a max-width for large screens */
+  width: 100%;
+  max-width: 900px; /* Increased width as requested */
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -141,15 +141,17 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  align-items: center;
-  flex: 1; /* Allow container to grow and fill space */
-  min-width: 0; /* Prevent flex item from overflowing its container */
+  align-items: flex-start; /* Align rows to the left */
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto; /* Allow horizontal scrolling for the hand itself */
+  padding: 10px 0; /* Add some padding for better scroll appearance */
 }
 
 .result-cards-row {
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap; /* This is the key fix for overflow */
+  justify-content: flex-start; /* Align cards to the left of the row */
+  /* No flex-wrap, to keep cards in a single line as requested */
 }
 
 .result-card-wrapper {
