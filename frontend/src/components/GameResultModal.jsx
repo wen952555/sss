@@ -11,8 +11,7 @@ const PlayerHandDisplay = ({ hand, gameType }) => {
             {lanes.map((laneCards, idx) => (
                 <div key={idx} className="result-cards-row">
                     {laneCards && laneCards.map((card, cardIdx) => (
-                        // Add a wrapper div to constrain the card size
-                        <div key={cardIdx} style={{ width: '50px', height: '70px', margin: '0 2px' }}>
+                        <div key={cardIdx} className="result-card-wrapper">
                             <Card card={card} />
                         </div>
                     ))}
