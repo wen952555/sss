@@ -7,9 +7,9 @@
 }
 
 .card-placement-box {
-  --card-width: 84px;
-  --card-height: 128px; /* 160px * 0.8 */
-  --card-overlap-px: 42px;
+  --card-width: 114px; /* Increased by 20% */
+  --card-height: 173px; /* Increased by 20% */
+  --card-overlap-px: 67px; /* Adjusted for new width */
   --left-buffer: 20px;
 
   width: 100%;
@@ -23,7 +23,8 @@
   padding: 8px 0;
   cursor: pointer;
   position: relative;
-  height: calc(var(--card-height) + 16px);
+  flex-grow: 1; /* Allow the box to grow vertically */
+  /* height property removed to allow flex-grow to work */
 }
 
 .lane-title-indicator {

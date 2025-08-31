@@ -134,14 +134,19 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
-  gap: 0;
+  justify-content: center; /* Changed from space-around */
+  gap: 5px; /* A small gap is better than none */
   min-height: 0;
-  padding: 0;
+  padding: 5px;
   box-sizing: border-box;
   background: var(--container-bg);
   border-radius: 14px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.lanes-container > .lane-wrapper {
+  flex-grow: 1; /* Make each lane grow to fill the space */
+  display: flex; /* Ensure its children can also use flex properties */
 }
 
 .error-text {
