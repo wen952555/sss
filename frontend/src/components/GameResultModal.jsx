@@ -14,13 +14,6 @@ const GameResultModal = ({ result, onClose, onPlayAgain, gameType, isTrial = fal
         return '平局';
     };
 
-    const handlePlayAgain = () => {
-        onClose(); // Close the modal first
-        if (onPlayAgain) {
-            onPlayAgain(); // Then trigger the next round
-        }
-    };
-
     return (
         <div className="result-modal-backdrop">
             <div className="result-modal-container">
@@ -74,7 +67,15 @@ const GameResultModal = ({ result, onClose, onPlayAgain, gameType, isTrial = fal
 
                 <div className="result-modal-footer">
                     <button onClick={onClose} className="result-btn exit-btn">退出游戏</button>
-                    <button onClick={handlePlayAgain} className="result-btn continue-btn">继续游戏</button>
+                    <button
+                        onClick={() => {
+                            onClose();
+                            if (onPlayAgain) onPlayAgain();
+                        }}
+                        className="result-btn continue-btn"
+                    >
+                        继续游戏
+                    </button>
                 </div>
             </div>
         </div>

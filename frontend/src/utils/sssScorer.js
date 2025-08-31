@@ -126,7 +126,7 @@ export function getAreaType(cards, area) {
   return "高牌";
 }
 
-function areaTypeRank(type, area) {
+export function areaTypeRank(type, area) {
   if (area === 'head') {
     if (type === "三条") return 4;
     if (type === "对子") return 2;
