@@ -32,6 +32,7 @@ const GameTable = ({
   onCardClick,
   onLaneClick,
   onCloseResult,
+  onPlayAgain,
 }) => {
   const renderPlayerName = (p) => {
     if (String(p.id).startsWith('ai')) return p.phone;
@@ -91,7 +92,7 @@ const GameTable = ({
           </>
         )}
       </div>
-      {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} gameType={gameType} isTrial={true} />}
+      {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} isTrial={true} />}
     </div>
   );
 };
