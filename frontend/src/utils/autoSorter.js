@@ -34,7 +34,8 @@ function calculateHandStrategicScore(hand) {
 function findBestSubHand(cards, num) {
     if (!cards || cards.length < num) return null;
     let bestHand = null;
-    let bestEval = { value: -1 };
+    // Initialize with a "worst possible hand" object that matches the evaluator's output structure.
+    let bestEval = { rank: -1, values: [0] };
     const possibleHands = combinations(cards, num);
     for (const hand of possibleHands) {
         const currentEval = evaluateHand(hand);
