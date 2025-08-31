@@ -1,5 +1,5 @@
 import { evaluateHand, compareHands, sortCards, combinations, parseCard } from './pokerEvaluator';
-import { getAreaType, areaTypeRank } from './sssScorer';
+import { getAreaType, areaTypeRank, getAreaScore } from './sssScorer';
 
 /**
  * Calculates a weighted score for a hand arrangement to determine its strategic value.
