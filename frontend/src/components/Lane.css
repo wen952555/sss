@@ -7,9 +7,9 @@
 }
 
 .card-placement-box {
-  --card-width: 114px; /* Increased by 20% */
-  --card-height: 173px; /* Increased by 20% */
-  --card-overlap-px: 67px; /* Adjusted for new width */
+  --card-width: 148px; /* Increased by 30% */
+  --card-height: 225px; /* Increased by 30% */
+  --card-overlap-px: 101px; /* Adjusted for new width */
   --left-buffer: 20px;
 
   width: 100%;
@@ -53,7 +53,7 @@
 .card-wrapper.selected {
   z-index: 99 !important;
   box-shadow: 0 7px 22px #00cec9aa,0 0 0 2px #00cec9;
-  transform: translateY(-20px) scale(1.08);
+  transform: translateY(-30px) scale(1.08);
 }
 
 .card {
