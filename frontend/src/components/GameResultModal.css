@@ -62,9 +62,7 @@
   background: rgba(0, 0, 0, 0.2);
   border-radius: 16px;
   padding: 15px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
+  /* No longer a flex container with a gap */
   transition: all 0.3s ease;
 }
 
@@ -74,13 +72,15 @@
   transform: scale(1.02);
 }
 
-.player-result-row .player-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 80px;
-  text-align: center;
+.player-info {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 6px;
+  z-index: 1;
+  text-align: right;
 }
 
 .player-result-row .player-name {
@@ -138,14 +138,13 @@
 }
 
 .result-hand-container {
+  position: relative; /* Context for the absolute positioned player-info */
   display: flex;
   flex-direction: column;
   gap: 10px;
-  align-items: flex-start; /* Align rows to the left */
-  flex: 1;
-  min-width: 0;
-  overflow-x: auto; /* Allow horizontal scrolling for the hand itself */
-  padding: 10px 0; /* Add some padding for better scroll appearance */
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
 }
 
 .result-cards-row {
