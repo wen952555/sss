@@ -58,29 +58,15 @@ export const useCardArrangement = (gameType) => {
         }
     });
 
-    const originalTargetLaneCards = newLanes[laneName];
-    const limit = LANE_LIMITS[laneName];
-
-    const combined = [...selectedCards, ...originalTargetLaneCards];
-
-    let finalTargetLane;
-    let newSelectedCards = [];
-
-    if (combined.length > limit) {
-        finalTargetLane = combined.slice(0, limit);
-        newSelectedCards = combined.slice(limit);
-    } else {
-        finalTargetLane = combined;
-    }
-
-    newLanes[laneName] = finalTargetLane;
+    // Add selected cards to the target lane
+    newLanes[laneName] = [...newLanes[laneName], ...selectedCards];
 
     setTopLane(sortCards(newLanes.top));
     setMiddleLane(sortCards(newLanes.middle));
     setBottomLane(sortCards(newLanes.bottom));
-    setSelectedCards(newSelectedCards);
+    setSelectedCards([]);
 
-  }, [selectedCards, topLane, middleLane, bottomLane, LANE_LIMITS]);
+  }, [selectedCards, topLane, middleLane, bottomLane]);
 
   const handleAutoSort = useCallback((allCards) => {
     const sorter = gameType === 'thirteen' ? getSmartSortedHand : getSmartSortedHandForEight;
