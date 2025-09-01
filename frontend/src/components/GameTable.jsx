@@ -51,7 +51,6 @@ const GameTable = ({
           {players.map((p, index) => (
             <span key={p.id} className={playerState === 'arranging' ? 'arranging-state' : ''}>
               {renderPlayerName(p)}
-              {index < players.length - 1 ? ', ' : ''}
             </span>
           ))}
         </span>

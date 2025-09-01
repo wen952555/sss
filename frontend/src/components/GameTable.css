@@ -140,3 +140,12 @@
   color: var(--text-color);
   z-index: 0;
 }
+
+.player-name-list > span {
+  padding: 0 10px;
+  border-right: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.player-name-list > span:last-child {
+  border-right: none;
+}
