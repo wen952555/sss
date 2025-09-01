@@ -21,6 +21,14 @@ switch ($action) {
         break;
 
     case 'get_online_count':
+        if (isset($_GET['userId']) && (int)$_GET['userId'] > 0) {
+            $userId = (int)$_GET['userId'];
+            $stmt = $conn->prepare("UPDATE users SET last_active = NOW() WHERE id = ?");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $stmt->close();
+        }
+
         $onlineCount = 0;
         $query = "
             SELECT COUNT(DISTINCT id) as onlineCount
@@ -70,9 +78,10 @@ switch ($action) {
                 $stmt->execute();
                 $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
                 $stmt->close();
-                if ($currentPlayers < $room['players_count']) {
-                    fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
-                }
+                // Removed AI filling logic as per user request for online modes.
+                // if ($currentPlayers < $room['players_count']) {
+                //     fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
+                // }
                 $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
@@ -127,7 +136,7 @@ switch ($action) {
                     $hand_type_scores = [ '高牌' => 1, '对子' => 2, '两对' => 3, '三条' => 4, '顺子' => 5, '同花' => 6, '葫芦' => 7, '铁支' => 8, '同花顺' => 10, ];
                     $scores = [];
                     $player_ids = array_keys($player_evaluations);
-                    for ($i = 0; $i < count($player_ids); $i++) { $p1_id = $player_ids[$i]; $total_score = 0; for ($j = 0; $j < count($player_ids); $j++) { if ($i === $j) continue; $p2_id = $player_ids[$j]; $p1_eval = $player_evaluations[$p1_id]; $p2_eval = $player_evaluations[$p2_id]; if ($p1_eval && $p2_eval) { $comparison = compareHands($p1_eval, $p2_eval); if ($comparison > 0) { $total_score += $hand_type_scores[$p1_eval['name']] ?? 1; } if ($comparison < 0) { $total_score -= $hand_type_scores[$p2_eval['name']] ?? 1; } } } $scores[$p1_id] = $total_score; }
+                    for ($i = 0; i < count($player_ids); $i++) { $p1_id = $player_ids[$i]; $total_score = 0; for ($j = 0; $j < count($player_ids); $j++) { if ($i === $j) continue; $p2_id = $player_ids[$j]; $p1_eval = $player_evaluations[$p1_id]; $p2_eval = $player_evaluations[$p2_id]; if ($p1_eval && $p2_eval) { $comparison = compareHands($p1_eval, $p2_eval); if ($comparison > 0) { $total_score += $hand_type_scores[$p1_eval['name']] ?? 1; } if ($comparison < 0) { $total_score -= $hand_type_scores[$p2_eval['name']] ?? 1; } } } $scores[$p1_id] = $total_score; }
                     foreach($scores as $pId => $score) { $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?"); $stmt->bind_param("iii", $score, $roomId, $pId); $stmt->execute(); $stmt->close(); if ($pId > 0) { $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?"); $stmt->bind_param("ii", $score, $pId); $stmt->execute(); $stmt->close(); } }
                     $stmt = $conn->prepare("UPDATE game_rooms SET status = 'finished' WHERE id = ?");
                     $stmt->bind_param("i", $roomId);
@@ -161,6 +170,12 @@ switch ($action) {
         if ($result->num_rows === 1) {
             $foundUser = $result->fetch_assoc();
             if (password_verify($password, $foundUser['password'])) {
+                // Also update last_active on login
+                $updateStmt = $conn->prepare("UPDATE users SET last_active = NOW() WHERE id = ?");
+                $updateStmt->bind_param("i", $foundUser['id']);
+                $updateStmt->execute();
+                $updateStmt->close();
+
                 $userDataForFrontend = [
                     'id' => $foundUser['id'],
                     'phone' => $foundUser['phone'],
@@ -315,8 +330,8 @@ switch ($action) {
                 $stmt->bind_param("ii", $roomId, $guestUserId);
                 $stmt->execute();
                 $stmt->close();
-                fillWithAI($conn, $roomId, $gameType, $playersNeeded);
-                dealCards($conn, $roomId, $gameType, $playersNeeded);
+                // fillWithAI($conn, $roomId, $gameType, $playersNeeded);
+                // dealCards($conn, $roomId, $gameType, $playersNeeded);
                 $conn->commit();
                 http_response_code(200);
                 echo json_encode(['success' => true, 'roomId' => $roomId, 'guestUserId' => $guestUserId]);
