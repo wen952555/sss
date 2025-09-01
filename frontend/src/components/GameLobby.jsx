@@ -2,26 +2,16 @@ import React, { useState, useEffect } from 'react';
 import './GameLobby.css';
 
 const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick }) => {
-  const [announcement, setAnnouncement] = useState('');
   const [onlineCount, setOnlineCount] = useState(null);
-
-  useEffect(() => {
-    const fetchAnnouncement = async () => {
-      try {
-        const response = await fetch('/api/index.php?action=get_announcement');
-        const data = await response.json();
-        if (data.success && data.text) setAnnouncement(data.text);
-      } catch (error) { /* ignore */ }
-    };
-    fetchAnnouncement();
-    const intervalId = setInterval(fetchAnnouncement, 30000);
-    return () => clearInterval(intervalId);
-  }, []);
 
   useEffect(() => {
     const fetchOnlineCount = async () => {
       try {
-        const resp = await fetch('/api/index.php?action=get_online_count');
+        let url = '/api/index.php?action=get_online_count';
+        if (user && user.id) {
+          url += `&userId=${user.id}`;
+        }
+        const resp = await fetch(url);
         const data = await resp.json();
         if (data.success) setOnlineCount(data.onlineCount);
       } catch (err) { setOnlineCount(null); }
@@ -29,7 +19,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
     fetchOnlineCount();
     const intervalId = setInterval(fetchOnlineCount, 15000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [user]);
 
   const isMatching = matchingStatus.thirteen || matchingStatus.eight;
 
@@ -52,12 +42,6 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
           当前在线人数：{onlineCount !== null ? onlineCount : '...'}
         </div>
       </header>
-
-      {announcement && (
-        <div className="announcement-banner">
-          📢 {announcement}
-        </div>
-      )}
 
       <main className="game-card-grid">
         {/* 十三张卡片 */}
