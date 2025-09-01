@@ -46,20 +46,14 @@ const GameTable = ({
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
         <div className="game-table-title">{title}</div>
       </div>
-      <div className={`players-status-container ${players.length > 4 ? 'six-player' : ''}`}>
-        {players.map(p => (
-          <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${playerState !== 'waiting' ? 'is-ready' : ''}`}>
-            <div className="player-avatar">{String(p.id).startsWith('ai') ? 'AI' : p.phone.slice(-2)}</div>
-            <div className="player-info">
-              <div className="player-name">{renderPlayerName(p)}</div>
-              <div className="player-ready-text">
-                {playerState === 'waiting' && '未准备'}
-                {playerState === 'arranging' && '理牌中...'}
-                {playerState === 'submitted' && '已提交'}
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="players-status-banner">
+        <span className="player-name-list">
+          {players.map((p, index) => (
+            <span key={p.id} className={playerState === 'arranging' ? 'arranging-state' : ''}>
+              {renderPlayerName(p)}
+            </span>
+          ))}
+        </span>
       </div>
 
       {unassignedCards.length > 0 && (
