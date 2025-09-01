@@ -8,7 +8,7 @@ import { getLaneScore } from './eightCardScorer';
  */
 function calculateHandBaseScore(hand) {
     // Note: eightCardScorer expects card objects, not strings.
-    return getLaneScore(hand.top, 'head') + getLaneScore(hand.middle, 'middle') + getLaneScore(hand.bottom, 'tail');
+    return getLaneScore(hand.top, 'top') + getLaneScore(hand.middle, 'middle') + getLaneScore(hand.bottom, 'bottom');
 }
 
 /**

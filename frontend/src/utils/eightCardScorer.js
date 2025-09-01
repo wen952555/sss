@@ -42,8 +42,18 @@ export function getHandType(cards) {
 
 function getStraightValue(cards) {
     const ranks = cards.map(c => c.value).sort((a, b) => a - b);
-    if (ranks.includes(14) && ranks.includes(13)) return 14;
-    if (ranks.includes(14) && ranks.includes(2)) return 13.5;
+    const isAceHigh = ranks.includes(14) && ranks.includes(13); // e.g., A, K, Q
+    const isAceLow = ranks.includes(14) && ranks.includes(2);   // e.g., A, 2, 3
+
+    // Per game rules: A-K-Q is the highest straight.
+    if (isAceHigh) {
+        return 14;
+    }
+    // A-2-3 is the second highest straight.
+    if (isAceLow) {
+        return 13.5; // Special value to rank it below A-K-Q but above K-Q-J.
+    }
+    // All other straights are ranked by their highest card.
     return ranks[ranks.length - 1];
 }
 
