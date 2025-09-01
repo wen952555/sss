@@ -21,14 +21,6 @@ switch ($action) {
         break;
 
     case 'get_online_count':
-        if (isset($_GET['userId']) && (int)$_GET['userId'] > 0) {
-            $userId = (int)$_GET['userId'];
-            $stmt = $conn->prepare("UPDATE users SET last_active = NOW() WHERE id = ?");
-            $stmt->bind_param("i", $userId);
-            $stmt->execute();
-            $stmt->close();
-        }
-
         $onlineCount = 0;
         $query = "
             SELECT COUNT(DISTINCT id) as onlineCount
