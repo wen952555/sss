@@ -52,11 +52,6 @@ const GameTable = ({
             <div className="player-avatar">{String(p.id).startsWith('ai') ? 'AI' : p.phone.slice(-2)}</div>
             <div className="player-info">
               <div className="player-name">{renderPlayerName(p)}</div>
-              <div className="player-ready-text">
-                {playerState === 'waiting' && '未准备'}
-                {playerState === 'arranging' && '理牌中...'}
-                {playerState === 'submitted' && '已提交'}
-              </div>
             </div>
           </div>
         ))}
