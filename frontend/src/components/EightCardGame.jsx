@@ -3,7 +3,7 @@ import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult, parseCard } from '../utils';
 import GameTable from './GameTable';
 
-const EightCardGame = ({ onBackToLobby, user, isTrialMode }) => {
+const EightCardGame = ({ onBackToLobby, user }) => {
   const {
     topLane,
     middleLane,
@@ -129,7 +129,6 @@ const EightCardGame = ({ onBackToLobby, user, isTrialMode }) => {
       title="急速八张 - 试玩模式"
       players={players}
       user={user}
-      isTrialMode={isTrialMode}
 
       topLane={topLane}
       middleLane={middleLane}

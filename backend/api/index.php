@@ -70,9 +70,10 @@ switch ($action) {
                 $stmt->execute();
                 $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
                 $stmt->close();
-                if ($currentPlayers < $room['players_count']) {
-                    fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
-                }
+                // Removed AI filling logic as per user request for online modes.
+                // if ($currentPlayers < $room['players_count']) {
+                //     fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
+                // }
                 $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();

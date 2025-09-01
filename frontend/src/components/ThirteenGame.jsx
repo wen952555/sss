@@ -3,7 +3,7 @@ import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand, parseCard, isFoul } from '../utils';
 import GameTable from './GameTable';
 
-const ThirteenGame = ({ onBackToLobby, user, isTrialMode }) => {
+const ThirteenGame = ({ onBackToLobby, user }) => {
   const {
     topLane,
     middleLane,
@@ -172,7 +172,6 @@ const ThirteenGame = ({ onBackToLobby, user, isTrialMode }) => {
       title="十三张 - 试玩模式"
       players={players}
       user={user}
-      isTrialMode={isTrialMode}
 
       topLane={topLane}
       middleLane={middleLane}
