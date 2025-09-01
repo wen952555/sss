@@ -7,6 +7,7 @@
   color: var(--text-color); /* This will be inherited, but good to be explicit */
   padding: 0 15px 15px 15px;
   box-sizing: border-box;
+  position: relative; /* For absolute positioning of children */
 }
 
 .game-table-header, .game-table-footer {
@@ -16,9 +17,36 @@
   backdrop-filter: blur(10px);
   border-radius: 0;
   display: flex;
-  justify-content: space-between;
+  justify-content: center; /* Center title now that info is absolute */
   align-items: center;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  position: relative; /* To keep back button flow correct */
+}
+
+.back-btn {
+    position: absolute;
+    left: 5px;
+}
+
+.game-table-info {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.trial-mode-indicator {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: var(--text-color);
+}
+
+.user-points {
+  color: var(--primary-color);
+  font-weight: 700;
 }
 
 .game-table-header {
