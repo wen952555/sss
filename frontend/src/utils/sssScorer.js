@@ -188,6 +188,20 @@ function compareArea(a, b, area) {
   const rankB = areaTypeRank(typeB, area);
   if (rankA !== rankB) return rankA - rankB;
 
+  // Special handling for straights according to house rules
+  if (typeA === '顺子' && typeB === '顺子') {
+      const getStraightValue = (cards) => {
+          let vals = [...new Set(cards.map(c => VALUE_ORDER[c.split('_')[0]]))].sort((a, b) => a - b);
+          const isA2345 = JSON.stringify(vals) === JSON.stringify([2,3,4,5,14]);
+          if (isA2345) return 13.5; // Second highest straight
+          return vals[vals.length - 1]; // Highest card
+      };
+      const valA = getStraightValue(a);
+      const valB = getStraightValue(b);
+      if (valA !== valB) return valA - valB;
+      return 0;
+  }
+
   if ( (typeA === '同花顺' && typeB === '同花顺') || (typeA === '同花' && typeB === '同花') ) {
     const suitA = SUIT_ORDER[a[0].split('_')[2]];
     const suitB = SUIT_ORDER[b[0].split('_')[2]];
