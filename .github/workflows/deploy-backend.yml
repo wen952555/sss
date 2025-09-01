@@ -1,0 +1,32 @@
+name: Deploy Backend to serv00
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh/
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SSH_HOST_USER | cut -d'@' -f2 }} >> ~/.ssh/known_hosts
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        SSH_HOST_USER: ${{ secrets.SSH_HOST_USER }}
+
+    - name: Deploy to Server with rsync
+      run: |
+        rsync -avz --delete --exclude 'config.php' ./backend/ ${{ secrets.SSH_HOST_USER }}:/path/to/your/project/backend/
+      env:
+        SSH_HOST_USER: ${{ secrets.SSH_HOST_USER }}

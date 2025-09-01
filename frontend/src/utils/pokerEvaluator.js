@@ -151,28 +151,34 @@ export function evaluateHand(cards) {
  * @returns {number} > 0 如果 A > B, < 0 如果 A < B, 0 如果相等
  */
 export function compareHands(handA, handB) {
-  if (!handA || !handB) return 0;
+  // 如果牌型相同且为顺子，应用特殊规则
+  if (handA.rank === HAND_TYPES.STRAIGHT.rank && handB.rank === HAND_TYPES.STRAIGHT.rank) {
+    const isA_A2345 = JSON.stringify(handA.values) === JSON.stringify([5, 4, 3, 2, 1]);
+    const isB_A2345 = JSON.stringify(handB.values) === JSON.stringify([5, 4, 3, 2, 1]);
 
+    // 根据规则，A2345是第二大顺子
+    const rankA = isA_A2345 ? 13.5 : handA.values[0];
+    const rankB = isB_A2345 ? 13.5 : handB.values[0];
+
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+    return 0; // 两个都是A2345或者10JQKA
+  }
+
+  // 首先比较牌型等级
   const rankDifference = handA.rank - handB.rank;
   if (rankDifference !== 0) {
     return rankDifference;
   }
   
-  // If hand types are the same, compare the card values.
-  // This needs to handle hands of different lengths (e.g. 2 vs 3 cards).
-  const len = Math.min(handA.values.length, handB.values.length);
-  for (let i = 0; i < len; i++) {
+  // 如果牌型相同，则依次比较关键牌的大小
+  for (let i = 0; i < handA.values.length; i++) {
     const valueDifference = handA.values[i] - handB.values[i];
     if (valueDifference !== 0) {
       return valueDifference;
     }
   }
 
-  // If all compared cards are equal, the hand with more cards wins.
-  // This is relevant for comparing partial hands in the auto-sorter.
-  if (handA.values.length !== handB.values.length) {
-    return handA.values.length - handB.values.length;
-  }
-
-  return 0; // Hands are identical.
+  return 0; // 两手牌完全相同
 }
