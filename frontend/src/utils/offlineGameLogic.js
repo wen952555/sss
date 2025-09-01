@@ -1,7 +1,5 @@
 import { compareHands, combinations, parseCard, evaluateHand } from './pokerEvaluator';
 import { getSmartSortedHand } from './autoSorter';
-import { calculateSinglePairScoreForEight } from './eightCardScorer';
-import { calculateSinglePairScore } from './sssScorer';
 
 // --- Game Setup ---
 export const createDeck = () => {
@@ -39,10 +37,19 @@ export const dealOfflineEightCardGame = (playerCount = 6) => {
 };
 
 export const calculateEightCardTrialResult = (playerHand, aiHands) => {
+    const isPlayerFoul = isSssFoul(playerHand);
     let totalScore = 0;
     aiHands.forEach(aiHand => {
         if (!aiHand) return;
-        const pairScore = calculateSinglePairScoreForEight(playerHand, aiHand);
+        const isAiFoul = isSssFoul(aiHand);
+        let pairScore = 0;
+        if (isPlayerFoul && !isAiFoul) pairScore = -3;
+        else if (!isPlayerFoul && isAiFoul) pairScore = 3;
+        else if (!isPlayerFoul && !isAiFoul) {
+            pairScore += compareSssLanes(playerHand.top, aiHand.top);
+            pairScore += compareSssLanes(playerHand.middle, aiHand.middle);
+            pairScore += compareSssLanes(playerHand.bottom, aiHand.bottom);
+        }
         totalScore += pairScore;
     });
     return { playerScore: totalScore };
@@ -65,6 +72,8 @@ export const getAiThirteenHand = (thirteenCards) => {
   const cardObjects = thirteenCards.map(parseCard);
   return getSmartSortedHand(cardObjects);
 };
+
+import { calculateSinglePairScore } from './sssScorer';
 
 export const calculateThirteenTrialResult = (playerHand, aiHands) => {
     let totalPlayerScore = 0;
