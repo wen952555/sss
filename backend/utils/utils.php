@@ -51,6 +51,18 @@ function dealCards($conn, $roomId, $gameType, $playerCount) {
 }
 
 function fillWithAI($conn, $roomId, $gameType, $playersNeeded) {
+    $stmt = $conn->prepare("SELECT game_mode FROM game_rooms WHERE id = ?");
+    $stmt->bind_param("i", $roomId);
+    $stmt->execute();
+    $room = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    // Only fill with AI if the game mode is not a standard online mode.
+    $online_modes = ['normal', 'double', 'multiplayer'];
+    if ($room && in_array($room['game_mode'], $online_modes)) {
+        return;
+    }
+
     $stmt = $conn->prepare("SELECT COUNT(*) as current_players FROM room_players WHERE room_id=?");
     $stmt->bind_param("i", $roomId);
     $stmt->execute();
