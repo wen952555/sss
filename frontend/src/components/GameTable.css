@@ -97,16 +97,16 @@
   gap: 10px;
   padding: 5px;
   border-radius: 8px;
-  background: var(--player-status-bg);
-  transition: background-color 0.3s;
+  background: transparent;
+  transition: none;
 }
 
 .player-status.is-ready {
-  background-color: var(--player-status-ready-bg);
+  background-color: transparent;
 }
 
 .player-status.is-me {
-  background-color: var(--player-status-me-bg);
+  background-color: transparent;
 }
 
 .player-avatar {
