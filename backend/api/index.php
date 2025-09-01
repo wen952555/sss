@@ -169,6 +169,12 @@ switch ($action) {
         if ($result->num_rows === 1) {
             $foundUser = $result->fetch_assoc();
             if (password_verify($password, $foundUser['password'])) {
+                // Also update last_active on login
+                $updateStmt = $conn->prepare("UPDATE users SET last_active = NOW() WHERE id = ?");
+                $updateStmt->bind_param("i", $foundUser['id']);
+                $updateStmt->execute();
+                $updateStmt->close();
+
                 $userDataForFrontend = [
                     'id' => $foundUser['id'],
                     'phone' => $foundUser['phone'],
