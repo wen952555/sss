@@ -151,6 +151,21 @@ export function evaluateHand(cards) {
  * @returns {number} > 0 如果 A > B, < 0 如果 A < B, 0 如果相等
  */
 export function compareHands(handA, handB) {
+  // 如果牌型相同且为顺子，应用特殊规则
+  if (handA.rank === HAND_TYPES.STRAIGHT.rank && handB.rank === HAND_TYPES.STRAIGHT.rank) {
+    const isA_A2345 = JSON.stringify(handA.values) === JSON.stringify([5, 4, 3, 2, 1]);
+    const isB_A2345 = JSON.stringify(handB.values) === JSON.stringify([5, 4, 3, 2, 1]);
+
+    // 根据规则，A2345是第二大顺子
+    const rankA = isA_A2345 ? 13.5 : handA.values[0];
+    const rankB = isB_A2345 ? 13.5 : handB.values[0];
+
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+    return 0; // 两个都是A2345或者10JQKA
+  }
+
   // 首先比较牌型等级
   const rankDifference = handA.rank - handB.rank;
   if (rankDifference !== 0) {
