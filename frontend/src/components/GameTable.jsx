@@ -51,7 +51,7 @@ const GameTable = ({
           <div key={p.id} className={`player-status ${p.id === user.id ? 'is-me' : ''} ${playerState !== 'waiting' ? 'is-ready' : ''}`}>
             <div className="player-avatar">{String(p.id).startsWith('ai') ? 'AI' : p.phone.slice(-2)}</div>
             <div className="player-info">
-              <div className="player-name">{renderPlayerName(p)}</div>
+              <div className={`player-name ${playerState === 'arranging' ? 'arranging-state' : ''}`}>{renderPlayerName(p)}</div>
             </div>
           </div>
         ))}

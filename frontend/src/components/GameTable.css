@@ -201,3 +201,8 @@
 .six-player .player-ready-text {
   font-size: 0.7rem;
 }
+
+.player-name.arranging-state {
+  color: red;
+  font-weight: bold;
+}
