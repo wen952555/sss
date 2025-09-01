@@ -21,7 +21,11 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
   useEffect(() => {
     const fetchOnlineCount = async () => {
       try {
-        const resp = await fetch('/api/index.php?action=get_online_count');
+        let url = '/api/index.php?action=get_online_count';
+        if (user && user.id) {
+          url += `&userId=${user.id}`;
+        }
+        const resp = await fetch(url);
         const data = await resp.json();
         if (data.success) setOnlineCount(data.onlineCount);
       } catch (err) { setOnlineCount(null); }
@@ -29,7 +33,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
     fetchOnlineCount();
     const intervalId = setInterval(fetchOnlineCount, 15000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [user]);
 
   const isMatching = matchingStatus.thirteen || matchingStatus.eight;
 
