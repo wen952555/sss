@@ -5,13 +5,11 @@
 // ini_set('display_errors', 0);
 // error_reporting(0);
 
-$DB_HOST = 'localhost';
-$DB_USER = 'YOUR_DB_USER';  // 请确认这里是您的正确信息
-$DB_PASS = 'YOUR_DB_PASS';  // 请确认这里是您的正确信息
-$DB_NAME = 'YOUR_DB_NAME';  // 请确认这里是您的正确信息
+// Include the configuration file
+require_once __DIR__ . '/../config.php';
 
 // 创建连接
-$conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
 // 检查连接
 if ($conn->connect_error) {
