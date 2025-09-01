@@ -82,52 +82,19 @@
   background-color: #1976d2;
 }
 
-.players-status-container {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 0;
-  gap: 10px;
-  padding: 2px 0;
-  background: rgba(0,0,0,0.05);
+.players-status-banner {
+  text-align: center;
+  padding: 8px 5px;
+  background: rgba(0,0,0,0.1);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.player-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px;
-  border-radius: 8px;
-  background: transparent;
-  transition: none;
-}
-
-.player-status.is-ready {
-  background-color: transparent;
-}
-
-.player-status.is-me {
-  background-color: transparent;
-}
-
-.player-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: var(--primary-color);
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.player-name-list span.arranging-state {
+  color: #ff5252; /* A brighter red */
   font-weight: 700;
-}
-
-.player-name {
-  font-weight: 600;
-}
-
-.player-ready-text {
-  font-size: 0.8rem;
-  opacity: 0.8;
+  transform: scale(1.05);
+  display: inline-block;
 }
 
 .lanes-container {
@@ -172,37 +139,4 @@
   font-weight: 600;
   color: var(--text-color);
   z-index: 0;
-}
-
-/* Styles for 6-player layout in EightCardGame */
-.players-status-container.six-player {
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.six-player .player-status {
-  flex-basis: 28%; /* Allow 3 items per row with gaps */
-  flex-grow: 1;
-  justify-content: flex-start; /* Align items to the start */
-  padding: 2px 4px;
-  gap: 5px;
-}
-
-.six-player .player-avatar {
-  width: 25px;
-  height: 25px;
-  font-size: 0.8rem;
-}
-
-.six-player .player-name {
-  font-size: 0.9rem;
-}
-
-.six-player .player-ready-text {
-  font-size: 0.7rem;
-}
-
-.player-name.arranging-state {
-  color: red;
-  font-weight: bold;
 }
