@@ -330,8 +330,8 @@ switch ($action) {
                 $stmt->bind_param("ii", $roomId, $guestUserId);
                 $stmt->execute();
                 $stmt->close();
-                fillWithAI($conn, $roomId, $gameType, $playersNeeded);
-                dealCards($conn, $roomId, $gameType, $playersNeeded);
+                // fillWithAI($conn, $roomId, $gameType, $playersNeeded);
+                // dealCards($conn, $roomId, $gameType, $playersNeeded);
                 $conn->commit();
                 http_response_code(200);
                 echo json_encode(['success' => true, 'roomId' => $roomId, 'guestUserId' => $guestUserId]);
