@@ -3,7 +3,7 @@ import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult, parseCard } from '../utils';
 import GameTable from './GameTable';
 
-const EightCardGame = ({ onBackToLobby, user }) => {
+const EightCardGame = ({ onBackToLobby, user, isTrialMode }) => {
   const {
     topLane,
     middleLane,
@@ -89,38 +89,22 @@ const EightCardGame = ({ onBackToLobby, user }) => {
     setIsLoading(true);
     setErrorMessage('正在计算比牌结果...');
 
-    setTimeout(() => {
-      try {
-        // For the modal display, we use the card objects from state
-        const playerHandObjects = { top: topLane, middle: middleLane, bottom: bottomLane };
+    try {
+      const playerHandObjects = { top: topLane, middle: middleLane, bottom: bottomLane };
+      const result = calculateEightCardTrialResult(playerHandObjects, aiHands);
 
-        // For the scorer, we need to convert the hands to string format
-        const playerHandStrings = {
-          top: topLane.map(c => `${c.rank}_of_${c.suit}`),
-          middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
-          bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
-        };
-        const aiHandStrings = aiHands.map(hand => ({
-          top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
-          middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
-          bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
-        }));
-
-        const result = calculateEightCardTrialResult(playerHandStrings, aiHandStrings);
-
-        const modalPlayers = [
-          { name: user.phone, hand: playerHandObjects, score: result.playerScore, is_me: true },
-          ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
-        ];
-        setGameResult({ players: modalPlayers });
-        setPlayerState('submitted');
-        setErrorMessage('');
-      } catch (e) {
-        setErrorMessage(`计算结果时发生错误: ${e.message}`);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 10);
+      const modalPlayers = [
+        { name: user.phone, hand: playerHandObjects, score: result.playerScore, is_me: true },
+        ...aiHands.map((hand, index) => ({ name: `AI ${index + 1}`, hand, score: 'N/A' }))
+      ];
+      setGameResult({ players: modalPlayers });
+      setPlayerState('submitted');
+      setErrorMessage('');
+    } catch (e) {
+      setErrorMessage(`计算结果时发生错误: ${e.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone, setIsLoading, setErrorMessage, setGameResult, setPlayerState]);
 
   return (
@@ -129,6 +113,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
       title="急速八张 - 试玩模式"
       players={players}
       user={user}
+      isTrialMode={isTrialMode}
 
       topLane={topLane}
       middleLane={middleLane}

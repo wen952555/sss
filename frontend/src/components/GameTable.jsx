@@ -11,6 +11,7 @@ const GameTable = ({
   title,
   players,
   user,
+  isTrialMode,
 
   // State
   topLane,
@@ -45,6 +46,13 @@ const GameTable = ({
       <div className="game-table-header">
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
         <div className="game-table-title">{title}</div>
+        <div className="game-table-info">
+          {isTrialMode ? (
+            <span className="trial-mode-indicator">试玩模式</span>
+          ) : (
+            user && <span className="user-points">积分: {user.points}</span>
+          )}
+        </div>
       </div>
       <div className="players-status-banner">
         <span className="player-name-list">

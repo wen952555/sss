@@ -42,8 +42,18 @@ export function getHandType(cards) {
 
 function getStraightValue(cards) {
     const ranks = cards.map(c => c.value).sort((a, b) => a - b);
-    if (ranks.includes(14) && ranks.includes(13)) return 14;
-    if (ranks.includes(14) && ranks.includes(2)) return 13.5;
+    const isAceHigh = ranks.includes(14) && ranks.includes(13); // e.g., A, K, Q
+    const isAceLow = ranks.includes(14) && ranks.includes(2);   // e.g., A, 2, 3
+
+    // Per game rules: A-K-Q is the highest straight.
+    if (isAceHigh) {
+        return 14;
+    }
+    // A-2-3 is the second highest straight.
+    if (isAceLow) {
+        return 13.5; // Special value to rank it below A-K-Q but above K-Q-J.
+    }
+    // All other straights are ranked by their highest card.
     return ranks[ranks.length - 1];
 }
 
@@ -51,17 +61,30 @@ function compareSameTypeHands(cardsA, cardsB) {
     const sortedA = [...cardsA].sort((a, b) => b.value - a.value || b.suitValue - a.suitValue);
     const sortedB = [...cardsB].sort((a, b) => b.value - a.value || b.suitValue - a.suitValue);
 
-    for (let i = 0; i < sortedA.length; i++) {
-        if (sortedA[i].value !== sortedB[i].value) return sortedA[i].value - sortedB[i].value;
+    const len = Math.min(sortedA.length, sortedB.length);
+    for (let i = 0; i < len; i++) {
+        if (sortedA[i].value !== sortedB[i].value) {
+            return sortedA[i].value - sortedB[i].value;
+        }
     }
-    for (let i = 0; i < sortedA.length; i++) {
-        if (sortedA[i].suitValue !== sortedB[i].suitValue) return sortedA[i].suitValue - sortedB[i].suitValue;
+
+    for (let i = 0; i < len; i++) {
+        if (sortedA[i].suitValue !== sortedB[i].suitValue) {
+            return sortedA[i].suitValue - sortedB[i].suitValue;
+        }
     }
-    return 0;
+
+    return sortedA.length - sortedB.length;
 }
 
 // --- 核心修复：重写此函数，使其逻辑更健壮 ---
 export function compareLanes(laneA, laneB) {
+    if (!laneA || !laneB) {
+        // Handle cases where a lane might be missing, returning a deterministic result.
+        if (laneA) return 1;
+        if (laneB) return -1;
+        return 0;
+    }
     const typeA = getHandType(laneA);
     const typeB = getHandType(laneB);
 
@@ -69,24 +92,21 @@ export function compareLanes(laneA, laneB) {
         return HAND_RANK[typeA] - HAND_RANK[typeB];
     }
     
-    // 如果牌型相同，则进行详细比较
     const cardsA = laneA.map(c => ({...c, value: VALUE_ORDER[c.rank], suitValue: SUIT_ORDER[c.suit]}));
     const cardsB = laneB.map(c => ({...c, value: VALUE_ORDER[c.rank], suitValue: SUIT_ORDER[c.suit]}));
     
     if (typeA === '同花顺') {
         const suitA = cardsA[0].suitValue;
         const suitB = cardsB[0].suitValue;
-        if (suitA !== suitB) return suitA - suitB; // 1. 比较花色
+        if (suitA !== suitB) return suitA - suitB;
     }
 
     if (typeA === '同花顺' || typeA === '顺子') {
         const straightValueA = getStraightValue(cardsA);
         const straightValueB = getStraightValue(cardsB);
-        if (straightValueA !== straightValueB) return straightValueA - straightValueB; // 2. 比较顺子大小
+        if (straightValueA !== straightValueB) return straightValueA - straightValueB;
     }
 
-    // 3. 对于所有其他平局情况（包括三条、对子、高牌，以及顺子/同花顺的最终比较），
-    // 使用通用的、从大到小逐张比较的方法。
     return compareSameTypeHands(cardsA, cardsB);
 }
 
@@ -97,16 +117,17 @@ function isFoul(head, middle, tail) {
 }
 
 export function getLaneScore(cards, laneName) {
+    if (!cards || cards.length === 0) return 0; // Prevent errors on empty lanes
     const type = getHandType(cards);
     switch (laneName) {
-        case 'head':
+        case 'top': // Use 'top' and 'bottom' to match component
             if (type === '对子') return VALUE_ORDER[cards[0].rank];
             break;
         case 'middle':
             if (type === '同花顺') return 10;
             if (type === '三条') return 6;
             break;
-        case 'tail':
+        case 'bottom': // Use 'top' and 'bottom' to match component
             if (type === '同花顺') return 5;
             if (type === '三条') return 3;
             break;
@@ -115,25 +136,25 @@ export function getLaneScore(cards, laneName) {
 }
 
 export function calculateSinglePairScoreForEight(p1, p2) {
-    const p1Info = { ...p1, isFoul: isFoul(p1.head, p1.middle, p1.tail) };
-    const p2Info = { ...p2, isFoul: isFoul(p2.head, p2.middle, p2.tail) };
+    const p1Info = { ...p1, isFoul: isFoul(p1.top, p1.middle, p1.bottom) };
+    const p2Info = { ...p2, isFoul: isFoul(p2.top, p2.middle, p2.bottom) };
     
     let pairScore = 0;
     if (p1Info.isFoul && !p2Info.isFoul) pairScore = -3;
     else if (!p1Info.isFoul && p2Info.isFoul) pairScore = 3;
     else if (p1Info.isFoul && p2Info.isFoul) pairScore = 0;
     else {
-        const headComparison = compareLanes(p1Info.head, p2Info.head);
-        if (headComparison > 0) pairScore += getLaneScore(p1Info.head, 'head');
-        else if (headComparison < 0) pairScore -= getLaneScore(p2Info.head, 'head');
+        const headComparison = compareLanes(p1Info.top, p2Info.top);
+        if (headComparison > 0) pairScore += getLaneScore(p1Info.top, 'top');
+        else if (headComparison < 0) pairScore -= getLaneScore(p2Info.top, 'top');
 
         const middleComparison = compareLanes(p1Info.middle, p2Info.middle);
         if (middleComparison > 0) pairScore += getLaneScore(p1Info.middle, 'middle');
         else if (middleComparison < 0) pairScore -= getLaneScore(p2Info.middle, 'middle');
         
-        const tailComparison = compareLanes(p1Info.tail, p2Info.tail);
-        if (tailComparison > 0) pairScore += getLaneScore(p1Info.tail, 'tail');
-        else if (tailComparison < 0) pairScore -= getLaneScore(p2Info.tail, 'tail');
+        const tailComparison = compareLanes(p1Info.bottom, p2Info.bottom);
+        if (tailComparison > 0) pairScore += getLaneScore(p1Info.bottom, 'bottom');
+        else if (tailComparison < 0) pairScore -= getLaneScore(p2Info.bottom, 'bottom');
     }
     return pairScore;
 }
