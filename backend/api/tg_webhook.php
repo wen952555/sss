@@ -1,12 +1,5 @@
 <?php
-// --- Logging for Debugging ---
-$raw_post_data = file_get_contents('php://input');
-$log_file = __DIR__ . '/tg_webhook.log';
-file_put_contents($log_file, $raw_post_data . "\n---\n", FILE_APPEND);
-// --- End Logging ---
-
-require_once 'db_connect.php';
-require_once __DIR__ . '/../config.php';
+require_once 'db_connect.php'; // This already includes config.php, which defines the needed variables
 
 $API_URL = 'https://api.telegram.org/bot' . $TELEGRAM_BOT_TOKEN . '/';
 
@@ -64,7 +57,19 @@ $welcomeInlineKeyboard = [
 
 // --- Main Logic ---
 $content = file_get_contents("php://input");
+if (empty($content)) {
+    // To prevent errors when the file is accessed directly
+    exit('No direct script access allowed.');
+}
+
 $update = json_decode($content, true);
+
+// Add basic error handling for JSON decoding
+if (json_last_error() !== JSON_ERROR_NONE) {
+    // In a real app, you might log this error
+    exit('Error decoding JSON input.');
+}
+
 
 if (isset($update["message"])) {
     $chatId = $update["message"]["chat"]["id"];
