@@ -449,6 +449,19 @@ switch ($action) {
         $conn->close();
         break;
 
+    case 'update_activity':
+        $input = json_decode(file_get_contents('php://input'), true);
+        $userId = (int)($input['userId'] ?? 0);
+        if ($userId > 0) {
+            $stmt = $conn->prepare("UPDATE users SET last_active = NOW() WHERE id = ?");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $stmt->close();
+        }
+        echo json_encode(['success' => true]);
+        $conn->close();
+        break;
+
     default:
         http_response_code(404);
         echo json_encode(['success' => false, 'message' => 'Unknown API action provided.']);

@@ -31,6 +31,23 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
     return () => clearInterval(intervalId);
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      const updateActivity = async () => {
+        try {
+          await fetch('/api/index.php?action=update_activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id })
+          });
+        } catch (error) { /* ignore */ }
+      };
+      updateActivity();
+      const intervalId = setInterval(updateActivity, 60000);
+      return () => clearInterval(intervalId);
+    }
+  }, [user]);
+
   const isMatching = matchingStatus.thirteen || matchingStatus.eight;
 
   return (
