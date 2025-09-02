@@ -79,9 +79,10 @@ function App() {
   };
 
   const handleSelectMode = async (gameMode, gameType = viewingGame) => {
-    if (!gameType || matchingStatus[gameType] || !user) {
-      // If no user, the lobby component should have already prompted for login.
-      // This is a fallback guard.
+    if (!gameType || matchingStatus[gameType]) return;
+
+    if (!user) {
+      setShowAuthModal(true);
       return;
     }
 
