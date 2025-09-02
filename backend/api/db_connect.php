@@ -9,7 +9,7 @@
 require_once __DIR__ . '/config.php';
 
 // 创建连接
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
 
 // 检查连接
 if ($conn->connect_error) {
@@ -21,3 +21,4 @@ if ($conn->connect_error) {
 $conn->set_charset("utf8mb4");
 
 // --- END OF FILE api/db_connect.php (PRODUCTION VERSION) ---
+?>
