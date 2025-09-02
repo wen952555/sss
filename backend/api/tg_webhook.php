@@ -1,4 +1,10 @@
 <?php
+// --- Logging for Debugging ---
+$raw_post_data = file_get_contents('php://input');
+$log_file = __DIR__ . '/tg_webhook.log';
+file_put_contents($log_file, $raw_post_data . "\n---\n", FILE_APPEND);
+// --- End Logging ---
+
 require_once 'db_connect.php';
 require_once __DIR__ . '/../config.php';
 
