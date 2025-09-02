@@ -6,7 +6,7 @@
 // error_reporting(0);
 
 // Include the configuration file
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/config.php';
 
 // 创建连接
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
