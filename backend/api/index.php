@@ -284,7 +284,7 @@ switch ($action) {
         // All online modes require a user to be logged in.
         if (!$userId) {
             http_response_code(401); // Unauthorized
-            echo json_encode(['success' => false, 'message' => '请注册登录获取积分']);
+            echo json_encode(['success' => false, 'message' => '请注册并登录后进入在线模式']);
             $conn->close();
             exit;
         }
@@ -307,7 +307,7 @@ switch ($action) {
 
         if (!$user || $user['points'] < $requiredPoints) {
             http_response_code(403); // Forbidden
-            echo json_encode(['success' => false, 'message' => '积分不足，无法进入该场次']);
+            echo json_encode(['success' => false, 'message' => '积分不足 (' . ($user['points'] ?? 0) . '/' . $requiredPoints . ')，无法进入该场次']);
             $conn->close();
             exit;
         }

@@ -79,20 +79,23 @@ function App() {
   };
 
   const handleSelectMode = async (gameMode, gameType = viewingGame) => {
-    if (!gameType || matchingStatus[gameType] || !user) return;
+    if (!gameType || matchingStatus[gameType] || !user) {
+      // If no user, the lobby component should have already prompted for login.
+      // This is a fallback guard.
+      return;
+    }
 
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
-    // Reset game state but keep mode info
     setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: user });
 
     try {
       const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${user.id}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        // Set all game state in one go to prevent race conditions
         setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: user });
         setViewingGame(null);
       } else {
+        // Handle failure (e.g., insufficient points)
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
         setGameState(prev => ({ ...prev, error: data.message || '匹配失败，请重试' }));
       }
