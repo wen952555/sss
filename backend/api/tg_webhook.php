@@ -81,7 +81,7 @@ if (isset($update["message"])) {
             case '/listusers':
             case '/broadcast':
                 if (!isAdmin($conn, $chatId)) {
-                    $reply = "抱歉，您没有权限。";
+                    $reply = "抱歉，没有权限。";
                     break;
                 }
                 // Existing admin command logic here...
