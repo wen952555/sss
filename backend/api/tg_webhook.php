@@ -2,8 +2,7 @@
 require_once 'db_connect.php';
 require_once __DIR__ . '/../config.php';
 
-$API_URL = 'https://api.telegram.org/bot' . BOT_TOKEN . '/';
-$GAME_URL = GAME_URL;
+$API_URL = 'https://api.telegram.org/bot' . $TELEGRAM_BOT_TOKEN . '/';
 
 // --- Telegram API Functions ---
 function sendMessage($chatId, $text, $replyMarkup = null) {
