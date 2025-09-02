@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand, parseCard, isFoul } from '../utils';
-import GameTable from './GameTable';
+import TrialGameTable from './TrialGameTable';
 
 const ThirteenGame = ({ onBackToLobby, user }) => {
   const {
@@ -167,7 +167,7 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
   }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone, setIsLoading, setErrorMessage, setGameResult, setPlayerState]);
 
   return (
-    <GameTable
+    <TrialGameTable
       gameType="thirteen"
       title="十三张 - 试玩模式"
       players={players}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult, parseCard } from '../utils';
-import GameTable from './GameTable';
+import TrialGameTable from './TrialGameTable';
 
 const EightCardGame = ({ onBackToLobby, user }) => {
   const {
@@ -124,7 +124,7 @@ const EightCardGame = ({ onBackToLobby, user }) => {
   }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone, setIsLoading, setErrorMessage, setGameResult, setPlayerState]);
 
   return (
-    <GameTable
+    <TrialGameTable
       gameType="eight"
       title="急速八张 - 试玩模式"
       players={players}
