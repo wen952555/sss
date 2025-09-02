@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand, parseCard, isFoul } from '../utils';
+import { getSmartSortedHand, parseCard, isFoul } from '../utils';
 import GameTable from './GameTable';
 
-const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, onGameEnd }) => {
+const ThirteenGame = ({
+  onBackToLobby,
+  user,
+  roomId,
+  players,
+  status,
+  hand,
+  result,
+  onGameEnd,
+}) => {
   const {
     topLane,
     middleLane,
@@ -15,35 +24,15 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, onGameEnd }) => {
     handleLaneClick,
   } = useCardArrangement('thirteen');
 
-  const [playerState, setPlayerState] = useState('waiting');
-  const [players, setPlayers] = useState([]);
-  const [myHand, setMyHand] = useState(null);
-  const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Polling for game status in online mode
+  // Effect to set the initial hand when it arrives from the server
   useEffect(() => {
-    if (!roomId) return;
-    const intervalId = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
-        const data = await response.json();
-        if (data.success) {
-          setPlayers(data.players || [{ id: user.id, phone: user.phone, is_ready: false }]);
-          if (data.hand) {
-            const handCards = [...data.hand.top, ...data.hand.middle, ...data.hand.bottom];
-            setMyHand(handCards);
-            setInitialLanes(data.hand); // Automatically place cards in lanes
-          }
-          // Could also set gameResult here if data.status is 'finished'
-        }
-      } catch (error) {
-        console.error("Failed to fetch game status:", error);
-      }
-    }, 3000);
-    return () => clearInterval(intervalId);
-  }, [roomId, user, setInitialLanes]);
+    if (hand) {
+      setInitialLanes(hand);
+    }
+  }, [hand, setInitialLanes]);
 
   const handlePlayerAction = async (action, details = {}) => {
     setIsLoading(true);
@@ -66,28 +55,33 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, onGameEnd }) => {
   const handleReady = () => handlePlayerAction('ready');
 
   const handleConfirm = () => {
-    const hand = { top: topLane.map(c=>`${c.rank}_of_${c.suit}`), middle: middleLane.map(c=>`${c.rank}_of_${c.suit}`), bottom: bottomLane.map(c=>`${c.rank}_of_${c.suit}`) };
-    if (isFoul(hand.top, hand.middle, hand.bottom)) {
+    const currentHand = {
+      top: topLane.map(c => `${c.rank}_of_${c.suit}`),
+      middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
+      bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
+    };
+    if (isFoul(currentHand.top, currentHand.middle, currentHand.bottom)) {
       setErrorMessage('您的牌型是倒水，请重新摆放！');
       return;
     }
-    handlePlayerAction('submit_hand', { hand });
+    handlePlayerAction('submit_hand', { hand: currentHand });
   };
 
   const handleAutoSort = useCallback(() => {
-    if (!myHand) return;
-    const sorted = getSmartSortedHand(myHand);
+    if (!hand) return;
+    const allCards = [...hand.top, ...hand.middle, ...hand.bottom];
+    const cardObjects = allCards.map(c => (typeof c === 'string' ? parseCard(c) : c));
+    const sorted = getSmartSortedHand(cardObjects);
     if (sorted) {
       setInitialLanes(sorted);
     } else {
       setErrorMessage('无法找到有效的牌型组合。');
     }
-  }, [myHand, setInitialLanes]);
+  }, [hand, setInitialLanes]);
 
   return (
     <GameTable
       gameType="thirteen"
-      title="经典十三张"
       players={players}
       user={user}
       topLane={topLane}
@@ -96,9 +90,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, onGameEnd }) => {
       unassignedCards={[]}
       selectedCards={selectedCards}
       LANE_LIMITS={LANE_LIMITS}
-      playerState={playerState}
+      playerState={status}
       isLoading={isLoading}
-      gameResult={gameResult}
+      gameResult={result}
       errorMessage={errorMessage}
       onBackToLobby={onBackToLobby}
       onReady={handleReady}
@@ -106,8 +100,8 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, onGameEnd }) => {
       onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
       onLaneClick={handleLaneClick}
-      onCloseResult={() => setGameResult(null)}
-      onPlayAgain={handleReady}
+      onCloseResult={onBackToLobby} // Go back to lobby after closing result
+      onPlayAgain={onBackToLobby} // Go back to lobby to find a new game
     />
   );
 };

@@ -27,12 +27,22 @@ const UpdateModal = ({ show, version, notes, onUpdate, onCancel }) => {
 
 function App() {
   const [user, setUser] = useState(null);
-  const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
+  const [gameState, setGameState] = useState({
+    roomId: null,
+    gameType: null,
+    gameMode: null,
+    error: null,
+    players: [],
+    playersCount: 0,
+    status: 'lobby',
+    hand: null,
+    result: null,
+  });
   const [currentView, setCurrentView] = useState('lobby');
   const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, eight: false });
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
-  const [viewingGame, setViewingGame] = useState(null); // null, 'thirteen', or 'eight'
+  const [viewingGame, setViewingGame] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
@@ -55,7 +65,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
+    setGameState({ roomId: null, gameType: null, gameMode: null, error: null, players: [], status: 'lobby', hand: null, result: null });
     setMatchingStatus({ thirteen: false, eight: false });
     setViewingGame(null);
   };
@@ -66,56 +76,65 @@ function App() {
   };
 
   const handleSelectMode = async (gameMode, gameType = viewingGame) => {
-    if (!gameType || matchingStatus[gameType]) return;
-
     if (!user) {
       setShowAuthModal(true);
       return;
     }
+    if (!gameType || matchingStatus[gameType]) return;
 
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
-    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: user });
+    setGameState(prev => ({ ...prev, gameType, gameMode, error: null }));
 
     try {
       const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${user.id}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: user });
+        setGameState(prev => ({ ...prev, roomId: data.roomId, status: 'waiting' }));
         setViewingGame(null);
+        setCurrentView('game'); // Switch to game view
       } else {
-        // Handle failure (e.g., insufficient points)
-        setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
         setGameState(prev => ({ ...prev, error: data.message || '匹配失败，请重试' }));
       }
     } catch (err) {
-      setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
       setGameState(prev => ({ ...prev, error: '无法连接到匹配服务器' }));
+    } finally {
+      setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
     }
   };
 
-  // This effect is for polling for a match for logged-in users.
+  // Central polling logic for game status
   useEffect(() => {
-    const currentGame = gameState.gameType;
-    if (!currentGame || !matchingStatus[currentGame] || !user || gameState.error) return;
-    const intervalId = setInterval(async () => {
-      if (gameState.roomId) {
-        setMatchingStatus(prev => ({ ...prev, [currentGame]: false }));
-        clearInterval(intervalId);
-        return;
+    if (!gameState.roomId || !user) return;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/index.php?action=game_status&roomId=${gameState.roomId}&userId=${user.id}`);
+        const data = await response.json();
+        if (data.success) {
+          setGameState(prev => ({
+            ...prev,
+            status: data.gameStatus,
+            players: data.players,
+            playersCount: data.playersCount,
+            hand: data.hand || prev.hand,
+            result: data.result || prev.result,
+          }));
+        } else {
+          setGameState(prev => ({ ...prev, error: data.message || '无法获取游戏状态' }));
+        }
+      } catch (error) {
+        setGameState(prev => ({ ...prev, error: '服务器连接失败' }));
       }
-      if (!matchingStatus[currentGame]) {
-        clearInterval(intervalId);
-        return;
-      }
-      // This polling logic might need revision depending on the final matchmaking flow.
-      // For now, it will re-attempt to match.
-      await handleSelectMode(gameState.gameMode);
-    }, 2000);
+    };
+
+    const intervalId = setInterval(poll, 3000);
+    poll(); // Initial fetch
+
     return () => clearInterval(intervalId);
-  }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode, gameState.error]);
+  }, [gameState.roomId, user]);
 
   const handleBackToLobby = () => {
-    setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
+    setGameState({ roomId: null, gameType: null, gameMode: null, error: null, players: [], status: 'lobby', hand: null, result: null });
     setCurrentView('lobby');
     setMatchingStatus({ thirteen: false, eight: false });
     setViewingGame(null);
@@ -137,10 +156,9 @@ function App() {
   const renderMainContent = () => {
     if (isInGame) {
       const gameProps = {
-        roomId: gameState.roomId,
-        gameMode: gameState.gameMode,
+        ...gameState,
+        user: user,
         onBackToLobby: handleBackToLobby,
-        user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
       };
       if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
