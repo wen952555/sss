@@ -8,8 +8,8 @@ import './GameTable.css';
 const GameTable = ({
   // Game Info
   gameType,
-  title,
   players,
+  playersCount,
   user,
 
   // State
@@ -35,25 +35,44 @@ const GameTable = ({
   onPlayAgain,
 }) => {
   const renderPlayerName = (p) => {
-    if (String(p.id).startsWith('ai')) return p.phone;
     if (p.id === user.id) return '你';
-    return `玩家${p.phone.slice(-4)}`;
+    return p.phone.startsWith('ai_') ? p.phone : `玩家${p.phone.slice(-4)}`;
   };
+
+  const playerSlots = new Array(playersCount || 0).fill(null);
+  players.forEach(p => {
+    if (p.seat > 0) {
+      playerSlots[p.seat - 1] = p;
+    }
+  });
+
+  // Re-order for display so "me" is always first.
+  const meIndex = playerSlots.findIndex(p => p && p.id === user.id);
+  let displaySlots = [...playerSlots];
+  if (meIndex > 0) {
+    const me = playerSlots[meIndex];
+    displaySlots.splice(meIndex, 1);
+    displaySlots.unshift(me);
+  }
 
   return (
     <div className="game-table-container">
       <div className="game-table-header">
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
-        <div className="game-table-title">{title}</div>
+        <div className="game-table-title">积分: {user?.points ?? '...'}</div>
       </div>
       <div className="players-status-banner">
-        <span className="player-name-list">
-          {players.map((p, index) => (
-            <span key={p.id} className={playerState === 'arranging' ? 'arranging-state' : ''}>
-              {renderPlayerName(p)}
-            </span>
-          ))}
-        </span>
+        {displaySlots.map((p, index) => (
+          <div key={p ? p.id : index} className="player-slot">
+            {p ? (
+              <span className={p.is_ready ? 'ready-state' : ''}>
+                {renderPlayerName(p)}
+              </span>
+            ) : (
+              <span className="empty-slot">等待玩家...</span>
+            )}
+          </div>
+        ))}
       </div>
 
       {unassignedCards.length > 0 && (
