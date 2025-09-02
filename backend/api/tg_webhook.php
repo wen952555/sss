@@ -142,7 +142,7 @@ try {
         $data = $callbackQuery["data"];
 
         if ($data === 'check_points') {
-            $points = "查询积分功能待实现";
+            $points = "查询积";
             answerCallbackQuery($callbackQueryId, "您的积分为: " . $points);
         }
     } else {
