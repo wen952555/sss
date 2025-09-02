@@ -9,6 +9,17 @@ require_once __DIR__ . '/../utils/scorer.php';
 $action = $_REQUEST['action'] ?? '';
 
 switch ($action) {
+    case 'get_announcement':
+        $result = $conn->query("SELECT content FROM announcements WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1");
+        if ($result && $result->num_rows > 0) {
+            $announcement = $result->fetch_assoc();
+            echo json_encode(['success' => true, 'text' => $announcement['content']]);
+        } else {
+            echo json_encode(['success' => false, 'text' => '']);
+        }
+        $conn->close();
+        break;
+
     case 'get_online_count':
         $onlineCount = 0;
         $query = "
@@ -435,6 +446,19 @@ switch ($action) {
             $response['result'] = ['players' => $resultPlayers];
         }
         echo json_encode($response);
+        $conn->close();
+        break;
+
+    case 'update_activity':
+        $input = json_decode(file_get_contents('php://input'), true);
+        $userId = (int)($input['userId'] ?? 0);
+        if ($userId > 0) {
+            $stmt = $conn->prepare("UPDATE users SET last_active = NOW() WHERE id = ?");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $stmt->close();
+        }
+        echo json_encode(['success' => true]);
         $conn->close();
         break;
 
