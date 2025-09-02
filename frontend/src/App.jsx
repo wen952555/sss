@@ -79,25 +79,18 @@ function App() {
   };
 
   const handleSelectMode = async (gameMode, gameType = viewingGame) => {
-    if (!gameType || matchingStatus[gameType]) return;
-
-    const currentUser = user; // Capture user state at time of call
-    const userId = currentUser ? currentUser.id : 0;
+    if (!gameType || matchingStatus[gameType] || !user) return;
 
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
     // Reset game state but keep mode info
-    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser });
+    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: user });
 
     try {
-      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${userId}`);
+      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${user.id}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        let finalGameUser = currentUser;
-        if (data.guestUserId) {
-          finalGameUser = { id: data.guestUserId, phone: 'Guest' };
-        }
         // Set all game state in one go to prevent race conditions
-        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: finalGameUser });
+        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: user });
         setViewingGame(null);
       } else {
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
@@ -112,7 +105,7 @@ function App() {
   // This effect is for polling for a match for logged-in users.
   useEffect(() => {
     const currentGame = gameState.gameType;
-    if (!currentGame || !matchingStatus[currentGame] || !user || (user && user.id === 0)) return; // Only for logged in users
+    if (!currentGame || !matchingStatus[currentGame] || !user || gameState.error) return;
     const intervalId = setInterval(async () => {
       if (gameState.roomId) {
         setMatchingStatus(prev => ({ ...prev, [currentGame]: false }));
@@ -123,10 +116,12 @@ function App() {
         clearInterval(intervalId);
         return;
       }
+      // This polling logic might need revision depending on the final matchmaking flow.
+      // For now, it will re-attempt to match.
       await handleSelectMode(gameState.gameMode);
     }, 2000);
     return () => clearInterval(intervalId);
-  }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
+  }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode, gameState.error]);
 
   const handleBackToLobby = () => {
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });

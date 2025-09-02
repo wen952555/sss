@@ -17,15 +17,15 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack, onSelectTrialMode }
       <div className="mode-options">
         <div className="mode-card" onClick={() => onSelectMode('normal')}>
           <h2 className="mode-card-title">普通场</h2>
-          <p className="mode-card-description">标准积分，休闲娱乐</p>
+          <p className="mode-card-description">标准积分，休闲娱乐。准入: 50分</p>
         </div>
         <div className="mode-card" onClick={() => onSelectMode('double')}>
           <h2 className="mode-card-title">翻倍场</h2>
-          <p className="mode-card-description">积分翻倍，心跳加速</p>
+          <p className="mode-card-description">积分翻倍，心跳加速。准入: 200分</p>
         </div>
         <div className="mode-card" onClick={() => onSelectMode('multiplayer')}>
           <h2 className="mode-card-title">多人场</h2>
-          <p className="mode-card-description">与更多玩家同场竞技</p>
+          <p className="mode-card-description">与更多玩家同场竞技。准入: 300分</p>
         </div>
       </div>
 

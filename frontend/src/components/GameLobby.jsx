@@ -59,26 +59,34 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
       <main className="game-card-grid">
         {/* 十三张卡片 */}
         <div
-          className={`game-card thirteen-bg ${isMatching ? 'disabled' : ''}`}
-          onClick={() => !isMatching && onSelectGameType('thirteen')}
+          className={`game-card thirteen-bg ${isMatching || !user ? 'disabled' : ''}`}
+          onClick={() => {
+            if (!user) { onLoginClick(); return; }
+            if (!isMatching) onSelectGameType('thirteen');
+          }}
         >
           <div className="game-card-overlay">
             <div className="game-content">
               <h2 className="game-title">经典十三张</h2>
               <p className="game-description">策略与运气的巅峰对决</p>
+              {!user && <p className="login-prompt">请先登录</p>}
             </div>
             {matchingStatus.thirteen && <div className="matching-indicator">匹配中...</div>}
           </div>
         </div>
         {/* 八张卡片 */}
         <div
-          className={`game-card eight-bg ${isMatching ? 'disabled' : ''}`}
-          onClick={() => !isMatching && onSelectGameType('eight')}
+          className={`game-card eight-bg ${isMatching || !user ? 'disabled' : ''}`}
+          onClick={() => {
+            if (!user) { onLoginClick(); return; }
+            if (!isMatching) onSelectGameType('eight');
+          }}
         >
           <div className="game-card-overlay">
             <div className="game-content">
               <h2 className="game-title">急速八张</h2>
               <p className="game-description">快节奏的竞技体验</p>
+              {!user && <p className="login-prompt">请先登录</p>}
             </div>
             {matchingStatus.eight && <div className="matching-indicator">匹配中...</div>}
           </div>

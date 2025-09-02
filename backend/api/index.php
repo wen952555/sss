@@ -59,9 +59,6 @@ switch ($action) {
                 $stmt->execute();
                 $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
                 $stmt->close();
-                if ($currentPlayers < $room['players_count']) {
-                    fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
-                }
                 $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
@@ -284,69 +281,70 @@ switch ($action) {
         $gameMode = $_GET['gameMode'] ?? 'normal';
         $userId = (int)($_GET['userId'] ?? 0);
 
+        // All online modes require a user to be logged in.
         if (!$userId) {
-            $playersNeeded = $gameType === 'thirteen' ? 4 : 2;
-            $conn->begin_transaction();
-            try {
-                $roomCode = uniqid('guest_room_');
-                $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'playing', ?)");
+            http_response_code(401); // Unauthorized
+            echo json_encode(['success' => false, 'message' => '请注册登录获取积分']);
+            $conn->close();
+            exit;
+        }
+
+        // Define point requirements for each game mode
+        $pointRequirements = [
+            'normal' => 50,
+            'double' => 200,
+            'multiplayer' => 300
+        ];
+
+        $requiredPoints = $pointRequirements[$gameMode] ?? 0;
+
+        // Check if user has enough points
+        $stmt = $conn->prepare("SELECT points FROM users WHERE id = ?");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $user = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$user || $user['points'] < $requiredPoints) {
+            http_response_code(403); // Forbidden
+            echo json_encode(['success' => false, 'message' => '积分不足，无法进入该场次']);
+            $conn->close();
+            exit;
+        }
+
+        // Proceed with existing matchmaking logic for logged-in users
+        $playersNeeded = $gameType === 'thirteen' ? 4 : 2;
+        $conn->begin_transaction();
+        try {
+            $roomId = null;
+            $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
+            $stmt->bind_param("ssi", $gameType, $gameMode, $playersNeeded);
+            $stmt->execute();
+            $room = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            if ($room) {
+                $roomId = $room['id'];
+            } else {
+                $roomCode = uniqid('room_');
+                $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'matching', ?)");
                 $stmt->bind_param("sssi", $roomCode, $gameType, $gameMode, $playersNeeded);
                 $stmt->execute();
                 $roomId = $stmt->insert_id;
                 $stmt->close();
-                $guestPhone = "guest_" . uniqid();
-                $stmt = $conn->prepare("INSERT INTO users (phone, password, points) VALUES (?, '', 0)");
-                $stmt->bind_param("s", $guestPhone);
-                $stmt->execute();
-                $guestUserId = $stmt->insert_id;
-                $stmt->close();
-                $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 1, 0)");
-                $stmt->bind_param("ii", $roomId, $guestUserId);
-                $stmt->execute();
-                $stmt->close();
-                fillWithAI($conn, $roomId, $gameType, $playersNeeded);
-                dealCards($conn, $roomId, $gameType, $playersNeeded);
-                $conn->commit();
-                http_response_code(200);
-                echo json_encode(['success' => true, 'roomId' => $roomId, 'guestUserId' => $guestUserId]);
-            } catch (Exception $e) {
-                $conn->rollback();
-                http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'Guest match failed: ' . $e->getMessage()]);
             }
-        } else {
-            $playersNeeded = $gameType === 'thirteen' ? 4 : 2;
-            $conn->begin_transaction();
-            try {
-                $roomId = null;
-                $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
-                $stmt->bind_param("ssi", $gameType, $gameMode, $playersNeeded);
-                $stmt->execute();
-                $room = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-                if ($room) {
-                    $roomId = $room['id'];
-                } else {
-                    $roomCode = uniqid('room_');
-                    $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'matching', ?)");
-                    $stmt->bind_param("sssi", $roomCode, $gameType, $gameMode, $playersNeeded);
-                    $stmt->execute();
-                    $roomId = $stmt->insert_id;
-                    $stmt->close();
-                }
-                $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 0, 0) ON DUPLICATE KEY UPDATE room_id = ?");
-                $stmt->bind_param("iii", $roomId, $userId, $roomId);
-                $stmt->execute();
-                $stmt->close();
-                $conn->commit();
-                http_response_code(200);
-                echo json_encode(['success' => true, 'roomId' => $roomId]);
-            } catch (Exception $e) {
-                $conn->rollback();
-                http_response_code(500);
-                echo json_encode(['success' => false, 'message' => '匹配时发生错误: ' . $e->getMessage()]);
-            }
+            $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 0, 0) ON DUPLICATE KEY UPDATE room_id = ?");
+            $stmt->bind_param("iii", $roomId, $userId, $roomId);
+            $stmt->execute();
+            $stmt->close();
+            $conn->commit();
+            http_response_code(200);
+            echo json_encode(['success' => true, 'roomId' => $roomId]);
+        } catch (Exception $e) {
+            $conn->rollback();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => '匹配时发生错误: ' . $e->getMessage()]);
         }
+
         $conn->close();
         break;
 
