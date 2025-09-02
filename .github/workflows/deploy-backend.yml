@@ -1,4 +1,4 @@
-name: Deploy Backend to serv00
+name: Deploy backend/ to serv00
 
 on:
   push:
@@ -12,21 +12,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up SSH
-      run: |
-        mkdir -p ~/.ssh/
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SSH_HOST_USER | cut -d'@' -f2 }} >> ~/.ssh/known_hosts
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        SSH_HOST_USER: ${{ secrets.SSH_HOST_USER }}
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SERV00_KEY }}
 
-    - name: Deploy to Server with rsync
-      run: |
-        rsync -avz --delete --exclude 'config.php' ./backend/ ${{ secrets.SSH_HOST_USER }}:/path/to/your/project/backend/
-      env:
-        SSH_HOST_USER: ${{ secrets.SSH_HOST_USER }}
+      - name: Rsync backend/ to serv00 (exclude config.php)
+        run: |
+          rsync -avz --delete \
+            --exclude='config.php' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
