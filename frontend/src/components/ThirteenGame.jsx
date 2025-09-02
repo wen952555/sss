@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand, parseCard, isFoul } from '../utils';
-import TrialGameTable from './TrialGameTable';
+import GameTable from './GameTable';
 
-const ThirteenGame = ({ onBackToLobby, user }) => {
+const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, onGameEnd }) => {
   const {
     topLane,
     middleLane,
@@ -15,176 +15,91 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
     handleLaneClick,
   } = useCardArrangement('thirteen');
 
-  const [allPlayerCards, setAllPlayerCards] = useState([]);
-  const [aiRawHands, setAiRawHands] = useState([]); // Store the dealt AI cards
-  const [aiHands, setAiHands] = useState([]); // Store the sorted AI hands (or null if sorting)
   const [playerState, setPlayerState] = useState('waiting');
   const [players, setPlayers] = useState([]);
+  const [myHand, setMyHand] = useState(null);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Polling for game status in online mode
   useEffect(() => {
-    const aiPlayerInfo = Array(3).fill(0).map((_, i) => ({ id: `ai_${i}`, phone: `AI ${i+1}`, is_ready: false }));
-    setPlayers([{ id: user.id, phone: user.phone, is_ready: false }, ...aiPlayerInfo]);
-  }, [user]);
-
-  // Effect to sort AI hands sequentially in the background after dealing
-  useEffect(() => {
-    if (aiRawHands.length > 0 && playerState === 'arranging') {
-      setAiHands(new Array(aiRawHands.length).fill(null)); // Set AI hands to a loading state
-
-      const sortAiHandSequentially = async () => {
-        const sortedHands = [];
-        for (const aiHand of aiRawHands) {
-          // Wrap the calculation in a promise with a timeout to avoid blocking the main thread
-          // and to allow UI to update between each AI's sort.
-          const sortedHand = await new Promise(resolve => {
-            setTimeout(() => {
-              resolve(getAiThirteenHand(aiHand));
-            }, 100); // A small delay to make the sequential update visible
-          });
-          sortedHands.push(sortedHand);
-          // Update state after each AI is done to show progress
-          setAiHands([...sortedHands, ...new Array(aiRawHands.length - sortedHands.length).fill(null)]);
+    if (!roomId) return;
+    const intervalId = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
+        const data = await response.json();
+        if (data.success) {
+          setPlayers(data.players || [{ id: user.id, phone: user.phone, is_ready: false }]);
+          if (data.hand) {
+            const handCards = [...data.hand.top, ...data.hand.middle, ...data.hand.bottom];
+            setMyHand(handCards);
+            setInitialLanes(data.hand); // Automatically place cards in lanes
+          }
+          // Could also set gameResult here if data.status is 'finished'
         }
-      };
+      } catch (error) {
+        console.error("Failed to fetch game status:", error);
+      }
+    }, 3000);
+    return () => clearInterval(intervalId);
+  }, [roomId, user, setInitialLanes]);
 
-      sortAiHandSequentially();
-    }
-  }, [aiRawHands, playerState]);
-
-  const handleReady = useCallback(() => {
+  const handlePlayerAction = async (action, details = {}) => {
+    setIsLoading(true);
+    setErrorMessage('');
     try {
-      setErrorMessage('');
-      const { playerHand, aiHands: initialAiHands } = dealOfflineThirteenGame(4);
-
-      // For the player, deal immediately
-      setAllPlayerCards(playerHand);
-      const playerCardObjects = playerHand.map(c => typeof c === 'string' ? parseCard(c) : c);
-      const shuffledPlayerHand = [...playerCardObjects].sort(() => Math.random() - 0.5);
-      const randomInitialHand = {
-        top: shuffledPlayerHand.slice(0, 3),
-        middle: shuffledPlayerHand.slice(3, 8),
-        bottom: shuffledPlayerHand.slice(8, 13)
-      };
-      setInitialLanes(randomInitialHand);
-
-      // Store the raw AI hands to be processed by the useEffect hook
-      setAiRawHands(initialAiHands);
-
-      setPlayerState('arranging');
-      setPlayers(prev => prev.map(p => ({ ...p, is_ready: true })));
-    } catch (e) {
-      console.error(e);
-      setErrorMessage(`发生意外错误: ${e.message}`);
+      const response = await fetch('/api/index.php?action=player_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, roomId, action, ...details }),
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message || '操作失败');
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
     }
-  }, [setInitialLanes, setAllPlayerCards, setAiRawHands, setPlayerState, setPlayers, setErrorMessage]);
+  };
+
+  const handleReady = () => handlePlayerAction('ready');
+
+  const handleConfirm = () => {
+    const hand = { top: topLane.map(c=>`${c.rank}_of_${c.suit}`), middle: middleLane.map(c=>`${c.rank}_of_${c.suit}`), bottom: bottomLane.map(c=>`${c.rank}_of_${c.suit}`) };
+    if (isFoul(hand.top, hand.middle, hand.bottom)) {
+      setErrorMessage('您的牌型是倒水，请重新摆放！');
+      return;
+    }
+    handlePlayerAction('submit_hand', { hand });
+  };
 
   const handleAutoSort = useCallback(() => {
-    setIsLoading(true);
-
-    setTimeout(() => {
-      try {
-        const sorted = getSmartSortedHand(allPlayerCards);
-        if (sorted) {
-          setInitialLanes(sorted);
-          setErrorMessage('');
-        } else {
-          setErrorMessage('无法找到有效的牌型组合。');
-        }
-      } catch (e) {
-        setErrorMessage(`理牌时发生错误: ${e.message}`);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 10);
-  }, [allPlayerCards, setInitialLanes, setIsLoading, setErrorMessage]);
-
-  const handleConfirm = useCallback(() => {
-    if (topLane.length !== LANE_LIMITS.top || middleLane.length !== LANE_LIMITS.middle || bottomLane.length !== LANE_LIMITS.bottom) {
-      setErrorMessage(`牌道数量错误！`);
-      return;
+    if (!myHand) return;
+    const sorted = getSmartSortedHand(myHand);
+    if (sorted) {
+      setInitialLanes(sorted);
+    } else {
+      setErrorMessage('无法找到有效的牌型组合。');
     }
-
-    const playerHandStringsForFoulCheck = {
-      top: topLane.map(c => `${c.rank}_of_${c.suit}`),
-      middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
-      bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
-    };
-
-    if (isFoul(playerHandStringsForFoulCheck.top, playerHandStringsForFoulCheck.middle, playerHandStringsForFoulCheck.bottom)) {
-      setErrorMessage(`您的牌型是倒水，请重新摆放！`);
-      return;
-    }
-
-    if (aiHands.some(h => h === null)) {
-      setErrorMessage('AI仍在理牌中，请稍候...');
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMessage('正在计算比牌结果...');
-
-    setTimeout(() => {
-      try {
-        // Convert both player and AI hands to string format for the scorer
-        const playerHandStrings = {
-          top: topLane.map(c => `${c.rank}_of_${c.suit}`),
-          middle: middleLane.map(c => `${c.rank}_of_${c.suit}`),
-          bottom: bottomLane.map(c => `${c.rank}_of_${c.suit}`)
-        };
-        const aiHandStrings = aiHands.map(hand => ({
-            top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
-            middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
-            bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
-        }));
-
-        const result = calculateThirteenTrialResult(playerHandStrings, aiHandStrings);
-
-        // For the modal display, we need the original card objects
-        const playerHandObjects = { top: topLane, middle: middleLane, bottom: bottomLane };
-
-        const aiPlayerResults = result.aiResults.map((aiResult, index) => ({
-            ...aiResult,
-            hand: aiHands[index] // Add the card objects to the result data
-        }));
-
-        const modalPlayers = [
-          { name: user.phone, hand: playerHandObjects, score: result.totalPlayerScore, is_me: true },
-          ...aiPlayerResults
-        ];
-
-        setGameResult({ players: modalPlayers });
-        setPlayerState('submitted');
-        setErrorMessage('');
-      } catch (e) {
-        setErrorMessage(`计算结果时发生错误: ${e.message}`);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 10);
-  }, [topLane, middleLane, bottomLane, LANE_LIMITS, aiHands, user.phone, setIsLoading, setErrorMessage, setGameResult, setPlayerState]);
+  }, [myHand, setInitialLanes]);
 
   return (
-    <TrialGameTable
+    <GameTable
       gameType="thirteen"
-      title="十三张 - 试玩模式"
+      title="经典十三张"
       players={players}
       user={user}
-
       topLane={topLane}
       middleLane={middleLane}
       bottomLane={bottomLane}
       unassignedCards={[]}
       selectedCards={selectedCards}
       LANE_LIMITS={LANE_LIMITS}
-
       playerState={playerState}
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}
-
       onBackToLobby={onBackToLobby}
       onReady={handleReady}
       onConfirm={handleConfirm}
