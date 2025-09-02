@@ -9,17 +9,6 @@ require_once __DIR__ . '/../utils/scorer.php';
 $action = $_REQUEST['action'] ?? '';
 
 switch ($action) {
-    case 'get_announcement':
-        $result = $conn->query("SELECT content FROM announcements WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1");
-        if ($result && $result->num_rows > 0) {
-            $announcement = $result->fetch_assoc();
-            echo json_encode(['success' => true, 'text' => $announcement['content']]);
-        } else {
-            echo json_encode(['success' => false, 'text' => '']);
-        }
-        $conn->close();
-        break;
-
     case 'get_online_count':
         $onlineCount = 0;
         $query = "
