@@ -1,15 +1,16 @@
 <?php
 // --- SETUP AND HELPERS ---
-require_once 'db_connect.php';
 
 // Log all errors and exceptions
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/tg_webhook.log');
 error_reporting(E_ALL);
 
+require_once 'db_connect.php';
+
 // Telegram API settings
 if (!isset($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
-    error_log("Telegram Bot Token is not configured in config.php");
+    error_log("FATAL: Telegram Bot Token is not configured in config.php");
     exit();
 }
 $API_URL = 'https://api.telegram.org/bot' . $TELEGRAM_BOT_TOKEN . '/';
@@ -79,7 +80,7 @@ function getAdminState($conn, $chatId) {
 $adminKeyboard = [
     'keyboard' => [
         [['text' => '查找玩家'], ['text' => '积分列表']],
-        [['text' => '发送公告']]
+        [['text' => '发送公告'], ['text' => '取消']]
     ],
     'resize_keyboard' => true
 ];
@@ -92,8 +93,7 @@ $conn = db_connect();
 
 // Pre-flight check for required tables
 if (!tableExists($conn, 'tg_admins') || !tableExists($conn, 'tg_admin_states')) {
-    error_log("Required Telegram bot tables ('tg_admins' or 'tg_admin_states') not found in database.");
-    // Optionally send a message to a super-admin if you have a hardcoded one
+    error_log("FATAL: Required Telegram bot tables ('tg_admins' or 'tg_admin_states') not found in database.");
     exit();
 }
 
@@ -102,7 +102,7 @@ if (isset($update["message"])) {
     $text = $update["message"]["text"];
 
     if (!isAdmin($conn, $chatId)) {
-        sendMessage($chatId, "您好！欢迎使用本游戏。");
+        sendMessage($chatId, "您好！");
         exit();
     }
 
