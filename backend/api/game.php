@@ -27,8 +27,7 @@ function shuffleDeck($deck) {
     return $deck;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_GET['action'] ?? '';
+if ($_SERVER['RE
     
     if ($action === 'start') {
         $deck = createDeck();
