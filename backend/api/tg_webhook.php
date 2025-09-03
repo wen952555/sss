@@ -46,14 +46,17 @@ function tableExists($conn, $tableName) {
     return $result && $result->num_rows > 0;
 }
 
+function isSuperAdmin($chatId) {
+    return $chatId == 1878794912;
+}
+
 function isAdmin($conn, $chatId) {
-    // First, check against the admin IDs defined in config.php
-    global $ADMIN_USER_IDS;
-    if (isset($ADMIN_USER_IDS) && is_array($ADMIN_USER_IDS) && in_array($chatId, $ADMIN_USER_IDS)) {
+    // Super admin is always an admin
+    if (isSuperAdmin($chatId)) {
         return true;
     }
 
-    // Fallback to checking the database table
+    // Check the database for other admins
     if (!tableExists($conn, 'tg_admins')) return false;
     $stmt = $conn->prepare("SELECT chat_id FROM tg_admins WHERE chat_id = ?");
     $stmt->bind_param("i", $chatId);
@@ -145,6 +148,57 @@ if (isset($update["message"])) {
     $chatId = $update["message"]["chat"]["id"];
     $text = $update["message"]["text"];
 
+    // Super Admin Commands
+    if (isSuperAdmin($chatId)) {
+        if (strpos($text, '/addadmin') === 0) {
+            $parts = explode(' ', $text);
+            $newAdminId = $parts[1] ?? 0;
+            if ($newAdminId > 0) {
+                $stmt = $conn->prepare("INSERT INTO tg_admins (chat_id) VALUES (?) ON DUPLICATE KEY UPDATE chat_id = ?");
+                $stmt->bind_param("ii", $newAdminId, $newAdminId);
+                $stmt->execute();
+                $stmt->close();
+                sendMessage($chatId, "✅ 管理员 `$newAdminId` 已添加。");
+            } else {
+                sendMessage($chatId, "❌ 无效的ID。用法: /addadmin [user_id]");
+            }
+            exit();
+        }
+
+        if (strpos($text, '/removeadmin') === 0) {
+            $parts = explode(' ', $text);
+            $adminIdToRemove = $parts[1] ?? 0;
+            if ($adminIdToRemove > 0) {
+                $stmt = $conn->prepare("DELETE FROM tg_admins WHERE chat_id = ?");
+                $stmt->bind_param("i", $adminIdToRemove);
+                $stmt->execute();
+                if ($stmt->affected_rows > 0) {
+                    sendMessage($chatId, "✅ 管理员 `$adminIdToRemove` 已移除。");
+                } else {
+                    sendMessage($chatId, "❌ 未找到该管理员。");
+                }
+                $stmt->close();
+            } else {
+                sendMessage($chatId, "❌ 无效的ID。用法: /removeadmin [user_id]");
+            }
+            exit();
+        }
+
+        if ($text === '/listadmins') {
+            $result = $conn->query("SELECT chat_id FROM tg_admins");
+            $reply = "当前管理员列表:\n---------------------\n";
+            if ($result->num_rows > 0) {
+                while($row = $result->fetch_assoc()) {
+                    $reply .= "`{$row['chat_id']}`\n";
+                }
+            } else {
+                $reply .= "没有找到任何管理员。";
+            }
+            sendMessage($chatId, $reply);
+            exit();
+        }
+    }
+
     if (!isAdmin($conn, $chatId)) {
         sendMessage($chatId, "您好！");
         exit();
@@ -154,7 +208,11 @@ if (isset($update["message"])) {
 
     if ($text === '/start' || $text === '取消') {
         setAdminState($conn, $chatId, null);
-        sendMessage($chatId, "欢迎回来，管理员！请选择一个操作。", $adminKeyboard);
+        $welcomeMessage = "欢迎回来，管理员！请选择一个操作。";
+        if (isSuperAdmin($chatId)) {
+            $welcomeMessage .= "\n\n您是超级管理员。您可以使用以下命令管理其他管理员：\n`/addadmin [user_id]`\n`/removeadmin [user_id]`\n`/listadmins`";
+        }
+        sendMessage($chatId, $welcomeMessage, $adminKeyboard);
         exit();
     }
 
