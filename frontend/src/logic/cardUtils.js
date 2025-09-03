@@ -161,25 +161,36 @@ export const evaluateHand = (hand) => { // hand 是一个包含3张或5张牌的
 };
 
 // 比较两个已评估的墩牌 (墩牌A, 墩牌B)
-// 返回 > 0 如果墩A大, < 0 如果墩B大, 0 如果一样大 (理论上十三水不会完全一样除非同花色同点)
+// 返回 > 0 如果墩A大, < 0 如果墩B大, 0 如果一样大
 export const compareEvaluatedHands = (evalHandA, evalHandB) => {
   if (evalHandA.rank !== evalHandB.rank) {
     return evalHandA.rank - evalHandB.rank;
   }
-  // 如果牌型和主要点数都相同，理论上需要比较次要牌或花色
-  // 对于十三水，通常如果rank相同，则认为是平手或根据规则比最大单张花色
-  // 简化处理：rank相同视为相同，具体游戏规则可能更细致
-  // 例如：同为同花，rank可能已经包含了花色信息（如果设计如此）或需要额外比较
-  if (evalHandA.type === 'flush' && evalHandB.type === 'flush') {
-    // 之前rank计算已包含所有牌点数，理论上不需要再比
-    // 如果需要比最高牌的花色：
-    // for (let i = 0; i < evalHandA.cards.length; i++) {
-    //   if (evalHandA.cards[i].suitRank !== evalHandB.cards[i].suitRank) {
-    //     return evalHandA.cards[i].suitRank - evalHandB.cards[i].suitRank;
-    //   }
-    // }
+
+  // 如果牌型等级相同，则需要比较单张牌来决胜负
+  // 确保所有牌都从大到小排序进行比较
+  const cardsA = [...evalHandA.cards].sort((a, b) => b.rankValue - a.rankValue);
+  const cardsB = [...evalHandB.cards].sort((a, b) => b.rankValue - a.rankValue);
+
+  for (let i = 0; i < cardsA.length; i++) {
+    const cardA = cardsA[i];
+    const cardB = cardsB[i];
+    if (cardA.rankValue !== cardB.rankValue) {
+      return cardA.rankValue - cardB.rankValue;
+    }
   }
-  return 0; 
+
+  // 如果所有牌的点数都相同，则比较最大牌的花色
+  // 这种情况在同花等牌型中可能出现
+  if (cardsA.length > 0) {
+      const cardA = cardsA[0];
+      const cardB = cardsB[0];
+      if (cardA.suitRank !== cardB.suitRank) {
+        return cardA.suitRank - cardB.suitRank;
+      }
+  }
+
+  return 0; // The hands are identical
 };
 
 // 检查三墩牌是否合法 (头墩 <= 中墩 <= 尾墩)
