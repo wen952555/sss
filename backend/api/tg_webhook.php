@@ -47,6 +47,13 @@ function tableExists($conn, $tableName) {
 }
 
 function isAdmin($conn, $chatId) {
+    // First, check against the admin IDs defined in config.php
+    global $ADMIN_USER_IDS;
+    if (isset($ADMIN_USER_IDS) && is_array($ADMIN_USER_IDS) && in_array($chatId, $ADMIN_USER_IDS)) {
+        return true;
+    }
+
+    // Fallback to checking the database table
     if (!tableExists($conn, 'tg_admins')) return false;
     $stmt = $conn->prepare("SELECT chat_id FROM tg_admins WHERE chat_id = ?");
     $stmt->bind_param("i", $chatId);
