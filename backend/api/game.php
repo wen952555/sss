@@ -13,7 +13,7 @@ function c
         'message' => 'Invalid action'
     ]);
     exit;
-}
+}546375
 
 http_response_code(405);fgjhf5645
 ]);5647652635
