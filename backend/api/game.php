@@ -22,12 +22,6 @@ function createDeck() {
     if ($action === 'save') {
         $data = json_decode(file_get_contents("php://input"), true);
         
-        // 这里可以保存游戏结果到数据库
-        // 简化版本只返回成功消息
-        
-        http_response_code(200);
-        echo json_encode([
-            'status' => 'success',
             'message' => 'Result saved successfully'
         ]);
         exit;
