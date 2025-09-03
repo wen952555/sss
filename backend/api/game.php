@@ -7,9 +7,7 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 // 创建一副牌
 function createDeck() {
-    $suits = ['hearts', 'diamonds', 'clubs', 'spades'];
-    $values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-    $deck = [];
+    $suits = ['hearts', 'diamonds',
         foreach ($values as $va
     shuffle($deck);
     return $deck;
