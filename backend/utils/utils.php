@@ -50,4 +50,43 @@ function dealCards($conn, $roomId, $gameType, $playerCount) {
     $stmt->close();
 }
 
+function fillWithAI($conn, $roomId, $gameType, $playersNeeded) {
+    $stmt = $conn->prepare("SELECT COUNT(*) as current_players FROM room_players WHERE room_id=?");
+    $stmt->bind_param("i", $roomId);
+    $stmt->execute();
+    $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
+    $stmt->close();
+
+    $aiToCreate = $playersNeeded - $currentPlayers;
+    if ($aiToCreate <= 0) return;
+
+    for ($i = 1; $i <= $aiToCreate; $i++) {
+        $aiPhone = "ai_player_" . $i;
+        $aiId = null;
+
+        $stmt = $conn->prepare("SELECT id FROM users WHERE phone = ?");
+        $stmt->bind_param("s", $aiPhone);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $aiId = $row['id'];
+        }
+        $stmt->close();
+
+        if (!$aiId) {
+            $insertStmt = $conn->prepare("INSERT INTO users (phone, password, points) VALUES (?, '', 1000)");
+            $insertStmt->bind_param("s", $aiPhone);
+            $insertStmt->execute();
+            $aiId = $insertStmt->insert_id;
+            $insertStmt->close();
+        }
+
+        if ($aiId) {
+            $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 1, 1)");
+            $stmt->bind_param("ii", $roomId, $aiId);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+}
 ?>
