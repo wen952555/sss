@@ -13,14 +13,6 @@ function createDeck() {
     return $deck;
 }
 
-if ($_SERVER['RE
-    
-    if ($action === 'start') {
-        $deck = createDeck();
-        $shuffledDeck = shuffleDeck($deck);
-        
-        http_response_code(200);
-        echo json_encode([
             'status' => 'success',
             'deck' => $shuffledDeck
         ]);
