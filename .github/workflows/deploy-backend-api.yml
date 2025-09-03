@@ -20,10 +20,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SERV00_KEY }}
 
-      - name: Create destination directory on serv00
-        run: |
-          ssh -o StrictHostKeyChecking=no "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}" "sudo mkdir -p ${{ secrets.SERV00_PATH }}/api/"
-
       - name: Rsync backend/api to serv00
         run: |
-          rsync -avz --mkpath --delete --exclude 'config.php' -e "ssh -o StrictHostKeyChecking=no" ./backend/api/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/api/"
+          rsync -avz --mkpath --delete --exclude 'config.php' -e "ssh -o StrictHostKeyChecking=no" ./backend/api/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
