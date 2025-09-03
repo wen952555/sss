@@ -10,17 +10,6 @@ function c
         exit;
     }
     
-    if ($action === 'save') {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-            'message' => 'Result saved successfully'
-        ]);
-        exit;
-    }
-    
-    http_response_code(400);
-    echo json_encode([
-        'status' => 'error',
         'message' => 'Invalid action'
     ]);
     exit;
