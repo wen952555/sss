@@ -1,14 +1,14 @@
 <?php
-// --- SETUP AND HELPERS ---
+// --- Telegram Bot Admin Webhook ---
 
-// Log all errors and exceptions
+// 日志设置
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/tg_webhook.log');
 error_reporting(E_ALL);
 
 require_once 'db_connect.php';
 
-// Telegram API settings
+// 读取配置
 if (!isset($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
     error_log("FATAL: Telegram Bot Token is not configured in config.php");
     exit();
@@ -28,9 +28,7 @@ function sendRequest($method, $params = []) {
 
 function sendMessage($chatId, $text, $replyMarkup = null) {
     $params = ['chat_id' => $chatId, 'text' => $text, 'parse_mode' => 'Markdown'];
-    if ($replyMarkup) {
-        $params['reply_markup'] = $replyMarkup;
-    }
+    if ($replyMarkup) $params['reply_markup'] = $replyMarkup;
     sendRequest('sendMessage', $params);
 }
 
@@ -42,10 +40,10 @@ function answerCallbackQuery($callbackQueryId, $text = '', $showAlert = false) {
     ]);
 }
 
-// --- ADMIN AND STATE HELPERS ---
+// --- 管理员与状态工具 ---
 function tableExists($conn, $tableName) {
     $result = $conn->query("SHOW TABLES LIKE '{$tableName}'");
-    return $result->num_rows > 0;
+    return $result && $result->num_rows > 0;
 }
 
 function isAdmin($conn, $chatId) {
@@ -76,7 +74,7 @@ function getAdminState($conn, $chatId) {
     return $result ?: ['state' => null, 'state_data' => null];
 }
 
-// --- KEYBOARDS ---
+// --- 管理员菜单 ---
 $adminKeyboard = [
     'keyboard' => [
         [['text' => '查找玩家'], ['text' => '积分列表']],
@@ -85,13 +83,14 @@ $adminKeyboard = [
     'resize_keyboard' => true
 ];
 
-// --- MAIN LOGIC ---
+// --- 主逻辑 ---
 $update = json_decode(file_get_contents('php://input'), true);
-if (!$update) { exit(); }
+if (!$update) exit();
 
-$conn = db_connect();
+$conn = function_exists('db_connect') ? db_connect() : (isset($conn) ? $conn : null);
+if (!$conn) exit('无法连接数据库');
 
-// Pre-flight check for required tables
+// 检查所需表
 if (!tableExists($conn, 'tg_admins') || !tableExists($conn, 'tg_admin_states')) {
     error_log("FATAL: Required Telegram bot tables ('tg_admins' or 'tg_admin_states') not found in database.");
     exit();
@@ -117,6 +116,7 @@ if (isset($update["message"])) {
     switch ($adminState['state']) {
         case 'awaiting_broadcast_message':
             $broadcastMessage = "【📢 公告】\n\n" . $text;
+            // 此处可调用实际群发逻辑
             sendMessage($chatId, "✅ 公告已发送给所有用户（模拟）。\n\n内容:\n" . $broadcastMessage, $adminKeyboard);
             setAdminState($conn, $chatId, null);
             exit();
@@ -145,7 +145,17 @@ if (isset($update["message"])) {
             $result = $stmt->get_result();
             if ($user = $result->fetch_assoc()) {
                 $reply = "找到玩家:\nID: `{$user['id']}`\n手机号: `{$user['phone']}`\n积分: *{$user['points']}*\n\n请选择要执行的操作:";
-                $inlineKeyboard = ['inline_keyboard' => [[['text' => '➕增加积分', 'callback_data' => 'add_pts_' . $user['id']],['text' => '➖减少积分', 'callback_data' => 'sub_pts_' . $user['id']]],[['text' => '❌删除玩家', 'callback_data' => 'del_usr_' . $user['id']]]]];
+                $inlineKeyboard = [
+                    'inline_keyboard' => [
+                        [
+                            ['text' => '➕增加积分', 'callback_data' => 'add_pts_' . $user['id']],
+                            ['text' => '➖减少积分', 'callback_data' => 'sub_pts_' . $user['id']]
+                        ],
+                        [
+                            ['text' => '❌删除玩家', 'callback_data' => 'del_usr_' . $user['id']]
+                        ]
+                    ]
+                ];
                 sendMessage($chatId, $reply, $inlineKeyboard);
             } else {
                 sendMessage($chatId, "未找到手机号为 `$phone` 的玩家。", $adminKeyboard);
@@ -201,7 +211,14 @@ if (isset($update["message"])) {
             answerCallbackQuery($callbackQueryId);
             break;
         case 'del_usr':
-            $confirmKeyboard = ['inline_keyboard' => [[['text' => '✅ 是，删除', 'callback_data' => 'confirm_del_' . $userId],['text' => '❌ 否，取消', 'callback_data' => 'cancel_del_' . $userId]]]];
+            $confirmKeyboard = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '✅ 是，删除', 'callback_data' => 'confirm_del_' . $userId],
+                        ['text' => '❌ 否，取消', 'callback_data' => 'cancel_del_' . $userId]
+                    ]
+                ]
+            ];
             sendMessage($chatId, "⚠️ 您确定要删除ID为 `{$userId}` 的玩家吗？此操作无法撤销。", $confirmKeyboard);
             answerCallbackQuery($callbackQueryId);
             break;
