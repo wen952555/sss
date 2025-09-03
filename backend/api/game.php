@@ -15,8 +15,5 @@ function c
     exit;
 }
 
-http_response_code(405);
-echo json_encode([
-    'status' => 'error',
-    'message' => 'Method not allowed'
+http_response_code(405);fgjhf
 ]);
