@@ -1,24 +1,28 @@
 <?php
-// --- START OF FILE api/db_connect.php (PRODUCTION VERSION) ---
+// --- FIXED VERSION: api/db_connect.php ---
+// 提供 db_connect() 函数，兼容所有调用方式
 
-// 在生产环境中，通常建议关闭错误细节的直接输出
-// ini_set('display_errors', 0);
-// error_reporting(0);
-
-// Include the configuration file
 require_once __DIR__ . '/config.php';
 
-// 创建连接
-$conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
-
-// 检查连接
-if ($conn->connect_error) {
-    http_response_code(503); // Service Unavailable
-    // 在生产环境中，返回一个通用的错误信息
-    die(json_encode(['success' => false, 'message' => '服务器暂时无法连接到数据库，请稍后重试。']));
+/**
+ * 创建并返回一个 MySQLi 连接对象
+ * @return mysqli
+ * @throws Exception
+ */
+function db_connect() {
+    global $DB_HOST, $DB_USER, $DB_PASS, $DB_NAME;
+    $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+    if ($conn->connect_error) {
+        error_log('DB CONNECT ERROR: ' . $conn->connect_error);
+        http_response_code(503);
+        die(json_encode(['success' => false, 'message' => '服务器暂时无法连接到数据库，请稍后重试。']));
+    }
+    $conn->set_charset("utf8mb4");
+    return $conn;
 }
 
-$conn->set_charset("utf8mb4");
-
-// --- END OF FILE api/db_connect.php (PRODUCTION VERSION) ---
+// 兼容老代码：如果没有 $conn 变量，则自动创建全局 $conn
+if (!isset($conn)) {
+    $conn = db_connect();
+}
 ?>
