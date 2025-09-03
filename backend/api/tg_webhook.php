@@ -47,19 +47,49 @@ function tableExists($conn, $tableName) {
 }
 
 function isAdmin($conn, $chatId) {
+    error_log("--- isAdmin Check Started ---");
+    error_log("Checking for Chat ID: " . $chatId);
+
     // First, check against the admin IDs defined in config.php
     global $ADMIN_USER_IDS;
-    if (isset($ADMIN_USER_IDS) && is_array($ADMIN_USER_IDS) && in_array($chatId, $ADMIN_USER_IDS)) {
-        return true;
+    if (isset($ADMIN_USER_IDS)) {
+        error_log("Found \$ADMIN_USER_IDS in config.");
+        if (is_array($ADMIN_USER_IDS)) {
+            error_log("config \$ADMIN_USER_IDS is an array. Contents: " . print_r($ADMIN_USER_IDS, true));
+            if (in_array($chatId, $ADMIN_USER_IDS)) {
+                error_log("Chat ID found in \$ADMIN_USER_IDS array. Granting admin access.");
+                error_log("--- isAdmin Check Finished ---");
+                return true;
+            } else {
+                error_log("Chat ID NOT found in \$ADMIN_USER_IDS array.");
+            }
+        } else {
+            error_log("config \$ADMIN_USER_IDS is NOT an array.");
+        }
+    } else {
+        error_log("config \$ADMIN_USER_IDS is NOT set.");
     }
 
     // Fallback to checking the database table
-    if (!tableExists($conn, 'tg_admins')) return false;
+    error_log("Falling back to database check.");
+    if (!tableExists($conn, 'tg_admins')) {
+        error_log("tg_admins table does not exist. Denying admin access.");
+        error_log("--- isAdmin Check Finished ---");
+        return false;
+    }
+
     $stmt = $conn->prepare("SELECT chat_id FROM tg_admins WHERE chat_id = ?");
     $stmt->bind_param("i", $chatId);
     $stmt->execute();
     $isAdmin = $stmt->get_result()->num_rows > 0;
     $stmt->close();
+
+    if ($isAdmin) {
+        error_log("Chat ID found in tg_admins database table. Granting admin access.");
+    } else {
+        error_log("Chat ID NOT found in tg_admins database table. Denying admin access.");
+    }
+    error_log("--- isAdmin Check Finished ---");
     return $isAdmin;
 }
 
