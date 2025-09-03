@@ -2,8 +2,8 @@ name: Deploy backend/api to serv00
 
 on:
   push:
-    branches: [ main ]
-    paths: [ 'backend/api/**' ]
+    branches: [main]
+    paths: ['backend/api/**']
 
 jobs:
   deploy:
@@ -13,31 +13,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 加载 SSH 私钥
+      - name: Load SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERV00_KEY }}
 
-      - name: 列出已加载的 SSH key（调试）
-        run: ssh-add -l
+      - name: List loaded SSH keys (fingerprints)
+        run: ssh-add -l -E sha256
 
-      - name: 测试 SSH 连通性（调试）
+      - name: Debug SSH connection
         run: |
-          ssh -vvv -o StrictHostKeyChecking=no \
+          ssh -vvv \
+            -o StrictHostKeyChecking=no \
+            -p ${{ secrets.SERV00_PORT }} \
             ${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }} \
             echo "SSH 链接成功" || exit 1
 
-      - name: 确保远端 /api 目录存在
+      - name: Rsync backend/api to serv00
         run: |
-          ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }} \
-            "mkdir -p ${{ secrets.SERV00_PATH }}/api"
-
-      - name: 同步 backend/api 到 serv00
-        run: |
-          rsync -avz \
-            --delete \
-            --exclude 'config.php' \
-            -e "ssh -o StrictHostKeyChecking=no" \
+          rsync -avz --delete --exclude 'config.php' \
+            -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SERV00_PORT }}" \
             ./backend/api/ \
             "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/api/"
