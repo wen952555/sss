@@ -9,8 +9,8 @@ error_reporting(E_ALL);
 require_once 'db_connect.php';
 
 // 读取配置
-if (!isset($TELEGRAM_BOT_TOKEN) || !isset($GAME_URL) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN' || $GAME_URL === 'https://your-game-url.com') {
-    error_log("FATAL: Telegram Bot Token or Game URL is not configured properly in config.php");
+if (!isset($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
+    error_log("FATAL: Telegram Bot Token is not configured in config.php");
     exit();
 }
 $API_URL = 'https://api.telegram.org/bot' . $TELEGRAM_BOT_TOKEN . '/';
@@ -47,11 +47,6 @@ function tableExists($conn, $tableName) {
 }
 
 function isAdmin($conn, $chatId) {
-    // Directly grant access to the specific user to resolve the issue.
-    if ($chatId == 1878794912) {
-        return true;
-    }
-
     // First, check against the admin IDs defined in config.php
     global $ADMIN_USER_IDS;
     if (isset($ADMIN_USER_IDS) && is_array($ADMIN_USER_IDS) && in_array($chatId, $ADMIN_USER_IDS)) {
@@ -86,12 +81,49 @@ function getAdminState($conn, $chatId) {
     return $result ?: ['state' => null, 'state_data' => null];
 }
 
+function showManageAnnouncements($conn, $chatId, $messageId = null) {
+    $stmt = $conn->prepare("SELECT id, message_text, created_at FROM tg_announcements WHERE status = 'published' ORDER BY created_at DESC LIMIT 10");
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $reply = "请选择要删除的公告：\n";
+        $inline_keyboard = [];
+        while ($announcement = $result->fetch_assoc()) {
+            $announcement_id = $announcement['id'];
+            $announcement_text = mb_substr($announcement['message_text'], 0, 20) . '...';
+
+            $inline_keyboard[] = [
+                ['text' => "删除: \"" . htmlspecialchars($announcement_text) . "\"", 'callback_data' => 'delete_ann_' . $announcement_id]
+            ];
+        }
+        $replyMarkup = ['inline_keyboard' => $inline_keyboard];
+    } else {
+        $reply = "没有找到任何已发布的公告。";
+        $replyMarkup = ['inline_keyboard' => []]; // Empty keyboard
+    }
+    $stmt->close();
+
+    if ($messageId) {
+        // Edit the existing message
+        sendRequest('editMessageText', [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'text' => $reply,
+            'reply_markup' => $replyMarkup
+        ]);
+    } else {
+        // Send a new message
+        sendMessage($chatId, $reply, $replyMarkup);
+    }
+}
+
 // --- 管理员菜单 ---
 $adminKeyboard = [
     'keyboard' => [
-        [['text' => '开始游戏', 'web_app' => ['url' => $GAME_URL]]],
         [['text' => '查找玩家'], ['text' => '积分列表']],
-        [['text' => '发送公告'], ['text' => '取消']]
+        [['text' => '发布新公告'], ['text' => '管理公告']],
+        [['text' => '取消']]
     ],
     'resize_keyboard' => true
 ];
@@ -114,7 +146,7 @@ if (isset($update["message"])) {
     $text = $update["message"]["text"];
 
     if (!isAdmin($conn, $chatId)) {
-        sendMessage($chatId, "抱歉，此功能仅对管理员开放。");
+        sendMessage($chatId, "您好！");
         exit();
     }
 
@@ -128,9 +160,15 @@ if (isset($update["message"])) {
 
     switch ($adminState['state']) {
         case 'awaiting_broadcast_message':
+            // Save the announcement to the database
+            $stmt = $conn->prepare("INSERT INTO tg_announcements (message_text) VALUES (?)");
+            $stmt->bind_param("s", $text);
+            $stmt->execute();
+            $stmt->close();
+
             $broadcastMessage = "【📢 公告】\n\n" . $text;
             // 此处可调用实际群发逻辑
-            sendMessage($chatId, "✅ 公告已发送给所有用户（模拟）。\n\n内容:\n" . $broadcastMessage, $adminKeyboard);
+            sendMessage($chatId, "✅ 公告已发布并保存。\n\n内容:\n" . $broadcastMessage, $adminKeyboard);
             setAdminState($conn, $chatId, null);
             exit();
         case 'awaiting_add_amount':
@@ -179,25 +217,11 @@ if (isset($update["message"])) {
     }
 
     switch ($text) {
-        case '/setup_menu':
-            $menuButton = [
-                'type' => 'web_app',
-                'text' => '开始游戏',
-                'web_app' => ['url' => $GAME_URL]
-            ];
-            $result = sendRequest('setChatMenuButton', ['menu_button' => $menuButton]);
-            if (isset($result['ok']) && $result['ok']) {
-                sendMessage($chatId, "✅ 菜单按钮已更新为游戏启动器。");
-            } else {
-                $error = $result['description'] ?? '未知错误';
-                sendMessage($chatId, "❌ 更新菜单按钮失败: " . $error);
-            }
-            break;
         case '查找玩家':
             setAdminState($conn, $chatId, 'awaiting_phone_number');
             sendMessage($chatId, "请输入您要查找的玩家手机号：");
             break;
-        case '发送公告':
+        case '发布新公告':
             setAdminState($conn, $chatId, 'awaiting_broadcast_message');
             sendMessage($chatId, "请输入您要发送的公告内容：");
             break;
@@ -208,6 +232,9 @@ if (isset($update["message"])) {
                 $reply .= "手机: `{$row['phone']}` - 积分: *{$row['points']}*\n";
             }
             sendMessage($chatId, $reply, $adminKeyboard);
+            break;
+        case '管理公告':
+            showManageAnnouncements($conn, $chatId);
             break;
     }
 
@@ -227,6 +254,25 @@ if (isset($update["message"])) {
     $userId = $parts[2] ?? 0;
 
     switch ($actionType) {
+        case 'delete_ann':
+            $announcementId = $parts[2] ?? 0;
+            if ($announcementId > 0) {
+                $stmt = $conn->prepare("UPDATE tg_announcements SET status = 'deleted' WHERE id = ?");
+                $stmt->bind_param("i", $announcementId);
+                $stmt->execute();
+
+                if ($stmt->affected_rows > 0) {
+                    answerCallbackQuery($callbackQueryId, "公告 #$announcementId 已删除。");
+                } else {
+                    answerCallbackQuery($callbackQueryId, "操作已完成或公告不存在。");
+                }
+                $stmt->close();
+
+                // Refresh the announcement list message
+                $messageId = $callbackQuery["message"]["message_id"];
+                showManageAnnouncements($conn, $chatId, $messageId);
+            }
+            break;
         case 'add_pts':
             setAdminState($conn, $chatId, 'awaiting_add_amount', $userId);
             sendMessage($chatId, "请输入要为ID `{$userId}` 增加的积分数量：");
