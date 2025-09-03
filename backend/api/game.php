@@ -15,7 +15,3 @@ function c
     exit;
 }546375
 
-http_response_code(405);fgjhf5645
-]);5647652635
-5678456
-2345
