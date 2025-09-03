@@ -1,26 +1,33 @@
+# 文件路径：.github/workflows/deploy-backend-api.yml
 name: Deploy backend/api to serv00
 
 on:
   push:
-    branches: [main]
-    paths: ['backend/api/**']
+    branches:
+      - main
+    paths:
+      - 'backend/api/**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. 拉取代码
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. 将私钥注入到 ssh-agent
       - name: Load SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERV00_KEY }}
 
+      # 3. 列出已加载的密钥指纹，确保私钥已注入
       - name: List loaded SSH keys (fingerprints)
         run: ssh-add -l -E sha256
 
+      # 4. 调试 SSH 连接（-p 指定端口必须在 user@host 之前）
       - name: Debug SSH connection
         run: |
           ssh -vvv \
@@ -29,6 +36,15 @@ jobs:
             ${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }} \
             echo "SSH 链接成功" || exit 1
 
+      # 5. 确保远端目录存在并有写权限
+      - name: Ensure remote directory exists
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+            -p ${{ secrets.SERV00_PORT }} \
+            ${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }} \
+            "mkdir -p ${{ secrets.SERV00_PATH }}/api && chmod u+rwx ${{ secrets.SERV00_PATH }}/api"
+
+      # 6. 使用 rsync 同步目录
       - name: Rsync backend/api to serv00
         run: |
           rsync -avz --delete --exclude 'config.php' \
