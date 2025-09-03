@@ -2,24 +2,33 @@ name: Deploy backend/api to serv00
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'backend/api/**'
+    branches: [ main ]
+    paths: [ 'backend/api/**' ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up SSH key
+      - name: Load SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERV00_KEY }}
 
-      - name: Rsync backend/api to serv00
+      - name: 确保远端 /api 目录存在
         run: |
-          rsync -avz --mkpath --delete --exclude 'config.php' -e "ssh -o StrictHostKeyChecking=no" ./backend/api/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/api/"
+          ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }} \
+            "mkdir -p ${{ secrets.SERV00_PATH }}/api"
+
+      - name: 同步 backend/api 到 serv00
+        run: |
+          rsync -avz \
+            --delete \
+            --exclude 'config.php' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./backend/api/ \
+            "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/api/"
