@@ -1,5 +1,5 @@
-import { evaluateHand, compareHands, sortCards, combinations, parseCard } from './pokerEvaluator';
-import { getAreaType, areaTypeRank, getAreaScore, isFoul } from './sssScorer';
+import { evaluateHand, compareHands, sortCards, combinations, parseCard } from './pokerEvaluator.js';
+import { getAreaType, areaTypeRank, getAreaScore, isFoul } from './sssScorer.js';
 
 function calculateHandStrategicScore(hand) {
     // This evaluation function uses a hybrid model to find the best arrangement.
@@ -22,7 +22,7 @@ function calculateHandStrategicScore(hand) {
     };
 
     // Primary score is based on the weighted rank of hand types.
-    const rankScore = (handRanks.bottom * 1000) + (handRanks.middle * 100) + handRanks.top;
+    const rankScore = (handRanks.bottom * 100) + (handRanks.middle * 1000) + handRanks.top;
 
     // Secondary score is based on the actual point value of the lanes.
     const pointsScore = laneScores.bottom + laneScores.middle + laneScores.top;
@@ -95,24 +95,7 @@ export const getSmartSortedHand = (allCards) => {
     return { top: sorted.slice(0, 3), middle: sorted.slice(3, 8), bottom: sorted.slice(8, 13) };
   }
 
-  // --- Try Aggressive Greedy Strategy First ---
-  const greedyBottom = findBestSubHand(cardObjects, 5);
-  const remainingAfterGreedyBottom = cardObjects.filter(c => !greedyBottom.find(bc => bc.rank === c.rank && bc.suit === c.suit));
-  const greedyMiddle = findBestSubHand(remainingAfterGreedyBottom, 5);
-  const greedyTop = remainingAfterGreedyBottom.filter(c => !greedyMiddle.find(mc => mc.rank === c.rank && mc.suit === c.suit));
-
-  const greedyHandStrings = {
-      top: greedyTop.map(c => `${c.rank}_of_${c.suit}`),
-      middle: greedyMiddle.map(c => `${c.rank}_of_${c.suit}`),
-      bottom: greedyBottom.map(c => `${c.rank}_of_${c.suit}`),
-  };
-
-  if (!isFoul(greedyHandStrings.top, greedyHandStrings.middle, greedyHandStrings.bottom)) {
-      // If the greedy approach is valid, use it.
-      return { top: sortCards(greedyTop), middle: sortCards(greedyMiddle), bottom: sortCards(greedyBottom) };
-  }
-
-  // --- If Greedy fails (foul), fall back to robust exhaustive search ---
+  // --- Directly use the robust exhaustive search ---
   const bestHand = runExhaustiveSearch(cardObjects);
   if (bestHand) {
       return {
