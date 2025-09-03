@@ -1,14 +1,13 @@
-import { getSmartSortedHand } from './src/utils/autoSorter.js';
-import { parseCard } from './src/utils/pokerEvaluator.js';
+import { getSmartSortedHand } from './frontend/src/utils/autoSorter.js';
+import { parseCard } from './frontend/src/utils/pokerEvaluator.js';
 
 /**
  * This sample hand is crafted to test the new scoring logic.
  * It can be arranged in two notable ways:
  * 1. A low-scoring flush in the bottom lane, and weak middle/top lanes.
- *    The simple sum-of-scores logic might have picked this.
- * 2. A full house (Aces full of 2s) in the middle lane, which is strategically
- *    much better as it scores more and provides a stronger middle presence.
- *    The new logic should prioritize this.
+ * 2. A full house (Aces full of 2s) in the bottom lane, which is strategically
+ *    much better as it's a stronger hand than the flush.
+ * The sorter should prioritize the stronger hand in the bottom lane.
  */
 const sampleHand = [
     // Cards for a potential full house in the middle
@@ -29,10 +28,10 @@ function runVerification() {
         return;
     }
 
-    // The expected best hand is the one with the full house in the middle.
-    const middleHandRanks = new Set(result.middle.map(c => c.rank));
-    const hasAce = middleHandRanks.has('ace');
-    const hasTwo = middleHandRanks.has('2');
+    // The expected best hand is the one with the full house in the bottom lane.
+    const bottomHandRanks = new Set(result.bottom.map(c => c.rank));
+    const hasAce = bottomHandRanks.has('ace');
+    const hasTwo = bottomHandRanks.has('2');
 
     console.log("Smart sorter produced the following hand:");
     console.log({
@@ -41,8 +40,8 @@ function runVerification() {
         bottom: result.bottom.map(c => `${c.rank}_of_${c.suit}`)
     });
 
-    if (hasAce && hasTwo && result.middle.length === 5) {
-        console.log("\nSUCCESS: The smart sorter correctly identified the strategically superior hand with the Full House in the middle lane.");
+    if (hasAce && hasTwo && result.bottom.length === 5) {
+        console.log("\nSUCCESS: The smart sorter correctly identified the strategically superior hand with the Full House in the bottom lane.");
     } else {
         console.error("\nFAILURE: The smart sorter did not pick the expected superior hand.");
     }
