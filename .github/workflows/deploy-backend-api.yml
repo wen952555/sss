@@ -17,58 +17,49 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. 加载 SSH 私钥到 agent
+      # 2. 将私钥加载到 ssh-agent
       - name: Load SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERV00_KEY }}
 
-      # 3. 打印 agent 中加载的密钥指纹，校验是否注入正确
+      # 3. 列出 agent 中加载的密钥指纹，校验密钥是否正确注入
       - name: List loaded SSH keys (fingerprints)
         run: ssh-add -l -E sha256
 
-      # 4. 调试 SSH 连接，动态拼接 -p 参数
+      # 4. 调试 SSH 连通性，动态拼接 -p 参数
       - name: Debug SSH connection
         run: |
-          #!/usr/bin/env bash
-          set -e
-
           SSH_OPTS="-o StrictHostKeyChecking=no"
           if [[ -n "${{ secrets.SERV00_PORT }}" ]]; then
-            SSH_OPTS="$SSH_OPTS -p ${{ secrets.SERV00_PORT }}"
+            SSH_OPTS+=" -p ${{ secrets.SERV00_PORT }}"
           fi
 
           ssh -vvv $SSH_OPTS \
             ${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }} \
-            echo "SSH 链接成功"
+            echo "SSH 链接成功" || exit 1
 
-      # 5. 确保远端目录存在并可写
+      # 5. 确保远端目录存在并有写权限
       - name: Ensure remote directory exists
         run: |
-          #!/usr/bin/env bash
-          set -e
-
           SSH_OPTS="-o StrictHostKeyChecking=no"
           if [[ -n "${{ secrets.SERV00_PORT }}" ]]; then
-            SSH_OPTS="$SSH_OPTS -p ${{ secrets.SERV00_PORT }}"
+            SSH_OPTS+=" -p ${{ secrets.SERV00_PORT }}"
           fi
 
           ssh $SSH_OPTS \
             ${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }} \
             "mkdir -p ${{ secrets.SERV00_PATH }}/api && chmod u+rwx ${{ secrets.SERV00_PATH }}/api"
 
-      # 6. 使用 rsync 同步目录（同样动态拼接端口）
+      # 6. 使用 rsync 同步本地 backend/api 到远端
       - name: Rsync backend/api to serv00
         run: |
-          #!/usr/bin/env bash
-          set -e
-
           SSH_CMD="ssh -o StrictHostKeyChecking=no"
           if [[ -n "${{ secrets.SERV00_PORT }}" ]]; then
-            SSH_CMD="$SSH_CMD -p ${{ secrets.SERV00_PORT }}"
+            SSH_CMD+=" -p ${{ secrets.SERV00_PORT }}"
           fi
 
           rsync -avz --delete --exclude 'config.php' \
             -e "$SSH_CMD" \
             ./backend/api/ \
-            "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/api/" 
+            "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/api/"
