@@ -9,8 +9,8 @@ error_reporting(E_ALL);
 require_once 'db_connect.php';
 
 // 读取配置
-if (!isset($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
-    error_log("FATAL: Telegram Bot Token is not configured in config.php");
+if (!isset($TELEGRAM_BOT_TOKEN) || !isset($GAME_URL) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN' || $GAME_URL === 'https://your-game-url.com') {
+    error_log("FATAL: Telegram Bot Token or Game URL is not configured properly in config.php");
     exit();
 }
 $API_URL = 'https://api.telegram.org/bot' . $TELEGRAM_BOT_TOKEN . '/';
@@ -77,6 +77,7 @@ function getAdminState($conn, $chatId) {
 // --- 管理员菜单 ---
 $adminKeyboard = [
     'keyboard' => [
+        [['text' => '开始游戏', 'web_app' => ['url' => $GAME_URL]]],
         [['text' => '查找玩家'], ['text' => '积分列表']],
         [['text' => '发送公告'], ['text' => '取消']]
     ],
@@ -101,7 +102,7 @@ if (isset($update["message"])) {
     $text = $update["message"]["text"];
 
     if (!isAdmin($conn, $chatId)) {
-        sendMessage($chatId, "您好！");
+        sendMessage($chatId, "抱歉，此功能仅对管理员开放。");
         exit();
     }
 
@@ -166,6 +167,20 @@ if (isset($update["message"])) {
     }
 
     switch ($text) {
+        case '/setup_menu':
+            $menuButton = [
+                'type' => 'web_app',
+                'text' => '开始游戏',
+                'web_app' => ['url' => $GAME_URL]
+            ];
+            $result = sendRequest('setChatMenuButton', ['menu_button' => $menuButton]);
+            if (isset($result['ok']) && $result['ok']) {
+                sendMessage($chatId, "✅ 菜单按钮已更新为游戏启动器。");
+            } else {
+                $error = $result['description'] ?? '未知错误';
+                sendMessage($chatId, "❌ 更新菜单按钮失败: " . $error);
+            }
+            break;
         case '查找玩家':
             setAdminState($conn, $chatId, 'awaiting_phone_number');
             sendMessage($chatId, "请输入您要查找的玩家手机号：");
