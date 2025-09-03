@@ -93,12 +93,46 @@ export const useGame = () => {
       if (!isLoadingApp) {
         setIsLoadingApp(true);
       }
-      const timer = setTimeout(() => {
-        initializeNewGame(true);
-      }, 0);
-      return () => clearTimeout(timer);
+
+      const humanPlayerId = gameState.players.find(p => p.isHuman)?.id;
+
+      if (humanPlayerId) {
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+        fetch(`${API_URL}/game.php?action=get_score&user_id=${humanPlayerId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Update the score in the initial state
+              setGameState(prev => {
+                const updatedPlayers = prev.players.map(p => {
+                  if (p.id === humanPlayerId) {
+                    return { ...p, score: data.score };
+                  }
+                  return p;
+                });
+                return { ...prev, players: updatedPlayers };
+              });
+            } else {
+              console.error('Failed to fetch score:', data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching score:', error);
+          })
+          .finally(() => {
+            const timer = setTimeout(() => {
+              initializeNewGame(true);
+            }, 0);
+            return () => clearTimeout(timer);
+          });
+      } else {
+        const timer = setTimeout(() => {
+          initializeNewGame(true);
+        }, 0);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [gameState?.gameState, initializeNewGame, isLoadingApp, setIsLoadingApp]);
+  }, [gameState?.gameState, initializeNewGame, isLoadingApp, setIsLoadingApp, setGameState]);
 
   const handleSubmitPlayerHand = useCallback(() => {
     if (!humanPlayerFromState) return;
@@ -120,6 +154,34 @@ export const useGame = () => {
     const finalState = compareAllHands(stateAfterConfirm);
     setGameState(finalState);
     setShowComparisonModal(true);
+
+    // Save score to backend
+    const humanPlayerResult = finalState.players.find(p => p.isHuman);
+    if (humanPlayerResult) {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+      fetch(`${API_URL}/game.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'save_score',
+          user_id: humanPlayerResult.id,
+          score: humanPlayerResult.score,
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('Score saved successfully.');
+        } else {
+          console.error('Failed to save score:', data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error saving score:', error);
+      });
+    }
   }, [humanPlayerFromState, arrangedHumanHand, gameState, setGameState, setShowComparisonModal]);
 
   const handleAIHelperForHuman = useCallback(() => {

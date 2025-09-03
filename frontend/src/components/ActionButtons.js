@@ -7,9 +7,7 @@ const ActionButtons = ({
   onSubmit, 
   canSubmit,
   onManageProfile,
-  onToggleAIPlay,
-  onAutoMatch,
-  isMultiplayer // New prop
+  onToggleAIPlay
 }) => {
   return (
     <div className="action-buttons-banner-v2">
@@ -17,9 +15,6 @@ const ActionButtons = ({
       <button onClick={onToggleAIPlay} className="action-button-v2 ai-play-button-v2">AI托管</button>
       <button onClick={onAIHelper} className="action-button-v2 ai-helper-button-v2">AI智能分牌</button>
       <button onClick={onSubmit} disabled={!canSubmit} className="action-button-v2 submit-button-v2">提交牌型</button>
-      <button onClick={onAutoMatch} className="action-button-v2 auto-match-button-v2">
-        {isMultiplayer ? "更换房间" : "多人在线"} {/* Example conditional text */}
-      </button>
     </div>
   );
 };

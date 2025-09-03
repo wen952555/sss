@@ -51,8 +51,7 @@ function App() {
         </div>
         <ActionButtons 
             onAIHelper={handleAIHelperForHuman} onSubmit={handleSubmitPlayerHand} canSubmit={canSubmitGame} 
-            onManageProfile={() => {}} onToggleAIPlay={handleToggleAIPlay} onAutoMatch={() => {}}
-            isMultiplayer={false}
+            onManageProfile={() => {}} onToggleAIPlay={handleToggleAIPlay}
         />
       </div>
     );
