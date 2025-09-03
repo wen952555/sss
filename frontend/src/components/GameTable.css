@@ -83,35 +83,18 @@
 }
 
 .players-status-banner {
-  display: flex;
-  justify-content: space-around;
-  background-color: #e0f2f1;
-  padding: 8px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-
-.player-slot {
-  flex: 1;
   text-align: center;
-  padding: 4px;
+  padding: 8px 5px;
+  background: rgba(0,0,0,0.1);
+  font-size: 0.9rem;
   font-weight: 500;
-  color: #004d40;
-  border-right: 1px solid #b2dfdb;
 }
 
-.player-slot:last-child {
-  border-right: none;
-}
-
-.empty-slot {
-  color: #757575;
-  font-style: italic;
-}
-
-.ready-state {
-  color: #00796b;
-  font-weight: bold;
+.player-name-list span.arranging-state {
+  color: #ff5252; /* A brighter red */
+  font-weight: 700;
+  transform: scale(1.05);
+  display: inline-block;
 }
 
 .lanes-container {
