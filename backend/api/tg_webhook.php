@@ -8,6 +8,10 @@ ini_set('error_log', __DIR__ . '/tg_webhook.log');
 error_reporting(E_ALL);
 
 // Telegram API settings
+if (!isset($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
+    error_log("Telegram Bot Token is not configured in config.php");
+    exit();
+}
 $API_URL = 'https://api.telegram.org/bot' . $TELEGRAM_BOT_TOKEN . '/';
 
 function sendRequest($method, $params = []) {
@@ -38,8 +42,13 @@ function answerCallbackQuery($callbackQueryId, $text = '', $showAlert = false) {
 }
 
 // --- ADMIN AND STATE HELPERS ---
-// I will assume a tg_admins table with a chat_id column exists
+function tableExists($conn, $tableName) {
+    $result = $conn->query("SHOW TABLES LIKE '{$tableName}'");
+    return $result->num_rows > 0;
+}
+
 function isAdmin($conn, $chatId) {
+    if (!tableExists($conn, 'tg_admins')) return false;
     $stmt = $conn->prepare("SELECT chat_id FROM tg_admins WHERE chat_id = ?");
     $stmt->bind_param("i", $chatId);
     $stmt->execute();
@@ -48,8 +57,8 @@ function isAdmin($conn, $chatId) {
     return $isAdmin;
 }
 
-// I will assume a tg_admin_states table exists (chat_id, state, state_data)
 function setAdminState($conn, $chatId, $state, $data = null) {
+    if (!tableExists($conn, 'tg_admin_states')) return;
     $stmt = $conn->prepare("INSERT INTO tg_admin_states (chat_id, state, state_data) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE state = ?, state_data = ?");
     $stmt->bind_param("issss", $chatId, $state, $data, $state, $data);
     $stmt->execute();
@@ -57,6 +66,7 @@ function setAdminState($conn, $chatId, $state, $data = null) {
 }
 
 function getAdminState($conn, $chatId) {
+    if (!tableExists($conn, 'tg_admin_states')) return ['state' => null, 'state_data' => null];
     $stmt = $conn->prepare("SELECT state, state_data FROM tg_admin_states WHERE chat_id = ?");
     $stmt->bind_param("i", $chatId);
     $stmt->execute();
@@ -76,12 +86,16 @@ $adminKeyboard = [
 
 // --- MAIN LOGIC ---
 $update = json_decode(file_get_contents('php://input'), true);
-
-if (!$update) {
-    exit();
-}
+if (!$update) { exit(); }
 
 $conn = db_connect();
+
+// Pre-flight check for required tables
+if (!tableExists($conn, 'tg_admins') || !tableExists($conn, 'tg_admin_states')) {
+    error_log("Required Telegram bot tables ('tg_admins' or 'tg_admin_states') not found in database.");
+    // Optionally send a message to a super-admin if you have a hardcoded one
+    exit();
+}
 
 if (isset($update["message"])) {
     $chatId = $update["message"]["chat"]["id"];
@@ -92,26 +106,20 @@ if (isset($update["message"])) {
         exit();
     }
 
-    // Admin-only logic starts here
     $adminState = getAdminState($conn, $chatId);
 
     if ($text === '/start' || $text === '取消') {
-        setAdminState($conn, $chatId, null); // Clear state
+        setAdminState($conn, $chatId, null);
         sendMessage($chatId, "欢迎回来，管理员！请选择一个操作。", $adminKeyboard);
         exit();
     }
 
-    // Handle state-based inputs first
     switch ($adminState['state']) {
         case 'awaiting_broadcast_message':
             $broadcastMessage = "【📢 公告】\n\n" . $text;
-            // In a real-world scenario, you would have a table of user chat_ids to loop through.
-            // For this example, we will just confirm the action to the admin.
-            // e.g., SELECT chat_id FROM tg_users; -> loop and call sendMessage()
             sendMessage($chatId, "✅ 公告已发送给所有用户（模拟）。\n\n内容:\n" . $broadcastMessage, $adminKeyboard);
-            setAdminState($conn, $chatId, null); // Reset state
+            setAdminState($conn, $chatId, null);
             exit();
-
         case 'awaiting_add_amount':
         case 'awaiting_sub_amount':
             $amount = (int)$text;
@@ -121,19 +129,14 @@ if (isset($update["message"])) {
                 $stmt = $conn->prepare("UPDATE users SET points = points $op ? WHERE id = ?");
                 $stmt->bind_param("ii", $amount, $userId);
                 $stmt->execute();
-                if ($stmt->affected_rows > 0) {
-                    $actionText = $op === '+' ? '增加' : '减少';
-                    sendMessage($chatId, "成功为ID `{$userId}` {$actionText} `{$amount}` 积分。", $adminKeyboard);
-                } else {
-                    sendMessage($chatId, "操作失败，未找到ID为 `{$userId}` 的用户。", $adminKeyboard);
-                }
+                $actionText = $op === '+' ? '增加' : '减少';
+                sendMessage($chatId, "成功为ID `{$userId}` {$actionText} `{$amount}` 积分。", $adminKeyboard);
                 $stmt->close();
             } else {
                 sendMessage($chatId, "无效的积分数量。", $adminKeyboard);
             }
-            setAdminState($conn, $chatId, null); // Reset state
+            setAdminState($conn, $chatId, null);
             exit();
-
         case 'awaiting_phone_number':
             $phone = $text;
             $stmt = $conn->prepare("SELECT id, phone, points FROM users WHERE phone = ?");
@@ -141,30 +144,17 @@ if (isset($update["message"])) {
             $stmt->execute();
             $result = $stmt->get_result();
             if ($user = $result->fetch_assoc()) {
-                $reply = "找到玩家:\n";
-                $reply .= "ID: `{$user['id']}`\n";
-                $reply .= "手机号: `{$user['phone']}`\n";
-                $reply .= "积分: *{$user['points']}*\n\n";
-                $reply .= "请选择要执行的操作:";
-
-                $inlineKeyboard = [
-                    'inline_keyboard' => [[
-                        ['text' => '➕增加积分', 'callback_data' => 'add_pts_' . $user['id']],
-                        ['text' => '➖减少积分', 'callback_data' => 'sub_pts_' . $user['id']],
-                    ],[
-                        ['text' => '❌删除玩家', 'callback_data' => 'del_usr_' . $user['id']],
-                    ]]
-                ];
+                $reply = "找到玩家:\nID: `{$user['id']}`\n手机号: `{$user['phone']}`\n积分: *{$user['points']}*\n\n请选择要执行的操作:";
+                $inlineKeyboard = ['inline_keyboard' => [[['text' => '➕增加积分', 'callback_data' => 'add_pts_' . $user['id']],['text' => '➖减少积分', 'callback_data' => 'sub_pts_' . $user['id']]],[['text' => '❌删除玩家', 'callback_data' => 'del_usr_' . $user['id']]]]];
                 sendMessage($chatId, $reply, $inlineKeyboard);
             } else {
                 sendMessage($chatId, "未找到手机号为 `$phone` 的玩家。", $adminKeyboard);
             }
             $stmt->close();
-            setAdminState($conn, $chatId, null); // Reset state
-            exit(); // Exit after handling state
+            setAdminState($conn, $chatId, null);
+            exit();
     }
 
-    // Handle keyboard commands
     switch ($text) {
         case '查找玩家':
             setAdminState($conn, $chatId, 'awaiting_phone_number');
@@ -175,16 +165,12 @@ if (isset($update["message"])) {
             sendMessage($chatId, "请输入您要发送的公告内容：");
             break;
         case '积分列表':
-            // This is a simple action, no state needed
             $result = $conn->query("SELECT phone, points FROM users WHERE points > 0 ORDER BY points DESC LIMIT 50");
             $reply = "积分排行榜 (Top 50):\n---------------------\n";
             while($row = $result->fetch_assoc()) {
                 $reply .= "手机: `{$row['phone']}` - 积分: *{$row['points']}*\n";
             }
             sendMessage($chatId, $reply, $adminKeyboard);
-            break;
-        default:
-             // Let state-based logic handle it or ignore
             break;
     }
 
@@ -200,10 +186,10 @@ if (isset($update["message"])) {
     }
 
     $parts = explode('_', $data);
-    $action = $parts[0] . '_' . $parts[1]; // e.g., "add_pts"
+    $actionType = $parts[0] . '_' . $parts[1];
     $userId = $parts[2] ?? 0;
 
-    switch ($action) {
+    switch ($actionType) {
         case 'add_pts':
             setAdminState($conn, $chatId, 'awaiting_add_amount', $userId);
             sendMessage($chatId, "请输入要为ID `{$userId}` 增加的积分数量：");
@@ -215,12 +201,7 @@ if (isset($update["message"])) {
             answerCallbackQuery($callbackQueryId);
             break;
         case 'del_usr':
-            $confirmKeyboard = [
-                'inline_keyboard' => [[
-                    ['text' => '✅ 是，删除', 'callback_data' => 'confirm_del_' . $userId],
-                    ['text' => '❌ 否，取消', 'callback_data' => 'cancel_del_' . $userId]
-                ]]
-            ];
+            $confirmKeyboard = ['inline_keyboard' => [[['text' => '✅ 是，删除', 'callback_data' => 'confirm_del_' . $userId],['text' => '❌ 否，取消', 'callback_data' => 'cancel_del_' . $userId]]]];
             sendMessage($chatId, "⚠️ 您确定要删除ID为 `{$userId}` 的玩家吗？此操作无法撤销。", $confirmKeyboard);
             answerCallbackQuery($callbackQueryId);
             break;
