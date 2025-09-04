@@ -1,33 +1,66 @@
 // frontend/functions/proxy49/[[path]].js
 
-/**
- * Cloudflare Pages function for proxying requests under the `/proxy49/` path.
- * This will catch all requests to `/proxy49/*` and forward them to the destination URL.
- */
-export async function onRequest(context) {
-  // Get the incoming request URL
-  const url = new URL(context.request.url);
+const ORIGIN_HOST = '49916a.com';
+const PROXY_PATH = '/proxy49';
 
-  // Strip the `/proxy49` prefix from the pathname
-  if (url.pathname.startsWith('/proxy49')) {
-    url.pathname = url.pathname.substring('/proxy49'.length);
+/**
+ * A class to handle rewriting HTML elements to keep them within the proxy.
+ */
+class AttributeRewriter {
+  constructor(originHost, proxyPath) {
+    this.originHost = originHost;
+    this.proxyPath = proxyPath;
   }
 
-  // Define the destination host and protocol.
-  // NOTE: SSL certificate is only valid for the non-www domain.
-  const destinationHostname = '49916a.com';
-  const destinationProtocol = 'https:';
+  element(element) {
+    const attributes = ['href', 'src', 'action'];
+    for (const attr of attributes) {
+      const value = element.getAttribute(attr);
+      if (value) {
+        // Replace absolute URLs with proxied URLs
+        const absoluteUrlPattern = new RegExp(`https?://${this.originHost}`, 'g');
+        if (absoluteUrlPattern.test(value)) {
+            element.setAttribute(attr, value.replace(absoluteUrlPattern, this.proxyPath));
+        }
+        // Handle root-relative paths by prepending the proxy path
+        else if (value.startsWith('/')) {
+            element.setAttribute(attr, `${this.proxyPath}${value}`);
+        }
+      }
+    }
+  }
+}
 
-  // Rewrite the URL to point to the destination.
-  url.hostname = destinationHostname;
-  url.protocol = destinationProtocol;
-  // url.port is intentionally not set to use the protocol's default (443 for https).
+/**
+ * Cloudflare Pages function for proxying requests under the `/proxy49/` path.
+ * This will catch all requests to `/proxy49/*` and forward them to 49916a.com.
+ */
+export async function onRequest(context) {
+  const requestUrl = new URL(context.request.url);
 
-  // Create a new request object with the rewritten URL, but preserve the original
-  // method, headers, and body from the incoming request.
-  const newRequest = new Request(url.toString(), context.request);
+  // Strip the proxy path prefix to get the path for the origin server
+  if (requestUrl.pathname.startsWith(PROXY_PATH)) {
+    requestUrl.pathname = requestUrl.pathname.substring(PROXY_PATH.length);
+  }
 
-  // Fetch the response from the destination and return it to the user.
-  // The response (including headers and body) from the destination will be streamed back.
-  return fetch(newRequest);
+  // Rewrite the URL to point to the destination origin
+  requestUrl.hostname = ORIGIN_HOST;
+  requestUrl.protocol = 'https:';
+
+  // Create a new request object to send to the origin
+  const newRequest = new Request(requestUrl.toString(), context.request);
+
+  // Fetch the response from the origin
+  const response = await fetch(newRequest);
+
+  // If the response is not HTML, return it directly
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) {
+    return response;
+  }
+
+  // Otherwise, rewrite the HTML to fix links and asset paths
+  const rewriter = new HTMLRewriter().on('*', new AttributeRewriter(ORIGIN_HOST, PROXY_PATH));
+
+  return rewriter.transform(response);
 }
