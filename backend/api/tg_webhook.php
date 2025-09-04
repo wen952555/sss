@@ -101,8 +101,8 @@ $conn = function_exists('db_connect') ? db_connect() : (isset($conn) ? $conn : n
 if (!$conn) exit('无法连接数据库');
 
 // 检查所需表
-if (!tableExists($conn, 'tg_admins') || !tableExists($conn, 'tg_admin_states') || !tableExists($conn, 'tg_announcements')) {
-    error_log("FATAL: Required Telegram bot tables ('tg_admins', 'tg_admin_states', or 'tg_announcements') not found in database.");
+if (!tableExists($conn, 'tg_admins') || !tableExists($conn, 'tg_admin_states')) {
+    error_log("FATAL: Required Telegram bot tables ('tg_admins' or 'tg_admin_states') not found in database.");
     exit();
 }
 

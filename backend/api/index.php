@@ -1,5 +1,4 @@
 <?php
-error_log("index.php is being executed");
 header("Content-Type: application/json; charset=UTF-8");
 require_once 'db_connect.php';
 
