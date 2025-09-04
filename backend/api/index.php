@@ -451,6 +451,18 @@ switch ($action) {
         $conn->close();
         break;
 
+    case 'getLatestAnnouncement':
+        $query = "SELECT message_text FROM tg_announcements WHERE status = 'published' ORDER BY created_at DESC LIMIT 1";
+        $result = $conn->query($query);
+        if ($result && $result->num_rows > 0) {
+            $announcement = $result->fetch_assoc();
+            echo json_encode(['success' => true, 'announcement' => $announcement['message_text']]);
+        } else {
+            echo json_encode(['success' => true, 'announcement' => null]);
+        }
+        $conn->close();
+        break;
+
     default:
         http_response_code(404);
         echo json_encode(['success' => false, 'message' => 'Unknown API action provided.']);
