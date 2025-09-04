@@ -46,7 +46,7 @@
  *
  * 5.  SET WEBHOOK:
  *     - You need to set this script as the webhook for your Telegram bot. You can do this by visiting the following URL in your browser:
- *       https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://<YOUR_DOMAIN>/path/to/tg_webhook.php
+ *       https://api.telegram.org/bot<YOUR_B_TOKEN>/setWebhook?url=https://<YOUR_DOMAIN>/path/to/tg_webhook.php
  */
 
 // Enable error reporting for debugging during development
