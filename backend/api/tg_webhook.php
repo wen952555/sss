@@ -7,6 +7,7 @@ ini_set('error_log', __DIR__ . '/tg_webhook.log');
 error_reporting(E_ALL);
 
 require_once 'db_connect.php';
+require_once __DIR__ . '/../utils/announcements.php';
 
 // 读取配置
 if (!isset($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
@@ -139,8 +140,8 @@ $conn = function_exists('db_connect') ? db_connect() : (isset($conn) ? $conn : n
 if (!$conn) exit('无法连接数据库');
 
 // 检查所需表
-if (!tableExists($conn, 'tg_admins') || !tableExists($conn, 'tg_admin_states')) {
-    error_log("FATAL: Required Telegram bot tables ('tg_admins' or 'tg_admin_states') not found in database.");
+if (!tableExists($conn, 'tg_admins') || !tableExists($conn, 'tg_admin_states') || !tableExists($conn, 'tg_announcements')) {
+    error_log("FATAL: Required Telegram bot tables ('tg_admins', 'tg_admin_states', or 'tg_announcements') not found in database.");
     exit();
 }
 
@@ -262,10 +263,7 @@ if (isset($update["message"])) {
             case '/publish_announcement':
                 $message = implode(' ', array_slice($parts, 1));
                 if (!empty($message)) {
-                    $stmt = $conn->prepare("INSERT INTO tg_announcements (message_text) VALUES (?)");
-                    $stmt->bind_param("s", $message);
-                    $stmt->execute();
-                    $stmt->close();
+                    createAnnouncement($conn, $message);
                     sendMessage($chatId, "✅ 公告已发布并保存。", $adminKeyboard);
                 } else {
                     sendMessage($chatId, "❌ 命令格式错误。\n用法: `/publish_announcement <公告内容>`");
@@ -274,15 +272,11 @@ if (isset($update["message"])) {
             case '/delete_announcement':
                 $announcementId = (int)($parts[1] ?? 0);
                 if ($announcementId > 0) {
-                    $stmt = $conn->prepare("UPDATE tg_announcements SET status = 'deleted' WHERE id = ?");
-                    $stmt->bind_param("i", $announcementId);
-                    $stmt->execute();
-                    if ($stmt->affected_rows > 0) {
+                    if (deleteAnnouncement($conn, $announcementId)) {
                         sendMessage($chatId, "✅ 公告 #{$announcementId} 已删除。", $adminKeyboard);
                     } else {
                         sendMessage($chatId, "❌ 未找到ID为 `{$announcementId}` 的公告，或该公告已被删除。", $adminKeyboard);
                     }
-                    $stmt->close();
                 } else {
                     sendMessage($chatId, "❌ 命令格式错误。\n用法: `/delete_announcement <公告ID>`");
                 }
@@ -292,12 +286,7 @@ if (isset($update["message"])) {
 
     switch ($adminState['state']) {
         case 'awaiting_broadcast_message':
-            // Save the announcement to the database
-            $stmt = $conn->prepare("INSERT INTO tg_announcements (message_text) VALUES (?)");
-            $stmt->bind_param("s", $text);
-            $stmt->execute();
-            $stmt->close();
-
+            createAnnouncement($conn, $text);
             $broadcastMessage = "【📢 公告】\n\n" . $text;
             // 此处可调用实际群发逻辑
             sendMessage($chatId, "✅ 公告已发布并保存。\n\n内容:\n" . $broadcastMessage, $adminKeyboard);
@@ -389,17 +378,11 @@ if (isset($update["message"])) {
         case 'delete_ann':
             $announcementId = $parts[2] ?? 0;
             if ($announcementId > 0) {
-                $stmt = $conn->prepare("UPDATE tg_announcements SET status = 'deleted' WHERE id = ?");
-                $stmt->bind_param("i", $announcementId);
-                $stmt->execute();
-
-                if ($stmt->affected_rows > 0) {
+                if (deleteAnnouncement($conn, $announcementId)) {
                     answerCallbackQuery($callbackQueryId, "公告 #$announcementId 已删除。");
                 } else {
                     answerCallbackQuery($callbackQueryId, "操作已完成或公告不存在。");
                 }
-                $stmt->close();
-
                 // Refresh the announcement list message
                 $messageId = $callbackQuery["message"]["message_id"];
                 showManageAnnouncements($conn, $chatId, $messageId);
