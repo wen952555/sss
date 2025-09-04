@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Frontend for the proxy and betting app.",
   "scripts": {
-    "build": "echo 'No build step required for static site, but this script satisfies the build system.' && exit 0"
+    "build": "mkdir -p build && cp index.html style.css script.js build/ && cp -r functions build/"
   },
   "author": "",
   "license": "ISC"
