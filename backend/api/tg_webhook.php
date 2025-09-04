@@ -55,15 +55,12 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // --- CONFIGURATION ---
-// 1. Set your Telegram Bot Token here
-define('BOT_TOKEN', 'YOUR_TELEGRAM_BOT_TOKEN');
-
-// 2. Set the list of authorized administrator Telegram User IDs
-define('ADMIN_IDS', [123456789]); // Example: [123456789, 987654321]
+// The BOT_TOKEN and ADMIN_IDS are now loaded from config.php
+require_once 'config.php';
 
 // --- HELPER FUNCTION TO SEND A MESSAGE VIA TELEGRAM API ---
-function sendMessage($chat_id, $text) {
-    $url = 'https://api.telegram.org/bot' . BOT_TOKEN . '/sendMessage';
+function sendMessage($chat_id, $text, $token) {
+    $url = 'https://api.telegram.org/bot' . $token . '/sendMessage';
     $post_fields = [
         'chat_id' => $chat_id,
         'text' => $text,
@@ -87,7 +84,7 @@ $content = file_get_contents("php://input");
 $update = json_decode($content, true);
 
 // Log the raw update for debugging
-// file_put_contents('telegram_log.txt', $content . "\n", FILE_APPEND);
+file_put_contents('telegram_log.txt', $content . "\n", FILE_APPEND);
 
 if (!$update) {
     // No update received
@@ -102,8 +99,8 @@ if (isset($update['message'])) {
     $text = $message['text'];
 
     // --- ADMIN AUTHENTICATION ---
-    if (!in_array($from_id, ADMIN_IDS)) {
-        sendMessage($chat_id, "Sorry, you are not authorized to use this bot.");
+    if (!in_array($from_id, $ADMIN_USER_IDS)) {
+        sendMessage($chat_id, "Sorry, you are not authorized to use this bot.", $TELEGRAM_BOT_TOKEN);
         exit();
     }
 
@@ -116,16 +113,14 @@ if (isset($update['message'])) {
 
         // --- Database Interaction ---
         try {
-            // Include database configuration and establish connection ($pdo).
-            require_once 'config.php';
-
+            // Database connection is already established via config.php at the top
             $stmt = null;
             if ($command === 'add_score') {
                 $stmt = $pdo->prepare("UPDATE players SET score = score + ? WHERE id = ?");
             } elseif ($command === 'set_score') {
                 $stmt = $pdo->prepare("UPDATE players SET score = ? WHERE id = ?");
             } else {
-                sendMessage($chat_id, "Unknown command: $command");
+                sendMessage($chat_id, "Unknown command: $command", $TELEGRAM_BOT_TOKEN);
                 exit();
             }
 
@@ -140,21 +135,21 @@ if (isset($update['message'])) {
 
                 if ($affected_rows > 0) {
                     $action_desc = ($command === 'add_score') ? "Added $points points to" : "Set score for";
-                    sendMessage($chat_id, "✅ Success! $action_desc player '$player_id'.");
+                    sendMessage($chat_id, "✅ Success! $action_desc player '$player_id'.", $TELEGRAM_BOT_TOKEN);
                 } else {
-                    sendMessage($chat_id, "⚠️ Warning: Player '$player_id' not found or score was not changed.");
+                    sendMessage($chat_id, "⚠️ Warning: Player '$player_id' not found or score was not changed.", $TELEGRAM_BOT_TOKEN);
                 }
             }
         } catch (PDOException $e) {
             // Log the error to a file for the admin to see, not to the user.
             error_log("Database Error: " . $e->getMessage());
-            sendMessage($chat_id, "❌ An error occurred with the database. Please check the server logs.");
+            sendMessage($chat_id, "❌ An error occurred with the database. Please check the server logs.", $TELEGRAM_BOT_TOKEN);
         } catch (Throwable $e) {
             error_log("General Error: " . $e->getMessage());
-            sendMessage($chat_id, "❌ A critical error occurred. Please check the server logs.");
+            sendMessage($chat_id, "❌ A critical error occurred. Please check the server logs.", $TELEGRAM_BOT_TOKEN);
         }
     } else {
-        sendMessage($chat_id, "Invalid command format. Use:\n/add_score [player_id] [points]\n/set_score [player_id] [points]");
+        sendMessage($chat_id, "Invalid command format. Use:\n/add_score [player_id] [points]\n/set_score [player_id] [points]", $TELEGRAM_BOT_TOKEN);
     }
 }
 
