@@ -7,7 +7,6 @@ ini_set('error_log', __DIR__ . '/tg_webhook.log');
 error_reporting(E_ALL);
 
 require_once 'db_connect.php';
-require_once __DIR__ . '/../utils/announcements.php';
 
 // 读取配置
 if (!isset($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
@@ -85,48 +84,10 @@ function getAdminState($conn, $chatId) {
     return $result ?: ['state' => null, 'state_data' => null];
 }
 
-function showManageAnnouncements($conn, $chatId, $messageId = null) {
-    $stmt = $conn->prepare("SELECT id, message_text, created_at FROM tg_announcements WHERE status = 'published' ORDER BY created_at DESC LIMIT 10");
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $reply = "请选择要删除的公告：\n";
-        $inline_keyboard = [];
-        while ($announcement = $result->fetch_assoc()) {
-            $announcement_id = $announcement['id'];
-            $announcement_text = mb_substr($announcement['message_text'], 0, 20) . '...';
-
-            $inline_keyboard[] = [
-                ['text' => "删除: \"" . htmlspecialchars($announcement_text) . "\"", 'callback_data' => 'delete_ann_' . $announcement_id]
-            ];
-        }
-        $replyMarkup = ['inline_keyboard' => $inline_keyboard];
-    } else {
-        $reply = "没有找到任何已发布的公告。";
-        $replyMarkup = ['inline_keyboard' => []]; // Empty keyboard
-    }
-    $stmt->close();
-
-    if ($messageId) {
-        // Edit the existing message
-        sendRequest('editMessageText', [
-            'chat_id' => $chatId,
-            'message_id' => $messageId,
-            'text' => $reply,
-            'reply_markup' => $replyMarkup
-        ]);
-    } else {
-        // Send a new message
-        sendMessage($chatId, $reply, $replyMarkup);
-    }
-}
-
 // --- 管理员菜单 ---
 $adminKeyboard = [
     'keyboard' => [
         [['text' => '查找玩家'], ['text' => '积分列表']],
-        [['text' => '发布新公告'], ['text' => '管理公告']],
         [['text' => '取消']]
     ],
     'resize_keyboard' => true
@@ -140,8 +101,8 @@ $conn = function_exists('db_connect') ? db_connect() : (isset($conn) ? $conn : n
 if (!$conn) exit('无法连接数据库');
 
 // 检查所需表
-if (!tableExists($conn, 'tg_admins') || !tableExists($conn, 'tg_admin_states') || !tableExists($conn, 'tg_announcements')) {
-    error_log("FATAL: Required Telegram bot tables ('tg_admins', 'tg_admin_states', or 'tg_announcements') not found in database.");
+if (!tableExists($conn, 'tg_admins') || !tableExists($conn, 'tg_admin_states')) {
+    error_log("FATAL: Required Telegram bot tables ('tg_admins' or 'tg_admin_states') not found in database.");
     exit();
 }
 
@@ -260,38 +221,10 @@ if (isset($update["message"])) {
                     sendMessage($chatId, "❌ 命令格式错误。\n用法: `/delete_player <手机号>`");
                 }
                 exit();
-            case '/publish_announcement':
-                $message = implode(' ', array_slice($parts, 1));
-                if (!empty($message)) {
-                    createAnnouncement($conn, $message);
-                    sendMessage($chatId, "✅ 公告已发布并保存。", $adminKeyboard);
-                } else {
-                    sendMessage($chatId, "❌ 命令格式错误。\n用法: `/publish_announcement <公告内容>`");
-                }
-                exit();
-            case '/delete_announcement':
-                $announcementId = (int)($parts[1] ?? 0);
-                if ($announcementId > 0) {
-                    if (deleteAnnouncement($conn, $announcementId)) {
-                        sendMessage($chatId, "✅ 公告 #{$announcementId} 已删除。", $adminKeyboard);
-                    } else {
-                        sendMessage($chatId, "❌ 未找到ID为 `{$announcementId}` 的公告，或该公告已被删除。", $adminKeyboard);
-                    }
-                } else {
-                    sendMessage($chatId, "❌ 命令格式错误。\n用法: `/delete_announcement <公告ID>`");
-                }
-                exit();
         }
     }
 
     switch ($adminState['state']) {
-        case 'awaiting_broadcast_message':
-            createAnnouncement($conn, $text);
-            $broadcastMessage = "【📢 公告】\n\n" . $text;
-            // 此处可调用实际群发逻辑
-            sendMessage($chatId, "✅ 公告已发布并保存。\n\n内容:\n" . $broadcastMessage, $adminKeyboard);
-            setAdminState($conn, $chatId, null);
-            exit();
         case 'awaiting_add_amount':
         case 'awaiting_sub_amount':
             $amount = (int)$text;
@@ -342,10 +275,6 @@ if (isset($update["message"])) {
             setAdminState($conn, $chatId, 'awaiting_phone_number');
             sendMessage($chatId, "请输入您要查找的玩家手机号：");
             break;
-        case '发布新公告':
-            setAdminState($conn, $chatId, 'awaiting_broadcast_message');
-            sendMessage($chatId, "请输入您要发送的公告内容：");
-            break;
         case '积分列表':
             $result = $conn->query("SELECT phone, points FROM users WHERE points > 0 ORDER BY points DESC LIMIT 50");
             $reply = "积分排行榜 (Top 50):\n---------------------\n";
@@ -353,9 +282,6 @@ if (isset($update["message"])) {
                 $reply .= "手机: `{$row['phone']}` - 积分: *{$row['points']}*\n";
             }
             sendMessage($chatId, $reply, $adminKeyboard);
-            break;
-        case '管理公告':
-            showManageAnnouncements($conn, $chatId);
             break;
     }
 
@@ -375,19 +301,6 @@ if (isset($update["message"])) {
     $userId = $parts[2] ?? 0;
 
     switch ($actionType) {
-        case 'delete_ann':
-            $announcementId = $parts[2] ?? 0;
-            if ($announcementId > 0) {
-                if (deleteAnnouncement($conn, $announcementId)) {
-                    answerCallbackQuery($callbackQueryId, "公告 #$announcementId 已删除。");
-                } else {
-                    answerCallbackQuery($callbackQueryId, "操作已完成或公告不存在。");
-                }
-                // Refresh the announcement list message
-                $messageId = $callbackQuery["message"]["message_id"];
-                showManageAnnouncements($conn, $chatId, $messageId);
-            }
-            break;
         case 'add_pts':
             setAdminState($conn, $chatId, 'awaiting_add_amount', $userId);
             sendMessage($chatId, "请输入要为ID `{$userId}` 增加的积分数量：");
