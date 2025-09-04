@@ -39,20 +39,18 @@ function App() {
   if (isLoadingApp) { return <div className="app-loading">{t("请稍候，应用正在加载...")}</div>; }
 
   const currentStatusText = GameStateDisplayNames[gameState?.gameState] || t("进行中...");
-  const playerNames = gameState?.players.map(p => p.name).join('、');
   const canSubmitGame = !!(arrangedHumanHand?.tou && arrangedHumanHand?.zhong && arrangedHumanHand?.wei && (arrangedHumanHand.tou.length + arrangedHumanHand.zhong.length + arrangedHumanHand.wei.length) === 13);
 
   if (humanPlayerFromState && (gameState.gameState === "HUMAN_ARRANGING") && !showComparisonModal) {
     return (
       <div className="app-container">
-        <TopInfoBar statusText={currentStatusText} playerNames={playerNames} />
+        <TopInfoBar statusText={currentStatusText} players={gameState.players} />
         <div className="game-content-area">
           <HumanPlayerBoard arrangedHand={arrangedHumanHand} selectedCardsInfo={selectedCardsInfo} onCardClick={handleCardClick} onDunClick={handleDunClick}/>
         </div>
         <ActionButtons 
             onAIHelper={handleAIHelperForHuman} onSubmit={handleSubmitPlayerHand} canSubmit={canSubmitGame} 
-            onManageProfile={() => {}} onToggleAIPlay={handleToggleAIPlay} onAutoMatch={() => {}}
-            isMultiplayer={false}
+            onManageProfile={() => {}} onToggleAIPlay={handleToggleAIPlay}
         />
       </div>
     );
