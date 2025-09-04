@@ -1,12 +1,17 @@
-// frontend/functions/[[path]].js
+// frontend/functions/proxy/[[path]].js
 
 /**
- * Cloudflare Pages function for proxying requests.
- * This will catch all requests to the site and forward them to the destination URL.
+ * Cloudflare Pages function for proxying requests under the `/proxy/` path.
+ * This will catch all requests to `/proxy/*` and forward them to the destination URL.
  */
 export async function onRequest(context) {
   // Get the incoming request URL
   const url = new URL(context.request.url);
+
+  // Strip the `/proxy` prefix from the pathname
+  if (url.pathname.startsWith('/proxy')) {
+    url.pathname = url.pathname.substring('/proxy'.length);
+  }
 
   // Define the destination host and protocol.
   // NOTE: SSL certificate is only valid for the non-www domain.
