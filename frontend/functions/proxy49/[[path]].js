@@ -1,16 +1,16 @@
-// frontend/functions/proxy/[[path]].js
+// frontend/functions/proxy49/[[path]].js
 
 /**
- * Cloudflare Pages function for proxying requests under the `/proxy/` path.
- * This will catch all requests to `/proxy/*` and forward them to the destination URL.
+ * Cloudflare Pages function for proxying requests under the `/proxy49/` path.
+ * This will catch all requests to `/proxy49/*` and forward them to the destination URL.
  */
 export async function onRequest(context) {
   // Get the incoming request URL
   const url = new URL(context.request.url);
 
-  // Strip the `/proxy` prefix from the pathname
-  if (url.pathname.startsWith('/proxy')) {
-    url.pathname = url.pathname.substring('/proxy'.length);
+  // Strip the `/proxy49` prefix from the pathname
+  if (url.pathname.startsWith('/proxy49')) {
+    url.pathname = url.pathname.substring('/proxy49'.length);
   }
 
   // Define the destination host and protocol.
