@@ -5,6 +5,7 @@ require_once 'db_connect.php';
 // All API requests will be routed through this file based on the 'action' parameter.
 require_once __DIR__ . '/../utils/utils.php';
 require_once __DIR__ . '/../utils/scorer.php';
+require_once __DIR__ . '/../utils/announcements.php';
 
 $action = $_REQUEST['action'] ?? '';
 
@@ -452,14 +453,8 @@ switch ($action) {
         break;
 
     case 'getLatestAnnouncement':
-        $query = "SELECT message_text FROM tg_announcements WHERE status = 'published' ORDER BY created_at DESC LIMIT 1";
-        $result = $conn->query($query);
-        if ($result && $result->num_rows > 0) {
-            $announcement = $result->fetch_assoc();
-            echo json_encode(['success' => true, 'announcement' => $announcement['message_text']]);
-        } else {
-            echo json_encode(['success' => true, 'announcement' => null]);
-        }
+        $announcement = getLatestAnnouncement($conn);
+        echo json_encode(['success' => true, 'announcement' => $announcement]);
         $conn->close();
         break;
 
