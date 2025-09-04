@@ -57,25 +57,10 @@ error_reporting(E_ALL);
 // --- CONFIGURATION ---
 // The BOT_TOKEN and ADMIN_IDS are now loaded from config.php
 require_once 'config.php';
+require_once 'telegram_helpers.php';
 
 // --- HELPER FUNCTION TO SEND A MESSAGE VIA TELEGRAM API ---
-function sendMessage($chat_id, $text, $token) {
-    $url = 'https://api.telegram.org/bot' . $token . '/sendMessage';
-    $post_fields = [
-        'chat_id' => $chat_id,
-        'text' => $text,
-        'parse_mode' => 'HTML'
-    ];
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type:application/json']);
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_fields));
-    $output = curl_exec($ch);
-    curl_close($ch);
-    return $output;
-}
+// The sendMessage function is now in telegram_helpers.php
 
 // --- WEBHOOK PROCESSING ---
 
