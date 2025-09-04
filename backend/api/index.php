@@ -1,11 +1,11 @@
 <?php
+error_log("index.php is being executed");
 header("Content-Type: application/json; charset=UTF-8");
 require_once 'db_connect.php';
 
 // All API requests will be routed through this file based on the 'action' parameter.
 require_once __DIR__ . '/../utils/utils.php';
 require_once __DIR__ . '/../utils/scorer.php';
-require_once __DIR__ . '/../utils/announcements.php';
 
 $action = $_REQUEST['action'] ?? '';
 
@@ -449,14 +449,6 @@ switch ($action) {
             $stmt->close();
         }
         echo json_encode(['success' => true]);
-        $conn->close();
-        break;
-
-    case 'getLatestAnnouncement':
-        error_log("Handling getLatestAnnouncement action");
-        $announcement = getLatestAnnouncement($conn);
-        error_log("Announcement from DB: " . ($announcement ?? 'null'));
-        echo json_encode(['success' => true, 'announcement' => $announcement]);
         $conn->close();
         break;
 
