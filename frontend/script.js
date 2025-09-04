@@ -64,6 +64,45 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSelectedNumbersDisplay();
     }
 
+    async function handleBetSubmission() {
+        const betData = {
+            player_id: "user123", // Placeholder player ID
+            numbers: Array.from(selectedNumbers),
+            amount: betAmountInput.value
+        };
+
+        try {
+            // Disable button to prevent multiple submissions
+            confirmButton.disabled = true;
+            confirmButton.textContent = '提交中...';
+
+            const response = await fetch('/api/bet.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(betData),
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                alert('投注成功！');
+                resetGame();
+            } else {
+                // Show a more specific error from the API if available
+                alert(`投注失败: ${result.message || '未知错误'}`);
+            }
+        } catch (error) {
+            console.error('Error submitting bet:', error);
+            alert('投注请求失败，请检查网络连接或联系管理员。');
+        } finally {
+            // Re-enable button
+            confirmButton.disabled = false;
+            confirmButton.textContent = '确认下注';
+        }
+    }
+
     function confirmBet() {
         const betAmount = betAmountInput.value;
         if (selectedNumbers.size === 0) {
@@ -79,15 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
             投注确认:
             - 号码: ${Array.from(selectedNumbers).sort((a, b) => a - b).join(', ')}
             - 金额: ${betAmount}
-
-            (注意: 这只是一个模拟, 点击“确定”后我们未来会连接到后端。)
         `;
 
         if (confirm(confirmationMessage)) {
-            // For now, just show a success message.
-            // Later, this is where we would make the API call to the backend.
-            alert('投注成功！');
-            resetGame();
+            handleBetSubmission();
         }
     }
 
