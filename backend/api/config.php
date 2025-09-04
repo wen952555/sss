@@ -12,8 +12,6 @@ $TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN'; // 请替换为你的 Telegram Bot Token
 $ADMIN_USER_IDS = [123456789]; // 可选: 管理员TG chat_id数组, 用于tg_webhook.php
 
 // --- Database Connection ---
-// This follows the recommended setup from tg_webhook.php's documentation.
-// It establishes a PDO connection or throws an exception on failure.
 $pdo = null;
 try {
     $dsn = "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4";
