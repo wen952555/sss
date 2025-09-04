@@ -3,7 +3,7 @@ import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineThirteenGame, getAiThirteenHand, calculateThirteenTrialResult, getSmartSortedHand, parseCard, isFoul } from '../utils';
 import GameTable from './GameTable';
 
-const ThirteenGame = ({ onBackToLobby, user }) => {
+const ThirteenGame = ({ onBackToLobby, user, isTrialMode }) => {
   const {
     topLane,
     middleLane,
@@ -25,9 +25,14 @@ const ThirteenGame = ({ onBackToLobby, user }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const aiPlayerInfo = Array(3).fill(0).map((_, i) => ({ id: `ai_${i}`, phone: `AI ${i+1}`, is_ready: false }));
-    setPlayers([{ id: user.id, phone: user.phone, is_ready: false }, ...aiPlayerInfo]);
-  }, [user]);
+    const initialPlayers = [{ id: user.id, phone: user.phone, is_ready: false }];
+    if (isTrialMode) {
+      const aiPlayerInfo = Array(3).fill(0).map((_, i) => ({ id: `ai_${i}`, phone: `AI ${i+1}`, is_ready: false }));
+      setPlayers([...initialPlayers, ...aiPlayerInfo]);
+    } else {
+      setPlayers(initialPlayers);
+    }
+  }, [user, isTrialMode]);
 
   // Effect to sort AI hands sequentially in the background after dealing
   useEffect(() => {

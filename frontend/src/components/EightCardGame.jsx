@@ -3,7 +3,7 @@ import { useCardArrangement } from '../hooks/useCardArrangement';
 import { dealOfflineEightCardGame, getSmartSortedHandForEight, calculateEightCardTrialResult, parseCard } from '../utils';
 import GameTable from './GameTable';
 
-const EightCardGame = ({ onBackToLobby, user }) => {
+const EightCardGame = ({ onBackToLobby, user, isTrialMode }) => {
   const {
     topLane,
     middleLane,
@@ -24,9 +24,14 @@ const EightCardGame = ({ onBackToLobby, user }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const aiPlayerInfo = Array(5).fill(0).map((_, i) => ({ id: `ai_${i}`, phone: `AI ${i+1}`, is_ready: false }));
-    setPlayers([{ id: user.id, phone: user.phone, is_ready: false }, ...aiPlayerInfo]);
-  }, [user]);
+    const initialPlayers = [{ id: user.id, phone: user.phone, is_ready: false }];
+    if (isTrialMode) {
+      const aiPlayerInfo = Array(5).fill(0).map((_, i) => ({ id: `ai_${i}`, phone: `AI ${i+1}`, is_ready: false }));
+      setPlayers([...initialPlayers, ...aiPlayerInfo]);
+    } else {
+      setPlayers(initialPlayers);
+    }
+  }, [user, isTrialMode]);
 
   const handleReady = useCallback(() => {
     try {
