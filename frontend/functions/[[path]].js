@@ -9,9 +9,8 @@ export async function onRequest(context) {
   const url = new URL(context.request.url);
 
   // Define the destination host and protocol.
-  // NOTE: As of execution, the destination site was not accessible from the environment.
-  // This proxy code assumes the site is 'https://www.49916a.com' and is reachable.
-  const destinationHostname = 'www.49916a.com';
+  // NOTE: SSL certificate is only valid for the non-www domain.
+  const destinationHostname = '49916a.com';
   const destinationProtocol = 'https:';
 
   // Rewrite the URL to point to the destination.
