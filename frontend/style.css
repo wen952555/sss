@@ -134,19 +134,49 @@ header h1 {
     background-color: #218838;
 }
 
-/* Landing Page List */
-ul {
-    list-style-type: none;
-    padding: 0;
+/* Main Menu / Landing Page Styles */
+.main-menu-container {
+    width: 100%;
+    max-width: 900px;
+    text-align: center;
+    padding: 20px;
 }
-ul li {
-    margin: 10px 0;
+
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 30px;
 }
-ul li a {
+
+.card-link {
     text-decoration: none;
-    font-size: 18px;
-    color: #007bff;
+    color: inherit;
 }
-ul li a:hover {
-    text-decoration: underline;
+
+.card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 30px;
+    width: 220px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+    margin-top: 0;
+    font-size: 22px;
+    color: #0056b3;
+}
+
+.card p {
+    font-size: 14px;
+    color: #666;
 }
