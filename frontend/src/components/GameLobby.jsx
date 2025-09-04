@@ -16,7 +16,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
 
     const fetchAnnouncement = async () => {
       try {
-        const response = await fetch('/api/index.php?action=getLatestAnnouncement');
+        const response = await fetch(`/api/index.php?action=getLatestAnnouncement&t=${new Date().getTime()}`);
         const data = await response.json();
         if (data.success && data.announcement) {
           setAnnouncement(data.announcement);
