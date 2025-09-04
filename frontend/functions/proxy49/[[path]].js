@@ -13,10 +13,15 @@ class AttributeRewriter {
   }
 
   element(element) {
-    const attributes = ['href', 'src', 'action'];
+    const attributes = ['href', 'src', 'action', 'data-original']; // Added data-original for lazy loaded images
     for (const attr of attributes) {
       const value = element.getAttribute(attr);
       if (value) {
+        // Ignore data URIs, javascript: links, mailto: links, etc.
+        if (value.startsWith('data:') || value.startsWith('javascript:') || value.startsWith('#') || value.startsWith('mailto:')) {
+            continue;
+        }
+
         // Replace absolute URLs with proxied URLs
         const absoluteUrlPattern = new RegExp(`https?://${this.originHost}`, 'g');
         if (absoluteUrlPattern.test(value)) {
@@ -25,6 +30,10 @@ class AttributeRewriter {
         // Handle root-relative paths by prepending the proxy path
         else if (value.startsWith('/')) {
             element.setAttribute(attr, `${this.proxyPath}${value}`);
+        }
+        // Handle path-relative URLs that should be treated as root-relative
+        else {
+            element.setAttribute(attr, `${this.proxyPath}/${value}`);
         }
       }
     }
