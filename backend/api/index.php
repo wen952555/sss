@@ -453,7 +453,9 @@ switch ($action) {
         break;
 
     case 'getLatestAnnouncement':
+        error_log("Handling getLatestAnnouncement action");
         $announcement = getLatestAnnouncement($conn);
+        error_log("Announcement from DB: " . ($announcement ?? 'null'));
         echo json_encode(['success' => true, 'announcement' => $announcement]);
         $conn->close();
         break;
