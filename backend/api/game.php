@@ -10,95 +10,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once 'config.php';
-
-// --- Database Connection ---
-$pdo = null;
+// Wrap the main logic in a try-catch to handle DB connection errors from config.php
 try {
-    $dsn = "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4";
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ];
-    $pdo = new PDO($dsn, $DB_USER, $DB_PASS, $options);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['message' => 'Database connection failed: ' . $e->getMessage()]);
-    exit;
-}
+    require_once 'config.php';
 
-// --- API Logic ---
-$action = '';
-$userId = '';
+    // --- API Logic ---
+    $action = '';
+    $userId = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if (isset($_GET['action'])) {
-        $action = $_GET['action'];
-    }
-    if (isset($_GET['user_id'])) {
-        $userId = $_GET['user_id'];
-    }
-
-    if ($action === 'get_score' && !empty($userId)) {
-        try {
-            $stmt = $pdo->prepare("SELECT score FROM players WHERE id = ?");
-            $stmt->execute([$userId]);
-            $player = $stmt->fetch();
-
-            if ($player) {
-                echo json_encode(['success' => true, 'score' => $player['score']]);
-            } else {
-                // If player not found, return a default score of 0
-                echo json_encode(['success' => true, 'score' => 0]);
-            }
-        } catch (PDOException $e) {
-            http_response_code(500);
-            echo json_encode(['message' => 'Error fetching score: ' . $e->getMessage()]);
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        if (isset($_GET['action'])) {
+            $action = $_GET['action'];
         }
-    } else {
-        http_response_code(400);
-        echo json_encode(['message' => 'Invalid GET request. Required action=get_score and user_id.']);
-    }
+        if (isset($_GET['user_id'])) {
+            $userId = $_GET['user_id'];
+        }
 
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
-
-    if (isset($data['action'])) {
-        $action = $data['action'];
-    }
-
-    if ($action === 'save_score') {
-        if (isset($data['user_id']) && isset($data['score'])) {
-            $userId = $data['user_id'];
-            $score = $data['score'];
-
+        if ($action === 'get_score' && !empty($userId)) {
             try {
-                // Use INSERT ... ON DUPLICATE KEY UPDATE to handle both new and existing players
-                $stmt = $pdo->prepare("
-                    INSERT INTO players (id, score) VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE score = VALUES(score)
-                ");
-                $stmt->execute([$userId, $score]);
+                $stmt = $pdo->prepare("SELECT score FROM players WHERE id = ?");
+                $stmt->execute([$userId]);
+                $player = $stmt->fetch();
 
-                echo json_encode(['success' => true, 'message' => 'Score saved successfully.']);
-
+                if ($player) {
+                    echo json_encode(['success' => true, 'score' => $player['score']]);
+                } else {
+                    // If player not found, return a default score of 0
+                    echo json_encode(['success' => true, 'score' => 0]);
+                }
             } catch (PDOException $e) {
                 http_response_code(500);
-                echo json_encode(['message' => 'Error saving score: ' . $e->getMessage()]);
+                echo json_encode(['message' => 'Error fetching score: ' . $e->getMessage()]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(['message' => 'Invalid POST request. Required action=save_score, user_id, and score.']);
+            echo json_encode(['message' => 'Invalid GET request. Required action=get_score and user_id.']);
         }
-    } else {
-        http_response_code(400);
-        echo json_encode(['message' => 'Invalid action in POST request.']);
-    }
 
-} else {
-    http_response_code(405);
-    echo json_encode(['message' => 'Method Not Allowed']);
+    } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if (isset($data['action'])) {
+            $action = $data['action'];
+        }
+
+        if ($action === 'save_score') {
+            if (isset($data['user_id']) && isset($data['score'])) {
+                $userId = $data['user_id'];
+                $score = $data['score'];
+
+                try {
+                    // Use INSERT ... ON DUPLICATE KEY UPDATE to handle both new and existing players
+                    $stmt = $pdo->prepare("
+                        INSERT INTO players (id, score) VALUES (?, ?)
+                        ON DUPLICATE KEY UPDATE score = VALUES(score)
+                    ");
+                    $stmt->execute([$userId, $score]);
+
+                    echo json_encode(['success' => true, 'message' => 'Score saved successfully.']);
+
+                } catch (PDOException $e) {
+                    http_response_code(500);
+                    echo json_encode(['message' => 'Error saving score: ' . $e->getMessage()]);
+                }
+            } else {
+                http_response_code(400);
+                echo json_encode(['message' => 'Invalid POST request. Required action=save_score, user_id, and score.']);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(['message' => 'Invalid action in POST request.']);
+        }
+
+    } else {
+        http_response_code(405);
+        echo json_encode(['message' => 'Method Not Allowed']);
+    }
+} catch (PDOException $e) {
+    // This catches the exception thrown by config.php if the database connection fails
+    http_response_code(500);
+    echo json_encode(['message' => 'Database connection failed: ' . $e->getMessage()]);
+    exit;
 }
 
 ?>
