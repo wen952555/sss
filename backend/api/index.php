@@ -59,9 +59,9 @@ switch ($action) {
                 $stmt->execute();
                 $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
                 $stmt->close();
-                if ($currentPlayers < $room['players_count']) {
-                    fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
-                }
+                // if ($currentPlayers < $room['players_count']) {
+                //     fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
+                // }
                 $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
@@ -304,7 +304,7 @@ switch ($action) {
                 $stmt->bind_param("ii", $roomId, $guestUserId);
                 $stmt->execute();
                 $stmt->close();
-                fillWithAI($conn, $roomId, $gameType, $playersNeeded);
+                // fillWithAI($conn, $roomId, $gameType, $playersNeeded);
                 dealCards($conn, $roomId, $gameType, $playersNeeded);
                 $conn->commit();
                 http_response_code(200);
