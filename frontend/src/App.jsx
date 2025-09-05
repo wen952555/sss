@@ -34,19 +34,6 @@ function App() {
   const [showTransfer, setShowTransfer] = useState(false);
   const [viewingGame, setViewingGame] = useState(null); // null, 'thirteen', or 'eight'
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isTrialMode, setIsTrialMode] = useState(false);
-
-  const handleSelectTrialMode = (gameType) => {
-    setIsTrialMode(true);
-    setGameState({
-      gameType: gameType,
-      gameMode: 'trial',
-      roomId: 'trial_room', // A dummy room ID for trial mode
-      error: null,
-      gameUser: user || { id: -1, phone: 'Player' } // Use logged in user or a guest
-    });
-    setCurrentView(''); // Hide other views
-  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -133,7 +120,6 @@ function App() {
     setCurrentView('lobby');
     setMatchingStatus({ thirteen: false, eight: false });
     setViewingGame(null);
-    setIsTrialMode(false); // Also reset trial mode
   };
 
   const handleUpdate = async () => {
@@ -147,22 +133,9 @@ function App() {
     setCurrentView('profile');
   };
 
-  const isInGame = !!gameState.roomId && !isTrialMode;
-  const isInTrial = isTrialMode;
+  const isInGame = !!gameState.roomId;
 
   const renderMainContent = () => {
-    if (isInTrial) {
-      const trialProps = {
-        isTrialMode: true,
-        onBackToLobby: handleBackToLobby,
-        user: gameState.gameUser,
-        gameMode: gameState.gameMode,
-      };
-      if (gameState.gameType === 'thirteen') {
-        return <ThirteenGame {...trialProps} />;
-      }
-      return <EightCardGame {...trialProps} />;
-    }
     if (isInGame) {
       const gameProps = {
         roomId: gameState.roomId,
@@ -181,7 +154,7 @@ function App() {
       case 'profile':
         return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
       case 'modeSelection':
-        return <GameModeSelection gameType={viewingGame} onSelectMode={handleSelectMode} onBack={handleBackToLobby} onSelectTrialMode={() => handleSelectTrialMode(viewingGame)} />;
+        return <GameModeSelection gameType={viewingGame} onSelectMode={handleSelectMode} onBack={handleBackToLobby} />;
       case 'lobby':
       default:
         return (
