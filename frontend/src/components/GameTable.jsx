@@ -4,31 +4,27 @@ import Lane from './Lane';
 import GameResultModal from './GameResultModal';
 import './GameTable.css';
 
-// This is a presentational component. It receives all state and handlers as props.
 const GameTable = ({
-  // Game Info
   gameType,
   title,
   players,
   user,
-
-  // State
+  autoPlayRounds,
   topLane,
   middleLane,
   bottomLane,
   unassignedCards,
   selectedCards,
   LANE_LIMITS,
-  playerState, // 'waiting', 'arranging', 'submitted'
+  playerState,
   isLoading,
   gameResult,
   errorMessage,
-
-  // Handlers
   onBackToLobby,
   onReady,
   onConfirm,
   onAutoSort,
+  onAutoPlay,
   onCardClick,
   onLaneClick,
   onCloseResult,
@@ -42,6 +38,7 @@ const GameTable = ({
 
   const me = players.find(p => p.id === user.id);
   const myReadyState = me ? me.is_ready : false;
+  const isAutoPlaying = autoPlayRounds > 0;
 
   return (
     <div className="game-table-container">
@@ -51,8 +48,8 @@ const GameTable = ({
       </div>
       <div className="players-status-banner">
         <span className="player-name-list">
-          {players.map((p, index) => (
-            <span key={p.id} className={p.is_ready ? 'ready-state' : ''}>
+          {players.map((p) => (
+            <span key={p.id} className={playerState === 'arranging' ? 'arranging-state' : (p.is_ready ? 'ready-state' : '')}>
               {renderPlayerName(p)}
             </span>
           ))}
@@ -78,9 +75,11 @@ const GameTable = ({
         )}
         {playerState === 'arranging' && (
           <>
-            <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={isLoading || playerState !== 'arranging'}>智能理牌</button>
-            <button className="table-action-btn auto-manage-btn" disabled={isLoading || playerState !== 'arranging'}>智能托管</button>
-            <button onClick={onConfirm} disabled={isLoading || playerState !== 'arranging'} className="table-action-btn confirm-btn">确认比牌</button>
+            <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={isLoading || isAutoPlaying}>智能理牌</button>
+            <button onClick={onAutoPlay} className="table-action-btn auto-manage-btn" disabled={isLoading}>
+              {isAutoPlaying ? `托管中... (${autoPlayRounds})` : '智能托管'}
+            </button>
+            <button onClick={onConfirm} disabled={isLoading || isAutoPlaying} className="table-action-btn confirm-btn">确认比牌</button>
           </>
         )}
         {playerState === 'submitted' && (

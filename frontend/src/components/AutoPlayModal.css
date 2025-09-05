@@ -1,0 +1,45 @@
+.auto-play-modal h3 {
+  margin-top: 0;
+  color: #004d40;
+}
+
+.auto-play-modal p {
+  color: #00695c;
+  margin-bottom: 24px;
+}
+
+.auto-play-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 24px;
+}
+
+.auto-play-option-btn {
+  padding: 15px 10px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #fff;
+  background-color: #00796b;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.auto-play-option-btn:hover {
+  background-color: #00897b;
+}
+
+.auto-play-modal .modal-actions {
+  margin-top: 10px;
+}
+
+.auto-play-modal .cancel-btn {
+  width: 100%;
+  background-color: #d32f2f;
+}
+
+.auto-play-modal .cancel-btn:hover {
+  background-color: #e53935;
+}
