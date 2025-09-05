@@ -29,6 +29,7 @@ const GameTable = ({
   onLaneClick,
   onCloseResult,
   onPlayAgain,
+  turnTimeLeft,
 }) => {
   const renderPlayerName = (p) => {
     if (String(p.id).startsWith('ai')) return p.phone;
@@ -75,6 +76,9 @@ const GameTable = ({
         )}
         {playerState === 'arranging' && (
           <>
+            <div className="timer-container">
+              <span className="timer-text">{turnTimeLeft}s</span>
+            </div>
             <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={isLoading || isAutoPlaying}>智能理牌</button>
             <button onClick={onAutoPlay} className="table-action-btn auto-manage-btn" disabled={isLoading}>
               {isAutoPlaying ? `托管中... (${autoPlayRounds})` : '智能托管'}

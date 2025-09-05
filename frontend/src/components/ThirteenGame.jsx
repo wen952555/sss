@@ -23,6 +23,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAutoPlayModal, setShowAutoPlayModal] = useState(false);
   const [autoPlay, setAutoPlay] = useState({ active: false, rounds: 0 });
+  const [turnTimeLeft, setTurnTimeLeft] = useState(90);
+
+  const isAutoPlaying = autoPlay.active && autoPlay.rounds > 0;
 
   const handleStartAutoPlay = (rounds) => {
     setAutoPlay({ active: true, rounds });
@@ -100,6 +103,33 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
     }
   }, [playerState, players, user.id, autoPlay.active]);
 
+  // Effect for the 90-second turn timer
+  useEffect(() => {
+    if (playerState === 'arranging' && !isAutoPlaying) {
+      setTurnTimeLeft(90); // Reset timer
+      const timer = setInterval(() => {
+        setTurnTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [playerState, isAutoPlaying]);
+
+  // Effect to handle timeout
+  useEffect(() => {
+    if (turnTimeLeft === 0 && playerState === 'arranging' && !isAutoPlaying) {
+      console.log('Turn timer expired, auto-submitting hand.');
+      handleAutoSort(); // Sort the cards first
+      // A short delay to ensure state from sorting is applied before confirming
+      setTimeout(() => handleConfirm(), 100);
+    }
+  }, [turnTimeLeft, playerState, isAutoPlaying]);
+
   const handleReady = () => {
     const me = players.find(p => p.id === user.id);
     const isReady = me && me.is_ready;
@@ -133,6 +163,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
         players={players}
         user={user}
         autoPlayRounds={autoPlay.rounds}
+        turnTimeLeft={turnTimeLeft}
         topLane={topLane}
         middleLane={middleLane}
         bottomLane={bottomLane}

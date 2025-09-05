@@ -27,6 +27,17 @@
 
 .game-table-footer {
   gap: 15px;
+  justify-content: center;
+  align-items: center;
+}
+
+.timer-container {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #c62828;
+  margin-right: 20px;
+  min-width: 50px;
+  text-align: center;
 }
 
 .game-table-title {
