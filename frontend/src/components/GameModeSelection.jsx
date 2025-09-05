@@ -1,11 +1,8 @@
 import React from 'react';
 import './GameModeSelection.css';
 
-const GameModeSelection = ({ gameType, onSelectMode, onBack, onSelectTrialMode }) => {
+const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
   const gameTitle = gameType === 'thirteen' ? '经典十三张' : '急速八张';
-
-  // 两个游戏都显示试玩模式
-  const showTrialMode = gameType === 'eight' || gameType === 'thirteen';
 
   return (
     <div className="mode-selection-container">
@@ -28,17 +25,6 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack, onSelectTrialMode }
           <p className="mode-card-description">与更多玩家同场竞技</p>
         </div>
       </div>
-
-      {showTrialMode && (
-        <>
-          <div className="mode-options" style={{ marginTop: '1rem' }}>
-            <div className="mode-card trial-mode" onClick={() => onSelectTrialMode()}>
-              <h2 className="mode-card-title">试玩模式</h2>
-              <p className="mode-card-description">与AI练习，不消耗积分</p>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 };
