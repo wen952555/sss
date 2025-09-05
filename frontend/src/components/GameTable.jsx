@@ -40,6 +40,9 @@ const GameTable = ({
     return `玩家${p.phone.slice(-4)}`;
   };
 
+  const me = players.find(p => p.id === user.id);
+  const myReadyState = me ? me.is_ready : false;
+
   return (
     <div className="game-table-container">
       <div className="game-table-header">
@@ -49,14 +52,14 @@ const GameTable = ({
       <div className="players-status-banner">
         <span className="player-name-list">
           {players.map((p, index) => (
-            <span key={p.id} className={playerState === 'arranging' ? 'arranging-state' : ''}>
+            <span key={p.id} className={p.is_ready ? 'ready-state' : ''}>
               {renderPlayerName(p)}
             </span>
           ))}
         </span>
       </div>
 
-      {unassignedCards.length > 0 && (
+      {unassignedCards && unassignedCards.length > 0 && (
           <Lane title="待选牌" cards={unassignedCards} onCardClick={onCardClick} selectedCards={selectedCards} />
       )}
 
@@ -69,7 +72,9 @@ const GameTable = ({
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
         {playerState === 'waiting' && (
-          <button className="table-action-btn confirm-btn" onClick={onReady}>点击准备</button>
+          <button className="table-action-btn confirm-btn" onClick={onReady}>
+            {myReadyState ? '取消准备' : '点击准备'}
+          </button>
         )}
         {playerState === 'arranging' && (
           <>

@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-// All offline utility imports are removed as they are no longer needed
 import GameTable from './GameTable';
+import { getSmartSortedHand } from '../utils/autoSorter.js';
 
-// The component now only accepts props relevant for an online game
 const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   const {
     topLane,
@@ -11,51 +10,104 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
     bottomLane,
     selectedCards,
     LANE_LIMITS,
-    // `setInitialLanes` might be repurposed for when the server sends the hand
     setInitialLanes,
     handleCardClick,
     handleLaneClick,
   } = useCardArrangement('thirteen');
 
-  // Most state is removed, what remains will be driven by server events
-  const [playerState, setPlayerState] = useState('waiting'); // e.g., 'waiting', 'arranging', 'submitted'
+  const [playerState, setPlayerState] = useState('waiting');
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Effect to set the initial player list (will be updated by server messages)
+  const fetchGameStatus = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
+      const data = await response.json();
+      if (data.success) {
+        setPlayers(data.players || []);
+        const me = data.players.find(p => p.id === user.id);
+        if (data.gameStatus === 'playing' && me && me.initial_hand) {
+          setInitialLanes(me.initial_hand);
+          setPlayerState('arranging');
+        }
+        if (data.gameStatus === 'finished') {
+          setGameResult(data.result);
+          setPlayerState('finished');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch game status:', error);
+    }
+  }, [roomId, user.id, setInitialLanes]);
+
   useEffect(() => {
-    // In a real online game, you'd fetch the player list for the room `roomId`
-    // For now, we just show the current user.
-    setPlayers([{ id: user.id, phone: user.phone, is_ready: false }]);
-  }, [user, roomId]);
+    const pollInterval = setInterval(fetchGameStatus, 2000);
+    return () => clearInterval(pollInterval);
+  }, [fetchGameStatus]);
 
-  // Offline game logic (handleReady, handleAutoSort, handleConfirm) is removed.
-  // These actions will now be handled by sending messages to the server.
+  const handlePlayerAction = async (action, hand = null) => {
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const payload = {
+        action,
+        userId: user.id,
+        roomId,
+      };
+      if (hand) {
+        payload.hand = hand;
+      }
+      const response = await fetch('/api/index.php?action=player_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        setErrorMessage(data.message || '操作失败');
+      } else {
+        // Optimistically update UI for some actions
+        if (action === 'ready' || action === 'unready') {
+            const me = players.find(p => p.id === user.id);
+            if(me) me.is_ready = (action === 'ready' ? 1 : 0);
+        }
+        if (action === 'submit_hand') {
+          setPlayerState('submitted');
+        }
+        // Fetch latest status immediately
+        fetchGameStatus();
+      }
+    } catch (error) {
+      setErrorMessage('无法连接到服务器');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const handleReady = useCallback(() => {
-    // In an online game, this would send a "ready" message to the server
-    console.log('Player is ready. Room ID:', roomId);
-    // Logic to update player state via server would go here
-  }, [roomId]);
+  const handleReady = () => {
+    const me = players.find(p => p.id === user.id);
+    const isReady = me && me.is_ready;
+    handlePlayerAction(isReady ? 'unready' : 'ready');
+  };
 
-  const handleConfirm = useCallback(() => {
-    // In an online game, this would send the player's hand arrangement to the server
-    console.log('Player confirmed hand. Room ID:', roomId);
-    // Logic to send hand to server would go here
-  }, [roomId, topLane, middleLane, bottomLane]);
+  const handleConfirm = () => {
+    const hand = { top: topLane, middle: middleLane, bottom: bottomLane };
+    handlePlayerAction('submit_hand', hand);
+  };
 
-  const handleAutoSort = useCallback(() => {
-    // This could either be a client-side utility or a request to the server
-    console.log('Auto-sort requested.');
-    // For now, it does nothing. A client-side implementation could be kept.
-  }, []);
+  const handleAutoSort = () => {
+    const allCards = [...topLane, ...middleLane, ...bottomLane];
+    const sortedHand = getSmartSortedHand(allCards);
+    if (sortedHand) {
+      setInitialLanes(sortedHand);
+    }
+  };
 
   return (
     <GameTable
       gameType="thirteen"
-      // Title is now generic for online play
       title="经典十三张"
       players={players}
       user={user}
@@ -63,7 +115,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       topLane={topLane}
       middleLane={middleLane}
       bottomLane={bottomLane}
-      unassignedCards={[]} // This will be populated by server data
+      unassignedCards={[]}
       selectedCards={selectedCards}
       LANE_LIMITS={LANE_LIMITS}
 
@@ -73,15 +125,17 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       errorMessage={errorMessage}
 
       onBackToLobby={onBackToLobby}
-      // The buttons now have placeholder functionality
       onReady={handleReady}
       onConfirm={handleConfirm}
       onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
       onLaneClick={handleLaneClick}
       onCloseResult={() => setGameResult(null)}
-      // Play again would likely be handled by server state change
-      onPlayAgain={() => console.log('Play again')}
+      onPlayAgain={() => {
+        setGameResult(null);
+        setPlayerState('waiting');
+        handlePlayerAction('unready');
+      }}
     />
   );
 };
