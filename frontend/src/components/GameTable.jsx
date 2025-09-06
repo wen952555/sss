@@ -68,12 +68,23 @@ const GameTable = ({
 
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
-        <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={playerState !== 'arranging' || isLoading}>智能理牌</button>
-        <button className="table-action-btn auto-manage-btn" disabled={playerState !== 'arranging' || isLoading}>智能托管</button>
-        <button onClick={onConfirm} className="table-action-btn confirm-btn" disabled={playerState !== 'arranging' || isLoading} style={{ display: playerState === 'waiting' ? 'none' : 'inline-block' }}>
-          {playerState === 'submitted' ? '等待开牌' : '确认比牌'}
-        </button>
-        <button onClick={onReady} className="table-action-btn confirm-btn" style={{ display: playerState === 'waiting' ? 'inline-block' : 'none' }}>点击准备</button>
+        {playerState === 'waiting' && (
+          <button className="table-action-btn confirm-btn" onClick={onReady}>点击准备</button>
+        )}
+        {playerState === 'arranging' && (
+          <>
+            <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={isLoading || playerState !== 'arranging'}>智能理牌</button>
+            <button className="table-action-btn auto-manage-btn" disabled={isLoading || playerState !== 'arranging'}>智能托管</button>
+            <button onClick={onConfirm} disabled={isLoading || playerState !== 'arranging'} className="table-action-btn confirm-btn">确认比牌</button>
+          </>
+        )}
+        {playerState === 'submitted' && (
+           <>
+            <button className="table-action-btn sort-btn" disabled={true}>智能理牌</button>
+            <button className="table-action-btn auto-manage-btn" disabled={true}>智能托管</button>
+            <button className="table-action-btn confirm-btn" disabled={true}>等待开牌</button>
+          </>
+        )}
       </div>
       {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} />}
     </div>
