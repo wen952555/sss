@@ -19,6 +19,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
 
   // Most state is removed, what remains will be driven by server events
   const [playerState, setPlayerState] = useState('waiting'); // e.g., 'waiting', 'arranging', 'submitted'
+  const [isReady, setIsReady] = useState(false);
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -35,10 +36,16 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   // These actions will now be handled by sending messages to the server.
 
   const handleReady = useCallback(() => {
-    // In an online game, this would send a "ready" message to the server
-    console.log('Player is ready. Room ID:', roomId);
-    // Logic to update player state via server would go here
-  }, [roomId]);
+    const newReadyState = !isReady;
+    setIsReady(newReadyState);
+    if (newReadyState) {
+      console.log('Player is ready. Room ID:', roomId);
+      // Here you would send a "ready" message to the server
+    } else {
+      console.log('Player cancelled ready. Room ID:', roomId);
+      // Here you would send an "unready" message to the server
+    }
+  }, [isReady, roomId]);
 
   const handleConfirm = useCallback(() => {
     // In an online game, this would send the player's hand arrangement to the server
@@ -68,6 +75,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       LANE_LIMITS={LANE_LIMITS}
 
       playerState={playerState}
+      isReady={isReady}
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}

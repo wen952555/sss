@@ -17,6 +17,7 @@ const EightCardGame = ({ onBackToLobby, user, roomId, gameMode }) => {
 
   // Most state is removed, what remains will be driven by server events
   const [playerState, setPlayerState] = useState('waiting');
+  const [isReady, setIsReady] = useState(false);
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -30,8 +31,16 @@ const EightCardGame = ({ onBackToLobby, user, roomId, gameMode }) => {
 
   // Offline game logic is removed.
   const handleReady = useCallback(() => {
-    console.log('Player is ready. Room ID:', roomId);
-  }, [roomId]);
+    const newReadyState = !isReady;
+    setIsReady(newReadyState);
+    if (newReadyState) {
+      console.log('Player is ready. Room ID:', roomId);
+      // Here you would send a "ready" message to the server
+    } else {
+      console.log('Player cancelled ready. Room ID:', roomId);
+      // Here you would send an "unready" message to the server
+    }
+  }, [isReady, roomId]);
 
   const handleConfirm = useCallback(() => {
     console.log('Player confirmed hand. Room ID:', roomId);
@@ -56,6 +65,7 @@ const EightCardGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       LANE_LIMITS={LANE_LIMITS}
 
       playerState={playerState}
+      isReady={isReady}
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}

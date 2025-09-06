@@ -20,6 +20,7 @@ const GameTable = ({
   selectedCards,
   LANE_LIMITS,
   playerState, // 'waiting', 'arranging', 'submitted'
+  isReady,
   isLoading,
   gameResult,
   errorMessage,
@@ -69,7 +70,9 @@ const GameTable = ({
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
         {playerState === 'waiting' && (
-          <button className="table-action-btn confirm-btn" onClick={onReady}>点击准备</button>
+          <button className="table-action-btn confirm-btn" onClick={onReady}>
+            {isReady ? '取消准备' : '点击准备'}
+          </button>
         )}
         {playerState === 'arranging' && (
           <>
