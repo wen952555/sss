@@ -35,12 +35,6 @@ const GameTable = ({
   onCloseResult,
   onPlayAgain,
 }) => {
-  const renderPlayerName = (p) => {
-    if (String(p.id).startsWith('ai')) return p.phone;
-    if (p.id === user.id) return '你';
-    return `玩家${p.phone.slice(-4)}`;
-  };
-
   return (
     <div className="game-table-container">
       <div className="game-table-header">
@@ -48,12 +42,8 @@ const GameTable = ({
         <div className="game-table-title">{title}</div>
       </div>
       <div className="players-status-banner">
-        <span className="player-name-list">
-          {players.map((p, index) => (
-            <span key={p.id} className={playerState === 'arranging' ? 'arranging-state' : ''}>
-              {renderPlayerName(p)}
-            </span>
-          ))}
+        <span className="player-count-display">
+          当前玩家数: {players.length}
         </span>
       </div>
 
@@ -69,25 +59,14 @@ const GameTable = ({
 
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
-        {playerState === 'waiting' && (
-          <button className="table-action-btn confirm-btn" onClick={onReady}>
-            {isReady ? '取消准备' : '点击准备'}
-          </button>
-        )}
-        {playerState === 'arranging' && (
-          <>
-            <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={isLoading || playerState !== 'arranging'}>智能理牌</button>
-            <button className="table-action-btn auto-manage-btn" disabled={isLoading || playerState !== 'arranging'}>智能托管</button>
-            <button onClick={onConfirm} disabled={isLoading || playerState !== 'arranging'} className="table-action-btn confirm-btn">确认比牌</button>
-          </>
-        )}
-        {playerState === 'submitted' && (
-           <>
-            <button className="table-action-btn sort-btn" disabled={true}>智能理牌</button>
-            <button className="table-action-btn auto-manage-btn" disabled={true}>智能托管</button>
-            <button className="table-action-btn confirm-btn" disabled={true}>等待开牌</button>
-          </>
-        )}
+        <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={playerState !== 'arranging' || isLoading}>智能理牌</button>
+        <button className="table-action-btn auto-manage-btn" disabled={playerState !== 'arranging' || isLoading}>智能托管</button>
+        <button onClick={onConfirm} className="table-action-btn confirm-btn" disabled={playerState !== 'arranging' || isLoading}>
+          {playerState === 'submitted' ? '等待开牌' : '确认比牌'}
+        </button>
+        <button onClick={onReady} className="table-action-btn confirm-btn" disabled={playerState !== 'waiting'}>
+          {isReady ? '取消准备' : '点击准备'}
+        </button>
       </div>
       {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} />}
     </div>

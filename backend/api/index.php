@@ -48,27 +48,50 @@ switch ($action) {
                 $stmt->bind_param("ii", $roomId, $userId);
                 $stmt->execute();
                 $stmt->close();
-                $stmt = $conn->prepare("SELECT game_type, players_count FROM game_rooms WHERE id = ?");
+
+                $stmt = $conn->prepare("SELECT game_type, status FROM game_rooms WHERE id = ?");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
                 $room = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
                 if (!$room) throw new Exception("Room not found.");
-                $stmt = $conn->prepare("SELECT COUNT(*) as current_players FROM room_players WHERE room_id = ?");
-                $stmt->bind_param("i", $roomId);
-                $stmt->execute();
-                $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
-                $stmt->close();
-                if ($currentPlayers < $room['players_count']) {
-                    fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
-                }
-                $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
-                $stmt->bind_param("i", $roomId);
-                $stmt->execute();
-                $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
-                $stmt->close();
-                if ($readyPlayers == $room['players_count']) {
-                    dealCards($conn, $roomId, $room['game_type'], $room['players_count']);
+
+                if ($room['game_type'] === 'thirteen' && $room['status'] !== 'playing') {
+                    // Custom logic for thirteen card game: start with >= 3 players
+                    $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1 AND initial_hand IS NULL");
+                    $stmt->bind_param("i", $roomId);
+                    $stmt->execute();
+                    $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
+                    $stmt->close();
+
+                    if ($readyPlayers >= 3) {
+                        $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id = ? AND is_ready = 1 AND initial_hand IS NULL");
+                        $stmt->bind_param("i", $roomId);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        $playingUserIds = [];
+                        while($row = $result->fetch_assoc()) {
+                            $playingUserIds[] = $row['user_id'];
+                        }
+                        $stmt->close();
+                        dealCards($conn, $roomId, 'thirteen', count($playingUserIds), $playingUserIds);
+                    }
+                } else { // Original logic for other games
+                    $stmt = $conn->prepare("SELECT players_count FROM game_rooms WHERE id = ?");
+                    $stmt->bind_param("i", $roomId);
+                    $stmt->execute();
+                    $room_players_count = $stmt->get_result()->fetch_assoc()['players_count'];
+                    $stmt->close();
+
+                    $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
+                    $stmt->bind_param("i", $roomId);
+                    $stmt->execute();
+                    $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
+                    $stmt->close();
+
+                    if ($readyPlayers == $room_players_count) {
+                        dealCards($conn, $roomId, $room['game_type'], $room_players_count);
+                    }
                 }
             } elseif ($sub_action === 'unready') {
                 $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE room_id = ? AND user_id = ?");
@@ -315,36 +338,74 @@ switch ($action) {
                 echo json_encode(['success' => false, 'message' => 'Guest match failed: ' . $e->getMessage()]);
             }
         } else {
-            $playersNeeded = $gameType === 'thirteen' ? 4 : 2;
-            $conn->begin_transaction();
-            try {
-                $roomId = null;
-                $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
-                $stmt->bind_param("ssi", $gameType, $gameMode, $playersNeeded);
-                $stmt->execute();
-                $room = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-                if ($room) {
-                    $roomId = $room['id'];
-                } else {
-                    $roomCode = uniqid('room_');
-                    $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'matching', ?)");
-                    $stmt->bind_param("sssi", $roomCode, $gameType, $gameMode, $playersNeeded);
+            if ($gameType === 'thirteen') {
+                $playersNeeded = 8; // Max players for a thirteen game
+                $conn->begin_transaction();
+                try {
+                    $roomId = null;
+                    // Find a thirteen game room that is not full
+                    $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.game_type = 'thirteen' AND r.status != 'finished' GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
+                    $stmt->bind_param("i", $playersNeeded);
                     $stmt->execute();
-                    $roomId = $stmt->insert_id;
+                    $room = $stmt->get_result()->fetch_assoc();
                     $stmt->close();
+
+                    if ($room) {
+                        $roomId = $room['id'];
+                    } else {
+                        // Create a new thirteen game room
+                        $roomCode = uniqid('room_');
+                        $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, 'thirteen', ?, 'matching', ?)");
+                        $stmt->bind_param("ssi", $roomCode, $gameMode, $playersNeeded);
+                        $stmt->execute();
+                        $roomId = $stmt->insert_id;
+                        $stmt->close();
+                    }
+
+                    $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 0, 0) ON DUPLICATE KEY UPDATE room_id = ?");
+                    $stmt->bind_param("iii", $roomId, $userId, $roomId);
+                    $stmt->execute();
+                    $stmt->close();
+                    $conn->commit();
+                    http_response_code(200);
+                    echo json_encode(['success' => true, 'roomId' => $roomId]);
+                } catch (Exception $e) {
+                    $conn->rollback();
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'message' => 'Thirteen match failed: ' . $e->getMessage()]);
                 }
-                $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 0, 0) ON DUPLICATE KEY UPDATE room_id = ?");
-                $stmt->bind_param("iii", $roomId, $userId, $roomId);
-                $stmt->execute();
-                $stmt->close();
-                $conn->commit();
-                http_response_code(200);
-                echo json_encode(['success' => true, 'roomId' => $roomId]);
-            } catch (Exception $e) {
-                $conn->rollback();
-                http_response_code(500);
-                echo json_encode(['success' => false, 'message' => '匹配时发生错误: ' . $e->getMessage()]);
+            } else { // Logic for 'eight' game remains the same
+                $playersNeeded = 2;
+                $conn->begin_transaction();
+                try {
+                    $roomId = null;
+                    $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
+                    $stmt->bind_param("ssi", $gameType, $gameMode, $playersNeeded);
+                    $stmt->execute();
+                    $room = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                    if ($room) {
+                        $roomId = $room['id'];
+                    } else {
+                        $roomCode = uniqid('room_');
+                        $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'matching', ?)");
+                        $stmt->bind_param("sssi", $roomCode, $gameType, $gameMode, $playersNeeded);
+                        $stmt->execute();
+                        $roomId = $stmt->insert_id;
+                        $stmt->close();
+                    }
+                    $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 0, 0) ON DUPLICATE KEY UPDATE room_id = ?");
+                    $stmt->bind_param("iii", $roomId, $userId, $roomId);
+                    $stmt->execute();
+                    $stmt->close();
+                    $conn->commit();
+                    http_response_code(200);
+                    echo json_encode(['success' => true, 'roomId' => $roomId]);
+                } catch (Exception $e) {
+                    $conn->rollback();
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'message' => 'Eight match failed: ' . $e->getMessage()]);
+                }
             }
         }
         $conn->close();
