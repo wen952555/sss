@@ -1,0 +1,59 @@
+body {
+    background-color: #006400; /* Dark Green */
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding-top: 50px;
+}
+
+.game-board {
+    text-align: center;
+    color: white;
+}
+
+.player-hand {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+    perspective: 1000px;
+}
+
+.card {
+    width: 80px;
+    height: 120px;
+    background-color: white;
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin: 0 -15px; /* Overlap cards */
+    position: relative;
+    box-shadow: 3px 3px 7px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.card:hover {
+    transform: translateY(-20px) scale(1.05);
+    z-index: 10;
+}
+
+.card .rank {
+    position: absolute;
+    top: 5px;
+    left: 8px;
+}
+
+.card .suit {
+    position: absolute;
+    bottom: 5px;
+    right: 8px;
+    font-size: 30px;
+}
+
+.card.red {
+    color: #FF0000;
+}
+
+.card.black {
+    color: #000000;
+}
