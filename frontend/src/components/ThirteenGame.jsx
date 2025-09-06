@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
+// All offline utility imports are removed as they are no longer needed
 import GameTable from './GameTable';
-import AutoPlayModal from './AutoPlayModal';
-import { getSmartSortedHand } from '../utils/autoSorter.js';
 
+// The component now only accepts props relevant for an online game
 const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   const {
     topLane,
@@ -11,180 +11,78 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
     bottomLane,
     selectedCards,
     LANE_LIMITS,
+    // `setInitialLanes` might be repurposed for when the server sends the hand
     setInitialLanes,
     handleCardClick,
     handleLaneClick,
   } = useCardArrangement('thirteen');
 
-  const [playerState, setPlayerState] = useState('waiting');
+  // Most state is removed, what remains will be driven by server events
+  const [playerState, setPlayerState] = useState('waiting'); // e.g., 'waiting', 'arranging', 'submitted'
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showAutoPlayModal, setShowAutoPlayModal] = useState(false);
-  const [autoPlay, setAutoPlay] = useState({ active: false, rounds: 0 });
-  const [turnTimeLeft, setTurnTimeLeft] = useState(90);
 
-  const isAutoPlaying = autoPlay.active && autoPlay.rounds > 0;
-
-  const handleStartAutoPlay = (rounds) => {
-    setAutoPlay({ active: true, rounds });
-    setShowAutoPlayModal(false);
-  };
-
-  const fetchGameStatus = useCallback(async () => {
-    // This is a placeholder for fetching status in a real app.
-    if (players.length === 0) {
-        setPlayers([{ id: user.id, phone: user.phone, is_ready: 0 }]);
-    }
-  }, [roomId, user.id, players]);
-
+  // Effect to set the initial player list (will be updated by server messages)
   useEffect(() => {
-    const pollInterval = setInterval(fetchGameStatus, 2000);
-    return () => clearInterval(pollInterval);
-  }, [fetchGameStatus]);
+    // In a real online game, you'd fetch the player list for the room `roomId`
+    // For now, we just show the current user.
+    setPlayers([{ id: user.id, phone: user.phone, is_ready: false }]);
+  }, [user, roomId]);
 
-  const handlePlayerAction = async (action, hand = null) => {
-    console.log(`Simulating action: ${action}`);
-    // This is a placeholder for making API calls.
-    // We will simulate the effects on the local state for now.
-    if (action === 'ready') {
-      const newPlayers = players.map(p => p.id === user.id ? { ...p, is_ready: 1 } : p);
-      setPlayers(newPlayers);
-    }
-    if (action === 'unready') {
-      const newPlayers = players.map(p => p.id === user.id ? { ...p, is_ready: 0 } : p);
-      setPlayers(newPlayers);
-    }
-    return { success: true };
-  };
+  // Offline game logic (handleReady, handleAutoSort, handleConfirm) is removed.
+  // These actions will now be handled by sending messages to the server.
 
-  const handlePlayAgain = useCallback(() => {
-    setGameResult(null);
-    setPlayerState('waiting');
-    setInitialLanes({ top: [], middle: [], bottom: [] });
-    handlePlayerAction('unready');
-  }, [setInitialLanes]);
+  const handleReady = useCallback(() => {
+    // In an online game, this would send a "ready" message to the server
+    console.log('Player is ready. Room ID:', roomId);
+    // Logic to update player state via server would go here
+  }, [roomId]);
 
-  // Effect for handling auto-play actions during the arranging phase
-  useEffect(() => {
-    if (autoPlay.active && playerState === 'arranging') {
-      const timer = setTimeout(() => {
-        const allCards = [...topLane, ...middleLane, ...bottomLane];
-        const sortedHand = getSmartSortedHand(allCards);
-        if (sortedHand) {
-          handlePlayerAction('submit_hand', sortedHand);
-        }
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [playerState, autoPlay.active, topLane, middleLane, bottomLane]);
+  const handleConfirm = useCallback(() => {
+    // In an online game, this would send the player's hand arrangement to the server
+    console.log('Player confirmed hand. Room ID:', roomId);
+    // Logic to send hand to server would go here
+  }, [roomId, topLane, middleLane, bottomLane]);
 
-  // Effect for handling auto-play actions when a game ends
-  useEffect(() => {
-    if (autoPlay.active && gameResult) {
-      const newRounds = autoPlay.rounds - 1;
-      if (newRounds >= 0) {
-        setAutoPlay(prev => ({ ...prev, rounds: newRounds }));
-        const timer = setTimeout(handlePlayAgain, 3000);
-        return () => clearTimeout(timer);
-      } else {
-        setAutoPlay({ active: false, rounds: 0 });
-      }
-    }
-  }, [gameResult, autoPlay.active, handlePlayAgain]);
-
-  // Effect to automatically ready up when auto-play is active
-  useEffect(() => {
-    const me = players.find(p => p.id === user.id);
-    if (autoPlay.active && playerState === 'waiting' && me && !me.is_ready) {
-        const timer = setTimeout(() => handlePlayerAction('ready'), 1000);
-        return () => clearTimeout(timer);
-    }
-  }, [playerState, players, user.id, autoPlay.active]);
-
-  // Effect for the 90-second turn timer
-  useEffect(() => {
-    if (playerState === 'arranging' && !isAutoPlaying) {
-      setTurnTimeLeft(90); // Reset timer
-      const timer = setInterval(() => {
-        setTurnTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [playerState, isAutoPlaying]);
-
-  // Effect to handle timeout
-  useEffect(() => {
-    if (turnTimeLeft === 0 && playerState === 'arranging' && !isAutoPlaying) {
-      console.log('Turn timer expired, auto-submitting hand.');
-      handleAutoSort(); // Sort the cards first
-      // A short delay to ensure state from sorting is applied before confirming
-      setTimeout(() => handleConfirm(), 100);
-    }
-  }, [turnTimeLeft, playerState, isAutoPlaying]);
-
-  const handleReady = () => {
-    const me = players.find(p => p.id === user.id);
-    const isReady = me && me.is_ready;
-    handlePlayerAction(isReady ? 'unready' : 'ready');
-  };
-
-  const handleConfirm = () => {
-    const hand = { top: topLane, middle: middleLane, bottom: bottomLane };
-    handlePlayerAction('submit_hand', hand);
-  };
-
-  const handleAutoSort = () => {
-    const allCards = [...topLane, ...middleLane, ...bottomLane];
-    const sortedHand = getSmartSortedHand(allCards);
-    if (sortedHand) {
-      setInitialLanes(sortedHand);
-    }
-  };
+  const handleAutoSort = useCallback(() => {
+    // This could either be a client-side utility or a request to the server
+    console.log('Auto-sort requested.');
+    // For now, it does nothing. A client-side implementation could be kept.
+  }, []);
 
   return (
-    <>
-      {showAutoPlayModal && (
-        <AutoPlayModal
-          onSelect={handleStartAutoPlay}
-          onCancel={() => setShowAutoPlayModal(false)}
-        />
-      )}
-      <GameTable
-        gameType="thirteen"
-        title="经典十三张"
-        players={players}
-        user={user}
-        autoPlayRounds={autoPlay.rounds}
-        turnTimeLeft={turnTimeLeft}
-        topLane={topLane}
-        middleLane={middleLane}
-        bottomLane={bottomLane}
-        unassignedCards={[]}
-        selectedCards={selectedCards}
-        LANE_LIMITS={LANE_LIMITS}
-        playerState={playerState}
-        isLoading={isLoading}
-        gameResult={gameResult}
-        errorMessage={errorMessage}
-        onBackToLobby={onBackToLobby}
-        onReady={handleReady}
-        onConfirm={handleConfirm}
-        onAutoSort={handleAutoSort}
-        onAutoPlay={() => setShowAutoPlayModal(true)}
-        onCardClick={handleCardClick}
-        onLaneClick={handleLaneClick}
-        onCloseResult={() => setGameResult(null)}
-        onPlayAgain={handlePlayAgain}
-      />
-    </>
+    <GameTable
+      gameType="thirteen"
+      // Title is now generic for online play
+      title="经典十三张"
+      players={players}
+      user={user}
+
+      topLane={topLane}
+      middleLane={middleLane}
+      bottomLane={bottomLane}
+      unassignedCards={[]} // This will be populated by server data
+      selectedCards={selectedCards}
+      LANE_LIMITS={LANE_LIMITS}
+
+      playerState={playerState}
+      isLoading={isLoading}
+      gameResult={gameResult}
+      errorMessage={errorMessage}
+
+      onBackToLobby={onBackToLobby}
+      // The buttons now have placeholder functionality
+      onReady={handleReady}
+      onConfirm={handleConfirm}
+      onAutoSort={handleAutoSort}
+      onCardClick={handleCardClick}
+      onLaneClick={handleLaneClick}
+      onCloseResult={() => setGameResult(null)}
+      // Play again would likely be handled by server state change
+      onPlayAgain={() => console.log('Play again')}
+    />
   );
 };
 
