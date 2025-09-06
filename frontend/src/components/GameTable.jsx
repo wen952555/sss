@@ -69,7 +69,11 @@ const GameTable = ({
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
         {playerState === 'waiting' && (
-          <button className="table-action-btn confirm-btn" onClick={onReady}>点击准备</button>
+          <>
+            <button className="table-action-btn sort-btn" disabled={true}>智能理牌</button>
+            <button className="table-action-btn auto-manage-btn" disabled={true}>智能托管</button>
+            <button className="table-action-btn confirm-btn" onClick={onReady}>点击准备</button>
+          </>
         )}
         {playerState === 'arranging' && (
           <>
