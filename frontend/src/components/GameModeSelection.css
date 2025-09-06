@@ -78,12 +78,3 @@
   color: var(--text-color);
   margin: 0;
 }
-
-.trial-mode .mode-card-title,
-.trial-mode .mode-card-description {
-  color: var(--back-btn-color); /* A nice blue color */
-}
-
-.trial-mode {
-  border-color: var(--back-btn-color);
-}
