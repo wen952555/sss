@@ -3,32 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>主菜单</title>
-    <link rel="stylesheet" href="style.css">
+    <title>斗地主</title>
+    <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
-    <div class="main-menu-container">
-        <h1>请选择一个板块</h1>
-        <div class="card-container">
-            <a href="/proxy49/" class="card-link">
-                <div class="card">
-                    <h2>49图库</h2>
-                    <p>查看最新的图库资料</p>
+    <div id="game-container">
+        <header class="game-header">
+            <h1>斗地主</h1>
+            <div id="game-info">状态: 等待玩家...</div>
+        </header>
+
+        <main id="game-board">
+            <div id="community-cards" class="player-area">
+                <div class="cards-title">底牌</div>
+                <div class="cards-container">
+                    <!-- Community cards will be rendered here -->
                 </div>
-            </a>
-            <a href="/proxymacau/" class="card-link">
-                <div class="card">
-                    <h2>开奖记录</h2>
-                    <p>获取实时的开奖结果</p>
+            </div>
+
+            <div id="player-2-area" class="player-area opponent">
+                <div class="player-name">玩家2</div>
+                <div class="cards-container">
+                    <!-- Player 2's cards will be rendered here -->
                 </div>
-            </a>
-            <a href="/betting.html" class="card-link">
-                <div class="card">
-                    <h2>选码下注</h2>
-                    <p>进入模拟投注游戏</p>
+            </div>
+
+            <div id="player-3-area" class="player-area opponent">
+                <div class="player-name">玩家3</div>
+                <div class="cards-container">
+                    <!-- Player 3's cards will be rendered here -->
                 </div>
-            </a>
-        </div>
+            </div>
+
+            <div id="player-1-area" class="player-area self">
+                <div class="player-name">我</div>
+                <div class="cards-container" id="my-hand">
+                    <!-- My cards will be rendered here -->
+                </div>
+            </div>
+        </main>
+
+        <footer id="controls">
+            <div id="action-buttons">
+                <button id="btn-play">出牌</button>
+                <button id="btn-pass">不要</button>
+            </div>
+        </footer>
     </div>
+
+    <!-- Socket.io client library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Custom game logic -->
+    <script src="js/game.js"></script>
 </body>
 </html>
