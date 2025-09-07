@@ -1,0 +1,92 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0f4d1c;
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+#game-container {
+    width: 100%;
+    max-width: 1200px;
+    height: 90vh;
+    background-color: #1a6a2a;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+#game-board {
+    position: relative;
+    flex-grow: 1;
+}
+
+.player-area {
+    position: absolute;
+    width: 60%;
+    left: 20%;
+}
+.player-area.self {
+    bottom: 0;
+}
+.player-area.opponent {
+    top: 0;
+}
+#player-2-area {
+    transform: rotate(180deg);
+}
+/* Note: player 3 would need different positioning in a real game */
+
+.cards-container {
+    display: flex;
+    justify-content: center;
+    min-height: 120px;
+}
+
+.card {
+    background-color: #fff;
+    color: #222;
+    border: 1px solid #999;
+    border-radius: 8px;
+    width: 70px;
+    height: 100px;
+    margin: 0 -25px; /* Overlap cards */
+    padding: 5px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 1.2em;
+    font-weight: bold;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-15px);
+    z-index: 10;
+}
+
+.card.red-card, .card.red-joker {
+    color: #d90000;
+}
+
+.suit {
+    font-size: 0.8em;
+    align-self: flex-end;
+}
+
+.red-joker, .black-joker {
+    font-size: 0.8em;
+    text-align: center;
+    line-height: 1.2;
+}
+.red-joker .rank, .black-joker .rank {
+    font-size: 0.7em;
+}

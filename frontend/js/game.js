@@ -20,8 +20,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Game Logic Placeholder ---
-    // More game event listeners will go here, e.g.:
-    // socket.on('gameState', (state) => { ... });
-    // socket.on('newHand', (cards) => { ... });
+    // --- Game Logic ---
+    socket.on('hand', (hand) => {
+        console.log('Received hand:', hand);
+        renderHand(hand);
+    });
+
+    socket.on('gameStart', ({ turn }) => {
+        console.log('Game is starting!', 'First turn:', turn);
+        const gameInfo = document.getElementById('game-info');
+        if (gameInfo) {
+            gameInfo.textContent = `游戏开始！轮到 ${turn}行动`;
+        }
+    });
+
+    function renderHand(cards) {
+        const myHandContainer = document.getElementById('my-hand');
+        myHandContainer.innerHTML = ''; // Clear current hand
+
+        cards.forEach(card => {
+            const cardDiv = document.createElement('div');
+            cardDiv.classList.add('card');
+
+            const rankSpan = document.createElement('span');
+            rankSpan.classList.add('rank');
+            rankSpan.textContent = card.rank;
+
+            const suitSpan = document.createElement('span');
+            suitSpan.classList.add('suit');
+            suitSpan.innerHTML = card.suit || ''; // Jokers have no suit symbol
+
+            // Color jokers differently
+            if (!card.suit) {
+                cardDiv.classList.add(card.rank.includes('Red') ? 'red-joker' : 'black-joker');
+            } else if (['♥', '♦'].includes(card.suit)) {
+                cardDiv.classList.add('red-card');
+            }
+
+            cardDiv.appendChild(rankSpan);
+            cardDiv.appendChild(suitSpan);
+            myHandContainer.appendChild(cardDiv);
+        });
+    }
 });
