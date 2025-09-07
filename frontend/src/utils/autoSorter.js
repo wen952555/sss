@@ -1,7 +1,7 @@
 import { evaluateHand, compareHands, sortCards, combinations, parseCard } from './pokerEvaluator.js';
 import { getAreaType, areaTypeRank, getAreaScore, isFoul } from './sssScorer.js';
 
-function calculateHandStrategicScore(hand, strategy = 'bottom') {
+function calculateHandStrategicScore(hand) {
     // This evaluation function uses a hybrid model to find the best arrangement.
     const handStrings = {
         top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
@@ -21,19 +21,8 @@ function calculateHandStrategicScore(hand, strategy = 'bottom') {
         bottom: getAreaScore(handStrings.bottom, 'tail'),
     };
 
-    let rankScore;
-    switch (strategy) {
-        case 'top':
-            rankScore = (handRanks.top * 10000) + (handRanks.middle * 100) + handRanks.bottom;
-            break;
-        case 'middle':
-            rankScore = (handRanks.middle * 10000) + (handRanks.bottom * 100) + handRanks.top;
-            break;
-        case 'bottom':
-        default:
-            rankScore = (handRanks.bottom * 10000) + (handRanks.middle * 100) + handRanks.top;
-            break;
-    }
+    // Primary score is based on the weighted rank of hand types.
+    const rankScore = (handRanks.bottom * 100) + (handRanks.middle * 1000) + handRanks.top;
 
     // Secondary score is based on the actual point value of the lanes.
     const pointsScore = laneScores.bottom + laneScores.middle + laneScores.top;
@@ -58,7 +47,7 @@ function findBestSubHand(cards, num) {
     return bestHand;
 }
 
-const runExhaustiveSearch = (cardObjects, strategy) => {
+const runExhaustiveSearch = (cardObjects) => {
     let bestHands = [];
     let bestScore = -1;
     const bottomCombinations = combinations(cardObjects, 5);
@@ -80,7 +69,7 @@ const runExhaustiveSearch = (cardObjects, strategy) => {
                 continue;
             }
 
-            const currentScore = calculateHandStrategicScore(hand, strategy);
+            const currentScore = calculateHandStrategicScore(hand);
             if (currentScore > bestScore) {
                 bestScore = currentScore;
                 bestHands = [hand];
@@ -96,7 +85,7 @@ const runExhaustiveSearch = (cardObjects, strategy) => {
     return null;
 };
 
-export const getSmartSortedHand = (allCards, strategy) => {
+export const getSmartSortedHand = (allCards) => {
   if (!allCards || allCards.length !== 13) return null;
   const cardObjects = allCards.map(c => (typeof c === 'string' ? parseCard(c) : c));
 
@@ -107,7 +96,7 @@ export const getSmartSortedHand = (allCards, strategy) => {
   }
 
   // --- Directly use the robust exhaustive search ---
-  const bestHand = runExhaustiveSearch(cardObjects, strategy);
+  const bestHand = runExhaustiveSearch(cardObjects);
   if (bestHand) {
       return {
           top: sortCards(bestHand.top),
