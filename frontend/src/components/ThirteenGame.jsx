@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-// All offline utility imports are removed as they are no longer needed
+import { getSmartSortedHand } from '../utils/autoSorter.js';
 import GameTable from './GameTable';
 
 // The component now only accepts props relevant for an online game
@@ -19,6 +19,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
 
   // Most state is removed, what remains will be driven by server events
   const [playerState, setPlayerState] = useState('waiting'); // e.g., 'waiting', 'arranging', 'submitted'
+  const [sortStrategy, setSortStrategy] = useState('bottom'); // 'bottom', 'middle', 'top'
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -47,10 +48,21 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   }, [roomId, topLane, middleLane, bottomLane]);
 
   const handleAutoSort = useCallback(() => {
-    // This could either be a client-side utility or a request to the server
-    console.log('Auto-sort requested.');
-    // For now, it does nothing. A client-side implementation could be kept.
-  }, []);
+    const allCards = [...topLane, ...middleLane, ...bottomLane];
+    if (allCards.length !== 13) return;
+
+    const sortedHand = getSmartSortedHand(allCards, sortStrategy);
+    if (sortedHand) {
+      setInitialLanes(sortedHand.top, sortedHand.middle, sortedHand.bottom);
+    }
+
+    // Cycle through strategies
+    setSortStrategy(prev => {
+      if (prev === 'bottom') return 'middle';
+      if (prev === 'middle') return 'top';
+      return 'bottom';
+    });
+  }, [topLane, middleLane, bottomLane, sortStrategy, setInitialLanes]);
 
   return (
     <GameTable

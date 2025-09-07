@@ -1,51 +1,41 @@
-import { getSmartSortedHand } from './src/utils/autoSorter.js';
-import { parseCard } from './src/utils/pokerEvaluator.js';
+import { getSmartSortedHand } from './frontend/src/utils/autoSorter.js';
+import { getAreaType } from './frontend/src/utils/sssScorer.js';
+import { parseCard } from './frontend/src/utils/pokerEvaluator.js';
 
-/**
- * This sample hand is crafted to test the new scoring logic.
- * It can be arranged in two notable ways:
- * 1. A low-scoring flush in the bottom lane, and weak middle/top lanes.
- *    (Old logic might have picked this, as a flush has a high type-rank).
- * 2. A high-scoring full house (Aces full of 2s) in the middle lane,
- *    which is strategically much better.
- *    (New logic should pick this, as it scores more actual points).
- */
-const sampleHand = [
-    // Cards for a potential full house in the middle
-    'ace_of_spades', 'ace_of_hearts', 'ace_of_clubs', '2_of_spades', '2_of_hearts',
-    // Cards for a potential flush in the bottom
-    'king_of_diamonds', '10_of_diamonds', '8_of_diamonds', '5_of_diamonds', '3_of_diamonds',
-    // Remaining cards for the top lane
-    'queen_of_clubs', 'jack_of_spades', '9_of_hearts'
-].map(parseCard);
+function run() {
+    const sampleHand = [
+        'ace_of_spades', 'ace_of_hearts', 'king_of_clubs',
+        'king_of_spades', 'king_of_hearts',
+        '5_of_spades', '6_of_hearts', 'jack_of_diamonds', '10_of_clubs',
+        '9_of_diamonds', '8_of_clubs', '7_of_diamonds', '2_of_clubs',
+    ].map(parseCard);
 
-function runVerification() {
-    console.log("Running verification for the NEW smart sorter scoring logic...");
+    console.log("Original Hand:", sampleHand.map(c => `${c.rank}_of_${c.suit}`).join(', '));
 
-    const result = getSmartSortedHand(sampleHand);
+    const strategies = ['bottom', 'middle', 'top'];
 
-    if (!result) {
-        console.error("FAILURE: getSmartSortedHand returned null.");
-        return;
-    }
+    for (const strategy of strategies) {
+        console.log(`\n--- Testing Strategy: ${strategy.toUpperCase()} ---`);
+        const sortedHand = getSmartSortedHand(sampleHand, strategy);
 
-    // The expected best hand is the one with the full house in the middle.
-    const middleHandRanks = new Set(result.middle.map(c => c.rank));
-    const hasAce = middleHandRanks.has('ace');
-    const hasTwo = middleHandRanks.has('2');
+        if (sortedHand) {
+            const top = sortedHand.top.map(c => `${c.rank}_of_${c.suit}`);
+            const middle = sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`);
+            const bottom = sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`);
 
-    console.log("Smart sorter produced the following hand:");
-    console.log({
-        top: result.top.map(c => `${c.rank}_of_${c.suit}`),
-        middle: result.middle.map(c => `${c.rank}_of_${c.suit}`),
-        bottom: result.bottom.map(c => `${c.rank}_of_${c.suit}`)
-    });
+            console.log("Top Lane:", top.join(', '));
+            console.log("Middle Lane:", middle.join(', '));
+            console.log("Bottom Lane:", bottom.join(', '));
 
-    if (hasAce && hasTwo && result.middle.length === 5) {
-        console.log("\nSUCCESS: The smart sorter correctly identified the strategically superior hand with the Full House in the middle lane.");
-    } else {
-        console.error("\nFAILURE: The smart sorter did not pick the expected superior hand. It may still be using the old logic.");
+            const topType = getAreaType(top, 'head');
+            const middleType = getAreaType(middle, 'middle');
+            const bottomType = getAreaType(bottom, 'tail');
+
+            console.log("Hand Types -> Top:", topType, "| Middle:", middleType, "| Bottom:", bottomType);
+        } else {
+            console.log("Could not sort hand for strategy:", strategy);
+        }
     }
 }
 
-runVerification();
+run();
