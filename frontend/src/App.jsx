@@ -66,10 +66,15 @@ function App() {
   };
 
   const handleSelectMode = async (gameMode, gameType = viewingGame) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
     if (!gameType || matchingStatus[gameType]) return;
 
     const currentUser = user; // Capture user state at time of call
-    const userId = currentUser ? currentUser.id : 0;
+    const userId = currentUser.id;
 
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
     // Reset game state but keep mode info
@@ -79,12 +84,7 @@ function App() {
       const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${userId}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        let finalGameUser = currentUser;
-        if (data.guestUserId) {
-          finalGameUser = { id: data.guestUserId, phone: 'Guest' };
-        }
-        // Set all game state in one go to prevent race conditions
-        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: finalGameUser });
+        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser });
         setViewingGame(null);
       } else {
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
