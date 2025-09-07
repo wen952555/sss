@@ -9,6 +9,7 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
     { key: 'normal-5', title: '普通场-5分', desc: '进阶积分对战' },
     { key: 'double-2', title: '翻倍场-2分', desc: '刺激翻倍挑战' },
     { key: 'double-5', title: '翻倍场-5分', desc: '高额翻倍豪局' },
+    { key: 'trial', title: '试玩模式', desc: '与机器人对战，无需积分', className: 'trial-mode' },
   ];
 
   const eightCardModes = [
@@ -16,6 +17,7 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
     { key: 'eight-normal-10', title: '普通场-10分', desc: '进阶积分对战' },
     { key: 'eight-dutou-5', title: '独头场-5分', desc: '特殊规则挑战' },
     { key: 'eight-dutou-10', title: '独头场-10分', desc: '高额独头豪局' },
+    { key: 'trial', title: '试玩模式', desc: '与机器人对战，无需积分', className: 'trial-mode' },
   ];
 
   const modesToRender = gameType === 'thirteen' ? thirteenCardModes : eightCardModes;
