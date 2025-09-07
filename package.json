@@ -1,0 +1,9 @@
+{
+  "name": "doudizhu-game",
+  "version": "1.0.0",
+  "description": "A Dou Di Zhu card game with an APK build workflow.",
+  "private": true,
+  "devDependencies": {
+    "cordova": "^12.0.0"
+  }
+}

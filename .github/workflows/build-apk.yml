@@ -1,0 +1,53 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Create Cordova project
+        run: npx cordova create cordova io.github.user.doudizhu DouDiZhu
+
+      - name: Link frontend assets
+        run: |
+          rm -rf cordova/www
+          ln -s $GITHUB_WORKSPACE/frontend cordova/www
+
+      - name: Add Android platform
+        working-directory: ./cordova
+        run: npx cordova platform add android@12.0.0
+
+      - name: Build Android APK
+        working-directory: ./cordova
+        run: npx cordova build android --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doudizhu-apk
+          path: cordova/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk

@@ -1,0 +1,16 @@
+# Dependencies
+/node_modules/
+
+# Build output
+/cordova/platforms/
+/cordova/plugins/
+/cordova/www/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Other
+.DS_Store
+Thumbs.db
