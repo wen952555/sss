@@ -22,7 +22,8 @@ function calculateHandStrategicScore(hand) {
     };
 
     // Primary score is based on the weighted rank of hand types.
-    const rankScore = (handRanks.bottom * 100) + (handRanks.middle * 1000) + handRanks.top;
+    // New logic: Prioritize top lane, then middle, then bottom.
+    const rankScore = (handRanks.top * 10000) + (handRanks.middle * 100) + handRanks.bottom;
 
     // Secondary score is based on the actual point value of the lanes.
     const pointsScore = laneScores.bottom + laneScores.middle + laneScores.top;
