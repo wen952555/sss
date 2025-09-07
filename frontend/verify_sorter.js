@@ -1,6 +1,6 @@
-import { getSmartSortedHand } from './frontend/src/utils/autoSorter.js';
-import { getAreaType } from './frontend/src/utils/sssScorer.js';
-import { parseCard } from './frontend/src/utils/pokerEvaluator.js';
+import { getSmartSortedHand } from './src/utils/autoSorter.js';
+import { getAreaType } from './src/utils/sssScorer.js';
+import { parseCard } from './src/utils/pokerEvaluator.js';
 
 function run() {
     const sampleHand = [

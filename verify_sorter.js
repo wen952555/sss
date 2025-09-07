@@ -1,49 +1,41 @@
-import { getSmartSortedHand } from './src/utils/autoSorter.js';
-import { parseCard } from './src/utils/pokerEvaluator.js';
+import { getSmartSortedHand } from './frontend/src/utils/autoSorter.js';
+import { getAreaType } from './frontend/src/utils/sssScorer.js';
+import { parseCard } from './frontend/src/utils/pokerEvaluator.js';
 
-// A sample hand that is known to have multiple valid arrangements
-const sampleHand = [
-    'ace_of_spades', 'king_of_spades', 'queen_of_spades', 'jack_of_spades', '10_of_spades', // Royal Flush
-    '9_of_hearts', '8_of_hearts', '7_of_hearts', // 3-card flush
-    '6_of_clubs', '6_of_diamonds', // a pair
-    '5_of_clubs', '4_of_diamonds', '3_of_spades'
-].map(parseCard);
+function run() {
+    const sampleHand = [
+        'ace_of_spades', 'ace_of_hearts', 'king_of_clubs',
+        'king_of_spades', 'king_of_hearts',
+        '5_of_spades', '6_of_hearts', 'jack_of_diamonds', '10_of_clubs',
+        '9_of_diamonds', '8_of_clubs', '7_of_diamonds', '2_of_clubs',
+    ].map(parseCard);
 
+    console.log("Original Hand:", sampleHand.map(c => `${c.rank}_of_${c.suit}`).join(', '));
 
-function runVerification() {
-    console.log("Running verification for smart sorter...");
+    const strategies = ['bottom', 'middle', 'top'];
 
-    const results = [];
-    for (let i = 0; i < 5; i++) {
-        const sortedHand = getSmartSortedHand(sampleHand);
-        if (!sortedHand) {
-            console.error("Verification failed: getSmartSortedHand returned null.");
-            return;
+    for (const strategy of strategies) {
+        console.log(`\n--- Testing Strategy: ${strategy.toUpperCase()} ---`);
+        const sortedHand = getSmartSortedHand(sampleHand, strategy);
+
+        if (sortedHand) {
+            const top = sortedHand.top.map(c => `${c.rank}_of_${c.suit}`);
+            const middle = sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`);
+            const bottom = sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`);
+
+            console.log("Top Lane:", top.join(', '));
+            console.log("Middle Lane:", middle.join(', '));
+            console.log("Bottom Lane:", bottom.join(', '));
+
+            const topType = getAreaType(top, 'head');
+            const middleType = getAreaType(middle, 'middle');
+            const bottomType = getAreaType(bottom, 'tail');
+
+            console.log("Hand Types -> Top:", topType, "| Middle:", middleType, "| Bottom:", bottomType);
+        } else {
+            console.log("Could not sort hand for strategy:", strategy);
         }
-        // Convert to a string representation for easy comparison
-        const handString = JSON.stringify({
-            top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`).sort(),
-            middle: sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`).sort(),
-            bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`).sort()
-        });
-        results.push(handString);
     }
-
-    const uniqueResults = new Set(results);
-
-    console.log(`Generated ${results.length} hands.`);
-    console.log(`Found ${uniqueResults.size} unique arrangements.`);
-
-    if (uniqueResults.size > 1) {
-        console.log("SUCCESS: The smart sorter produced multiple different hand arrangements.");
-    } else if (uniqueResults.size === 1) {
-        console.log("NOTE: The smart sorter produced only one unique arrangement for this specific hand. This might be correct if there is only one optimal solution, but it does not confirm variety.");
-    } else {
-        console.error("FAILURE: The smart sorter produced no valid arrangements.");
-    }
-
-    console.log("\nSample of one arrangement:");
-    console.log(JSON.parse(results[0]));
 }
 
-runVerification();
+run();
