@@ -11,8 +11,8 @@ const SUIT_ORDER = ['diamonds' => 1, 'clubs' => 2, 'hearts' => 3, 'spades' => 4]
 // Placeholder for SSS scores
 const SSS_SCORES = [
   'HEAD' => ['三条' => 3],
-  'MIDDLE' => ['五条' => 10, '铁支' => 8, '同花顺' => 10, '葫芦' => 2],
-  'TAIL' => ['五条' => 5, '铁支' => 4, '同花顺' => 5],
+  'MIDDLE' => ['铁支' => 8, '同花顺' => 10, '葫芦' => 2],
+  'TAIL' => ['铁支' => 4, '同花顺' => 5],
   'SPECIAL' => ['一条龙' => 13, '三同花' => 4, '三顺子' => 4, '六对半' => 3],
 ];
 
@@ -79,7 +79,6 @@ function getSssAreaType($cards, $area) {
         if (isset($grouped[2])) return "对子";
         return "高牌";
     }
-    if (isset($grouped[5])) return "五条";
     if ($isF && $isS) return "同花顺";
     if (isset($grouped[4])) return "铁支";
     if (isset($grouped[3]) && isset($grouped[2])) return "葫芦";
@@ -94,7 +93,7 @@ function getSssAreaType($cards, $area) {
 function sssAreaTypeRank($type, $area) {
     $ranks = [
         "高牌" => 1, "对子" => 2, "两对" => 3, "三条" => 4, "顺子" => 5,
-        "同花" => 6, "葫芦" => 7, "铁支" => 8, "同花顺" => 9, "五条" => 10
+        "同花" => 6, "葫芦" => 7, "铁支" => 8, "同花顺" => 9
     ];
     if ($area === 'head' && $type === '三条') return 4;
     return $ranks[$type] ?? 1;

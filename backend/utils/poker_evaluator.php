@@ -17,7 +17,6 @@ const HAND_TYPES = [
     'FULL_HOUSE' => ['rank' => 6, 'name' => '葫芦'],
     'FOUR_OF_A_KIND' => ['rank' => 7, 'name' => '铁支'],
     'STRAIGHT_FLUSH' => ['rank' => 8, 'name' => '同花顺'],
-    'FIVE_OF_A_KIND' => ['rank' => 9, 'name' => '五条'],
 ];
 
 // 用于排序的单卡牌力评估
@@ -42,13 +41,6 @@ function evaluateHand($cards) {
     // A-5顺子特殊处理
     $isAceLowStraight = ($ranks === [14, 5, 4, 3, 2]);
 
-    $rankCounts = array_count_values($ranks);
-    arsort($rankCounts);
-
-    $counts = array_values($rankCounts);
-    $primaryRanks = array_keys($rankCounts);
-
-    if (isset($counts[0]) && $counts[0] === 5) return array_merge(HAND_TYPES['FIVE_OF_A_KIND'], ['values' => $primaryRanks]);
     if ($isStraight && $isFlush) return array_merge(HAND_TYPES['STRAIGHT_FLUSH'], ['values' => $ranks]);
     if ($isAceLowStraight && $isFlush) return array_merge(HAND_TYPES['STRAIGHT_FLUSH'], ['values' => [5, 4, 3, 2, 1]]);
 

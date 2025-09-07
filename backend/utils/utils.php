@@ -1,30 +1,12 @@
 <?php
 // --- Helper Functions ---
-function dealCards($conn, $roomId, $gameType, $playerCount, $playerIds = null) {
+function dealCards($conn, $roomId, $gameType, $playerCount) {
     $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
     $suits = ['spades', 'hearts', 'clubs', 'diamonds'];
     $deck = [];
-
-    // Base deck
     foreach ($suits as $suit) {
         foreach ($ranks as $rank) {
             $deck[] = ['rank' => $rank, 'suit' => $suit];
-        }
-    }
-
-    // Additional cards based on player count for thirteen card game
-    if ($gameType === 'thirteen') {
-        if ($playerCount >= 5) { // Add spades
-            foreach ($ranks as $rank) { $deck[] = ['rank' => $rank, 'suit' => 'spades']; }
-        }
-        if ($playerCount >= 6) { // Add hearts
-            foreach ($ranks as $rank) { $deck[] = ['rank' => $rank, 'suit' => 'hearts']; }
-        }
-        if ($playerCount >= 7) { // Add clubs
-            foreach ($ranks as $rank) { $deck[] = ['rank' => $rank, 'suit' => 'clubs']; }
-        }
-        if ($playerCount >= 8) { // Add diamonds (completing the second deck)
-            foreach ($ranks as $rank) { $deck[] = ['rank' => $rank, 'suit' => 'diamonds']; }
         }
     }
     shuffle($deck);
@@ -46,27 +28,20 @@ function dealCards($conn, $roomId, $gameType, $playerCount, $playerIds = null) {
         }
     }
 
-    // If specific player IDs are not provided, fetch them all from the room
-    if ($playerIds === null) {
-        $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id=? ORDER BY id ASC");
-        $stmt->bind_param("i", $roomId);
-        $stmt->execute();
-        $playerIdsResult = $stmt->get_result();
-        $playerIds = [];
-        while ($row = $playerIdsResult->fetch_assoc()) {
-            $playerIds[] = $row['user_id'];
-        }
-        $stmt->close();
-    }
-
     // Deal hands to players
-    foreach ($playerIds as $i => $userId) {
-        $handJson = json_encode($all_hands[$i]);
+    $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id=? ORDER BY id ASC");
+    $stmt->bind_param("i", $roomId);
+    $stmt->execute();
+    $playerIdsResult = $stmt->get_result();
+    $i = 0;
+    while ($row = $playerIdsResult->fetch_assoc()) {
+        $handJson = json_encode($all_hands[$i++]);
         $updateStmt = $conn->prepare("UPDATE room_players SET initial_hand=? WHERE room_id=? AND user_id=?");
-        $updateStmt->bind_param("sii", $handJson, $roomId, $userId);
+        $updateStmt->bind_param("sii", $handJson, $roomId, $row['user_id']);
         $updateStmt->execute();
         $updateStmt->close();
     }
+    $stmt->close();
 
     // Update room status
     $stmt = $conn->prepare("UPDATE game_rooms SET status='playing' WHERE id=?");
