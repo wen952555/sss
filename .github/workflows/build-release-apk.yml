@@ -56,18 +56,18 @@ jobs:
         id: decode_keystore
         run: |
           echo "Decoding keystore..."
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/release.keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/release.keystore
           echo "Keystore decoded."
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
 
       - name: Build signed APK
         id: build_apk
         run: ./gradlew assembleRelease
         working-directory: ./frontend/android
         env:
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         if: steps.decode_keystore.outcome == 'success'
 
       - name: Find APK
