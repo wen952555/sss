@@ -82,8 +82,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   return (
     <GameTable
       gameType="thirteen"
-      // Title is now generic for online play
-      title="经典十三张"
+      title={`玩家: ${players.length} / 8`}
       players={players}
       user={user}
 

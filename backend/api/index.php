@@ -67,7 +67,7 @@ switch ($action) {
                 $stmt->execute();
                 $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
                 $stmt->close();
-                if ($readyPlayers >= 3 && $currentPlayers >= 3) {
+                if ($readyPlayers >= 3) {
                     dealCards($conn, $roomId, $room['game_type'], $currentPlayers);
                 }
             } elseif ($sub_action === 'unready') {
