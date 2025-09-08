@@ -48,8 +48,6 @@ jobs:
         run: |
           VERSION_NAME="1.0.${{ github.run_number }}"
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          # Use sed to update the versionName in build.gradle
-          # This ensures the APK has the correct version
           sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" frontend/android/app/build.gradle
 
       - name: Decode Keystore
@@ -60,15 +58,16 @@ jobs:
           echo "Keystore decoded."
         if: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
+      # --- 修改的部分在这里 ---
       - name: Build signed APK
         id: build_apk
         run: ./gradlew assembleRelease
         working-directory: ./frontend/android
         env:
-          SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         if: steps.decode_keystore.outcome == 'success'
+      # --- 修改结束 ---
 
       - name: Find APK
         id: find_apk
