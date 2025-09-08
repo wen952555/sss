@@ -50,15 +50,13 @@ jobs:
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" frontend/android/app/build.gradle
 
-      # --- 修改的部分在这里 ---
       - name: Decode Keystore
         id: decode_keystore
         run: |
           echo "Decoding keystore..."
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/release.keystore
           echo "Keystore decoded."
-        if: secrets.ANDROID_KEYSTORE_BASE64 # <--- 已修正
-      # --- 修改结束 ---
+        if: secrets.ANDROID_KEYSTORE_BASE64
 
       - name: Build signed APK
         id: build_apk
