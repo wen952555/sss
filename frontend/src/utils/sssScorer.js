@@ -136,8 +136,8 @@ export function areaTypeRank(type, area) {
   if (type === "铁支") return 8;
   if (type === "葫芦") return 7;
   if (type === "同花") return 6;
-  if (type === "顺子") return 5;
-  if (type === "三条") return 4;
+  if (type === "顺子") return 4;
+  if (type === "三条") return 5;
   if (type === "两对") return 3;
   if (type === "对子") return 2;
   return 1;
