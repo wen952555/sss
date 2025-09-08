@@ -24,7 +24,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
@@ -56,9 +56,7 @@ jobs:
           echo "Decoding keystore..."
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/release.keystore
           echo "Keystore decoded."
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        if: env.ANDROID_KEYSTORE_BASE64
+        if: secrets.ANDROID_KEYSTORE_BASE64
 
       - name: Build signed APK
         id: build_apk
