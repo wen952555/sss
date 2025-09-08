@@ -4,7 +4,6 @@ import Auth from './components/Auth';
 import UserProfile from './components/UserProfile';
 import TransferPoints from './components/TransferPoints';
 import ThirteenGame from './components/ThirteenGame';
-import EightCardGame from './components/EightCardGame';
 import GameModeSelection from './components/GameModeSelection';
 import './App.css';
 import { Browser } from '@capacitor/browser';
@@ -73,18 +72,27 @@ function App() {
 
     if (!gameType || matchingStatus[gameType]) return;
 
+    let playerCount = gameType === 'thirteen' ? 4 : null; // Default classic thirteen to 4 players
+    let finalGameMode = gameMode;
+
+    if (gameType === 'eight') {
+      const parts = gameMode.split('-');
+      playerCount = parseInt(parts[0], 10);
+      finalGameMode = parts[1];
+    }
+
     const currentUser = user; // Capture user state at time of call
     const userId = currentUser.id;
 
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
     // Reset game state but keep mode info
-    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser });
+    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser, playerCount });
 
     try {
-      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${userId}`);
+      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${finalGameMode}&userId=${userId}&playerCount=${playerCount}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser });
+        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser, playerCount });
         setViewingGame(null);
       } else {
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
@@ -110,7 +118,8 @@ function App() {
         clearInterval(intervalId);
         return;
       }
-      await handleSelectMode(gameState.gameMode);
+      // Pass both gameMode and gameType for polling
+      await handleSelectMode(gameState.gameMode, gameState.gameType);
     }, 2000);
     return () => clearInterval(intervalId);
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
@@ -143,9 +152,12 @@ function App() {
         onBackToLobby: handleBackToLobby,
         user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
+        playerCount: gameState.playerCount,
       };
-      if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
-      if (gameState.gameType === 'eight') return <EightCardGame {...gameProps} />;
+      // Both 'thirteen' and 'eight' (5-point game) now use the ThirteenGame component
+      if (gameState.gameType === 'thirteen' || gameState.gameType === 'eight') {
+        return <ThirteenGame {...gameProps} />;
+      }
     }
     if (gameState.error) return <p className="error-message">{gameState.error}</p>;
     if (showTransfer && user) return <TransferPoints fromId={user.id} onClose={() => setShowTransfer(false)} onSuccess={handleTransferSuccess} />;

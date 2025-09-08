@@ -70,15 +70,15 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
             {matchingStatus.thirteen && <div className="matching-indicator">匹配中...</div>}
           </div>
         </div>
-        {/* 八张卡片 */}
+        {/* 5分场 */}
         <div
           className={`game-card eight-bg ${isMatching ? 'disabled' : ''}`}
           onClick={() => !isMatching && onSelectGameType('eight')}
         >
           <div className="game-card-overlay">
             <div className="game-content">
-              <h2 className="game-title">急速八张</h2>
-              <p className="game-description">快节奏的竞技体验</p>
+              <h2 className="game-title">5分场</h2>
+              <p className="game-description">多人竞技场</p>
             </div>
             {matchingStatus.eight && <div className="matching-indicator">匹配中...</div>}
           </div>

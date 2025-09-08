@@ -2,7 +2,7 @@ import React from 'react';
 import './GameModeSelection.css';
 
 const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
-  const gameTitle = gameType === 'thirteen' ? '经典十三张' : '急速八张';
+  const gameTitle = gameType === 'thirteen' ? '经典十三张' : '5分场';
 
   const thirteenCardModes = [
     { key: 'normal-2', title: '普通场-2分', desc: '基础积分对战' },
@@ -11,14 +11,14 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
     { key: 'double-5', title: '翻倍场-5分', desc: '高额翻倍豪局' },
   ];
 
-  const eightCardModes = [
-    { key: 'eight-normal-5', title: '普通场-5分', desc: '基础积分对战' },
-    { key: 'eight-normal-10', title: '普通场-10分', desc: '进阶积分对战' },
-    { key: 'eight-dutou-5', title: '独头场-5分', desc: '特殊规则挑战' },
-    { key: 'eight-dutou-10', title: '独头场-10分', desc: '高额独头豪局' },
+  const fivePointModes = [
+    { key: '4-normal', title: '4人普通场', desc: '标准4人对局' },
+    { key: '4-double', title: '4人翻倍场', desc: '4人刺激挑战' },
+    { key: '8-normal', title: '8人普通场', desc: '标准8人对局' },
+    { key: '8-double', title: '8人翻倍场', desc: '8人终极对决' },
   ];
 
-  const modesToRender = gameType === 'thirteen' ? thirteenCardModes : eightCardModes;
+  const modesToRender = gameType === 'thirteen' ? thirteenCardModes : fivePointModes;
 
   return (
     <div className="mode-selection-container">
