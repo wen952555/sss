@@ -22,7 +22,7 @@ const GameResultModal = ({ result, onClose, onPlayAgain, gameType, isTrial = fal
                     <p>总分: <span className={myTotalScore > 0 ? 'score-win' : (myTotalScore < 0 ? 'score-loss' : '')}>{myTotalScore > 0 ? `+${myTotalScore}` : myTotalScore}</span></p>
                 </div>
 
-                <div className="result-players-container">
+                <div className={`result-players-container player-count-${result.players.length}`}>
                     {result.players.map((player, index) => {
                         const playerScore = player.score;
                         const isMe = player.is_me || (result.myId && player.id === result.myId) || (isTrial && index === 0);
