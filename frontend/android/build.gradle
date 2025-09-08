@@ -24,12 +24,14 @@ allprojects {
     }
 }
 
-// Set the Java version for the capacitor-android project
-project(':capacitor-android').afterEvaluate { proj ->
-    proj.android {
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_17
-            targetCompatibility JavaVersion.VERSION_17
+// Set the Java version for all relevant subprojects
+[':app', ':capacitor-android'].each { projectName ->
+    project(projectName).afterEvaluate { proj ->
+        proj.android {
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
         }
     }
 }
