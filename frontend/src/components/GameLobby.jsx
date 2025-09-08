@@ -50,7 +50,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
             <button className="header-btn login-btn" onClick={onLoginClick}>注册/登录</button>
           )}
         </div>
-        <h1 className="lobby-title">游戏大厅</h1>
+        <h1 className="lobby-title">十三张游戏大厅</h1>
         <div style={{ marginTop: 8, fontSize: '1rem', color: '#00796b', fontWeight: 500 }}>
           当前在线人数：{onlineCount !== null ? onlineCount : '...'}
         </div>
