@@ -50,35 +50,35 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
             <button className="header-btn login-btn" onClick={onLoginClick}>注册/登录</button>
           )}
         </div>
-        <h1 className="lobby-title">游戏大厅</h1>
+        <h1 className="lobby-title">十三张游戏大厅</h1>
         <div style={{ marginTop: 8, fontSize: '1rem', color: '#00796b', fontWeight: 500 }}>
           当前在线人数：{onlineCount !== null ? onlineCount : '...'}
         </div>
       </header>
 
       <main className="game-card-grid">
-        {/* 十三张卡片 */}
+        {/* 2分场 */}
         <div
           className={`game-card thirteen-bg ${isMatching ? 'disabled' : ''}`}
           onClick={() => !isMatching && onSelectGameType('thirteen')}
         >
           <div className="game-card-overlay">
             <div className="game-content">
-              <h2 className="game-title">经典十三张</h2>
-              <p className="game-description">策略与运气的巅峰对决</p>
+              <h2 className="game-title">2分场</h2>
+              <p className="game-description">经典模式对局</p>
             </div>
             {matchingStatus.thirteen && <div className="matching-indicator">匹配中...</div>}
           </div>
         </div>
-        {/* 八张卡片 */}
+        {/* 5分场 */}
         <div
           className={`game-card eight-bg ${isMatching ? 'disabled' : ''}`}
           onClick={() => !isMatching && onSelectGameType('eight')}
         >
           <div className="game-card-overlay">
             <div className="game-content">
-              <h2 className="game-title">急速八张</h2>
-              <p className="game-description">快节奏的竞技体验</p>
+              <h2 className="game-title">5分场</h2>
+              <p className="game-description">多人竞技场</p>
             </div>
             {matchingStatus.eight && <div className="matching-indicator">匹配中...</div>}
           </div>
