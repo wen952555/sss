@@ -58,7 +58,7 @@ jobs:
           echo "Decoding keystore..."
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/release.keystore
           echo "Keystore decoded."
-        if: secrets.KEYSTORE_BASE64 != ''
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
 
       - name: Build signed APK
         id: build_apk
