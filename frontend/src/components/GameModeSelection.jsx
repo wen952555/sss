@@ -2,23 +2,16 @@ import React from 'react';
 import './GameModeSelection.css';
 
 const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
-  const gameTitle = gameType === 'thirteen' ? '经典十三张' : '5分场';
+  const gameTitle = gameType === 'thirteen' ? '2分场' : '5分场';
 
-  const thirteenCardModes = [
-    { key: 'normal-2', title: '普通场-2分', desc: '基础积分对战' },
-    { key: 'normal-5', title: '普通场-5分', desc: '进阶积分对战' },
-    { key: 'double-2', title: '翻倍场-2分', desc: '刺激翻倍挑战' },
-    { key: 'double-5', title: '翻倍场-5分', desc: '高额翻倍豪局' },
-  ];
-
-  const fivePointModes = [
+  const sharedModes = [
     { key: '4-normal', title: '4人普通场', desc: '标准4人对局' },
     { key: '4-double', title: '4人翻倍场', desc: '4人刺激挑战' },
     { key: '8-normal', title: '8人普通场', desc: '标准8人对局' },
     { key: '8-double', title: '8人翻倍场', desc: '8人终极对决' },
   ];
 
-  const modesToRender = gameType === 'thirteen' ? thirteenCardModes : fivePointModes;
+  const modesToRender = sharedModes;
 
   return (
     <div className="mode-selection-container">

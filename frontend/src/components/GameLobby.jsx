@@ -57,15 +57,15 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
       </header>
 
       <main className="game-card-grid">
-        {/* 十三张卡片 */}
+        {/* 2分场 */}
         <div
           className={`game-card thirteen-bg ${isMatching ? 'disabled' : ''}`}
           onClick={() => !isMatching && onSelectGameType('thirteen')}
         >
           <div className="game-card-overlay">
             <div className="game-content">
-              <h2 className="game-title">经典十三张</h2>
-              <p className="game-description">策略与运气的巅峰对决</p>
+              <h2 className="game-title">2分场</h2>
+              <p className="game-description">经典模式对局</p>
             </div>
             {matchingStatus.thirteen && <div className="matching-indicator">匹配中...</div>}
           </div>
