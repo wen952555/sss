@@ -15,7 +15,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
     setInitialLanes,
     handleCardClick,
     handleLaneClick,
-  } = useCardArrangement('thirteen');
+  } = useCardArrangement();
 
   // Most state is removed, what remains will be driven by server events
   const [playerState, setPlayerState] = useState('waiting'); // e.g., 'waiting', 'arranging', 'submitted'

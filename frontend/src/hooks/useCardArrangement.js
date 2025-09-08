@@ -1,14 +1,10 @@
 import { useState, useCallback } from 'react';
-import { sortCards, areCardsEqual, getSmartSortedHand, getSmartSortedHandForEight, parseCard } from '../utils';
+import { sortCards, areCardsEqual, parseCard } from '../utils';
 
-const getLaneLimits = (gameType) => {
-  if (gameType === 'thirteen') return { top: 3, middle: 5, bottom: 5 };
-  if (gameType === 'eight') return { top: 2, middle: 3, bottom: 3 };
-  return { top: 0, middle: 0, bottom: 0 };
-};
+const LANE_LIMITS_THIRTEEN = { top: 3, middle: 5, bottom: 5 };
 
-export const useCardArrangement = (gameType) => {
-  const [LANE_LIMITS] = useState(() => getLaneLimits(gameType));
+export const useCardArrangement = () => {
+  const [LANE_LIMITS] = useState(LANE_LIMITS_THIRTEEN);
 
   const [topLane, setTopLane] = useState([]);
   const [middleLane, setMiddleLane] = useState([]);
@@ -68,17 +64,6 @@ export const useCardArrangement = (gameType) => {
 
   }, [selectedCards, topLane, middleLane, bottomLane]);
 
-  const handleAutoSort = useCallback((allCards) => {
-    const sorter = gameType === 'thirteen' ? getSmartSortedHand : getSmartSortedHandForEight;
-    const sorted = sorter(allCards);
-    if (sorted) {
-      setTopLane(sorted.top || []);
-      setMiddleLane(sorted.middle || []);
-      setBottomLane(sorted.bottom || []);
-      setSelectedCards([]);
-    }
-  }, [gameType]);
-
   return {
     topLane,
     middleLane,
@@ -88,6 +73,5 @@ export const useCardArrangement = (gameType) => {
     setInitialLanes,
     handleCardClick,
     handleLaneClick,
-    handleAutoSort
   };
 };
