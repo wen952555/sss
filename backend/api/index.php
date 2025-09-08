@@ -59,16 +59,16 @@ switch ($action) {
                 $stmt->execute();
                 $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
                 $stmt->close();
-                if ($currentPlayers < $room['players_count']) {
-                    fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
-                }
+                // if ($currentPlayers < $room['players_count']) {
+                //     fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
+                // }
                 $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
                 $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
                 $stmt->close();
-                if ($readyPlayers == $room['players_count']) {
-                    dealCards($conn, $roomId, $room['game_type'], $room['players_count']);
+                if ($readyPlayers >= 3 && $currentPlayers >= 3) {
+                    dealCards($conn, $roomId, $room['game_type'], $currentPlayers);
                 }
             } elseif ($sub_action === 'unready') {
                 $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE room_id = ? AND user_id = ?");

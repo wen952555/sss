@@ -35,11 +35,26 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   // Offline game logic (handleReady, handleAutoSort, handleConfirm) is removed.
   // These actions will now be handled by sending messages to the server.
 
-  const handleReady = useCallback(() => {
-    // In an online game, this would send a "ready" message to the server
-    console.log('Player is ready. Room ID:', roomId);
-    // Logic to update player state via server would go here
-  }, [roomId]);
+  const handleReady = useCallback(async () => {
+    if (!user || !roomId) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/index.php?action=player_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, roomId, action: 'ready' }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to ready up.');
+      }
+      // The game state will be updated via the polling mechanism in GameTable
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, roomId]);
 
   const handleConfirm = useCallback(() => {
     // In an online game, this would send the player's hand arrangement to the server

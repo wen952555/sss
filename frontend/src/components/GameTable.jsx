@@ -45,6 +45,7 @@ const GameTable = ({
       <div className="game-table-header">
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
         <div className="game-table-title">{title}</div>
+        <button onClick={onReady} className="table-action-btn ready-btn">准备</button>
       </div>
       <div className="players-status-banner">
         <span className="player-name-list">
@@ -68,9 +69,6 @@ const GameTable = ({
 
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
-        {playerState === 'waiting' && (
-          <button className="table-action-btn confirm-btn" onClick={onReady}>点击准备</button>
-        )}
         {playerState === 'arranging' && (
           <>
             <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={isLoading || playerState !== 'arranging'}>智能理牌</button>
