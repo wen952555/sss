@@ -25,12 +25,32 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Effect to set the initial player list (will be updated by server messages)
+  const fetchGameStatus = useCallback(async () => {
+    if (!roomId || !user) return;
+    try {
+      const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
+      const data = await response.json();
+      if (data.success) {
+        setPlayers(data.players);
+        setPlayerState(data.gameStatus);
+        if (data.gameStatus === 'playing' && data.hand) {
+          setInitialLanes(data.hand.top, data.hand.middle, data.hand.bottom);
+        }
+        if (data.gameStatus === 'finished' && data.result) {
+          setGameResult(data.result);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch game status:", error);
+      setErrorMessage("无法获取游戏状态");
+    }
+  }, [roomId, user, setInitialLanes]);
+
   useEffect(() => {
-    // In a real online game, you'd fetch the player list for the room `roomId`
-    // For now, we just show the current user.
-    setPlayers([{ id: user.id, phone: user.phone, is_ready: false }]);
-  }, [user, roomId]);
+    fetchGameStatus(); // Initial fetch
+    const intervalId = setInterval(fetchGameStatus, 3000); // Poll every 3 seconds
+    return () => clearInterval(intervalId);
+  }, [fetchGameStatus]);
 
   // Offline game logic (handleReady, handleAutoSort, handleConfirm) is removed.
   // These actions will now be handled by sending messages to the server.
@@ -49,7 +69,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       if (!data.success) {
         throw new Error(data.message || `Failed to ${action}.`);
       }
-      // The game state will be updated via the polling mechanism
+      fetchGameStatus(); // Immediately fetch status after action
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
