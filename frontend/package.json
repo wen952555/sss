@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Frontend for the proxy and betting app.",
   "scripts": {
-    "build": "mkdir -p build && cp betting.html index.html style.css script.js build/"
+    "build": "mkdir -p build && cp betting.html index.html style.css script.js build/ && cp public/_worker.js build/"
   },
   "author": "",
   "license": "ISC",
