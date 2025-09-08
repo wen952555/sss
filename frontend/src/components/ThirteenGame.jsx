@@ -35,11 +35,27 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   // Offline game logic (handleReady, handleAutoSort, handleConfirm) is removed.
   // These actions will now be handled by sending messages to the server.
 
-  const handleReady = useCallback(() => {
-    // In an online game, this would send a "ready" message to the server
-    console.log('Player is ready. Room ID:', roomId);
-    // Logic to update player state via server would go here
-  }, [roomId]);
+  const handleReady = useCallback(async (isReady) => {
+    if (!user || !roomId) return;
+    const action = isReady ? 'unready' : 'ready';
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/index.php?action=player_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, roomId, action }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || `Failed to ${action}.`);
+      }
+      // The game state will be updated via the polling mechanism
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, roomId]);
 
   const handleConfirm = useCallback(() => {
     // In an online game, this would send the player's hand arrangement to the server
@@ -64,11 +80,13 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
     });
   }, [topLane, middleLane, bottomLane, sortStrategy, setInitialLanes]);
 
+  const me = players.find(p => p.id === user.id);
+  const isReady = me ? me.is_ready : false;
+
   return (
     <GameTable
       gameType="thirteen"
-      // Title is now generic for online play
-      title="经典十三张"
+      title={`玩家: ${players.length} / 8`}
       players={players}
       user={user}
 
@@ -83,10 +101,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}
+      isReady={isReady}
 
       onBackToLobby={onBackToLobby}
-      // The buttons now have placeholder functionality
-      onReady={handleReady}
+      onReady={() => handleReady(isReady)}
       onConfirm={handleConfirm}
       onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
