@@ -25,7 +25,7 @@ allprojects {
 }
 
 // Set the Java version for the capacitor-android project
-project(':capacitor-android') {
+project(':capacitor-android').afterEvaluate {
     android {
         compileOptions {
             sourceCompatibility JavaVersion.VERSION_17
