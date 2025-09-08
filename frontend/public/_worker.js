@@ -66,7 +66,7 @@ export default {
         return new Response('API backend unavailable.', { status: 502 });
       }
 
-      // 复制响应体和头
+      // 复制响应体
       const respHeaders = new Headers(backendResp.headers);
 
       // 强制写入CORS头，防止浏览器报错
