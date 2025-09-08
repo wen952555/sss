@@ -85,9 +85,17 @@ export function evaluateHand(cards) {
   
   // 检查是否为顺子
   const rankSet = new Set(ranks);
-  const isStraight = rankSet.size === cards.length && (ranks[0] - ranks[ranks.length - 1] === cards.length - 1);
-  // 特殊处理 A-2-3-4-5 的情况
-  const isAceLowStraight = JSON.stringify(ranks) === JSON.stringify([14, 5, 4, 3, 2]);
+  let isStraight = rankSet.size === cards.length && (ranks[0] - ranks[ranks.length - 1] === cards.length - 1);
+
+  // 检查A-low顺子, e.g., A,2,3 or A,2,3,4 or A,2,3,4,5
+  let isAceLowStraight = false;
+  if (rankSet.has(14) && rankSet.size === cards.length) {
+    const otherRanks = ranks.filter(r => r !== 14);
+    const expectedRanks = Array.from({ length: cards.length - 1 }, (_, i) => i + 2).sort((a, b) => b - a);
+    if (JSON.stringify(otherRanks) === JSON.stringify(expectedRanks)) {
+      isAceLowStraight = true;
+    }
+  }
 
   if (isStraight && isFlush) {
     return { ...HAND_TYPES.STRAIGHT_FLUSH, values: ranks };
@@ -126,7 +134,10 @@ export function evaluateHand(cards) {
     return { ...HAND_TYPES.STRAIGHT, values: ranks };
   }
   if (isAceLowStraight) {
-    return { ...HAND_TYPES.STRAIGHT, values: [5, 4, 3, 2, 1] };
+    // For Ace-low straights, the values are ranked by the highest card (5, 4, or 3),
+    // with the Ace being treated as low.
+    const newValues = [...ranks.slice(1), 1];
+    return { ...HAND_TYPES.STRAIGHT, values: newValues };
   }
 
   if (counts[0] === 3) {
