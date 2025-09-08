@@ -40,11 +40,21 @@ try {
                 }
             } catch (PDOException $e) {
                 http_response_code(500);
-                echo json_encode(['message' => 'Error fetching score: ' . $e->getMessage()]);
+                echo json_encode(['success' => false, 'message' => 'Error fetching score: ' . $e->getMessage()]);
+            }
+        } elseif ($action === 'get_results') {
+            try {
+                $stmt = $pdo->prepare("SELECT id, winning_numbers, created_at FROM game_rounds ORDER BY created_at DESC");
+                $stmt->execute();
+                $results = $stmt->fetchAll();
+                echo json_encode(['success' => true, 'data' => $results]);
+            } catch (PDOException $e) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Error fetching results: ' . $e->getMessage()]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(['message' => 'Invalid GET request. Required action=get_score and user_id.']);
+            echo json_encode(['success' => false, 'message' => 'Invalid GET request. Available actions: get_score, get_results.']);
         }
 
     } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
