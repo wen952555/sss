@@ -82,31 +82,11 @@ jobs:
           echo "Found APK at $APK_PATH"
         if: steps.build_apk.outcome == 'success'
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release and Upload APK
+        uses: softprops/action-gh-release@v1
         with:
+          files: ${{ env.APK_PATH }}
           tag_name: v${{ env.VERSION_NAME }}
-          release_name: Release v${{ env.VERSION_NAME }}
+          name: Release v${{ env.VERSION_NAME }}
           body: "Automated release for version ${{ env.VERSION_NAME }}"
-          draft: false
-          prerelease: false
         if: steps.find_apk.outcome == 'success'
-
-      - name: Get APK Filename
-        id: get_apk_filename
-        run: echo "APK_FILENAME=$(basename ${{ env.APK_PATH }})" >> $GITHUB_ENV
-        if: steps.create_release.outcome == 'success'
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.APK_PATH }}
-          asset_name: ${{ env.APK_FILENAME }}
-          asset_content_type: application/vnd.android.package-archive
-        if: steps.get_apk_filename.outcome == 'success'
