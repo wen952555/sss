@@ -27,6 +27,7 @@ const GameTable = ({
   // Handlers
   onBackToLobby,
   onReady,
+  isReady,
   onConfirm,
   onAutoSort,
   onCardClick,
@@ -45,7 +46,9 @@ const GameTable = ({
       <div className="game-table-header">
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
         <div className="game-table-title">{title}</div>
-        <button onClick={onReady} className="table-action-btn ready-btn">准备</button>
+        <button onClick={onReady} className="table-action-btn ready-btn">
+          {isReady ? '取消准备' : '准备'}
+        </button>
       </div>
       <div className="players-status-banner">
         <span className="player-name-list">
