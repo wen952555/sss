@@ -34,7 +34,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
         setPlayers(data.players);
         setPlayerState(data.gameStatus);
         if (data.gameStatus === 'playing' && data.hand) {
-          setInitialLanes(data.hand.top, data.hand.middle, data.hand.bottom);
+          setInitialLanes(data.hand);
         }
         if (data.gameStatus === 'finished' && data.result) {
           setGameResult(data.result);
