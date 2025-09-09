@@ -72,10 +72,11 @@ function App() {
 
     if (!gameType || matchingStatus[gameType]) return;
 
-    let playerCount = gameType === 'thirteen' ? 4 : null; // Default classic thirteen to 4 players
+    let playerCount = 4; // Default player count
     let finalGameMode = gameMode;
 
-    if (gameType === 'eight') {
+    // If the gameMode string contains player count info (e.g., "4-normal"), parse it.
+    if (gameMode.includes('-')) {
       const parts = gameMode.split('-');
       playerCount = parseInt(parts[0], 10);
       finalGameMode = parts[1];
