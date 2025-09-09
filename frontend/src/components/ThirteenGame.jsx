@@ -123,7 +123,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
 
   useEffect(() => {
     fetchGameStatus();
-    const intervalId = setInterval(fetchGameStatus, 3000);
+    const intervalId = setInterval(fetchGameStatus, 1000);
     return () => clearInterval(intervalId);
   }, [fetchGameStatus]);
 
