@@ -50,15 +50,6 @@ const GameTable = ({
           {isReady ? '取消准备' : '准备'}
         </button>
       </div>
-      <div className="players-status-banner">
-        <span className="player-name-list">
-          {players.map((p, index) => (
-            <span key={p.id} className={playerState === 'arranging' ? 'arranging-state' : ''}>
-              {renderPlayerName(p)}
-            </span>
-          ))}
-        </span>
-      </div>
 
       {unassignedCards.length > 0 && (
           <Lane title="待选牌" cards={unassignedCards} onCardClick={onCardClick} selectedCards={selectedCards} />
@@ -72,20 +63,20 @@ const GameTable = ({
 
       {errorMessage && <p className="error-text">{errorMessage}</p>}
       <div className="game-table-footer">
-        {playerState === 'arranging' && (
-          <>
-            <button onClick={onAutoSort} className="table-action-btn sort-btn" disabled={isLoading || playerState !== 'arranging'}>智能理牌</button>
-            <button className="table-action-btn auto-manage-btn" disabled={isLoading || playerState !== 'arranging'}>智能托管</button>
-            <button onClick={onConfirm} disabled={isLoading || playerState !== 'arranging'} className="table-action-btn confirm-btn">确认比牌</button>
-          </>
-        )}
-        {playerState === 'submitted' && (
-           <>
-            <button className="table-action-btn sort-btn" disabled={true}>智能理牌</button>
-            <button className="table-action-btn auto-manage-btn" disabled={true}>智能托管</button>
-            <button className="table-action-btn confirm-btn" disabled={true}>等待开牌</button>
-          </>
-        )}
+        <button
+          onClick={onAutoSort}
+          className="table-action-btn sort-btn"
+          disabled={isLoading || playerState !== 'arranging'}
+        >
+          智能理牌
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={isLoading || playerState !== 'arranging'}
+          className="table-action-btn confirm-btn"
+        >
+          {playerState === 'submitted' ? '等待开牌' : '确认比牌'}
+        </button>
       </div>
       {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} isTrial={true} />}
     </div>
