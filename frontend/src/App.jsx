@@ -5,6 +5,7 @@ import UserProfile from './components/UserProfile';
 import TransferPoints from './components/TransferPoints';
 import ThirteenGame from './components/ThirteenGame';
 import GameModeSelection from './components/GameModeSelection';
+import GameRules from './components/GameRules';
 import './App.css';
 import { Browser } from '@capacitor/browser';
 
@@ -72,18 +73,28 @@ function App() {
 
     if (!gameType || matchingStatus[gameType]) return;
 
+    let playerCount = 4; // Default player count
+    let finalGameMode = gameMode;
+
+    // If the gameMode string contains player count info (e.g., "4-normal"), parse it.
+    if (gameMode.includes('-')) {
+      const parts = gameMode.split('-');
+      playerCount = parseInt(parts[0], 10);
+      finalGameMode = parts[1];
+    }
+
     const currentUser = user; // Capture user state at time of call
     const userId = currentUser.id;
 
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
     // Reset game state but keep mode info
-    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser });
+    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser, playerCount });
 
     try {
-      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${userId}`);
+      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${finalGameMode}&userId=${userId}&playerCount=${playerCount}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser });
+        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser, playerCount });
         setViewingGame(null);
       } else {
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
@@ -109,7 +120,8 @@ function App() {
         clearInterval(intervalId);
         return;
       }
-      await handleSelectMode(gameState.gameMode);
+      // Pass both gameMode and gameType for polling
+      await handleSelectMode(gameState.gameMode, gameState.gameType);
     }, 2000);
     return () => clearInterval(intervalId);
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
@@ -142,13 +154,19 @@ function App() {
         onBackToLobby: handleBackToLobby,
         user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
+        playerCount: gameState.playerCount,
       };
-      if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
+      // Both 'thirteen' and 'eight' (5-point game) now use the ThirteenGame component
+      if (gameState.gameType === 'thirteen' || gameState.gameType === 'eight') {
+        return <ThirteenGame {...gameProps} />;
+      }
     }
     if (gameState.error) return <p className="error-message">{gameState.error}</p>;
     if (showTransfer && user) return <TransferPoints fromId={user.id} onClose={() => setShowTransfer(false)} onSuccess={handleTransferSuccess} />;
 
     switch (currentView) {
+      case 'rules':
+        return <GameRules onBack={() => setCurrentView('lobby')} />;
       case 'profile':
         return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
       case 'modeSelection':
@@ -161,6 +179,7 @@ function App() {
             matchingStatus={matchingStatus}
             user={user}
             onProfile={() => setCurrentView('profile')}
+            onShowRules={() => setCurrentView('rules')}
             onLogout={handleLogout}
             onLoginClick={() => setShowAuthModal(true)}
           />

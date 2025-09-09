@@ -67,7 +67,8 @@ switch ($action) {
                 $stmt->execute();
                 $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
                 $stmt->close();
-                if ($readyPlayers >= 3) {
+                // Only deal cards if the room is full and all players are ready.
+                if ($currentPlayers === (int)$room['players_count'] && $readyPlayers === (int)$room['players_count']) {
                     dealCards($conn, $roomId, $room['game_type'], $currentPlayers);
                 }
             } elseif ($sub_action === 'unready') {
@@ -283,6 +284,7 @@ switch ($action) {
         $gameType = $_GET['gameType'] ?? 'thirteen';
         $gameMode = $_GET['gameMode'] ?? 'normal';
         $userId = (int)($_GET['userId'] ?? 0);
+        $playerCount = (int)($_GET['playerCount'] ?? 0);
 
         if (!$userId) {
             http_response_code(401);
@@ -290,12 +292,14 @@ switch ($action) {
             exit;
         }
 
-        $playersNeeded = $gameType === 'thirteen' ? 4 : 2;
+        // Use playerCount from request, with fallbacks for older clients or classic mode
+        $playersNeeded = $playerCount > 0 ? $playerCount : ($gameType === 'thirteen' ? 4 : 2);
+
         $conn->begin_transaction();
         try {
             $roomId = null;
-            $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
-            $stmt->bind_param("ssi", $gameType, $gameMode, $playersNeeded);
+            $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? AND r.players_count = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
+            $stmt->bind_param("ssii", $gameType, $gameMode, $playersNeeded, $playersNeeded);
             $stmt->execute();
             $room = $stmt->get_result()->fetch_assoc();
             $stmt->close();
