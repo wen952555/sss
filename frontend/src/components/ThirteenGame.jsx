@@ -210,7 +210,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       isReady={isReady}
 
       onBackToLobby={onBackToLobby}
-      onReady={() => handleReady(_isReady)}
+      onReady={() => handleReady(isReady)}
       onConfirm={() => handleConfirm()}
       onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
