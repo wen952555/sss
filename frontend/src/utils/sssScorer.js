@@ -13,9 +13,9 @@ const SUIT_ORDER = { spades: 4, hearts: 3, clubs: 2, diamonds: 1 };
 
 const SCORES = {
   HEAD: { '三条': 3 },
-  MIDDLE: { '铁支': 8, '同花顺': 10, '葫芦': 2 },
-  TAIL: { '铁支': 4, '同花顺': 5 },
-  SPECIAL: { '一条龙': 13, '三同花': 4, '三顺子': 4, '六对半': 3 },
+  MIDDLE: { '铁支': 8, '同花顺': 10, '葫芦': 2, '五条': 12 },
+  TAIL: { '铁支': 4, '同花顺': 5, '五条': 6 },
+  SPECIAL: { '一条龙': 13, '三同花': 4, '三顺子': 4, '六对半': 3, '大六对': 7, '高级三同花/三顺子': 8 },
 };
 
 /**
@@ -115,6 +115,7 @@ export function getAreaType(cards, area) {
     if (grouped[2]) return "对子";
     return "高牌";
   }
+  if (grouped[5]) return "五条";
   if (isF && isS) return "同花顺";
   if (grouped[4]) return "铁支";
   if (grouped[3] && grouped[2]) return "葫芦";
@@ -132,6 +133,7 @@ export function areaTypeRank(type, area) {
     if (type === "对子") return 2;
     return 1;
   }
+  if (type === "五条") return 10;
   if (type === "同花顺") return 9;
   if (type === "铁支") return 8;
   if (type === "葫芦") return 7;
@@ -238,10 +240,33 @@ export function getSpecialType(p) {
   const all = [...p.head, ...p.middle, ...p.tail];
   const uniqVals = new Set(all.map(c => c.split('_')[0]));
   if (uniqVals.size === 13) return '一条龙';
+
   const groupedAll = getGroupedValues(all);
-  if (groupedAll['2']?.length === 6 && !groupedAll['3'] && !groupedAll['4']) return '六对半';
-  if (isFlush(p.head) && isFlush(p.middle) && isFlush(p.tail)) return '三同花';
-  if (isStraight(p.head) && isStraight(p.middle) && isStraight(p.tail)) return '三顺子';
+  if (groupedAll['4']) return '大六对'; // "Big 6 Pairs" - a hand with a Four of a Kind
+  if (groupedAll['2']?.length === 6 && !groupedAll['3']) return '六对半';
+
+  const isHeadFlush = isFlush(p.head);
+  const isMidFlush = isFlush(p.middle);
+  const isTailFlush = isFlush(p.tail);
+
+  const isHeadStraight = isStraight(p.head);
+  const isMidStraight = isStraight(p.middle);
+  const isTailStraight = isStraight(p.tail);
+
+  if (isHeadFlush && isMidFlush && isTailFlush) {
+    if (getAreaType(p.middle, 'middle') === '同花顺' || getAreaType(p.tail, 'tail') === '同花顺') {
+      return '高级三同花/三顺子';
+    }
+    return '三同花';
+  }
+
+  if (isHeadStraight && isMidStraight && isTailStraight) {
+    if (getAreaType(p.middle, 'middle') === '同花顺' || getAreaType(p.tail, 'tail') === '同花顺') {
+      return '高级三同花/三顺子';
+    }
+    return '三顺子';
+  }
+
   return null;
 }
 

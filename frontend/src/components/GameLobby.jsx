@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './GameLobby.css';
 
-const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick }) => {
+const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick, onShowRules }) => {
   const [onlineCount, setOnlineCount] = useState(null);
 
   useEffect(() => {
@@ -49,6 +49,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
           ) : (
             <button className="header-btn login-btn" onClick={onLoginClick}>注册/登录</button>
           )}
+          <button className="header-btn rules-btn" onClick={onShowRules}>游戏规则</button>
         </div>
         <h1 className="lobby-title">游戏大厅</h1>
         <div style={{ marginTop: 8, fontSize: '1rem', color: '#00796b', fontWeight: 500 }}>
@@ -57,28 +58,28 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
       </header>
 
       <main className="game-card-grid">
-        {/* 十三张卡片 */}
+        {/* 2分场 */}
         <div
           className={`game-card thirteen-bg ${isMatching ? 'disabled' : ''}`}
           onClick={() => !isMatching && onSelectGameType('thirteen')}
         >
           <div className="game-card-overlay">
             <div className="game-content">
-              <h2 className="game-title">经典十三张</h2>
-              <p className="game-description">策略与运气的巅峰对决</p>
+              <h2 className="game-title">2分场</h2>
+              <p className="game-description">经典模式对局</p>
             </div>
             {matchingStatus.thirteen && <div className="matching-indicator">匹配中...</div>}
           </div>
         </div>
-        {/* 八张卡片 */}
+        {/* 5分场 */}
         <div
           className={`game-card eight-bg ${isMatching ? 'disabled' : ''}`}
           onClick={() => !isMatching && onSelectGameType('eight')}
         >
           <div className="game-card-overlay">
             <div className="game-content">
-              <h2 className="game-title">急速八张</h2>
-              <p className="game-description">快节奏的竞技体验</p>
+              <h2 className="game-title">5分场</h2>
+              <p className="game-description">多人竞技场</p>
             </div>
             {matchingStatus.eight && <div className="matching-indicator">匹配中...</div>}
           </div>

@@ -11,19 +11,94 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
     bottomLane,
     selectedCards,
     LANE_LIMITS,
-    // `setInitialLanes` might be repurposed for when the server sends the hand
     setInitialLanes,
     handleCardClick,
     handleLaneClick,
   } = useCardArrangement();
 
-  // Most state is removed, what remains will be driven by server events
   const [playerState, setPlayerState] = useState('waiting'); // e.g., 'waiting', 'arranging', 'submitted'
   const [sortStrategy, setSortStrategy] = useState('bottom'); // 'bottom', 'middle', 'top'
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  const handleConfirm = useCallback((hand = null) => {
+    let handToSend;
+    if (hand && hand.top && hand.top.length > 0 && hand.top[0].rank) {
+      // Hand is from auto-sorter, format { top: [cardObj], ... }
+      handToSend = {
+        top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
+        middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
+        bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
+      };
+    } else {
+      // Hand is from user arrangement in the state
+      handToSend = {
+        top: topLane.map(c => c.key),
+        middle: middleLane.map(c => c.key),
+        bottom: bottomLane.map(c => c.key),
+      };
+    }
+
+    setIsLoading(true);
+    fetch('/api/index.php?action=player_action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        roomId,
+        action: 'submit_hand',
+        hand: handToSend,
+      }),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to submit hand.');
+      }
+      // The game state will be updated by the polling mechanism
+      console.log('Hand submitted successfully.');
+    })
+    .catch(error => {
+      setErrorMessage(error.message);
+    })
+    .finally(() => {
+      setIsLoading(false);
+    });
+  }, [roomId, user, topLane, middleLane, bottomLane]);
+
+  const handleAutoConfirm = useCallback(() => {
+    const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
+    if (allCardKeys.length !== 13) return;
+
+    const sortedHand = getSmartSortedHand(allCardKeys, 'bottom');
+    if (sortedHand) {
+      handleConfirm(sortedHand);
+    }
+  }, [topLane, middleLane, bottomLane, handleConfirm]);
+
+  useEffect(() => {
+    if (playerState === 'arranging') {
+      setTimeLeft(90);
+    } else {
+      setTimeLeft(null);
+    }
+  }, [playerState]);
+
+  useEffect(() => {
+    if (timeLeft === null) return;
+    if (timeLeft === 0) {
+      handleAutoConfirm();
+      setTimeLeft(null);
+      return;
+    }
+    const intervalId = setInterval(() => {
+      setTimeLeft(t => (t > 0 ? t - 1 : 0));
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [timeLeft, handleAutoConfirm]);
 
   const fetchGameStatus = useCallback(async () => {
     if (!roomId || !user) return;
@@ -47,13 +122,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   }, [roomId, user, setInitialLanes]);
 
   useEffect(() => {
-    fetchGameStatus(); // Initial fetch
-    const intervalId = setInterval(fetchGameStatus, 3000); // Poll every 3 seconds
+    fetchGameStatus();
+    const intervalId = setInterval(fetchGameStatus, 3000);
     return () => clearInterval(intervalId);
   }, [fetchGameStatus]);
-
-  // Offline game logic (handleReady, handleAutoSort, handleConfirm) is removed.
-  // These actions will now be handled by sending messages to the server.
 
   const handleReady = useCallback(async (isReady) => {
     if (!user || !roomId) return;
@@ -69,30 +141,28 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       if (!data.success) {
         throw new Error(data.message || `Failed to ${action}.`);
       }
-      fetchGameStatus(); // Immediately fetch status after action
+      fetchGameStatus();
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
       setIsLoading(false);
     }
-  }, [user, roomId]);
-
-  const handleConfirm = useCallback(() => {
-    // In an online game, this would send the player's hand arrangement to the server
-    console.log('Player confirmed hand. Room ID:', roomId);
-    // Logic to send hand to server would go here
-  }, [roomId, topLane, middleLane, bottomLane]);
+  }, [user, roomId, fetchGameStatus]);
 
   const handleAutoSort = useCallback(() => {
-    const allCards = [...topLane, ...middleLane, ...bottomLane];
-    if (allCards.length !== 13) return;
+    const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
+    if (allCardKeys.length !== 13) return;
 
-    const sortedHand = getSmartSortedHand(allCards, sortStrategy);
+    const sortedHand = getSmartSortedHand(allCardKeys, sortStrategy);
     if (sortedHand) {
-      setInitialLanes(sortedHand.top, sortedHand.middle, sortedHand.bottom);
+      const handForState = {
+          top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`),
+          middle: sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`),
+          bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`),
+      }
+      setInitialLanes(handForState);
     }
 
-    // Cycle through strategies
     setSortStrategy(prev => {
       if (prev === 'bottom') return 'middle';
       if (prev === 'middle') return 'top';
@@ -109,28 +179,25 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       title={`玩家: ${players.length} / 8`}
       players={players}
       user={user}
-
       topLane={topLane}
       middleLane={middleLane}
       bottomLane={bottomLane}
-      unassignedCards={[]} // This will be populated by server data
+      unassignedCards={[]}
       selectedCards={selectedCards}
       LANE_LIMITS={LANE_LIMITS}
-
       playerState={playerState}
+      timeLeft={timeLeft}
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}
       isReady={isReady}
-
       onBackToLobby={onBackToLobby}
       onReady={() => handleReady(isReady)}
-      onConfirm={handleConfirm}
+      onConfirm={() => handleConfirm()}
       onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
       onLaneClick={handleLaneClick}
       onCloseResult={() => setGameResult(null)}
-      // Play again would likely be handled by server state change
       onPlayAgain={() => console.log('Play again')}
     />
   );
