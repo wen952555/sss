@@ -115,7 +115,6 @@ export function getAreaType(cards, area) {
     if (grouped[2]) return "对子";
     return "高牌";
   }
-  if (grouped[5]) return "五条";
   if (isF && isS) return "同花顺";
   if (grouped[4]) return "铁支";
   if (grouped[3] && grouped[2]) return "葫芦";
@@ -133,13 +132,12 @@ export function areaTypeRank(type, area) {
     if (type === "对子") return 2;
     return 1;
   }
-  if (type === "五条") return 10;
   if (type === "同花顺") return 9;
   if (type === "铁支") return 8;
   if (type === "葫芦") return 7;
   if (type === "同花") return 6;
-  if (type === "顺子") return 4;
-  if (type === "三条") return 5;
+  if (type === "顺子") return 5;
+  if (type === "三条") return 4;
   if (type === "两对") return 3;
   if (type === "对子") return 2;
   return 1;

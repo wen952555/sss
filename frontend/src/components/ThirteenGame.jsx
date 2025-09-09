@@ -24,90 +24,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(null);
-
-  const handleConfirm = useCallback((hand = null) => {
-    let handToSend;
-    if (hand && hand.top && hand.top.length > 0 && hand.top[0].rank) {
-      // Hand is from auto-sorter, format { top: [cardObj], ... }
-      handToSend = {
-        top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
-        middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
-        bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
-      };
-    } else {
-      // Hand is from user arrangement in the state
-      handToSend = {
-        top: topLane.map(c => c.key),
-        middle: middleLane.map(c => c.key),
-        bottom: bottomLane.map(c => c.key),
-      };
-    }
-    setIsLoading(true);
-    fetch('/api/index.php?action=player_action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: user.id,
-        roomId,
-        action: 'submit_hand',
-        hand: handToSend,
-      }),
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to submit hand.');
-      }
-      // The game state will be updated by the polling mechanism
-      console.log('Hand submitted successfully.');
-    })
-    .catch(error => {
-      setErrorMessage(error.message);
-    })
-    .finally(() => {
-      setIsLoading(false);
-    });
-  }, [roomId, user, topLane, middleLane, bottomLane]);
-
-  const handleAutoConfirm = useCallback(() => {
-    const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
-    if (allCardKeys.length !== 13) return;
-
-    // Use the default 'bottom' strategy for auto-confirmation
-    const sortedHand = getSmartSortedHand(allCardKeys, 'bottom');
-    if (sortedHand) {
-      // Directly call handleConfirm with the sorted hand
-      handleConfirm(sortedHand);
-    }
-  }, [topLane, middleLane, bottomLane, handleConfirm]);
-
-  // This effect starts the timer when the player should be arranging their hand
-  useEffect(() => {
-    if (playerState === 'arranging') {
-      setTimeLeft(90);
-    } else {
-      setTimeLeft(null); // Clear timer if not in arranging phase
-    }
-  }, [playerState]);
-
-  // This effect handles the countdown and triggers auto-confirmation
-  useEffect(() => {
-    if (timeLeft === null) return;
-
-    if (timeLeft === 0) {
-      console.log("Time's up! Auto-confirming hand.");
-      handleAutoConfirm();
-      setTimeLeft(null);
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      setTimeLeft(t => (t > 0 ? t - 1 : 0));
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [timeLeft, handleAutoConfirm]);
 
   const fetchGameStatus = useCallback(async () => {
     if (!roomId || !user) return;
@@ -161,20 +77,19 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
     }
   }, [user, roomId]);
 
-  const handleAutoSort = useCallback(() => {
-    const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
-    if (allCardKeys.length !== 13) return;
+  const handleConfirm = useCallback(() => {
+    // In an online game, this would send the player's hand arrangement to the server
+    console.log('Player confirmed hand. Room ID:', roomId);
+    // Logic to send hand to server would go here
+  }, [roomId, topLane, middleLane, bottomLane]);
 
-    const sortedHand = getSmartSortedHand(allCardKeys, sortStrategy);
+  const handleAutoSort = useCallback(() => {
+    const allCards = [...topLane, ...middleLane, ...bottomLane];
+    if (allCards.length !== 13) return;
+
+    const sortedHand = getSmartSortedHand(allCards, sortStrategy);
     if (sortedHand) {
-      // The auto-sorter returns card objects, but setInitialLanes expects card strings
-      // We need to convert them back.
-      const handForState = {
-          top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`),
-          middle: sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`),
-          bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`),
-      }
-      setInitialLanes(handForState.top, handForState.middle, handForState.bottom);
+      setInitialLanes(sortedHand.top, sortedHand.middle, sortedHand.bottom);
     }
 
     // Cycle through strategies
@@ -203,7 +118,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
       LANE_LIMITS={LANE_LIMITS}
 
       playerState={playerState}
-      timeLeft={timeLeft}
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}
@@ -211,7 +125,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode }) => {
 
       onBackToLobby={onBackToLobby}
       onReady={() => handleReady(isReady)}
-      onConfirm={() => handleConfirm()}
+      onConfirm={handleConfirm}
       onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
       onLaneClick={handleLaneClick}
