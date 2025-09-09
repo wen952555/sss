@@ -72,28 +72,18 @@ function App() {
 
     if (!gameType || matchingStatus[gameType]) return;
 
-    let playerCount = 4; // Default player count
-    let finalGameMode = gameMode;
-
-    // If the gameMode string contains player count info (e.g., "4-normal"), parse it.
-    if (gameMode.includes('-')) {
-      const parts = gameMode.split('-');
-      playerCount = parseInt(parts[0], 10);
-      finalGameMode = parts[1];
-    }
-
     const currentUser = user; // Capture user state at time of call
     const userId = currentUser.id;
 
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
     // Reset game state but keep mode info
-    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser, playerCount });
+    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser });
 
     try {
-      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${finalGameMode}&userId=${userId}&playerCount=${playerCount}`);
+      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${userId}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser, playerCount });
+        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser });
         setViewingGame(null);
       } else {
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
@@ -119,8 +109,7 @@ function App() {
         clearInterval(intervalId);
         return;
       }
-      // Pass both gameMode and gameType for polling
-      await handleSelectMode(gameState.gameMode, gameState.gameType);
+      await handleSelectMode(gameState.gameMode);
     }, 2000);
     return () => clearInterval(intervalId);
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
@@ -153,12 +142,8 @@ function App() {
         onBackToLobby: handleBackToLobby,
         user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
-        playerCount: gameState.playerCount,
       };
-      // Both 'thirteen' and 'eight' (5-point game) now use the ThirteenGame component
-      if (gameState.gameType === 'thirteen' || gameState.gameType === 'eight') {
-        return <ThirteenGame {...gameProps} />;
-      }
+      if (gameState.gameType === 'thirteen') return <ThirteenGame {...gameProps} />;
     }
     if (gameState.error) return <p className="error-message">{gameState.error}</p>;
     if (showTransfer && user) return <TransferPoints fromId={user.id} onClose={() => setShowTransfer(false)} onSuccess={handleTransferSuccess} />;
