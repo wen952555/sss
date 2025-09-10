@@ -127,6 +127,23 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount }) =>
     return () => clearInterval(intervalId);
   }, [fetchGameStatus]);
 
+  const handleLeaveRoom = useCallback(() => {
+    if (!user || !roomId) {
+      onBackToLobby();
+      return;
+    }
+    // Send a request to the backend to leave the room
+    fetch('/api/index.php?action=leave_room', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, roomId }),
+    })
+    .then(() => {
+      // Regardless of success or failure, navigate back to lobby
+      onBackToLobby();
+    });
+  }, [user, roomId, onBackToLobby]);
+
   const handleReady = useCallback(async (isReady) => {
     if (!user || !roomId) return;
     const action = isReady ? 'unready' : 'ready';
@@ -172,6 +189,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount }) =>
 
   const me = players.find(p => p.id === user.id);
   const isReady = me ? me.is_ready : false;
+  const isGameInProgress = playerState === 'arranging' || playerState === 'submitted';
 
   return (
     <GameTable
@@ -191,7 +209,8 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount }) =>
       gameResult={gameResult}
       errorMessage={errorMessage}
       isReady={isReady}
-      onBackToLobby={onBackToLobby}
+      isGameInProgress={isGameInProgress}
+      onBackToLobby={handleLeaveRoom}
       onReady={() => handleReady(isReady)}
       onConfirm={() => handleConfirm()}
       onAutoSort={handleAutoSort}

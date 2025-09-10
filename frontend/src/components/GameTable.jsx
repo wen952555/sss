@@ -20,6 +20,7 @@ const GameTable = ({
   selectedCards,
   LANE_LIMITS,
   playerState, // 'waiting', 'arranging', 'submitted'
+  isGameInProgress,
   isLoading,
   gameResult,
   errorMessage,
@@ -44,9 +45,9 @@ const GameTable = ({
   return (
     <div className="game-table-container">
       <div className="game-table-header">
-        <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
+        <button onClick={onBackToLobby} className="table-action-btn back-btn" disabled={isGameInProgress}>&larr; 退出</button>
         <div className="game-table-title">{title}</div>
-        <button onClick={onReady} className="table-action-btn ready-btn">
+        <button onClick={onReady} className="table-action-btn ready-btn" disabled={isGameInProgress}>
           {isReady ? '取消准备' : '准备'}
         </button>
       </div>

@@ -23,6 +23,12 @@ switch ($action) {
             $row = $result->fetch_assoc();
             $onlineCount = (int)$row['onlineCount'];
             $result->free();
+
+            if ($onlineCount === 0) {
+                // If no one is online, clean up all rooms.
+                $conn->query("DELETE FROM room_players");
+                $conn->query("DELETE FROM game_rooms");
+            }
         }
         echo json_encode(['success' => true, 'onlineCount' => $onlineCount]);
         $conn->close();
@@ -328,6 +334,20 @@ switch ($action) {
         $conn->close();
         break;
 
+    case 'leave_room':
+        $input = json_decode(file_get_contents('php://input'), true);
+        $userId = (int)($input['userId'] ?? 0);
+        $roomId = (int)($input['roomId'] ?? 0);
+        if ($userId && $roomId) {
+            $stmt = $conn->prepare("DELETE FROM room_players WHERE room_id = ? AND user_id = ?");
+            $stmt->bind_param("ii", $roomId, $userId);
+            $stmt->execute();
+            $stmt->close();
+        }
+        echo json_encode(['success' => true]);
+        $conn->close();
+        break;
+
     case 'find_user':
         $data = json_decode(file_get_contents("php://input"));
         $phone = $data->phone ?? '';
@@ -355,6 +375,25 @@ switch ($action) {
         $userId = (int)($_GET['userId'] ?? 0);
 
         if (!$roomId || !$userId) { echo json_encode(['success'=>false]); exit; }
+
+        // Cleanup inactive players from the room (zombie players)
+        // We only do this in the 'matching' or 'waiting' phase to not disrupt an ongoing game
+        $roomStatusStmt = $conn->prepare("SELECT status FROM game_rooms WHERE id = ?");
+        $roomStatusStmt->bind_param("i", $roomId);
+        $roomStatusStmt->execute();
+        $roomStatusResult = $roomStatusStmt->get_result()->fetch_assoc();
+        $roomStatusStmt->close();
+
+        if ($roomStatusResult && ($roomStatusResult['status'] === 'matching' || $roomStatusResult['status'] === 'waiting')) {
+            $cleanupStmt = $conn->prepare("
+                DELETE rp FROM room_players rp
+                JOIN users u ON rp.user_id = u.id
+                WHERE rp.room_id = ? AND u.last_active < NOW() - INTERVAL 2 MINUTE
+            ");
+            $cleanupStmt->bind_param("i", $roomId);
+            $cleanupStmt->execute();
+            $cleanupStmt->close();
+        }
 
         // Update user's last active timestamp
         if ($userId > 0) {
