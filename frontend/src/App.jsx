@@ -29,7 +29,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
   const [currentView, setCurrentView] = useState('lobby');
-  const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, 'thirteen-5': false });
+  const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, 'thirteen-5': false, trial: false });
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
   const [viewingGame, setViewingGame] = useState(null); // null, 'thirteen', or 'eight'
@@ -66,7 +66,7 @@ function App() {
     localStorage.removeItem('activeGame');
     setUser(null);
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
-    setMatchingStatus({ thirteen: false, 'thirteen-5': false });
+    setMatchingStatus({ thirteen: false, 'thirteen-5': false, trial: false });
     setViewingGame(null);
   };
 
@@ -104,7 +104,15 @@ function App() {
       const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${finalGameMode}&userId=${userId}&playerCount=${playerCount}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        const newGameState = { gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser, playerCount };
+        const newGameState = {
+          gameType,
+          gameMode,
+          roomId: data.roomId,
+          error: null,
+          gameUser: currentUser,
+          playerCount,
+          initialHand: data.hand || null // Store the hand if it exists
+        };
         setGameState(newGameState);
         localStorage.setItem('activeGame', JSON.stringify({
           roomId: data.roomId,
@@ -147,7 +155,7 @@ function App() {
     localStorage.removeItem('activeGame');
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setCurrentView('lobby');
-    setMatchingStatus({ thirteen: false, 'thirteen-5': false });
+    setMatchingStatus({ thirteen: false, 'thirteen-5': false, trial: false });
     setViewingGame(null);
   };
 
@@ -174,8 +182,8 @@ function App() {
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
         playerCount: gameState.playerCount,
       };
-      if (gameState.gameType === 'thirteen') {
-        return <ThirteenGame {...gameProps} />;
+      if (['thirteen', 'thirteen-5', 'trial'].includes(gameState.gameType)) {
+        return <ThirteenGame {...gameProps} initialHand={gameState.initialHand} />;
       }
     }
     if (gameState.error) return <p className="error-message">{gameState.error}</p>;
