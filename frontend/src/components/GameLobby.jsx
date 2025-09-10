@@ -35,8 +35,6 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
     }
   }, [user]);
 
-  const isMatching = matchingStatus.thirteen;
-
   return (
     <div className="lobby-container">
       <header className="lobby-header">
@@ -60,8 +58,8 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
       <main className="game-card-grid">
         {/* 2分场 */}
         <div
-          className={`game-card thirteen-bg ${isMatching ? 'disabled' : ''}`}
-          onClick={() => !isMatching && onSelectGameType('thirteen')}
+          className={`game-card thirteen-bg ${matchingStatus.thirteen ? 'disabled' : ''}`}
+          onClick={() => !matchingStatus.thirteen && onSelectGameType('thirteen')}
         >
           <div className="game-card-overlay">
             <div className="game-content">
@@ -69,6 +67,20 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
               <p className="game-description">经典模式对局</p>
             </div>
             {matchingStatus.thirteen && <div className="matching-indicator">匹配中...</div>}
+          </div>
+        </div>
+
+        {/* 5分场 */}
+        <div
+          className={`game-card thirteen-bg ${matchingStatus['thirteen-5'] ? 'disabled' : ''}`}
+          onClick={() => !matchingStatus['thirteen-5'] && onSelectGameType('thirteen-5')}
+        >
+          <div className="game-card-overlay">
+            <div className="game-content">
+              <h2 className="game-title">5分场</h2>
+              <p className="game-description">高手进阶对局</p>
+            </div>
+            {matchingStatus['thirteen-5'] && <div className="matching-indicator">匹配中...</div>}
           </div>
         </div>
       </main>
