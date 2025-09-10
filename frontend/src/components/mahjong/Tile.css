@@ -1,0 +1,35 @@
+.tile {
+  width: 60px;
+  height: 90px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  overflow: hidden;
+  display: inline-block;
+  margin: 5px;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+}
+
+.tile img {
+  width: 100%;
+  height: 100%;
+}
+
+.tile-placeholder {
+  width: 60px;
+  height: 90px;
+  border: 1px dashed #ccc;
+  border-radius: 5px;
+  display: inline-block;
+  margin: 5px;
+  background-color: #f0f0f0;
+}
+
+.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.clickable:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
