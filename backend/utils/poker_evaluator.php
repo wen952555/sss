@@ -78,4 +78,37 @@ function compareHands($handA, $handB) {
     }
     return 0;
 }
+
+function parseCard($cardStr) {
+    if (!$cardStr) return null;
+    $parts = explode('_', $cardStr);
+    return ['rank' => $parts[0], 'suit' => $parts[2]];
+}
+
+function sortCards($cards) {
+    global $RANK_VALUES;
+    if (empty($cards)) return [];
+    $sortedCards = $cards;
+    usort($sortedCards, function ($a, $b) use ($RANK_VALUES) {
+        return $RANK_VALUES[$a['rank']] - $RANK_VALUES[$b['rank']];
+    });
+    return $sortedCards;
+}
+
+function combinations($array, $size) {
+    if ($size === 0) {
+        return [[]];
+    }
+    if (empty($array) || count($array) < $size) {
+        return [];
+    }
+    $first = $array[0];
+    $rest = array_slice($array, 1);
+    $combsWithFirst = combinations($rest, $size - 1);
+    foreach ($combsWithFirst as &$comb) {
+        array_unshift($comb, $first);
+    }
+    $combsWithoutFirst = combinations($rest, $size);
+    return array_merge($combsWithFirst, $combsWithoutFirst);
+}
 ?>

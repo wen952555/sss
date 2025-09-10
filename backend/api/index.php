@@ -160,7 +160,7 @@ switch ($action) {
                         $stmt->bind_param("iii", $finalScore, $roomId, $pId);
                         $stmt->execute();
                         $stmt->close();
-                        if ($pId > 0) {
+                        if ($pId > 0 && $gameType !== 'trial') {
                             $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?");
                             $stmt->bind_param("ii", $finalScore, $pId);
                             $stmt->execute();
@@ -362,6 +362,25 @@ switch ($action) {
                 fillWithAI($conn, $roomId, $gameType, $playersNeeded);
                 dealCards($conn, $roomId, $playersNeeded);
 
+                // --- Auto-submit hands for AI players ---
+                $stmt = $conn->prepare("SELECT user_id, initial_hand, is_auto_managed FROM room_players WHERE room_id = ?");
+                $stmt->bind_param("i", $roomId);
+                $stmt->execute();
+                $playersResult = $stmt->get_result();
+                while ($player = $playersResult->fetch_assoc()) {
+                    if ($player['is_auto_managed'] == 1 && $player['initial_hand']) {
+                        $initialHand = json_decode($player['initial_hand'], true);
+                        $flatHand = array_merge($initialHand['top'], $initialHand['middle'], $initialHand['bottom']);
+                        $submittedHand = getHeuristicArrangedHand($flatHand);
+                        $submittedHandJson = json_encode($submittedHand);
+                        $updateStmt = $conn->prepare("UPDATE room_players SET submitted_hand = ? WHERE room_id = ? AND user_id = ?");
+                        $updateStmt->bind_param("sii", $submittedHandJson, $roomId, $player['user_id']);
+                        $updateStmt->execute();
+                        $updateStmt->close();
+                    }
+                }
+                $stmt->close();
+
                 $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
                 $stmt->bind_param("ii", $roomId, $userId);
                 $stmt->execute();
@@ -492,7 +511,11 @@ switch ($action) {
         $stmt->execute();
         $playersResult = $stmt->get_result();
         $players = [];
+        $aiCounter = 1;
         while($row = $playersResult->fetch_assoc()) {
+            if ($row['is_auto_managed'] == 1) {
+                $row['phone'] = '电脑玩家 ' . $aiCounter++;
+            }
             $players[] = $row;
         }
         $stmt->close();
