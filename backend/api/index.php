@@ -427,7 +427,7 @@ switch ($action) {
             'players' => $players
         ];
 
-        if ($room['status'] === 'playing') {
+        if ($room['status'] === 'playing' || $room['status'] === 'arranging') {
             $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
             $stmt->bind_param("ii", $roomId, $userId);
             $stmt->execute();
