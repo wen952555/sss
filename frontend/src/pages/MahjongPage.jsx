@@ -104,8 +104,8 @@ const MahjongPage = () => {
       {winner && (
         <div className="winner-overlay">
           <div className="winner-message">
-            <h2>{winner === 0 ? 'Draw Game!' : `Player ${winner} Wins!`}</h2>
-            <button onClick={startNewGame}>Play Again</button>
+            <h2>{winner === 0 ? '流局!' : `玩家 ${winner} 获胜!`}</h2>
+            <button onClick={startNewGame}>再玩一次</button>
           </div>
         </div>
       )}
@@ -113,7 +113,7 @@ const MahjongPage = () => {
         <h1>麻将</h1>
         <div>
           <button onClick={startNewGame} className="new-game-button">
-            New Game
+            新游戏
           </button>
         </div>
       </div>
@@ -121,14 +121,14 @@ const MahjongPage = () => {
       <div className="game-board">
         <div className="center-area">
             <div className="wall-info">
-              <p>{wall.length} tiles left in the wall.</p>
-              <p>Current Turn: Player {currentPlayer}</p>
+              <p>牌墙剩余 {wall.length} 张</p>
+              <p>当前回合: 玩家 {currentPlayer}</p>
             </div>
         </div>
 
         {/* Player Areas */}
         <div className={`player-area player-1 ${currentPlayer === 1 ? 'active' : ''}`}>
-          <h2>Your Hand (Player 1)</h2>
+          <h2>你的手牌 (玩家 1)</h2>
           <div className="hand-container">
             {hands[1].map(tile => (
               <Tile key={tile.id} tile={tile} onClick={handleDiscardTile} />
@@ -142,20 +142,20 @@ const MahjongPage = () => {
         </div>
 
         <div className={`player-area player-2 ${currentPlayer === 2 ? 'active' : ''}`}>
-          <h4>Player 2</h4>
-          <div className="hand-container-hidden">13 tiles</div>
+          <h4>玩家 2</h4>
+          <div className="hand-container-hidden">13 张牌</div>
           <DiscardPile tiles={discardPiles[2]} />
         </div>
 
         <div className={`player-area player-3 ${currentPlayer === 3 ? 'active' : ''}`}>
-          <h4>Player 3</h4>
-          <div className="hand-container-hidden">13 tiles</div>
+          <h4>玩家 3</h4>
+          <div className="hand-container-hidden">13 张牌</div>
           <DiscardPile tiles={discardPiles[3]} />
         </div>
 
         <div className={`player-area player-4 ${currentPlayer === 4 ? 'active' : ''}`}>
-          <h4>Player 4</h4>
-          <div className="hand-container-hidden">13 tiles</div>
+          <h4>玩家 4</h4>
+          <div className="hand-container-hidden">13 张牌</div>
           <DiscardPile tiles={discardPiles[4]} />
         </div>
       </div>

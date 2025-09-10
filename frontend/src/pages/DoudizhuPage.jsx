@@ -4,7 +4,7 @@ const DoudizhuPage = () => {
   return (
     <div>
       <h1>斗地主</h1>
-      <p>Game logic and UI to be implemented.</p>
+      <p>游戏逻辑和UI待实现。</p>
     </div>
   );
 };
