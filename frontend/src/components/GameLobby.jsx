@@ -88,7 +88,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
         <div
           className={`game-card thirteen-bg ${matchingStatus['trial'] ? 'disabled' : ''}`}
           onClick={() => !matchingStatus['trial'] && onSelectGameType('trial')}
-          style={{backgroundColor: '#388e3c'}}
+          style={{backgroundColor: '#388e3c', height: '90px'}}
         >
           <div className="game-card-overlay">
             <div className="game-content">

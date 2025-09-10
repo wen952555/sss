@@ -111,7 +111,8 @@ function App() {
           error: null,
           gameUser: currentUser,
           playerCount,
-          initialHand: data.hand || null // Store the hand if it exists
+          initialHand: data.hand || null, // Store the hand if it exists
+          gameStatus: data.gameStatus || null
         };
         setGameState(newGameState);
         localStorage.setItem('activeGame', JSON.stringify({
@@ -183,7 +184,7 @@ function App() {
         playerCount: gameState.playerCount,
       };
       if (['thirteen', 'thirteen-5', 'trial'].includes(gameState.gameType)) {
-        return <ThirteenGame {...gameProps} initialHand={gameState.initialHand} />;
+        return <ThirteenGame {...gameProps} initialHand={gameState.initialHand} initialPlayerState={gameState.gameStatus} />;
       }
     }
     if (gameState.error) return <p className="error-message">{gameState.error}</p>;

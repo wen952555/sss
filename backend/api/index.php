@@ -368,7 +368,7 @@ switch ($action) {
                 $handResult = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
 
-                $response = ['success' => true, 'roomId' => $roomId];
+                $response = ['success' => true, 'roomId' => $roomId, 'gameStatus' => 'arranging'];
                 if ($handResult && $handResult['initial_hand']) {
                     $response['hand'] = json_decode($handResult['initial_hand'], true);
                 }
