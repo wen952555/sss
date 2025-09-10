@@ -1,28 +1,22 @@
 <?php
-// scorer.php - Backend scoring logic for SSS and Eight-Card games
 
-const VALUE_ORDER = [
-  '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7, '8' => 8, '9' => 9,
-  '10' => 10, 'jack' => 11, 'queen' => 12, 'king' => 13, 'ace' => 14
-];
+// Constants for scoring
+if (!defined('VALUE_ORDER')) {
+    define('VALUE_ORDER', [
+      '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7, '8' => 8, '9' => 9,
+      '10' => 10, 'jack' => 11, 'queen' => 12, 'king' => 13, 'ace' => 14
+    ]);
+}
+if (!defined('SSS_SCORES')) {
+    define('SSS_SCORES', [
+      'HEAD' => ['三条' => 3],
+      'MIDDLE' => ['铁支' => 8, '同花顺' => 10, '葫芦' => 2],
+      'TAIL' => ['铁支' => 4, '同花顺' => 5],
+      'SPECIAL' => ['一条龙' => 13, '三同花' => 4, '三顺子' => 4, '六对半' => 3],
+    ]);
+}
 
-const SUIT_ORDER = ['diamonds' => 1, 'clubs' => 2, 'hearts' => 3, 'spades' => 4];
-
-// Placeholder for SSS scores
-const SSS_SCORES = [
-  'HEAD' => ['三条' => 3],
-  'MIDDLE' => ['铁支' => 8, '同花顺' => 10, '葫芦' => 2],
-  'TAIL' => ['铁支' => 4, '同花顺' => 5],
-  'SPECIAL' => ['一条龙' => 13, '三同花' => 4, '三顺子' => 4, '六对半' => 3],
-];
-
-// Placeholder for Eight-Card scores
-const EIGHT_CARD_SCORES = [
-    'HEAD' => ['对子' => 1], // Base score, value is added
-    'MIDDLE' => ['同花顺' => 10, '三条' => 6],
-    'TAIL' => ['同花顺' => 5, '三条' => 3]
-];
-
+// Helper functions for scoring
 function parseCard($cardStr) {
     $parts = explode('_', $cardStr);
     return ['rank' => $parts[0], 'suit' => $parts[2]];
@@ -73,7 +67,6 @@ function getSssAreaType($cards, $area) {
     $grouped = getGroupedValues($cards);
     $isF = isFlush($cards);
     $isS = isStraight($cards);
-
     if (count($cards) === 3) {
         if (isset($grouped[3])) return "三条";
         if (isset($grouped[2])) return "对子";
@@ -91,52 +84,9 @@ function getSssAreaType($cards, $area) {
 }
 
 function sssAreaTypeRank($type, $area) {
-    $ranks = [
-        "高牌" => 1, "对子" => 2, "两对" => 3, "三条" => 4, "顺子" => 5,
-        "同花" => 6, "葫芦" => 7, "铁支" => 8, "同花顺" => 9
-    ];
+    $ranks = [ "高牌" => 1, "对子" => 2, "两对" => 3, "三条" => 4, "顺子" => 5, "同花" => 6, "葫芦" => 7, "铁支" => 8, "同花顺" => 9 ];
     if ($area === 'head' && $type === '三条') return 4;
     return $ranks[$type] ?? 1;
-}
-
-function isSssFoul($head, $middle, $tail) {
-    $headRank = sssAreaTypeRank(getSssAreaType($head, 'head'), 'head');
-    $midRank = sssAreaTypeRank(getSssAreaType($middle, 'middle'), 'middle');
-    $tailRank = sssAreaTypeRank(getSssAreaType($tail, 'tail'), 'tail');
-    if ($headRank > $midRank || $midRank > $tailRank) return true;
-    if ($headRank === $midRank && compareSssArea($head, $middle, 'head') > 0) return true;
-    if ($midRank === $tailRank && compareSssArea($middle, $tail, 'middle') > 0) return true;
-    return false;
-}
-
-function getSssAreaScore($cards, $area) {
-    $type = getSssAreaType($cards, $area);
-    $areaUpper = strtoupper($area);
-    return SSS_SCORES[$areaUpper][$type] ?? 1;
-}
-
-function calculateTotalBaseScore($p) {
-    // Simplified, does not handle special types for now
-    return getSssAreaScore($p['head'], 'head') + getSssAreaScore($p['middle'], 'middle') + getSssAreaScore($p['tail'], 'tail');
-}
-
-function calculateSinglePairScore($p1, $p2) {
-    $p1_foul = isSssFoul($p1['head'], $p1['middle'], $p1['tail']);
-    $p2_foul = isSssFoul($p2['head'], $p2['middle'], $p2['tail']);
-
-    if ($p1_foul && !$p2_foul) return -calculateTotalBaseScore($p2);
-    if (!$p1_foul && $p2_foul) return calculateTotalBaseScore($p1);
-    if ($p1_foul && $p2_foul) return 0;
-
-    // Special hand logic omitted for simplicity
-
-    $pairScore = 0;
-    foreach (['head', 'middle', 'tail'] as $area) {
-        $cmp = compareSssArea($p1[$area], $p2[$area], $area);
-        if ($cmp > 0) $pairScore += getSssAreaScore($p1[$area], $area);
-        else if ($cmp < 0) $pairScore -= getSssAreaScore($p2[$area], $area);
-    }
-    return $pairScore;
 }
 
 function compareSssArea($a, $b, $area) {
@@ -145,9 +95,6 @@ function compareSssArea($a, $b, $area) {
     $rankA = sssAreaTypeRank($typeA, $area);
     $rankB = sssAreaTypeRank($typeB, $area);
     if ($rankA !== $rankB) return $rankA - $rankB;
-
-    // Further comparison for same type hands
-    // This is a simplified version. A full implementation would be more complex.
     $valsA = array_map(function($c) { return VALUE_ORDER[parseCard($c)['rank']]; }, $a);
     $valsB = array_map(function($c) { return VALUE_ORDER[parseCard($c)['rank']]; }, $b);
     rsort($valsA);
@@ -158,7 +105,37 @@ function compareSssArea($a, $b, $area) {
     return 0;
 }
 
+function isSssFoul($hand) {
+    $headRank = sssAreaTypeRank(getSssAreaType($hand['top'], 'head'), 'head');
+    $midRank = sssAreaTypeRank(getSssAreaType($hand['middle'], 'middle'), 'middle');
+    $tailRank = sssAreaTypeRank(getSssAreaType($hand['bottom'], 'tail'), 'tail');
+    if ($headRank > $midRank || $midRank > $tailRank) return true;
+    if ($headRank === $midRank && compareSssArea($hand['top'], $hand['middle'], 'head') > 0) return true;
+    if ($midRank === $tailRank && compareSssArea($hand['middle'], $hand['bottom'], 'middle') > 0) return true;
+    return false;
+}
 
-// --- EIGHT CARD GAME SCORING LOGIC (DEPRECATED) ---
-// The logic has been moved to player_action.php and uses poker_evaluator.php
-?>
+function getSssAreaScore($cards, $area) {
+    $type = getSssAreaType($cards, $area);
+    $areaUpper = strtoupper($area);
+    return SSS_SCORES[$areaUpper][$type] ?? 1;
+}
+
+function calculateTotalBaseScore($p) {
+    return getSssAreaScore($p['top'], 'head') + getSssAreaScore($p['middle'], 'middle') + getSssAreaScore($p['bottom'], 'tail');
+}
+
+function calculateSinglePairScore($p1_hand, $p2_hand) {
+    $p1_foul = isSssFoul($p1_hand);
+    $p2_foul = isSssFoul($p2_hand);
+    if ($p1_foul && !$p2_foul) return -calculateTotalBaseScore($p2_hand);
+    if (!$p1_foul && $p2_foul) return calculateTotalBaseScore($p1_hand);
+    if ($p1_foul && $p2_foul) return 0;
+    $pairScore = 0;
+    foreach (['top', 'middle', 'bottom'] as $area) {
+        $cmp = compareSssArea($p1_hand[$area], $p2_hand[$area], $area);
+        if ($cmp > 0) $pairScore += getSssAreaScore($p1_hand[$area], $area);
+        else if ($cmp < 0) $pairScore -= getSssAreaScore($p2_hand[$area], $area);
+    }
+    return $pairScore;
+}

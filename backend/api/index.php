@@ -127,34 +127,8 @@ switch ($action) {
                         $pointMultiplier = 5;
                     }
 
-                    // --- Inlined SSS Scoring Logic from scorer.php ---
-
-                    // Constants for scoring
-                    define('VALUE_ORDER', [
-                      '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7, '8' => 8, '9' => 9,
-                      '10' => 10, 'jack' => 11, 'queen' => 12, 'king' => 13, 'ace' => 14
-                    ]);
-                    define('SSS_SCORES', [
-                      'HEAD' => ['三条' => 3],
-                      'MIDDLE' => ['铁支' => 8, '同花顺' => 10, '葫芦' => 2],
-                      'TAIL' => ['铁支' => 4, '同花顺' => 5],
-                      'SPECIAL' => ['一条龙' => 13, '三同花' => 4, '三顺子' => 4, '六对半' => 3],
-                    ]);
-
-                    // Helper functions for scoring
-                    function parseCard_inline($cardStr) { $parts = explode('_', $cardStr); return ['rank' => $parts[0], 'suit' => $parts[2]]; }
-                    function getGroupedValues_inline($cards) { $counts = []; foreach ($cards as $card) { $val = VALUE_ORDER[parseCard_inline($card)['rank']]; $counts[$val] = ($counts[$val] ?? 0) + 1; } $groups = []; foreach ($counts as $val => $count) { if (!isset($groups[$count])) { $groups[$count] = []; } $groups[$count][] = (int)$val; } foreach ($groups as &$group) { rsort($group); } return $groups; }
-                    function isStraight_inline($cards) { if (empty($cards)) return false; $unique_ranks = array_unique(array_map(function($c) { return VALUE_ORDER[parseCard_inline($c)['rank']]; }, $cards)); if (count($unique_ranks) !== count($cards)) return false; sort($unique_ranks); $is_a2345 = $unique_ranks === [2, 3, 4, 5, 14]; $is_normal = ($unique_ranks[count($unique_ranks) - 1] - $unique_ranks[0] === count($cards) - 1); return $is_normal || $is_a2345; }
-                    function isFlush_inline($cards) { if (empty($cards)) return false; $first_suit = parseCard_inline($cards[0])['suit']; foreach ($cards as $card) { if (parseCard_inline($card)['suit'] !== $first_suit) { return false; } } return true; }
-                    function getSssAreaType_inline($cards, $area) { if (empty($cards)) return "高牌"; $grouped = getGroupedValues_inline($cards); $isF = isFlush_inline($cards); $isS = isStraight_inline($cards); if (count($cards) === 3) { if (isset($grouped[3])) return "三条"; if (isset($grouped[2])) return "对子"; return "高牌"; } if ($isF && $isS) return "同花顺"; if (isset($grouped[4])) return "铁支"; if (isset($grouped[3]) && isset($grouped[2])) return "葫芦"; if ($isF) return "同花"; if ($isS) return "顺子"; if (isset($grouped[3])) return "三条"; if (isset($grouped[2]) && count($grouped[2]) === 2) return "两对"; if (isset($grouped[2])) return "对子"; return "高牌"; }
-                    function sssAreaTypeRank_inline($type, $area) { $ranks = [ "高牌" => 1, "对子" => 2, "两对" => 3, "三条" => 4, "顺子" => 5, "同花" => 6, "葫芦" => 7, "铁支" => 8, "同花顺" => 9 ]; if ($area === 'head' && $type === '三条') return 4; return $ranks[$type] ?? 1; }
-                    function compareSssArea_inline($a, $b, $area) { $typeA = getSssAreaType_inline($a, $area); $typeB = getSssAreaType_inline($b, $area); $rankA = sssAreaTypeRank_inline($typeA, $area); $rankB = sssAreaTypeRank_inline($typeB, $area); if ($rankA !== $rankB) return $rankA - $rankB; $valsA = array_map(function($c) { return VALUE_ORDER[parseCard_inline($c)['rank']]; }, $a); $valsB = array_map(function($c) { return VALUE_ORDER[parseCard_inline($c)['rank']]; }, $b); rsort($valsA); rsort($valsB); for ($i = 0; $i < count($valsA); $i++) { if ($valsA[$i] !== $valsB[$i]) return $valsA[$i] - $valsB[$i]; } return 0; }
-                    function isSssFoul_inline($hand) { $headRank = sssAreaTypeRank_inline(getSssAreaType_inline($hand['top'], 'head'), 'head'); $midRank = sssAreaTypeRank_inline(getSssAreaType_inline($hand['middle'], 'middle'), 'middle'); $tailRank = sssAreaTypeRank_inline(getSssAreaType_inline($hand['bottom'], 'tail'), 'tail'); if ($headRank > $midRank || $midRank > $tailRank) return true; if ($headRank === $midRank && compareSssArea_inline($hand['top'], $hand['middle'], 'head') > 0) return true; if ($midRank === $tailRank && compareSssArea_inline($hand['middle'], $hand['bottom'], 'middle') > 0) return true; return false; }
-                    function getSssAreaScore_inline($cards, $area) { $type = getSssAreaType_inline($cards, $area); $areaUpper = strtoupper($area); return SSS_SCORES[$areaUpper][$type] ?? 1; }
-                    function calculateTotalBaseScore_inline($p) { return getSssAreaScore_inline($p['top'], 'head') + getSssAreaScore_inline($p['middle'], 'middle') + getSssAreaScore_inline($p['bottom'], 'tail'); }
-                    function calculateSinglePairScore_inline($p1_hand, $p2_hand) { $p1_foul = isSssFoul_inline($p1_hand); $p2_foul = isSssFoul_inline($p2_hand); if ($p1_foul && !$p2_foul) return -calculateTotalBaseScore_inline($p2_hand); if (!$p1_foul && $p2_foul) return calculateTotalBaseScore_inline($p1_hand); if ($p1_foul && $p2_foul) return 0; $pairScore = 0; foreach (['top', 'middle', 'bottom'] as $area) { $cmp = compareSssArea_inline($p1_hand[$area], $p2_hand[$area], $area); if ($cmp > 0) $pairScore += getSssAreaScore_inline($p1_hand[$area], $area); else if ($cmp < 0) $pairScore -= getSssAreaScore_inline($p2_hand[$area], $area); } return $pairScore; }
-
                     // --- Main scoring execution ---
+                    require_once __DIR__ . '/../utils/scorer.php';
                     $stmt = $conn->prepare("SELECT user_id, submitted_hand FROM room_players WHERE room_id = ?");
                     $stmt->bind_param("i", $roomId);
                     $stmt->execute();
@@ -174,7 +148,7 @@ switch ($action) {
                             $p2_id = $player_ids[$j];
                             $p1_hand = $players_data[$p1_id];
                             $p2_hand = $players_data[$p2_id];
-                            $pair_score = calculateSinglePairScore_inline($p1_hand, $p2_hand);
+                            $pair_score = calculateSinglePairScore($p1_hand, $p2_hand);
                             $scores[$p1_id] += $pair_score;
                             $scores[$p2_id] -= $pair_score;
                         }
@@ -186,7 +160,7 @@ switch ($action) {
                         $stmt->bind_param("iii", $finalScore, $roomId, $pId);
                         $stmt->execute();
                         $stmt->close();
-                        if ($pId > 0) {
+                        if ($pId > 0 && $gameType !== 'trial') {
                             $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?");
                             $stmt->bind_param("ii", $finalScore, $pId);
                             $stmt->execute();
@@ -367,34 +341,86 @@ switch ($action) {
             exit;
         }
 
-        // Use playerCount from request, with a fallback for the single game mode
         $playersNeeded = $playerCount > 0 ? $playerCount : 4;
 
         $conn->begin_transaction();
         try {
-            $roomId = null;
-            $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? AND r.players_count = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
-            $stmt->bind_param("ssii", $gameType, $gameMode, $playersNeeded, $playersNeeded);
-            $stmt->execute();
-            $room = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-            if ($room) {
-                $roomId = $room['id'];
-            } else {
+            if ($gameType === 'trial') {
+                // --- Trial Mode: Create room, fill with AI, and start immediately ---
                 $roomCode = uniqid('room_');
-                $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'matching', ?)");
+                $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'arranging', ?)");
                 $stmt->bind_param("sssi", $roomCode, $gameType, $gameMode, $playersNeeded);
                 $stmt->execute();
                 $roomId = $stmt->insert_id;
                 $stmt->close();
+
+                $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 1, 0)");
+                $stmt->bind_param("ii", $roomId, $userId);
+                $stmt->execute();
+                $stmt->close();
+
+                fillWithAI($conn, $roomId, $gameType, $playersNeeded);
+                dealCards($conn, $roomId, $playersNeeded);
+
+                // --- Auto-submit hands for AI players ---
+                $stmt = $conn->prepare("SELECT user_id, initial_hand, is_auto_managed FROM room_players WHERE room_id = ?");
+                $stmt->bind_param("i", $roomId);
+                $stmt->execute();
+                $playersResult = $stmt->get_result();
+                while ($player = $playersResult->fetch_assoc()) {
+                    if ($player['is_auto_managed'] == 1 && $player['initial_hand']) {
+                        $initialHand = json_decode($player['initial_hand'], true);
+                        $flatHand = array_merge($initialHand['top'], $initialHand['middle'], $initialHand['bottom']);
+                        $submittedHand = getHeuristicArrangedHand($flatHand);
+                        $submittedHandJson = json_encode($submittedHand);
+                        $updateStmt = $conn->prepare("UPDATE room_players SET submitted_hand = ? WHERE room_id = ? AND user_id = ?");
+                        $updateStmt->bind_param("sii", $submittedHandJson, $roomId, $player['user_id']);
+                        $updateStmt->execute();
+                        $updateStmt->close();
+                    }
+                }
+                $stmt->close();
+
+                $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
+                $stmt->bind_param("ii", $roomId, $userId);
+                $stmt->execute();
+                $handResult = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+
+                $response = ['success' => true, 'roomId' => $roomId, 'gameStatus' => 'arranging'];
+                if ($handResult && $handResult['initial_hand']) {
+                    $response['hand'] = json_decode($handResult['initial_hand'], true);
+                }
+                echo json_encode($response);
+
+            } else {
+                // --- Normal Match Logic ---
+                $roomId = null;
+                $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? AND r.players_count = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
+                $stmt->bind_param("ssii", $gameType, $gameMode, $playersNeeded, $playersNeeded);
+                $stmt->execute();
+                $room = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+
+                if ($room) {
+                    $roomId = $room['id'];
+                } else {
+                    $roomCode = uniqid('room_');
+                    $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'matching', ?)");
+                    $stmt->bind_param("sssi", $roomCode, $gameType, $gameMode, $playersNeeded);
+                    $stmt->execute();
+                    $roomId = $stmt->insert_id;
+                    $stmt->close();
+                }
+
+                $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 0, 0) ON DUPLICATE KEY UPDATE room_id = ?");
+                $stmt->bind_param("iii", $roomId, $userId, $roomId);
+                $stmt->execute();
+                $stmt->close();
+                echo json_encode(['success' => true, 'roomId' => $roomId]);
             }
-            $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 0, 0) ON DUPLICATE KEY UPDATE room_id = ?");
-            $stmt->bind_param("iii", $roomId, $userId, $roomId);
-            $stmt->execute();
-            $stmt->close();
+
             $conn->commit();
-            http_response_code(200);
-            echo json_encode(['success' => true, 'roomId' => $roomId]);
         } catch (Exception $e) {
             $conn->rollback();
             http_response_code(500);
@@ -485,7 +511,11 @@ switch ($action) {
         $stmt->execute();
         $playersResult = $stmt->get_result();
         $players = [];
+        $aiCounter = 1;
         while($row = $playersResult->fetch_assoc()) {
+            if ($row['is_auto_managed'] == 1) {
+                $row['phone'] = '电脑玩家 ' . $aiCounter++;
+            }
             $players[] = $row;
         }
         $stmt->close();
