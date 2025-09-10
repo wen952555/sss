@@ -50,33 +50,47 @@ switch ($action) {
 
         $conn->begin_transaction();
         try {
+            $response = ['success' => true]; // Default response
+
             if ($sub_action === 'ready') {
                 $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE room_id = ? AND user_id = ?");
                 $stmt->bind_param("ii", $roomId, $userId);
                 $stmt->execute();
                 $stmt->close();
+
                 $stmt = $conn->prepare("SELECT game_type, players_count FROM game_rooms WHERE id = ?");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
                 $room = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
                 if (!$room) throw new Exception("Room not found.");
+
                 $stmt = $conn->prepare("SELECT COUNT(*) as current_players FROM room_players WHERE room_id = ?");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
                 $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
                 $stmt->close();
-                // if ($currentPlayers < $room['players_count']) {
-                //     fillWithAI($conn, $roomId, $room['game_type'], $room['players_count']);
-                // }
+
                 $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
                 $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
                 $stmt->close();
-                // Only deal cards if the room is full and all players are ready.
+
+                $response['cardsDealt'] = false;
                 if ($currentPlayers === (int)$room['players_count'] && $readyPlayers === (int)$room['players_count']) {
                     dealCards($conn, $roomId, $currentPlayers);
+
+                    $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
+                    $stmt->bind_param("ii", $roomId, $userId);
+                    $stmt->execute();
+                    $handResult = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+
+                    if ($handResult && $handResult['initial_hand']) {
+                        $response['cardsDealt'] = true;
+                        $response['hand'] = json_decode($handResult['initial_hand'], true);
+                    }
                 }
             } elseif ($sub_action === 'unready') {
                 $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE room_id = ? AND user_id = ?");
@@ -187,7 +201,7 @@ switch ($action) {
                 }
             }
             $conn->commit();
-            echo json_encode(['success' => true]);
+            echo json_encode($response);
         } catch (Exception $e) {
             $conn->rollback();
             http_response_code(500);

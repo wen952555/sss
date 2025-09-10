@@ -169,6 +169,11 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount }) =>
       if (!data.success) {
         throw new Error(data.message || `Failed to ${action}.`);
       }
+      // If the 'ready' action caused cards to be dealt, the hand will be in the response.
+      if (data.cardsDealt && data.hand) {
+        setInitialLanes(data.hand);
+      }
+      // We still call this to get the latest state for all players
       fetchGameStatus();
     } catch (error) {
       setErrorMessage(error.message);
