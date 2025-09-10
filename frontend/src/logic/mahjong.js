@@ -86,3 +86,28 @@ export function dealTiles(shuffledTiles) {
 
   return { player1, player2, player3, player4, wall };
 }
+
+/**
+ * Performs a simple AI turn: draws a tile and discards a random tile.
+ * @param {Array<Object>} hand - The AI player's current hand.
+ * @param {Array<Object>} wall - The current wall.
+ * @returns {Object} An object containing the updated hand, the updated wall, and the discarded tile.
+ */
+export function performAITurn(hand, wall) {
+  if (wall.length === 0) {
+    return { updatedHand: hand, updatedWall: wall, discardedTile: null };
+  }
+
+  // 1. Draw a tile from the wall
+  const newWall = [...wall];
+  const drawnTile = newWall.shift();
+  const currentHand = [...hand, drawnTile];
+
+  // 2. Discard a random tile from the hand
+  const discardIndex = Math.floor(Math.random() * currentHand.length);
+  const discardedTile = currentHand.splice(discardIndex, 1)[0];
+
+  const updatedHand = currentHand; // hand is already modified by splice
+
+  return { updatedHand, updatedWall: newWall, discardedTile };
+}

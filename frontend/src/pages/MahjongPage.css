@@ -17,9 +17,43 @@
 }
 
 .game-board {
-  background-color: #f0f0f0;
+  display: grid;
+  grid-template-areas:
+    ". player3 ."
+    "player4 center player2"
+    ". player1 .";
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 200px 1fr 200px;
+  gap: 20px;
+  width: 100%;
+  height: 80vh;
+  background-color: #006600; /* Green table color */
   padding: 20px;
   border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.center-area {
+  grid-area: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.player-1 { grid-area: player1; }
+.player-2 { grid-area: player2; }
+.player-3 { grid-area: player3; text-align: center; }
+.player-4 { grid-area: player4; }
+
+.player-area {
+  border: 3px solid transparent;
+  border-radius: 10px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.player-area.active {
+  border-color: #ffdd44;
+  box-shadow: 0 0 15px #ffdd44;
 }
 
 .hand-container {
@@ -27,11 +61,24 @@
   padding: 10px;
   border-radius: 5px;
   min-height: 110px;
+  margin-bottom: 10px;
+}
+
+.hand-container-hidden {
+  background-color: #ccc;
+  border: 1px solid #999;
+  border-radius: 5px;
+  padding: 10px;
+  text-align: center;
+  color: #555;
+  margin-bottom: 10px;
 }
 
 .wall-info {
-  margin-top: 20px;
   text-align: center;
   font-style: italic;
-  color: #555;
+  color: #fff;
+  background-color: rgba(0,0,0,0.5);
+  padding: 10px;
+  border-radius: 5px;
 }
