@@ -9,103 +9,113 @@ const MahjongPage = () => {
   const [wall, setWall] = useState([]);
   const [discardPiles, setDiscardPiles] = useState({ 1: [], 2: [], 3: [], 4: [] });
   const [currentPlayer, setCurrentPlayer] = useState(1);
+  const [winner, setWinner] = useState(null);
+  const [drawnTile, setDrawnTile] = useState(null); // The 14th tile for the current player
 
   const startNewGame = () => {
     const tileSet = mahjongLogic.createTileSet();
     const shuffledTiles = mahjongLogic.shuffleTiles(tileSet);
     const { player1, player2, player3, player4, wall: newWall } = mahjongLogic.dealTiles(shuffledTiles);
 
-    // Sort hands for better visualization
     setHands({
       1: player1.sort((a, b) => a.id.localeCompare(b.id)),
-      2: player2.sort((a, b) => a.id.localeCompare(b.id)),
-      3: player3.sort((a, b) => a.id.localeCompare(b.id)),
-      4: player4.sort((a, b) => a.id.localeCompare(b.id)),
+      2: player2, 3: player3, 4: player4,
     });
 
     setWall(newWall);
     setDiscardPiles({ 1: [], 2: [], 3: [], 4: [] });
     setCurrentPlayer(1);
+    setWinner(null);
+    setDrawnTile(null);
   };
 
-  // This function now only handles the human player's (Player 1) turn
+  // This function now handles discarding one of the 14 tiles
   const handleDiscardTile = (tileToDiscard) => {
-    if (currentPlayer !== 1 || wall.length === 0) {
-      return; // Not player 1's turn or wall is empty
+    if (currentPlayer !== 1 || winner || !drawnTile) {
+      return; // Not player 1's turn, game is over, or no tile has been drawn
     }
 
-    const player1Hand = hands[1];
-    const newPlayer1Hand = player1Hand.filter(tile => tile.id !== tileToDiscard.id);
+    // Combine hand and drawn tile, then remove the one to be discarded
+    const fullHand = [...hands[1], drawnTile];
+    const newHand = fullHand.filter(tile => tile.id !== tileToDiscard.id);
 
     const newDiscardPiles = { ...discardPiles };
     newDiscardPiles[1] = [...newDiscardPiles[1], tileToDiscard];
 
-    const newWall = [...wall];
-    const drawnTile = newWall.shift();
-
-    const updatedHand = [...newPlayer1Hand, drawnTile].sort((a, b) => a.id.localeCompare(b.id));
-
-    setHands({ ...hands, 1: updatedHand });
+    setHands({ ...hands, 1: newHand.sort((a, b) => a.id.localeCompare(b.id)) });
     setDiscardPiles(newDiscardPiles);
-    setWall(newWall);
-
-    // Pass the turn to the next player
+    setDrawnTile(null); // Clear the drawn tile
     setCurrentPlayer(2);
   };
 
-  // Start a new game when the component mounts
+  // Effect to handle drawing a tile for the current player
+  useEffect(() => {
+    if (winner || wall.length === 0) return;
+
+    const drawTile = () => {
+        const newWall = [...wall];
+        const tile = newWall.shift();
+        setWall(newWall);
+
+        if (currentPlayer === 1) {
+            setDrawnTile(tile);
+            const handWithDrawnTile = [...hands[1], tile];
+            if (mahjongLogic.isWinningHand(handWithDrawnTile)) {
+                setWinner(1);
+            }
+        } else {
+            // AI Turn Logic
+            const currentHand = hands[currentPlayer];
+            const handWithDrawnTile = [...currentHand, tile];
+            if (mahjongLogic.isWinningHand(handWithDrawnTile)) {
+                setWinner(currentPlayer);
+                setHands({ ...hands, [currentPlayer]: handWithDrawnTile });
+                return;
+            }
+
+            // AI discards a tile
+            const { updatedHand, discardedTile } = mahjongLogic.performAITurn(handWithDrawnTile, []);
+            const newHands = { ...hands, [currentPlayer]: updatedHand };
+            const newDiscardPiles = { ...discardPiles };
+            newDiscardPiles[currentPlayer] = [...newDiscardPiles[currentPlayer], discardedTile];
+
+            setHands(newHands);
+            setDiscardPiles(newDiscardPiles);
+            setCurrentPlayer(currentPlayer % 4 + 1);
+        }
+    };
+
+    // Trigger draw for AI, but wait for human to discard
+    if (currentPlayer !== 1) {
+        const timer = setTimeout(drawTile, 1000);
+        return () => clearTimeout(timer);
+    } else if (!drawnTile) { // Human player's turn to draw
+        drawTile();
+    }
+
+  }, [currentPlayer, winner, wall]); // Simplified dependencies
+
   useEffect(() => {
     startNewGame();
   }, []);
 
-  // Effect to handle AI turns
-  useEffect(() => {
-    // If it's the human player's turn (or game is over), do nothing
-    if (currentPlayer === 1 || wall.length === 0) {
-      return;
-    }
-
-    // AI's turn
-    const aiPlayerId = currentPlayer;
-
-    const performTurn = () => {
-      const currentHand = hands[aiPlayerId];
-      const { updatedHand, updatedWall, discardedTile } = mahjongLogic.performAITurn(currentHand, wall);
-
-      if (discardedTile) {
-        // Update hands
-        const newHands = { ...hands };
-        newHands[aiPlayerId] = updatedHand;
-        setHands(newHands);
-
-        // Update discard pile
-        const newDiscardPiles = { ...discardPiles };
-        newDiscardPiles[aiPlayerId] = [...newDiscardPiles[aiPlayerId], discardedTile];
-        setDiscardPiles(newDiscardPiles);
-
-        // Update wall
-        setWall(updatedWall);
-
-        // Pass the turn to the next player
-        setCurrentPlayer(currentPlayer % 4 + 1);
-      }
-    };
-
-    // Use a timeout to make the AI turn feel more natural
-    const timer = setTimeout(performTurn, 1000); // 1 second delay
-
-    // Cleanup the timer if the component unmounts
-    return () => clearTimeout(timer);
-
-  }, [currentPlayer, hands, wall, discardPiles]); // Dependencies for the effect
-
   return (
     <div className="mahjong-page">
+      {winner && (
+        <div className="winner-overlay">
+          <div className="winner-message">
+            <h2>{winner === 0 ? 'Draw Game!' : `Player ${winner} Wins!`}</h2>
+            <button onClick={startNewGame}>Play Again</button>
+          </div>
+        </div>
+      )}
       <div className="game-header">
         <h1>麻将</h1>
-        <button onClick={startNewGame} className="new-game-button">
-          New Game
-        </button>
+        <div>
+          <button onClick={startNewGame} className="new-game-button">
+            New Game
+          </button>
+        </div>
       </div>
 
       <div className="game-board">
@@ -123,6 +133,10 @@ const MahjongPage = () => {
             {hands[1].map(tile => (
               <Tile key={tile.id} tile={tile} onClick={handleDiscardTile} />
             ))}
+            {drawnTile && currentPlayer === 1 && <div className="drawn-tile-separator" />}
+            {drawnTile && currentPlayer === 1 && (
+              <Tile key={drawnTile.id} tile={drawnTile} onClick={handleDiscardTile} />
+            )}
           </div>
           <DiscardPile tiles={discardPiles[1]} />
         </div>

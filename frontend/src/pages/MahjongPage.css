@@ -82,3 +82,37 @@
   padding: 10px;
   border-radius: 5px;
 }
+
+.winner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.winner-message {
+  background-color: white;
+  padding: 40px 60px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 1.5em;
+  color: #333;
+}
+
+.winner-message button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 0.8em;
+  cursor: pointer;
+}
+
+.drawn-tile-separator {
+  width: 20px;
+  display: inline-block;
+}
