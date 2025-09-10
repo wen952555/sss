@@ -4,7 +4,8 @@ require_once 'db_connect.php';
 
 // All API requests will be routed through this file based on the 'action' parameter.
 require_once __DIR__ . '/../utils/utils.php';
-require_once __DIR__ . '/../utils/scorer.php';
+// Scorer.php is no longer needed as the functions are moved inline.
+// require_once __DIR__ . '/../utils/scorer.php';
 
 $action = $_REQUEST['action'] ?? '';
 
@@ -75,7 +76,7 @@ switch ($action) {
                 $stmt->close();
                 // Only deal cards if the room is full and all players are ready.
                 if ($currentPlayers === (int)$room['players_count'] && $readyPlayers === (int)$room['players_count']) {
-                    dealCards($conn, $roomId, $room['game_type'], $currentPlayers);
+                    dealCards($conn, $roomId, $currentPlayers);
                 }
             } elseif ($sub_action === 'unready') {
                 $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE room_id = ? AND user_id = ?");
@@ -101,30 +102,72 @@ switch ($action) {
                 $playersNeeded = $stmt->get_result()->fetch_assoc()['players_count'];
                 $stmt->close();
                 if ($submittedPlayers == $playersNeeded) {
+                    // --- Inlined SSS Scoring Logic from scorer.php ---
+
+                    // Constants for scoring
+                    define('VALUE_ORDER', [
+                      '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7, '8' => 8, '9' => 9,
+                      '10' => 10, 'jack' => 11, 'queen' => 12, 'king' => 13, 'ace' => 14
+                    ]);
+                    define('SSS_SCORES', [
+                      'HEAD' => ['三条' => 3],
+                      'MIDDLE' => ['铁支' => 8, '同花顺' => 10, '葫芦' => 2],
+                      'TAIL' => ['铁支' => 4, '同花顺' => 5],
+                      'SPECIAL' => ['一条龙' => 13, '三同花' => 4, '三顺子' => 4, '六对半' => 3],
+                    ]);
+
+                    // Helper functions for scoring
+                    function parseCard_inline($cardStr) { $parts = explode('_', $cardStr); return ['rank' => $parts[0], 'suit' => $parts[2]]; }
+                    function getGroupedValues_inline($cards) { $counts = []; foreach ($cards as $card) { $val = VALUE_ORDER[parseCard_inline($card)['rank']]; $counts[$val] = ($counts[$val] ?? 0) + 1; } $groups = []; foreach ($counts as $val => $count) { if (!isset($groups[$count])) { $groups[$count] = []; } $groups[$count][] = (int)$val; } foreach ($groups as &$group) { rsort($group); } return $groups; }
+                    function isStraight_inline($cards) { if (empty($cards)) return false; $unique_ranks = array_unique(array_map(function($c) { return VALUE_ORDER[parseCard_inline($c)['rank']]; }, $cards)); if (count($unique_ranks) !== count($cards)) return false; sort($unique_ranks); $is_a2345 = $unique_ranks === [2, 3, 4, 5, 14]; $is_normal = ($unique_ranks[count($unique_ranks) - 1] - $unique_ranks[0] === count($cards) - 1); return $is_normal || $is_a2345; }
+                    function isFlush_inline($cards) { if (empty($cards)) return false; $first_suit = parseCard_inline($cards[0])['suit']; foreach ($cards as $card) { if (parseCard_inline($card)['suit'] !== $first_suit) { return false; } } return true; }
+                    function getSssAreaType_inline($cards, $area) { if (empty($cards)) return "高牌"; $grouped = getGroupedValues_inline($cards); $isF = isFlush_inline($cards); $isS = isStraight_inline($cards); if (count($cards) === 3) { if (isset($grouped[3])) return "三条"; if (isset($grouped[2])) return "对子"; return "高牌"; } if ($isF && $isS) return "同花顺"; if (isset($grouped[4])) return "铁支"; if (isset($grouped[3]) && isset($grouped[2])) return "葫芦"; if ($isF) return "同花"; if ($isS) return "顺子"; if (isset($grouped[3])) return "三条"; if (isset($grouped[2]) && count($grouped[2]) === 2) return "两对"; if (isset($grouped[2])) return "对子"; return "高牌"; }
+                    function sssAreaTypeRank_inline($type, $area) { $ranks = [ "高牌" => 1, "对子" => 2, "两对" => 3, "三条" => 4, "顺子" => 5, "同花" => 6, "葫芦" => 7, "铁支" => 8, "同花顺" => 9 ]; if ($area === 'head' && $type === '三条') return 4; return $ranks[$type] ?? 1; }
+                    function compareSssArea_inline($a, $b, $area) { $typeA = getSssAreaType_inline($a, $area); $typeB = getSssAreaType_inline($b, $area); $rankA = sssAreaTypeRank_inline($typeA, $area); $rankB = sssAreaTypeRank_inline($typeB, $area); if ($rankA !== $rankB) return $rankA - $rankB; $valsA = array_map(function($c) { return VALUE_ORDER[parseCard_inline($c)['rank']]; }, $a); $valsB = array_map(function($c) { return VALUE_ORDER[parseCard_inline($c)['rank']]; }, $b); rsort($valsA); rsort($valsB); for ($i = 0; $i < count($valsA); $i++) { if ($valsA[$i] !== $valsB[$i]) return $valsA[$i] - $valsB[$i]; } return 0; }
+                    function isSssFoul_inline($hand) { $headRank = sssAreaTypeRank_inline(getSssAreaType_inline($hand['top'], 'head'), 'head'); $midRank = sssAreaTypeRank_inline(getSssAreaType_inline($hand['middle'], 'middle'), 'middle'); $tailRank = sssAreaTypeRank_inline(getSssAreaType_inline($hand['bottom'], 'tail'), 'tail'); if ($headRank > $midRank || $midRank > $tailRank) return true; if ($headRank === $midRank && compareSssArea_inline($hand['top'], $hand['middle'], 'head') > 0) return true; if ($midRank === $tailRank && compareSssArea_inline($hand['middle'], $hand['bottom'], 'middle') > 0) return true; return false; }
+                    function getSssAreaScore_inline($cards, $area) { $type = getSssAreaType_inline($cards, $area); $areaUpper = strtoupper($area); return SSS_SCORES[$areaUpper][$type] ?? 1; }
+                    function calculateTotalBaseScore_inline($p) { return getSssAreaScore_inline($p['top'], 'head') + getSssAreaScore_inline($p['middle'], 'middle') + getSssAreaScore_inline($p['bottom'], 'tail'); }
+                    function calculateSinglePairScore_inline($p1_hand, $p2_hand) { $p1_foul = isSssFoul_inline($p1_hand); $p2_foul = isSssFoul_inline($p2_hand); if ($p1_foul && !$p2_foul) return -calculateTotalBaseScore_inline($p2_hand); if (!$p1_foul && $p2_foul) return calculateTotalBaseScore_inline($p1_hand); if ($p1_foul && $p2_foul) return 0; $pairScore = 0; foreach (['top', 'middle', 'bottom'] as $area) { $cmp = compareSssArea_inline($p1_hand[$area], $p2_hand[$area], $area); if ($cmp > 0) $pairScore += getSssAreaScore_inline($p1_hand[$area], $area); else if ($cmp < 0) $pairScore -= getSssAreaScore_inline($p2_hand[$area], $area); } return $pairScore; }
+
+                    // --- Main scoring execution ---
                     $stmt = $conn->prepare("SELECT user_id, submitted_hand FROM room_players WHERE room_id = ?");
                     $stmt->bind_param("i", $roomId);
                     $stmt->execute();
                     $result = $stmt->get_result();
                     $players_data = [];
                     while($row = $result->fetch_assoc()) {
-                        $players_data[] = ['id' => $row['user_id'], 'hand' => json_decode($row['submitted_hand'], true)];
+                        $players_data[$row['user_id']] = json_decode($row['submitted_hand'], true);
                     }
                     $stmt->close();
-                    $stmt = $conn->prepare("SELECT game_type FROM game_rooms WHERE id = ?");
-                    $stmt->bind_param("i", $roomId);
-                    $stmt->execute();
-                    $game_type = $stmt->get_result()->fetch_assoc()['game_type'];
-                    $stmt->close();
-                    require_once __DIR__ . '/../utils/poker_evaluator.php';
-                    function combinations($arr, $k) { if ($k == 0) return [[]]; if (count($arr) < $k) return []; $first = $arr[0]; $remaining = array_slice($arr, 1); $combs_with_first = []; $combs_without_first = combinations($remaining, $k); $combs_of_remaining = combinations($remaining, $k - 1); foreach ($combs_of_remaining as $comb) { $combs_with_first[] = array_merge([$first], $comb); } return array_merge($combs_with_first, $combs_without_first); }
-                    function get_best_5_from_8($cards) { if (count($cards) < 5) return null; $best_eval = null; $card_combinations = combinations($cards, 5); foreach ($card_combinations as $hand_str_array) { $current_hand_obj = array_map('parseCard', $hand_str_array); $current_eval = evaluateHand($current_hand_obj); if ($best_eval === null || compareHands($current_eval, $best_eval) > 0) { $best_eval = $current_eval; } } return $best_eval; }
-                    $player_evaluations = [];
-                    foreach ($players_data as $player) { if ($game_type === 'eight') { $player_evaluations[$player['id']] = get_best_5_from_8($player['hand']['middle']); } else { $player_evaluations[$player['id']] = null; } }
-                    $hand_type_scores = [ '高牌' => 1, '对子' => 2, '两对' => 3, '三条' => 4, '顺子' => 5, '同花' => 6, '葫芦' => 7, '铁支' => 8, '同花顺' => 10, ];
-                    $scores = [];
-                    $player_ids = array_keys($player_evaluations);
-                    for ($i = 0; $i < count($player_ids); $i++) { $p1_id = $player_ids[$i]; $total_score = 0; for ($j = 0; $j < count($player_ids); $j++) { if ($i === $j) continue; $p2_id = $player_ids[$j]; $p1_eval = $player_evaluations[$p1_id]; $p2_eval = $player_evaluations[$p2_id]; if ($p1_eval && $p2_eval) { $comparison = compareHands($p1_eval, $p2_eval); if ($comparison > 0) { $total_score += $hand_type_scores[$p1_eval['name']] ?? 1; } if ($comparison < 0) { $total_score -= $hand_type_scores[$p2_eval['name']] ?? 1; } } } $scores[$p1_id] = $total_score; }
-                    foreach($scores as $pId => $score) { $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?"); $stmt->bind_param("iii", $score, $roomId, $pId); $stmt->execute(); $stmt->close(); if ($pId > 0) { $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?"); $stmt->bind_param("ii", $score, $pId); $stmt->execute(); $stmt->close(); } }
+
+                    $player_ids = array_keys($players_data);
+                    $scores = array_fill_keys($player_ids, 0);
+
+                    for ($i = 0; $i < count($player_ids); $i++) {
+                        for ($j = $i + 1; $j < count($player_ids); $j++) {
+                            $p1_id = $player_ids[$i];
+                            $p2_id = $player_ids[$j];
+                            $p1_hand = $players_data[$p1_id];
+                            $p2_hand = $players_data[$p2_id];
+                            $pair_score = calculateSinglePairScore_inline($p1_hand, $p2_hand);
+                            $scores[$p1_id] += $pair_score;
+                            $scores[$p2_id] -= $pair_score;
+                        }
+                    }
+
+                    foreach($scores as $pId => $score) {
+                        $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?");
+                        $stmt->bind_param("iii", $score, $roomId, $pId);
+                        $stmt->execute();
+                        $stmt->close();
+                        if ($pId > 0) {
+                            $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?");
+                            $stmt->bind_param("ii", $score, $pId);
+                            $stmt->execute();
+                            $stmt->close();
+                        }
+                    }
+
                     $stmt = $conn->prepare("UPDATE game_rooms SET status = 'finished' WHERE id = ?");
                     $stmt->bind_param("i", $roomId);
                     $stmt->execute();
@@ -298,8 +341,8 @@ switch ($action) {
             exit;
         }
 
-        // Use playerCount from request, with fallbacks for older clients or classic mode
-        $playersNeeded = $playerCount > 0 ? $playerCount : ($gameType === 'thirteen' ? 4 : 2);
+        // Use playerCount from request, with a fallback for the single game mode
+        $playersNeeded = $playerCount > 0 ? $playerCount : 4;
 
         $conn->begin_transaction();
         try {
