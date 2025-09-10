@@ -111,3 +111,114 @@ export function performAITurn(hand, wall) {
 
   return { updatedHand, updatedWall: newWall, discardedTile };
 }
+
+/**
+ * Converts a hand of tile objects into a map of tile names to their counts.
+ * e.g., { '1m': 2, '2m': 1, ... }
+ * @param {Array<Object>} hand - The player's hand.
+ * @returns {Map<string, number>} A map of tile counts.
+ */
+function getTileCounts(hand) {
+  const counts = new Map();
+  // Use a simplified tile name for counting, e.g., '1m', '2p', '1z' (east wind)
+  const simplifiedHand = hand.map(tile => {
+    if (tile.suit === 'honors') {
+      // Map honor names back to a numeric rank for simplicity in sorting and checking sequences
+      return `${HONOR_TILES.indexOf(tile.rank) + 1}z`;
+    }
+    return `${tile.rank}${tile.suit.charAt(0)}`;
+  });
+
+  for (const tileName of simplifiedHand) {
+    counts.set(tileName, (counts.get(tileName) || 0) + 1);
+  }
+  return counts;
+}
+
+/**
+ * Recursively checks if a given set of tiles can be formed into melds (sets of 3).
+ * @param {Map<string, number>} counts - A map of tile counts.
+ * @returns {boolean} True if the tiles can form melds, false otherwise.
+ */
+function canFormMelds(counts) {
+  const firstTile = [...counts.keys()].sort()[0];
+  if (!firstTile) {
+    return true; // Base case: no tiles left, all have been formed into melds
+  }
+
+  const count = counts.get(firstTile);
+  const newCounts = new Map(counts);
+
+  // Try to form a Pung (triplet)
+  if (count >= 3) {
+    newCounts.set(firstTile, count - 3);
+    if (newCounts.get(firstTile) === 0) {
+      newCounts.delete(firstTile);
+    }
+    if (canFormMelds(newCounts)) {
+      return true;
+    }
+  }
+
+  // Try to form a Chow (sequence), only for suit tiles (m, p, s)
+  const suit = firstTile.charAt(firstTile.length - 1);
+  if (suit !== 'z') {
+    const rank = parseInt(firstTile, 10);
+    const next1 = `${rank + 1}${suit}`;
+    const next2 = `${rank + 2}${suit}`;
+    if (counts.get(next1) && counts.get(next2)) {
+      const seqCounts = new Map(counts);
+      seqCounts.set(firstTile, seqCounts.get(firstTile) - 1);
+      seqCounts.set(next1, seqCounts.get(next1) - 1);
+      seqCounts.set(next2, seqCounts.get(next2) - 1);
+
+      // Remove tiles with count 0
+      [firstTile, next1, next2].forEach(t => {
+        if (seqCounts.get(t) === 0) {
+          seqCounts.delete(t);
+        }
+      });
+
+      if (canFormMelds(seqCounts)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+
+/**
+ * Checks if a given hand is a winning Mahjong hand (4 melds and 1 pair).
+ * @param {Array<Object>} hand - A hand of 14 tiles.
+ * @returns {boolean} True if the hand is a winning hand, false otherwise.
+ */
+export function isWinningHand(hand) {
+  if (hand.length !== 14) {
+    return false;
+  }
+
+  const counts = getTileCounts(hand);
+  const pairs = [...counts.entries()].filter(([, count]) => count >= 2).map(([tile]) => tile);
+
+  if (pairs.length === 0 && counts.size !== 7) { // Special case for 7 pairs is not handled here
+      return false;
+  }
+
+  // Check for standard win (4 melds, 1 pair)
+  for (const pairTile of pairs) {
+    const remainingCounts = new Map(counts);
+    remainingCounts.set(pairTile, remainingCounts.get(pairTile) - 2);
+    if (remainingCounts.get(pairTile) === 0) {
+      remainingCounts.delete(pairTile);
+    }
+
+    if (canFormMelds(remainingCounts)) {
+      return true;
+    }
+  }
+
+  // Note: This basic implementation does not check for special hands like "Thirteen Orphans" or "Seven Pairs".
+  return false;
+}
