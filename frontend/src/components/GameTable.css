@@ -149,3 +149,34 @@
 .player-name-list > span:last-child {
   border-right: none;
 }
+
+.connection-status-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(255, 193, 7, 0.9); /* Amber with transparency */
+  color: #212121; /* Dark grey text */
+  padding: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0,0,0,0.3);
+  border-radius: 50%;
+  border-top-color: #212121;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
