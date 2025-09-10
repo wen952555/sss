@@ -2,7 +2,11 @@ import React from 'react';
 import './GameModeSelection.css';
 
 const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
-  const gameTitle = gameType === 'thirteen' ? '2分场' : '5分场';
+  const gameTitles = {
+    'thirteen': '2分场',
+    'thirteen-5': '5分场',
+  };
+  const gameTitle = gameTitles[gameType] || '游戏'; // Fallback to '游戏'
 
   const sharedModes = [
     { key: '4-normal', title: '4人普通场', desc: '标准4人对局' },

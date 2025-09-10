@@ -96,12 +96,23 @@ switch ($action) {
                 $stmt->execute();
                 $submittedPlayers = $stmt->get_result()->fetch_assoc()['submitted_players'];
                 $stmt->close();
-                $stmt = $conn->prepare("SELECT players_count FROM game_rooms WHERE id = ?");
+                $stmt = $conn->prepare("SELECT game_type, players_count FROM game_rooms WHERE id = ?");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
-                $playersNeeded = $stmt->get_result()->fetch_assoc()['players_count'];
+                $roomDetails = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
+                $playersNeeded = $roomDetails['players_count'];
+                $gameType = $roomDetails['game_type'];
+
                 if ($submittedPlayers == $playersNeeded) {
+                    // Define point multipliers
+                    $pointMultiplier = 1;
+                    if ($gameType === 'thirteen') {
+                        $pointMultiplier = 2;
+                    } else if ($gameType === 'thirteen-5') {
+                        $pointMultiplier = 5;
+                    }
+
                     // --- Inlined SSS Scoring Logic from scorer.php ---
 
                     // Constants for scoring
@@ -156,13 +167,14 @@ switch ($action) {
                     }
 
                     foreach($scores as $pId => $score) {
+                        $finalScore = $score * $pointMultiplier;
                         $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?");
-                        $stmt->bind_param("iii", $score, $roomId, $pId);
+                        $stmt->bind_param("iii", $finalScore, $roomId, $pId);
                         $stmt->execute();
                         $stmt->close();
                         if ($pId > 0) {
                             $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?");
-                            $stmt->bind_param("ii", $score, $pId);
+                            $stmt->bind_param("ii", $finalScore, $pId);
                             $stmt->execute();
                             $stmt->close();
                         }
