@@ -23,6 +23,12 @@ switch ($action) {
             $row = $result->fetch_assoc();
             $onlineCount = (int)$row['onlineCount'];
             $result->free();
+
+            if ($onlineCount === 0) {
+                // If no one is online, clean up all rooms.
+                $conn->query("DELETE FROM room_players");
+                $conn->query("DELETE FROM game_rooms");
+            }
         }
         echo json_encode(['success' => true, 'onlineCount' => $onlineCount]);
         $conn->close();
