@@ -29,7 +29,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
   const [currentView, setCurrentView] = useState('lobby');
-  const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, eight: false });
+  const [matchingStatus, setMatchingStatus] = useState({ thirteen: false });
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
   const [viewingGame, setViewingGame] = useState(null); // null, 'thirteen', or 'eight'
@@ -66,7 +66,7 @@ function App() {
     localStorage.removeItem('activeGame');
     setUser(null);
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
-    setMatchingStatus({ thirteen: false, eight: false });
+    setMatchingStatus({ thirteen: false });
     setViewingGame(null);
   };
 
@@ -147,7 +147,7 @@ function App() {
     localStorage.removeItem('activeGame');
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setCurrentView('lobby');
-    setMatchingStatus({ thirteen: false, eight: false });
+    setMatchingStatus({ thirteen: false });
     setViewingGame(null);
   };
 
@@ -174,8 +174,7 @@ function App() {
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
         playerCount: gameState.playerCount,
       };
-      // Both 'thirteen' and 'eight' (5-point game) now use the ThirteenGame component
-      if (gameState.gameType === 'thirteen' || gameState.gameType === 'eight') {
+      if (gameState.gameType === 'thirteen') {
         return <ThirteenGame {...gameProps} />;
       }
     }
