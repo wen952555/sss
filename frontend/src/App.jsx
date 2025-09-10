@@ -37,7 +37,16 @@ function App() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) setUser(JSON.parse(storedUser));
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setUser(user);
+
+      const storedGame = localStorage.getItem('activeGame');
+      if (storedGame) {
+        const { roomId, gameType, gameMode, playerCount } = JSON.parse(storedGame);
+        setGameState({ roomId, gameType, gameMode, playerCount, error: null, gameUser: user });
+      }
+    }
   }, []);
 
   const updateUserData = (newUser) => {
@@ -54,6 +63,7 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('activeGame');
     setUser(null);
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setMatchingStatus({ thirteen: false, eight: false });
@@ -94,7 +104,14 @@ function App() {
       const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${finalGameMode}&userId=${userId}&playerCount=${playerCount}`);
       const data = await response.json();
       if (data.success && data.roomId) {
-        setGameState({ gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser, playerCount });
+        const newGameState = { gameType, gameMode, roomId: data.roomId, error: null, gameUser: currentUser, playerCount };
+        setGameState(newGameState);
+        localStorage.setItem('activeGame', JSON.stringify({
+          roomId: data.roomId,
+          gameType,
+          gameMode,
+          playerCount
+        }));
         setViewingGame(null);
       } else {
         setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
@@ -127,6 +144,7 @@ function App() {
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
 
   const handleBackToLobby = () => {
+    localStorage.removeItem('activeGame');
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setCurrentView('lobby');
     setMatchingStatus({ thirteen: false, eight: false });
