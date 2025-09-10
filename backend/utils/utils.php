@@ -44,7 +44,7 @@ function dealCards($conn, $roomId, $gameType, $playerCount) {
     $stmt->close();
 
     // Update room status
-    $stmt = $conn->prepare("UPDATE game_rooms SET status='playing' WHERE id=?");
+    $stmt = $conn->prepare("UPDATE game_rooms SET status='arranging' WHERE id=?");
     $stmt->bind_param("i", $roomId);
     $stmt->execute();
     $stmt->close();
