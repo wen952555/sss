@@ -24,6 +24,7 @@ const GameTable = ({
   isLoading,
   gameResult,
   errorMessage,
+  isOnline,
 
   // Handlers
   onBackToLobby,
@@ -44,6 +45,12 @@ const GameTable = ({
 
   return (
     <div className="game-table-container">
+      {!isOnline && (
+        <div className="connection-status-overlay">
+          <div className="spinner"></div>
+          网络连接已断开，正在尝试重新连接...
+        </div>
+      )}
       <div className="game-table-header">
         <button onClick={onBackToLobby} className="table-action-btn back-btn" disabled={isGameInProgress}>&larr; 退出</button>
         <div className="game-table-title">{title}</div>

@@ -23,6 +23,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount }) =>
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
+  const [isOnline, setIsOnline] = useState(true);
 
   const handleConfirm = useCallback((hand = null) => {
     let handToSend;
@@ -106,6 +107,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount }) =>
       const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
       const data = await response.json();
       if (data.success) {
+        if (!isOnline) {
+          setIsOnline(true);
+          setErrorMessage(''); // Clear connection error on success
+        }
         setPlayers(data.players);
         setPlayerState(data.gameStatus);
         if (data.gameStatus === 'playing' && data.hand) {
@@ -114,12 +119,18 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount }) =>
         if (data.gameStatus === 'finished' && data.result) {
           setGameResult(data.result);
         }
+      } else {
+        // Handle backend-specific errors if necessary
+        setErrorMessage(data.message || '获取游戏状态失败');
       }
     } catch (error) {
+      if (isOnline) {
+        setIsOnline(false);
+        setErrorMessage("网络连接已断开，正在尝试重新连接...");
+      }
       console.error("Failed to fetch game status:", error);
-      setErrorMessage("无法获取游戏状态");
     }
-  }, [roomId, user, setInitialLanes]);
+  }, [roomId, user, setInitialLanes, isOnline]);
 
   useEffect(() => {
     fetchGameStatus();
@@ -210,6 +221,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount }) =>
       errorMessage={errorMessage}
       isReady={isReady}
       isGameInProgress={isGameInProgress}
+      isOnline={isOnline}
       onBackToLobby={handleLeaveRoom}
       onReady={() => handleReady(isReady)}
       onConfirm={() => handleConfirm()}
