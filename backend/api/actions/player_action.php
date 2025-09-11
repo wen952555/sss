@@ -43,7 +43,7 @@ try {
             $stmt->close();
 
             if ($readyPlayers === 4) {
-                dealCards($conn, $roomId, 4);
+                        dealCardsFor4Players($conn, $roomId);
             }
         } elseif ($sub_action === 'unready') {
             $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE room_id = ? AND user_id = ?");

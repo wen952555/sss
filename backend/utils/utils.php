@@ -6,7 +6,7 @@
  * The hand is arranged by a simple rank sort and sliced into lanes.
  * This is a fast and simple approach as per user instruction.
  */
-function dealCards($conn, $roomId, $playerCount) {
+function dealCardsFor4Players($conn, $roomId) {
     $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
     $suits = ['spades', 'hearts', 'clubs', 'diamonds'];
     $deck = [];
@@ -58,6 +58,10 @@ function dealCards($conn, $roomId, $playerCount) {
     $stmt->bind_param("i", $roomId);
     $stmt->execute();
     $stmt->close();
+}
+
+function dealCardsFor8Players($conn, $roomId) {
+    // TODO: Implement dealing logic for 8 players, likely using two decks.
 }
 
 /**
