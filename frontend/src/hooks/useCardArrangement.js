@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { sortCards, areCardsEqual, parseCard } from '../utils';
-import { getSmartSortedHand } from '../utils/autoSorter.js';
 
 const LANE_LIMITS_THIRTEEN = { top: 3, middle: 5, bottom: 5 };
 
@@ -12,32 +11,12 @@ export const useCardArrangement = () => {
   const [bottomLane, setBottomLane] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
 
-  const setInitialLanes = useCallback((hand) => {
-    let arrangedHand = null;
-
-    if (Array.isArray(hand)) {
-      // New case: received a flat array of 13 cards from the server.
-      // The cards from the server are objects like { rank: 'ace', suit: 'spades' }.
-      // The getSmartSortedHand function expects card keys (e.g., 'ace_of_spades').
-      const cardKeys = hand.map(c => `${c.rank}_of_${c.suit}`);
-      arrangedHand = getSmartSortedHand(cardKeys);
-    } else if (hand && hand.top) {
-      // Existing case: received a pre-arranged hand object.
-      arrangedHand = hand;
+  const setInitialLanes = useCallback((sortedHand) => {
+    if (sortedHand) {
+      setTopLane(sortedHand.top.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
+      setMiddleLane(sortedHand.middle.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
+      setBottomLane(sortedHand.bottom.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
     }
-
-    if (arrangedHand) {
-      // The auto-sorter and the old API might return strings or objects, so we handle both.
-      setTopLane(arrangedHand.top.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
-      setMiddleLane(arrangedHand.middle.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
-      setBottomLane(arrangedHand.bottom.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
-    } else {
-      // If the hand is invalid or null, clear the lanes.
-      setTopLane([]);
-      setMiddleLane([]);
-      setBottomLane([]);
-    }
-
     setSelectedCards([]);
   }, []);
 
