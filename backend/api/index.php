@@ -77,20 +77,9 @@ switch ($action) {
                 $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
                 $stmt->close();
 
-                $response['cardsDealt'] = false;
+                // Only deal cards if the room is full and all players are ready.
                 if ($currentPlayers === (int)$room['players_count'] && $readyPlayers === (int)$room['players_count']) {
                     dealCards($conn, $roomId, $currentPlayers);
-
-                    $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
-                    $stmt->bind_param("ii", $roomId, $userId);
-                    $stmt->execute();
-                    $handResult = $stmt->get_result()->fetch_assoc();
-                    $stmt->close();
-
-                    if ($handResult && $handResult['initial_hand']) {
-                        $response['cardsDealt'] = true;
-                        $response['hand'] = json_decode($handResult['initial_hand'], true);
-                    }
                 }
             } elseif ($sub_action === 'unready') {
                 $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE room_id = ? AND user_id = ?");
