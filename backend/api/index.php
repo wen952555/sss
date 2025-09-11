@@ -36,7 +36,6 @@ switch ($action) {
         break;
 
     case 'player_action':
-        // This block is a combination of the logic from the original player_action.php
         $input = json_decode(file_get_contents('php://input'), true);
         $userId = (int)($input['userId'] ?? 0);
         $roomId = (int)($input['roomId'] ?? 0);
@@ -50,43 +49,61 @@ switch ($action) {
 
         $conn->begin_transaction();
         try {
-            $response = ['success' => true]; // Default response
+            $response = ['success' => true];
 
-            if ($sub_action === 'ready') {
-                $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE room_id = ? AND user_id = ?");
-                $stmt->bind_param("ii", $roomId, $userId);
-                $stmt->execute();
-                $stmt->close();
+            // Get room details first to decide on the logic path
+            $stmt = $conn->prepare("SELECT game_type, game_mode, players_count FROM game_rooms WHERE id = ?");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $room = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            if (!$room) {
+                throw new Exception("Room not found.");
+            }
 
-                $stmt = $conn->prepare("SELECT game_type, players_count FROM game_rooms WHERE id = ?");
-                $stmt->bind_param("i", $roomId);
-                $stmt->execute();
-                $room = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-                if (!$room) throw new Exception("Room not found.");
+            // --- Logic for 4-Player Normal Thirteen Game ---
+            if ($room['game_type'] === 'thirteen' && (int)$room['players_count'] === 4) {
+                if ($sub_action === 'ready') {
+                    $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE room_id = ? AND user_id = ?");
+                    $stmt->bind_param("ii", $roomId, $userId);
+                    $stmt->execute();
+                    $stmt->close();
 
-                $stmt = $conn->prepare("SELECT COUNT(*) as current_players FROM room_players WHERE room_id = ?");
-                $stmt->bind_param("i", $roomId);
-                $stmt->execute();
-                $currentPlayers = $stmt->get_result()->fetch_assoc()['current_players'];
-                $stmt->close();
+                    // Check if all players are ready
+                    $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
+                    $stmt->bind_param("i", $roomId);
+                    $stmt->execute();
+                    $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
+                    $stmt->close();
 
-                $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
-                $stmt->bind_param("i", $roomId);
-                $stmt->execute();
-                $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
-                $stmt->close();
-
-                // Only deal cards if the room is full and all players are ready.
-                if ($currentPlayers === (int)$room['players_count'] && $readyPlayers === (int)$room['players_count']) {
-                    dealCards($conn, $roomId, $currentPlayers);
+                    if ($readyPlayers === 4) {
+                        dealCards($conn, $roomId, 4);
+                    }
+                } elseif ($sub_action === 'unready') {
+                    $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE room_id = ? AND user_id = ?");
+                    $stmt->bind_param("ii", $roomId, $userId);
+                    $stmt->execute();
+                    $stmt->close();
                 }
-            } elseif ($sub_action === 'unready') {
-                $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE room_id = ? AND user_id = ?");
-                $stmt->bind_param("ii", $roomId, $userId);
-                $stmt->execute();
-                $stmt->close();
-            } elseif ($sub_action === 'submit_hand') {
+            }
+            // --- Placeholder for 8-Player Logic ---
+            elseif ($room['game_type'] === 'thirteen' && (int)$room['players_count'] === 8) {
+                // TODO: Implement separate logic for 8-player games
+                // For now, it can reuse the 4-player logic if it's identical
+                if ($sub_action === 'ready') {
+                    // ... (logic for 8 players) ...
+                }
+            }
+            // --- Placeholder for Double-Points Game Logic ---
+            elseif ($room['game_type'] === 'thirteen-5') {
+                 // TODO: Implement separate logic for double-points games
+                 if ($sub_action === 'ready') {
+                    // ... (logic for double-points games) ...
+                 }
+            }
+
+            // --- Common logic for submitting hands (can also be separated if needed) ---
+            if ($sub_action === 'submit_hand') {
                 $hand = $input['hand'] ?? null;
                 if (!$hand) throw new Exception("Hand data is missing.");
                 $handJson = json_encode($hand);
