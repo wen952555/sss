@@ -54,6 +54,7 @@ const GameTable = ({
       <div className="game-table-header">
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
         <div className="game-table-title">{title}</div>
+        {user && <div className="user-points">积分: {user.points}</div>}
       </div>
 
       {unassignedCards.length > 0 && (
