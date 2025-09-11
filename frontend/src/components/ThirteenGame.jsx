@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
 import { getSmartSortedHand } from '../utils/autoSorter.js';
 import GameTable from './GameTable';
+import { isSssFoul, calculateSinglePairScore, getSpecialType, compareSssArea } from '../utils/scorer.js';
 
 // The component now only accepts props relevant for an online game
 const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerCount }) => {
@@ -41,6 +42,11 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
         middle: middleLane.map(c => c.key),
         bottom: bottomLane.map(c => c.key),
       };
+    }
+
+    if (isSssFoul(handToSend)) {
+      setErrorMessage('你的牌组不符合规则（倒水）');
+      return;
     }
 
     setIsLoading(true);
@@ -117,7 +123,54 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
           setInitialLanes(data.hand);
         }
         if (data.gameStatus === 'finished' && data.result) {
-          setGameResult(data.result);
+          const { players: resultPlayers } = data.result;
+          const playerHands = resultPlayers.reduce((acc, p) => {
+            acc[p.id] = p.hand;
+            return acc;
+          }, {});
+
+          const playerIds = resultPlayers.map(p => p.id);
+          const scores = playerIds.reduce((acc, id) => {
+            acc[id] = 0;
+            return acc;
+          }, {});
+
+          for (let i = 0; i < playerIds.length; i++) {
+            for (let j = i + 1; j < playerIds.length; j++) {
+              const p1_id = playerIds[i];
+              const p2_id = playerIds[j];
+              const p1_hand = playerHands[p1_id];
+              const p2_hand = playerHands[p2_id];
+              const pair_score = calculateSinglePairScore(p1_hand, p2_hand);
+              scores[p1_id] += pair_score;
+              scores[p2_id] -= pair_score;
+            }
+          }
+
+          const pointMultiplier = gameType === 'thirteen' ? 2 : (gameType === 'thirteen-5' ? 5 : 1);
+
+          resultPlayers.forEach(p => {
+            p.score = scores[p.id] * pointMultiplier;
+          });
+
+          const humanPlayer = resultPlayers.find(p => p.id === user.id);
+          if (humanPlayer) {
+            const humanPlayerHand = humanPlayer.hand;
+            resultPlayers.forEach(player => {
+              if (player.id === user.id) {
+                player.laneResults = ['draw', 'draw', 'draw'];
+              } else {
+                player.laneResults = ['top', 'middle', 'bottom'].map(area => {
+                  const cmp = compareSssArea(player.hand[area], humanPlayerHand[area], area);
+                  if (cmp > 0) return 'win';
+                  if (cmp < 0) return 'loss';
+                  return 'draw';
+                });
+              }
+            });
+          }
+
+          setGameResult({ players: resultPlayers });
         }
       } else {
         // Handle backend-specific errors if necessary
@@ -137,6 +190,23 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     const intervalId = setInterval(fetchGameStatus, 1000);
     return () => clearInterval(intervalId);
   }, [fetchGameStatus]);
+
+  useEffect(() => {
+    if (gameResult && gameResult.players) {
+      const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
+      if (user.id === playerIds[0]) {
+        const scores = gameResult.players.reduce((acc, p) => {
+          acc[p.id] = p.score;
+          return acc;
+        }, {});
+        fetch('/api/index.php?action=save_scores', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId, scores }),
+        });
+      }
+    }
+  }, [gameResult, roomId, user.id]);
 
   const handleLeaveRoom = useCallback(() => {
     if (!user || !roomId) {
