@@ -15,8 +15,29 @@ if (!$fromId || !$toId || $amount <= 0) {
 
 $conn->begin_transaction();
 try {
+    // Lock rows in a consistent order to prevent deadlocks
+    if ($fromId < $toId) {
+        $stmt = $conn->prepare("SELECT points FROM users WHERE id = ? FOR UPDATE");
+        $stmt->bind_param("i", $fromId);
+        $stmt->execute();
+        $stmt->close();
+        $stmt = $conn->prepare("SELECT points FROM users WHERE id = ? FOR UPDATE");
+        $stmt->bind_param("i", $toId);
+        $stmt->execute();
+        $stmt->close();
+    } else {
+        $stmt = $conn->prepare("SELECT points FROM users WHERE id = ? FOR UPDATE");
+        $stmt->bind_param("i", $toId);
+        $stmt->execute();
+        $stmt->close();
+        $stmt = $conn->prepare("SELECT points FROM users WHERE id = ? FOR UPDATE");
+        $stmt->bind_param("i", $fromId);
+        $stmt->execute();
+        $stmt->close();
+    }
+
     // Check sender's balance
-    $stmt = $conn->prepare("SELECT points FROM users WHERE id = ? FOR UPDATE");
+    $stmt = $conn->prepare("SELECT points FROM users WHERE id = ?");
     $stmt->bind_param("i", $fromId);
     $stmt->execute();
     $sender = $stmt->get_result()->fetch_assoc();

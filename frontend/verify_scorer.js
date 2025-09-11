@@ -63,4 +63,26 @@ runTest('calculateSinglePairScore should score a simple hand correctly', (assert
   assert(score === 1, `Simple hand score incorrect, expected 1, got ${score}`);
 });
 
+runTest('compareSssArea should rank straights correctly', (assert) => {
+    const aceHighStraight = {
+        top: [],
+        middle: ['10_of_clubs', 'jack_of_diamonds', 'queen_of_hearts', 'king_of_spades', 'ace_of_clubs'],
+        bottom: [],
+    };
+    const aceLowStraight = {
+        top: [],
+        middle: ['ace_of_diamonds', '2_of_hearts', '3_of_spades', '4_of_clubs', '5_of_diamonds'],
+        bottom: [],
+    };
+    const kingHighStraight = {
+        top: [],
+        middle: ['9_of_hearts', '10_of_spades', 'jack_of_clubs', 'queen_of_diamonds', 'king_of_hearts'],
+        bottom: [],
+    };
+
+    assert(compareSssArea(aceHighStraight.middle, kingHighStraight.middle, 'middle') > 0, 'A-high straight should beat K-high straight');
+    assert(compareSssArea(aceLowStraight.middle, kingHighStraight.middle, 'middle') > 0, 'A-low straight should beat K-high straight');
+    assert(compareSssArea(aceHighStraight.middle, aceLowStraight.middle, 'middle') > 0, 'A-high straight should beat A-low straight');
+});
+
 console.log('All scorer tests passed!');
