@@ -88,7 +88,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
 
   useEffect(() => {
     if (playerState === 'arranging') {
-      setTimeLeft(90);
+      setTimeLeft(100);
     } else {
       setTimeLeft(null);
     }

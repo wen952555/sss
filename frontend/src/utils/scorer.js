@@ -5,9 +5,9 @@ export const VALUE_ORDER = {
 
 export const SSS_SCORES = {
   'HEAD': { '三条': 3 },
-  'MIDDLE': { '铁支': 8, '同花顺': 10, '葫芦': 2 },
-  'TAIL': { '铁支': 4, '同花顺': 5 },
-  'SPECIAL': { '一条龙': 13, '三同花': 4, '三顺子': 4, '六对半': 3, '大六对': 7, '高级三同花/三顺子': 8 },
+  'MIDDLE': { '铁支': 8, '同花顺': 10, '葫芦': 2, '五同': 10 },
+  'TAIL': { '铁支': 4, '同花顺': 5, '五同': 5 },
+  'SPECIAL': { '一条龙': 13, '三同花': 3, '三顺子': 3, '六对半': 3, '大六对': 7, '高级三同花/三顺子': 8 },
 };
 
 export const SUIT_ORDER = { 'spades': 4, 'hearts': 3, 'clubs': 2, 'diamonds': 1 };
@@ -68,6 +68,7 @@ export function getSssAreaType(cards, area) {
     if (grouped[2]) return "对子";
     return "高牌";
   }
+  if (grouped[5]) return "五同";
   if (isF && isS) return "同花顺";
   if (grouped[4]) return "铁支";
   if (grouped[3] && grouped[2]) return "葫芦";
@@ -80,7 +81,7 @@ export function getSssAreaType(cards, area) {
 }
 
 export function sssAreaTypeRank(type, area) {
-  const ranks = { "高牌": 1, "对子": 2, "两对": 3, "三条": 4, "顺子": 5, "同花": 6, "葫芦": 7, "铁支": 8, "同花顺": 9 };
+  const ranks = { "高牌": 1, "对子": 2, "两对": 3, "三条": 4, "顺子": 5, "同花": 6, "葫芦": 7, "铁支": 8, "同花顺": 9, "五同": 10 };
   if (area === 'head' && type === '三条') return 4;
   return ranks[type] || 1;
 }
@@ -200,21 +201,8 @@ export function calculateTotalBaseScore(p_hand, p_special_type = null) {
 }
 
 export function calculateSinglePairScore(p1_hand, p2_hand) {
-    const p1_foul = isSssFoul(p1_hand);
-    const p1_special_type = p1_foul ? null : getSpecialType(p1_hand);
-
-    const p2_foul = isSssFoul(p2_hand);
-    const p2_special_type = p2_foul ? null : getSpecialType(p2_hand);
-
-    if (p1_foul && !p2_foul) {
-        return -calculateTotalBaseScore(p2_hand, p2_special_type);
-    }
-    if (!p1_foul && p2_foul) {
-        return calculateTotalBaseScore(p1_hand, p1_special_type);
-    }
-    if (p1_foul && p2_foul) {
-        return 0;
-    }
+    const p1_special_type = getSpecialType(p1_hand);
+    const p2_special_type = getSpecialType(p2_hand);
 
     if (p1_special_type && !p2_special_type) {
         return SSS_SCORES['SPECIAL'][p1_special_type] ?? 0;
