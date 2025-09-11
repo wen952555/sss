@@ -35,6 +35,14 @@
   color: var(--primary-color);
 }
 
+.user-points {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-left: auto;
+  padding-right: 15px;
+}
+
 .table-action-btn {
   border: none;
   border-radius: 8px;
