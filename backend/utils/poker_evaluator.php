@@ -2,26 +2,22 @@
 // backend/utils/poker_evaluator.php
 
 // 定义常量
-if (!defined('RANK_VALUES')) {
-    define('RANK_VALUES', [
-        '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7, '8' => 8, '9' => 9, '10' => 10,
-        'jack' => 11, 'queen' => 12, 'king' => 13, 'ace' => 14
-    ]);
-}
+const RANK_VALUES = [
+    '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7, '8' => 8, '9' => 9, '10' => 10,
+    'jack' => 11, 'queen' => 12, 'king' => 13, 'ace' => 14
+];
 
-if (!defined('HAND_TYPES')) {
-    define('HAND_TYPES', [
-        'HIGH_CARD' => ['rank' => 0, 'name' => '高牌'],
-        'PAIR' => ['rank' => 1, 'name' => '对子'],
-        'TWO_PAIR' => ['rank' => 2, 'name' => '两对'],
-        'THREE_OF_A_KIND' => ['rank' => 3, 'name' => '三条'],
-        'STRAIGHT' => ['rank' => 4, 'name' => '顺子'],
-        'FLUSH' => ['rank' => 5, 'name' => '同花'],
-        'FULL_HOUSE' => ['rank' => 6, 'name' => '葫芦'],
-        'FOUR_OF_A_KIND' => ['rank' => 7, 'name' => '铁支'],
-        'STRAIGHT_FLUSH' => ['rank' => 8, 'name' => '同花顺'],
-    ]);
-}
+const HAND_TYPES = [
+    'HIGH_CARD' => ['rank' => 0, 'name' => '高牌'],
+    'PAIR' => ['rank' => 1, 'name' => '对子'],
+    'TWO_PAIR' => ['rank' => 2, 'name' => '两对'],
+    'THREE_OF_A_KIND' => ['rank' => 3, 'name' => '三条'],
+    'STRAIGHT' => ['rank' => 4, 'name' => '顺子'],
+    'FLUSH' => ['rank' => 5, 'name' => '同花'],
+    'FULL_HOUSE' => ['rank' => 6, 'name' => '葫芦'],
+    'FOUR_OF_A_KIND' => ['rank' => 7, 'name' => '铁支'],
+    'STRAIGHT_FLUSH' => ['rank' => 8, 'name' => '同花顺'],
+];
 
 // 用于排序的单卡牌力评估
 function evaluate_card_value($card) {
@@ -90,10 +86,11 @@ function parseCard($cardStr) {
 }
 
 function sortCards($cards) {
+    global $RANK_VALUES;
     if (empty($cards)) return [];
     $sortedCards = $cards;
-    usort($sortedCards, function ($a, $b) {
-        return RANK_VALUES[$a['rank']] - RANK_VALUES[$b['rank']];
+    usort($sortedCards, function ($a, $b) use ($RANK_VALUES) {
+        return $RANK_VALUES[$a['rank']] - $RANK_VALUES[$b['rank']];
     });
     return $sortedCards;
 }

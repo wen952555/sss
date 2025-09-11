@@ -433,7 +433,11 @@ switch ($action) {
         } catch (Exception $e) {
             $conn->rollback();
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => '匹配时发生错误: ' . $e->getMessage()]);
+            echo json_encode([
+                'success' => false,
+                'message' => '服务器发生内部错误，请将此信息截图给管理员。Error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
         $conn->close();
         break;
