@@ -1,11 +1,10 @@
 <?php
-// This file no longer needs the scorer for dealing cards.
-// It will be required by the API endpoint when scoring is needed.
+// This file no longer needs the scorer for dealing cards, as no sorting that requires it is done here.
 
 /**
  * Deals 13 cards to each player in the room.
- * The hand is a simple flat array of 13 card objects.
- * The frontend is responsible for any initial arrangement.
+ * The hand is arranged by a simple rank sort and sliced into lanes.
+ * This is a fast and simple approach as per user instruction.
  */
 function dealCards($conn, $roomId, $playerCount) {
     $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
@@ -20,7 +19,6 @@ function dealCards($conn, $roomId, $playerCount) {
 
     $cards_per_player = 13;
 
-    // First, get all player IDs in the room to ensure we deal correctly.
     $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id=? ORDER BY id ASC");
     $stmt->bind_param("i", $roomId);
     $stmt->execute();
@@ -32,13 +30,22 @@ function dealCards($conn, $roomId, $playerCount) {
     }
     $stmt->close();
 
-    // Now, deal a hand to each player
     for ($i = 0; $i < count($player_ids); $i++) {
-        // Slice the deck to get a 13-card hand
-        $hand = array_slice($deck, $i * $cards_per_player, $cards_per_player);
+        $hand_unsorted = array_slice($deck, $i * $cards_per_player, $cards_per_player);
 
-        // The hand is a simple flat array of card objects.
-        $handJson = json_encode($hand);
+        // Simple sort by rank as per user's new instruction
+        usort($hand_unsorted, function ($a, $b) use ($ranks) {
+            return array_search($b['rank'], $ranks) - array_search($a['rank'], $ranks);
+        });
+
+        // Slice into lanes directly
+        $hand_arranged = [
+            'bottom' => array_slice($hand_unsorted, 0, 5),
+            'middle' => array_slice($hand_unsorted, 5, 5),
+            'top' => array_slice($hand_unsorted, 10, 3),
+        ];
+
+        $handJson = json_encode($hand_arranged);
 
         $updateStmt = $conn->prepare("UPDATE room_players SET initial_hand=? WHERE room_id=? AND user_id=?");
         $updateStmt->bind_param("sii", $handJson, $roomId, $player_ids[$i]);
