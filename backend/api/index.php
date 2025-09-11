@@ -160,7 +160,7 @@ switch ($action) {
                         $stmt->bind_param("iii", $finalScore, $roomId, $pId);
                         $stmt->execute();
                         $stmt->close();
-                        if ($pId > 0 && $gameType !== 'trial') {
+                        if ($pId > 0) {
                             $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?");
                             $stmt->bind_param("ii", $finalScore, $pId);
                             $stmt->execute();
@@ -354,82 +354,29 @@ switch ($action) {
 
         $conn->begin_transaction();
         try {
-            if ($gameType === 'trial') {
-                // --- Trial Mode: Create room, fill with AI, and start immediately ---
+            $roomId = null;
+            $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? AND r.players_count = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
+            $stmt->bind_param("ssii", $gameType, $gameMode, $playersNeeded, $playersNeeded);
+            $stmt->execute();
+            $room = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            if ($room) {
+                $roomId = $room['id'];
+            } else {
                 $roomCode = uniqid('room_');
-                $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'arranging', ?)");
+                $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'matching', ?)");
                 $stmt->bind_param("sssi", $roomCode, $gameType, $gameMode, $playersNeeded);
                 $stmt->execute();
                 $roomId = $stmt->insert_id;
                 $stmt->close();
-
-                $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 1, 0)");
-                $stmt->bind_param("ii", $roomId, $userId);
-                $stmt->execute();
-                $stmt->close();
-
-                fillWithAI($conn, $roomId, $gameType, $playersNeeded);
-                dealCards($conn, $roomId, $playersNeeded);
-
-                // --- Auto-submit hands for AI players ---
-                $stmt = $conn->prepare("SELECT user_id, initial_hand, is_auto_managed FROM room_players WHERE room_id = ?");
-                $stmt->bind_param("i", $roomId);
-                $stmt->execute();
-                $playersResult = $stmt->get_result();
-                while ($player = $playersResult->fetch_assoc()) {
-                    if ($player['is_auto_managed'] == 1 && $player['initial_hand']) {
-                        $initialHand = json_decode($player['initial_hand'], true);
-                        $flatHand = array_merge($initialHand['top'], $initialHand['middle'], $initialHand['bottom']);
-                        $submittedHand = getHeuristicArrangedHand($flatHand);
-                        $submittedHandJson = json_encode($submittedHand);
-                        $updateStmt = $conn->prepare("UPDATE room_players SET submitted_hand = ? WHERE room_id = ? AND user_id = ?");
-                        $updateStmt->bind_param("sii", $submittedHandJson, $roomId, $player['user_id']);
-                        $updateStmt->execute();
-                        $updateStmt->close();
-                    }
-                }
-                $stmt->close();
-
-                $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
-                $stmt->bind_param("ii", $roomId, $userId);
-                $stmt->execute();
-                $handResult = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-
-                $response = ['success' => true, 'roomId' => $roomId, 'gameStatus' => 'arranging'];
-                if ($handResult && $handResult['initial_hand']) {
-                    $response['hand'] = json_decode($handResult['initial_hand'], true);
-                }
-                echo json_encode($response);
-
-            } else {
-                // --- Normal Match Logic ---
-                $roomId = null;
-                $stmt = $conn->prepare("SELECT r.id FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.status = 'matching' AND r.game_type = ? AND r.game_mode = ? AND r.players_count = ? GROUP BY r.id HAVING COUNT(rp.id) < ? LIMIT 1");
-                $stmt->bind_param("ssii", $gameType, $gameMode, $playersNeeded, $playersNeeded);
-                $stmt->execute();
-                $room = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-
-                if ($room) {
-                    $roomId = $room['id'];
-                } else {
-                    $roomCode = uniqid('room_');
-                    $stmt = $conn->prepare("INSERT INTO game_rooms (room_code, game_type, game_mode, status, players_count) VALUES (?, ?, ?, 'matching', ?)");
-                    $stmt->bind_param("sssi", $roomCode, $gameType, $gameMode, $playersNeeded);
-                    $stmt->execute();
-                    $roomId = $stmt->insert_id;
-                    $stmt->close();
-                }
-
-                $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 0, 0) ON DUPLICATE KEY UPDATE room_id = ?");
-                $stmt->bind_param("iii", $roomId, $userId, $roomId);
-                $stmt->execute();
-                $stmt->close();
-                echo json_encode(['success' => true, 'roomId' => $roomId]);
             }
-
+            $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 0, 0) ON DUPLICATE KEY UPDATE room_id = ?");
+            $stmt->bind_param("iii", $roomId, $userId, $roomId);
+            $stmt->execute();
+            $stmt->close();
             $conn->commit();
+            http_response_code(200);
+            echo json_encode(['success' => true, 'roomId' => $roomId]);
         } catch (Exception $e) {
             $conn->rollback();
             http_response_code(500);
