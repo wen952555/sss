@@ -97,10 +97,13 @@ export function compareSssArea(a, b, area) {
     const getStraightHighCard = (cards) => {
       let vals = [...new Set(cards.map(c => VALUE_ORDER[parseCard(c).rank]))];
       vals.sort((a, b) => a - b);
-      if (JSON.stringify(vals) === JSON.stringify([2, 3, 4, 5, 14])) {
-        return 5;
-      }
-      return vals[vals.length - 1];
+      const isAceLow = JSON.stringify(vals) === JSON.stringify([2, 3, 4, 5, 14]);
+      const isAceHigh = JSON.stringify(vals) === JSON.stringify([10, 11, 12, 13, 14]);
+
+      if (isAceHigh) return 14; // Highest straight
+      if (isAceLow) return 13.5; // Second highest straight
+
+      return vals[vals.length - 1]; // Regular straights are ranked by their high card
     };
     const valA = getStraightHighCard(a);
     const valB = getStraightHighCard(b);
