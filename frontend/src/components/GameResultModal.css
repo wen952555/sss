@@ -42,6 +42,13 @@
   font-weight: 600;
 }
 
+.trial-mode-notice {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #a0a0a0; /* A lighter gray color */
+  margin-top: 10px;
+}
+
 .score-win {
   color: #4caf50;
 }

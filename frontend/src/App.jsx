@@ -184,7 +184,7 @@ function App() {
         playerCount: gameState.playerCount,
       };
       if (['thirteen', 'thirteen-5', 'trial'].includes(gameState.gameType)) {
-        return <ThirteenGame {...gameProps} initialHand={gameState.initialHand} initialPlayerState={gameState.gameStatus} />;
+        return <ThirteenGame {...gameProps} gameType={gameState.gameType} initialHand={gameState.initialHand} initialPlayerState={gameState.gameStatus} />;
       }
     }
     if (gameState.error) return <p className="error-message">{gameState.error}</p>;
