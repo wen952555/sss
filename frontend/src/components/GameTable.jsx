@@ -52,9 +52,9 @@ const GameTable = ({
         </div>
       )}
       <div className="game-table-header">
-        <button onClick={onBackToLobby} className="table-action-btn back-btn" disabled={isGameInProgress}>&larr; 退出</button>
+        <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
         <div className="game-table-title">{title}</div>
-        <button onClick={onReady} className="table-action-btn ready-btn" disabled={isGameInProgress}>
+        <button onClick={onReady} className="table-action-btn ready-btn">
           {isReady ? '取消准备' : '准备'}
         </button>
       </div>
