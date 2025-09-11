@@ -23,6 +23,7 @@ const Card = ({ card, onClick, isSelected }) => {
         boxSizing: 'border-box',
         border: 'none',
         borderRadius: '9px',
+        boxShadow: 'none',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'

@@ -4,8 +4,6 @@ require_once 'db_connect.php';
 
 // All API requests will be routed through this file based on the 'action' parameter.
 require_once __DIR__ . '/../utils/utils.php';
-// Scorer.php is no longer needed as the functions are moved inline.
-// require_once __DIR__ . '/../utils/scorer.php';
 
 $action = $_REQUEST['action'] ?? '';
 
@@ -125,55 +123,6 @@ switch ($action) {
                 $gameType = $roomDetails['game_type'];
 
                 if ($submittedPlayers == $playersNeeded) {
-                    // Define point multipliers
-                    $pointMultiplier = 1;
-                    if ($gameType === 'thirteen') {
-                        $pointMultiplier = 2;
-                    } else if ($gameType === 'thirteen-5') {
-                        $pointMultiplier = 5;
-                    }
-
-                    // --- Main scoring execution ---
-                    require_once __DIR__ . '/../utils/scorer.php';
-                    $stmt = $conn->prepare("SELECT user_id, submitted_hand FROM room_players WHERE room_id = ?");
-                    $stmt->bind_param("i", $roomId);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    $players_data = [];
-                    while($row = $result->fetch_assoc()) {
-                        $players_data[$row['user_id']] = json_decode($row['submitted_hand'], true);
-                    }
-                    $stmt->close();
-
-                    $player_ids = array_keys($players_data);
-                    $scores = array_fill_keys($player_ids, 0);
-
-                    for ($i = 0; $i < count($player_ids); $i++) {
-                        for ($j = $i + 1; $j < count($player_ids); $j++) {
-                            $p1_id = $player_ids[$i];
-                            $p2_id = $player_ids[$j];
-                            $p1_hand = $players_data[$p1_id];
-                            $p2_hand = $players_data[$p2_id];
-                            $pair_score = calculateSinglePairScore($p1_hand, $p2_hand);
-                            $scores[$p1_id] += $pair_score;
-                            $scores[$p2_id] -= $pair_score;
-                        }
-                    }
-
-                    foreach($scores as $pId => $score) {
-                        $finalScore = $score * $pointMultiplier;
-                        $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?");
-                        $stmt->bind_param("iii", $finalScore, $roomId, $pId);
-                        $stmt->execute();
-                        $stmt->close();
-                        if ($pId > 0) {
-                            $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?");
-                            $stmt->bind_param("ii", $finalScore, $pId);
-                            $stmt->execute();
-                            $stmt->close();
-                        }
-                    }
-
                     $stmt = $conn->prepare("UPDATE game_rooms SET status = 'finished' WHERE id = ?");
                     $stmt->bind_param("i", $roomId);
                     $stmt->execute();
@@ -499,44 +448,17 @@ switch ($action) {
             }
         }
         if ($room['status'] === 'finished') {
-            require_once __DIR__ . '/../utils/scorer.php';
             $stmt = $conn->prepare("SELECT u.id, u.phone as name, rp.submitted_hand, rp.score, rp.is_auto_managed FROM room_players rp JOIN users u ON rp.user_id = u.id WHERE rp.room_id = ?");
             $stmt->bind_param("i", $roomId);
             $stmt->execute();
             $resultPlayersResult = $stmt->get_result();
             $resultPlayers = [];
-            $humanPlayerHand = null;
-
             while($row = $resultPlayersResult->fetch_assoc()) {
                 $row['hand'] = json_decode($row['submitted_hand'], true);
                 unset($row['submitted_hand']);
-                if ($row['id'] == $userId) {
-                    $humanPlayerHand = $row['hand'];
-                }
                 $resultPlayers[] = $row;
             }
             $stmt->close();
-
-            if ($humanPlayerHand) {
-                foreach ($resultPlayers as &$player) {
-                    if ($player['id'] == $userId) {
-                        $player['laneResults'] = ['draw', 'draw', 'draw'];
-                        continue;
-                    }
-                    $laneResults = [];
-                    foreach (['top', 'middle', 'bottom'] as $area) {
-                        // Note: This compares the other player vs the human player.
-                        // So a 'win' means the other player won that lane.
-                        $cmp = compareSssArea($player['hand'][$area], $humanPlayerHand[$area], $area);
-                        if ($cmp > 0) $laneResults[] = 'win';
-                        else if ($cmp < 0) $laneResults[] = 'loss';
-                        else $laneResults[] = 'draw';
-                    }
-                    $player['laneResults'] = $laneResults;
-                }
-                unset($player); // break the reference with the last element
-            }
-
             $response['result'] = ['players' => $resultPlayers];
         }
         echo json_encode($response);
@@ -553,6 +475,43 @@ switch ($action) {
             $stmt->close();
         }
         echo json_encode(['success' => true]);
+        $conn->close();
+        break;
+
+    case 'save_scores':
+        $input = json_decode(file_get_contents('php://input'), true);
+        $roomId = (int)($input['roomId'] ?? 0);
+        $scores = $input['scores'] ?? [];
+
+        if (!$roomId || empty($scores)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Missing parameters for saving scores.']);
+            exit;
+        }
+
+        $conn->begin_transaction();
+        try {
+            foreach ($scores as $userId => $score) {
+                $userId = (int)$userId;
+                $score = (int)$score;
+                $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?");
+                $stmt->bind_param("iii", $score, $roomId, $userId);
+                $stmt->execute();
+                $stmt->close();
+                if ($userId > 0) {
+                    $stmt = $conn->prepare("UPDATE users SET points = points + ? WHERE id = ?");
+                    $stmt->bind_param("ii", $score, $userId);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+            }
+            $conn->commit();
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            $conn->rollback();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to save scores: ' . $e->getMessage()]);
+        }
         $conn->close();
         break;
 
