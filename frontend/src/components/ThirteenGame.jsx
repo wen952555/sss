@@ -4,7 +4,7 @@ import { getSmartSortedHand } from '../utils/autoSorter.js';
 import GameTable from './GameTable';
 
 // The component now only accepts props relevant for an online game
-const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerCount, initialHand, initialPlayerState }) => {
+const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerCount }) => {
   const {
     topLane,
     middleLane,
@@ -16,14 +16,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     handleLaneClick,
   } = useCardArrangement();
 
-  const [playerState, setPlayerState] = useState(initialPlayerState || 'waiting'); // e.g., 'waiting', 'arranging', 'submitted'
-
-  // This effect will run once on mount to set the hand if it's passed directly
-  useEffect(() => {
-    if (initialHand) {
-      setInitialLanes(initialHand);
-    }
-  }, []); // The empty dependency array ensures this runs only once on mount
+  const [playerState, setPlayerState] = useState('waiting'); // e.g., 'waiting', 'arranging', 'submitted'
   const [sortStrategy, setSortStrategy] = useState('bottom'); // 'bottom', 'middle', 'top'
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
