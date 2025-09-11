@@ -86,7 +86,7 @@ const GameTable = ({
           {playerState === 'submitted' ? '等待开牌' : '确认比牌'}
         </button>
       </div>
-      {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} isTrial={true} />}
+      {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} isTrial={gameType === 'trial'} />}
     </div>
   );
 };

@@ -343,6 +343,15 @@ switch ($action) {
 
         $playersNeeded = $playerCount > 0 ? $playerCount : 4;
 
+        // Defensive override: Recalculate playersNeeded on the server from the gameMode string
+        if (strpos($gameMode, '-') !== false) {
+            $parts = explode('-', $gameMode);
+            $num_from_mode = (int)$parts[0];
+            if ($num_from_mode > 0) {
+                $playersNeeded = $num_from_mode;
+            }
+        }
+
         $conn->begin_transaction();
         try {
             if ($gameType === 'trial') {
@@ -537,17 +546,44 @@ switch ($action) {
             }
         }
         if ($room['status'] === 'finished') {
-            $stmt = $conn->prepare("SELECT u.phone as name, rp.submitted_hand, rp.score, rp.is_auto_managed FROM room_players rp JOIN users u ON rp.user_id = u.id WHERE rp.room_id = ?");
+            require_once __DIR__ . '/../utils/scorer.php';
+            $stmt = $conn->prepare("SELECT u.id, u.phone as name, rp.submitted_hand, rp.score, rp.is_auto_managed FROM room_players rp JOIN users u ON rp.user_id = u.id WHERE rp.room_id = ?");
             $stmt->bind_param("i", $roomId);
             $stmt->execute();
             $resultPlayersResult = $stmt->get_result();
             $resultPlayers = [];
+            $humanPlayerHand = null;
+
             while($row = $resultPlayersResult->fetch_assoc()) {
                 $row['hand'] = json_decode($row['submitted_hand'], true);
                 unset($row['submitted_hand']);
+                if ($row['id'] == $userId) {
+                    $humanPlayerHand = $row['hand'];
+                }
                 $resultPlayers[] = $row;
             }
             $stmt->close();
+
+            if ($humanPlayerHand) {
+                foreach ($resultPlayers as &$player) {
+                    if ($player['id'] == $userId) {
+                        $player['laneResults'] = ['draw', 'draw', 'draw'];
+                        continue;
+                    }
+                    $laneResults = [];
+                    foreach (['top', 'middle', 'bottom'] as $area) {
+                        // Note: This compares the other player vs the human player.
+                        // So a 'win' means the other player won that lane.
+                        $cmp = compareSssArea($player['hand'][$area], $humanPlayerHand[$area], $area);
+                        if ($cmp > 0) $laneResults[] = 'win';
+                        else if ($cmp < 0) $laneResults[] = 'loss';
+                        else $laneResults[] = 'draw';
+                    }
+                    $player['laneResults'] = $laneResults;
+                }
+                unset($player); // break the reference with the last element
+            }
+
             $response['result'] = ['players' => $resultPlayers];
         }
         echo json_encode($response);

@@ -20,6 +20,7 @@ const GameResultModal = ({ result, onClose, onPlayAgain, gameType, isTrial = fal
                 <div className="result-modal-header">
                     <h2>{getTitle()}</h2>
                     <p>总分: <span className={myTotalScore > 0 ? 'score-win' : (myTotalScore < 0 ? 'score-loss' : '')}>{myTotalScore > 0 ? `+${myTotalScore}` : myTotalScore}</span></p>
+                    {isTrial && <p className="trial-mode-notice">本局为试玩，积分不计入总分</p>}
                 </div>
 
                 <div className="result-players-container">

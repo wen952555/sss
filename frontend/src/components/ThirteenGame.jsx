@@ -4,7 +4,7 @@ import { getSmartSortedHand } from '../utils/autoSorter.js';
 import GameTable from './GameTable';
 
 // The component now only accepts props relevant for an online game
-const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount, initialHand, initialPlayerState }) => {
+const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerCount, initialHand, initialPlayerState }) => {
   const {
     topLane,
     middleLane,
@@ -216,7 +216,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameMode, playerCount, init
 
   return (
     <GameTable
-      gameType="thirteen"
+      gameType={gameType}
       title={`玩家: ${players.length} / ${playerCount || 4}`}
       players={players}
       user={user}
