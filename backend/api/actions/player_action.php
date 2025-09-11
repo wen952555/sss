@@ -45,11 +45,6 @@ try {
             if ($readyPlayers === 4) {
                         dealCardsFor4Players($conn, $roomId);
             }
-        } elseif ($sub_action === 'unready') {
-            $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE room_id = ? AND user_id = ?");
-            $stmt->bind_param("ii", $roomId, $userId);
-            $stmt->execute();
-            $stmt->close();
         }
     }
     // --- Placeholder for 8-Player Logic ---
