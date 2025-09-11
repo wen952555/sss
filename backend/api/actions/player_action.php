@@ -49,10 +49,22 @@ try {
     }
     // --- Placeholder for 8-Player Logic ---
     elseif ($room['game_type'] === 'thirteen' && (int)$room['players_count'] === 8) {
-        // TODO: Implement separate logic for 8-player games
-        // For now, it can reuse the 4-player logic if it's identical
         if ($sub_action === 'ready') {
-            // ... (logic for 8 players) ...
+            $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE room_id = ? AND user_id = ?");
+            $stmt->bind_param("ii", $roomId, $userId);
+            $stmt->execute();
+            $stmt->close();
+
+            // Check if all players are ready
+            $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
+            $stmt->close();
+
+            if ($readyPlayers === 8) {
+                dealCardsFor8Players($conn, $roomId);
+            }
         }
     }
     // --- Placeholder for Double-Points Game Logic ---
