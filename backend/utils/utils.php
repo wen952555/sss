@@ -1,5 +1,12 @@
 <?php
-// --- Helper Functions ---
+// This file no longer needs the scorer for dealing cards.
+// It will be required by the API endpoint when scoring is needed.
+
+/**
+ * Deals 13 cards to each player in the room.
+ * The hand is a simple flat array of 13 card objects.
+ * The frontend is responsible for any initial arrangement.
+ */
 function dealCards($conn, $roomId, $playerCount) {
     $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
     $suits = ['spades', 'hearts', 'clubs', 'diamonds'];
@@ -10,42 +17,45 @@ function dealCards($conn, $roomId, $playerCount) {
         }
     }
     shuffle($deck);
-    $cards_per_player = 13;
-    $all_hands = [];
-    for ($i = 0; $i < $playerCount; $i++) {
-        $hand = array_slice($deck, $i * $cards_per_player, $cards_per_player);
-        usort($hand, function ($a, $b) use ($ranks) {
-            return array_search($b['rank'], $ranks) - array_search($a['rank'], $ranks);
-        });
-        $all_hands[$i] = [
-            'top' => array_slice($hand, 10, 3),
-            'middle' => array_slice($hand, 5, 5),
-            'bottom' => array_slice($hand, 0, 5),
-        ];
-    }
 
-    // Deal hands to players
+    $cards_per_player = 13;
+
+    // First, get all player IDs in the room to ensure we deal correctly.
     $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id=? ORDER BY id ASC");
     $stmt->bind_param("i", $roomId);
     $stmt->execute();
     $playerIdsResult = $stmt->get_result();
-    $i = 0;
+
+    $player_ids = [];
     while ($row = $playerIdsResult->fetch_assoc()) {
-        $handJson = json_encode($all_hands[$i++]);
-        $updateStmt = $conn->prepare("UPDATE room_players SET initial_hand=? WHERE room_id=? AND user_id=?");
-        $updateStmt->bind_param("sii", $handJson, $roomId, $row['user_id']);
-        $updateStmt->execute();
-        $updateStmt->close();
+        $player_ids[] = $row['user_id'];
     }
     $stmt->close();
 
-    // Update room status
+    // Now, deal a hand to each player
+    for ($i = 0; $i < count($player_ids); $i++) {
+        // Slice the deck to get a 13-card hand
+        $hand = array_slice($deck, $i * $cards_per_player, $cards_per_player);
+
+        // The hand is a simple flat array of card objects.
+        $handJson = json_encode($hand);
+
+        $updateStmt = $conn->prepare("UPDATE room_players SET initial_hand=? WHERE room_id=? AND user_id=?");
+        $updateStmt->bind_param("sii", $handJson, $roomId, $player_ids[$i]);
+        $updateStmt->execute();
+        $updateStmt->close();
+    }
+
+    // Update room status to 'arranging'
     $stmt = $conn->prepare("UPDATE game_rooms SET status='arranging' WHERE id=?");
     $stmt->bind_param("i", $roomId);
     $stmt->execute();
     $stmt->close();
 }
 
+/**
+ * Fills the remaining slots in a room with AI players.
+ */
 function fillWithAI($conn, $roomId, $gameType, $playersNeeded) {
     $stmt = $conn->prepare("SELECT COUNT(*) as current_players FROM room_players WHERE room_id=?");
     $stmt->bind_param("i", $roomId);
