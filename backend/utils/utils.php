@@ -61,7 +61,78 @@ function dealCardsFor4Players($conn, $roomId) {
 }
 
 function dealCardsFor8Players($conn, $roomId) {
-    // TODO: Implement dealing logic for 8 players, likely using two decks.
+    $stmt = $conn->prepare("SELECT COUNT(*) as playerCount FROM room_players WHERE room_id = ?");
+    $stmt->bind_param("i", $roomId);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $playerCount = (int)$result['playerCount'];
+    $stmt->close();
+
+    $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
+    $suits = ['spades', 'hearts', 'clubs', 'diamonds'];
+    $deck = [];
+
+    // Base deck
+    foreach ($suits as $suit) {
+        foreach ($ranks as $rank) {
+            $deck[] = ['rank' => $rank, 'suit' => $suit];
+        }
+    }
+
+    $suits_to_add = $playerCount - 4;
+    if ($suits_to_add > 0) {
+        $additional_suits = array_slice($suits, 0, $suits_to_add);
+        foreach ($additional_suits as $suit) {
+            foreach ($ranks as $rank) {
+                $deck[] = ['rank' => $rank, 'suit' => $suit];
+            }
+        }
+    }
+
+    if ($playerCount === 8) { // Two full decks for 8 players
+        $deck = array_merge($deck, $deck);
+    }
+
+    shuffle($deck);
+
+    $cards_per_player = 13;
+
+    $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id=? ORDER BY id ASC");
+    $stmt->bind_param("i", $roomId);
+    $stmt->execute();
+    $playerIdsResult = $stmt->get_result();
+
+    $player_ids = [];
+    while ($row = $playerIdsResult->fetch_assoc()) {
+        $player_ids[] = $row['user_id'];
+    }
+    $stmt->close();
+
+    for ($i = 0; $i < count($player_ids); $i++) {
+        $hand_unsorted = array_slice($deck, $i * $cards_per_player, $cards_per_player);
+
+        usort($hand_unsorted, function ($a, $b) use ($ranks) {
+            return array_search($b['rank'], $ranks) - array_search($a['rank'], $ranks);
+        });
+
+        $hand_arranged = [
+            'bottom' => array_slice($hand_unsorted, 0, 5),
+            'middle' => array_slice($hand_unsorted, 5, 5),
+            'top' => array_slice($hand_unsorted, 10, 3),
+        ];
+
+        $handJson = json_encode($hand_arranged);
+
+        $updateStmt = $conn->prepare("UPDATE room_players SET initial_hand=? WHERE room_id=? AND user_id=?");
+        $updateStmt->bind_param("sii", $handJson, $roomId, $player_ids[$i]);
+        $updateStmt->execute();
+        $updateStmt->close();
+    }
+
+    $stmt = $conn->prepare("UPDATE game_rooms SET status='arranging' WHERE id=?");
+    $stmt->bind_param("i", $roomId);
+    $stmt->execute();
+    $stmt->close();
 }
 
 /**
