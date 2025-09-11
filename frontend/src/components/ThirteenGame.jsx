@@ -192,6 +192,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
   }, [fetchGameStatus]);
 
   useEffect(() => {
+    handleReady(false);
+  }, []);
+
+  useEffect(() => {
     if (gameResult && gameResult.players) {
       const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
       if (user.id === playerIds[0]) {
@@ -298,7 +302,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       isGameInProgress={isGameInProgress}
       isOnline={isOnline}
       onBackToLobby={handleLeaveRoom}
-      onReady={() => handleReady(isReady)}
       onConfirm={() => handleConfirm()}
       onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
