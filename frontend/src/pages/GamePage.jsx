@@ -56,7 +56,7 @@ const GamePage = () => {
             break;
         }
       } else {
-        setError(workerError || 'An unknown worker error occurred.');
+        setError(workerError || '发生未知错误。');
       }
     };
 
@@ -105,7 +105,7 @@ const GamePage = () => {
 
   const triggerAiMove = useCallback((aiPlayerId) => {
     if (!gameId || !worker.current) return;
-    console.log(`Triggering AI move for ${aiPlayerId}...`);
+    console.log(`正在为 ${aiPlayerId} 生成AI走法...`);
     worker.current.postMessage({
       action: 'getAiMove',
       payload: { game: 'thirteen-cards', game_id: gameId, player_id: aiPlayerId },

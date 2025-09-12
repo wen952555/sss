@@ -122,8 +122,115 @@ class Mahjong extends Game {
         $this->send_response(['message' => 'Pung successful. Please discard a tile.']);
     }
 
-    protected function chow() { $this->send_error("Chow not implemented yet."); }
-    protected function kong() { $this->send_error("Kong not implemented yet."); }
+    protected function chow() {
+        $options = $this->game_state['action_options'][$this->player_id] ?? [];
+        if (!in_array('chow', $options)) {
+            $this->send_error("You cannot chow now.");
+        }
+
+        $last_discard = $this->game_state['last_discard'];
+        $hand = &$this->game_state['hands'][$this->player_id];
+
+        $chow_tiles_ids = $this->request_data['chow_tiles_ids'] ?? [];
+        if (count($chow_tiles_ids) !== 2) {
+            $this->send_error("You must select two of your tiles to form a chow.");
+        }
+
+        $tiles_to_remove = [];
+        foreach($chow_tiles_ids as $id) {
+            $found = false;
+            foreach($hand as $tile) {
+                if ($tile['id'] === $id) {
+                    $tiles_to_remove[] = $tile;
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $this->send_error("Invalid tile selected for chow.");
+            }
+        }
+
+        $potential_chow = array_merge($tiles_to_remove, [$last_discard]);
+        usort($potential_chow, fn($a, $b) => $a['rank'] <=> $b['rank']);
+
+        $is_valid_chow = ($potential_chow[0]['type'] === 'suit' &&
+                           $potential_chow[0]['suit'] === $potential_chow[1]['suit'] &&
+                           $potential_chow[0]['suit'] === $potential_chow[2]['suit'] &&
+                           $potential_chow[1]['rank'] === $potential_chow[0]['rank'] + 1 &&
+                           $potential_chow[2]['rank'] === $potential_chow[1]['rank'] + 1);
+
+        if (!$is_valid_chow) {
+            $this->send_error("The selected tiles do not form a valid chow with the discard.");
+        }
+
+        $hand = array_udiff($hand, $tiles_to_remove, fn($a, $b) => $a['id'] <=> $b['id']);
+        $this->game_state['hands'][$this->player_id] = array_values($hand);
+
+        $this->game_state['melds'][$this->player_id][] = ['type' => 'chow', 'tiles' => $potential_chow];
+        $this->game_state['last_discard'] = null;
+        $this->game_state['action_options'] = [];
+        $this->game_state['current_turn'] = $this->player_id;
+
+        $this->send_response(['message' => 'Chow successful. Please discard a tile.']);
+    }
+
+    protected function kong() {
+        $kong_type = $this->request_data['kong_type'] ?? null;
+        $hand = &$this->game_state['hands'][$this->player_id];
+
+        switch ($kong_type) {
+            case 'melded':
+                $last_discard = $this->game_state['last_discard'];
+                if (!$last_discard || !canKong($hand, $last_discard)) {
+                    $this->send_error("You cannot form a melded kong with this tile.");
+                }
+
+                $new_hand = [];
+                $matches_found = 0;
+                foreach ($hand as $tile) {
+                    if ($tile['name'] === $last_discard['name'] && $matches_found < 3) {
+                        $matches_found++;
+                    } else {
+                        $new_hand[] = $tile;
+                    }
+                }
+                $this->game_state['hands'][$this->player_id] = $new_hand;
+                $this->game_state['melds'][$this->player_id][] = ['type' => 'kong', 'kong_type' => 'melded', 'tiles' => array_fill(0, 4, $last_discard)];
+                $this->game_state['last_discard'] = null;
+                break;
+
+            case 'concealed':
+                $kong_tile_name = $this->request_data['tile_name'] ?? null;
+                $counts = array_count_values(array_column($hand, 'name'));
+                if (!isset($counts[$kong_tile_name]) || $counts[$kong_tile_name] < 4) {
+                    $this->send_error("You do not have a concealed kong of that tile.");
+                }
+
+                $new_hand = array_filter($hand, fn($t) => $t['name'] !== $kong_tile_name);
+                $this->game_state['hands'][$this->player_id] = array_values($new_hand);
+                $kong_tile = array_values(array_filter($hand, fn($t) => $t['name'] === $kong_tile_name))[0];
+                $this->game_state['melds'][$this->player_id][] = ['type' => 'kong', 'kong_type' => 'concealed', 'tiles' => array_fill(0, 4, $kong_tile)];
+                break;
+
+            case 'promoted':
+                $this->send_error("Promoted kong not implemented yet.");
+                break;
+
+            default:
+                $this->send_error("Invalid kong type specified.");
+                return;
+        }
+
+        if (!empty($this->game_state['wall'])) {
+            $replacement_tile = array_pop($this->game_state['wall']);
+            $this->game_state['hands'][$this->player_id][] = $replacement_tile;
+        }
+
+        $this->game_state['action_options'] = [];
+        $this->game_state['current_turn'] = $this->player_id;
+        $this->send_response(['message' => 'Kong successful. Please discard a tile.']);
+    }
 
     protected function checkWinAction() {
         $hand = $this->game_state['hands'][$this->player_id] ?? [];

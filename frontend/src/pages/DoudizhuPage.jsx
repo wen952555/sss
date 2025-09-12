@@ -27,7 +27,7 @@ const DoudizhuPage = () => {
     const handlePlay = useCallback((cards, pId = playerId) => {
         if (!gameId || !worker.current) return;
         if (pId === playerId && cards.length === 0) {
-            setError("You must select cards to play.");
+            setError("请选择要出的牌。");
             return;
         }
         worker.current.postMessage({
@@ -118,7 +118,7 @@ const DoudizhuPage = () => {
                         break;
                 }
             } else {
-                setError(workerError || 'An unknown worker error occurred.');
+                setError(workerError || '发生未知错误。');
             }
         };
         return () => worker.current.terminate();
@@ -156,7 +156,7 @@ const DoudizhuPage = () => {
     if (!game) {
         return (
             <div className="doudizhu-page">
-                <div className="game-header"><h1>斗地主</h1><button onClick={createNewGame}>New Game</button></div>
+                <div className="game-header"><h1>斗地主</h1><button onClick={createNewGame}>新游戏</button></div>
                 {error && <div className="error-message">{error}</div>}
                 {!error && <div className="loading">加载中...</div>}
             </div>
@@ -185,7 +185,7 @@ const DoudizhuPage = () => {
                 <div className="center-info">
                     {game.game_phase === 'bidding' && (
                         <>
-                            <p>Current Bid: {game.bidding.highest_bid}</p>
+                            <p>当前叫分: {game.bidding.highest_bid}</p>
                             <BiddingControls
                                 currentBid={game.bidding.highest_bid}
                                 isMyTurn={game.bidding.turn === playerId}
@@ -195,7 +195,7 @@ const DoudizhuPage = () => {
                     )}
                     {game.game_phase === 'playing' && (
                         <>
-                            <p>Turn: {game.current_turn}</p>
+                            <p>轮到: {game.current_turn}</p>
                             <PlayingControls
                                 isMyTurn={game.current_turn === playerId}
                                 onPlay={() => handlePlay(selectedCards)}
