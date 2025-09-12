@@ -1,5 +1,10 @@
 .game-page {
-  padding: 20px;
+  width: 100vw;
+  height: 100vh;
+  padding: 10px;
+  box-sizing: border-box;
+  background-color: #0f4d1c; /* Dark green card table color */
+  color: white;
   font-family: sans-serif;
 }
 
@@ -7,53 +12,122 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  height: 50px;
 }
 
 .new-game-button {
   padding: 10px 20px;
   font-size: 1em;
   border-radius: 5px;
-  border: none;
-  background-color: #4caf50;
+  border: 1px solid #fff;
+  background-color: transparent;
   color: white;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+.new-game-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .game-board {
+  display: grid;
+  grid-template-columns: 180px 1fr 180px; /* Side columns for left/right players */
+  grid-template-rows: 1fr 2fr 1.5fr; /* Top, Center, Bottom rows */
+  height: calc(100vh - 70px); /* Full height minus header */
+  gap: 15px;
+  grid-template-areas:
+    "opponent-left opponent-top opponent-right"
+    "center-area center-area center-area"
+    "player-area player-area player-area";
+}
+
+.opponent-top { grid-area: opponent-top; }
+.opponent-left { grid-area: opponent-left; }
+.opponent-right { grid-area: opponent-right; }
+.center-area { grid-area: center-area; }
+.player-area { grid-area: player-area; }
+
+.opponent {
+  border-radius: 10px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.hand-container {
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 10px;
-}
-
-.cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.card {
-  width: 50px;
-  height: 70px;
-  border: 1px solid #999;
-  border-radius: 5px;
-  display: flex;
   align-items: center;
   justify-content: center;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.opponent h2 {
+  margin: 0 0 10px 0;
   font-size: 1.2em;
-  background-color: white;
 }
 
 .card-placeholder {
-  height: 70px;
+  font-size: 1.1em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.center-area {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #999;
+  gap: 20px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.last-play {
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.last-play p {
+  margin: 0 0 10px 0;
+}
+
+.cards-display-mini {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+
+.cards-display-mini img {
+  width: 60px;
+  height: auto;
+}
+
+.player-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.error-message {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #c9302c;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 1000;
+  font-size: 1.1em;
+}
+
+.loading {
+  font-size: 2em;
+  text-align: center;
+  margin-top: 50px;
 }

@@ -110,11 +110,7 @@ if (isset($update['message'])) {
             }
 
             if ($stmt) {
-                if ($command === 'add_score') {
-                    $stmt->execute([$points, $player_id]);
-                } else {
-                    $stmt->execute([$points, $player_id]);
-                }
+                $stmt->execute([$points, $player_id]);
 
                 $affected_rows = $stmt->rowCount();
 
