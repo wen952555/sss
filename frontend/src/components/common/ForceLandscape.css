@@ -34,8 +34,7 @@
     This class should be added to the main content wrapper of the game pages
     to hide the game content when the overlay is active.
   */
-  .game-content-wrapper,
-  .main-menu-content-wrapper {
+  .game-content-wrapper {
     display: none;
   }
 }
