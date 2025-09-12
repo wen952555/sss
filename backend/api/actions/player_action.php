@@ -27,44 +27,31 @@ try {
         throw new Exception("Room not found.");
     }
 
-    // --- Logic for 4-Player Normal Thirteen Game ---
-    if ($room['game_type'] === 'thirteen' && (int)$room['players_count'] === 4) {
-        if ($sub_action === 'ready') {
-            $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE room_id = ? AND user_id = ?");
-            $stmt->bind_param("ii", $roomId, $userId);
-            $stmt->execute();
-            $stmt->close();
+    if ($sub_action === 'ready') {
+        $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE room_id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $roomId, $userId);
+        $stmt->execute();
+        $stmt->close();
 
-            // Check if all players are ready
-            $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
-            $stmt->bind_param("i", $roomId);
-            $stmt->execute();
-            $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
-            $stmt->close();
+        // Check if all players are ready
+        $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
+        $stmt->bind_param("i", $roomId);
+        $stmt->execute();
+        $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
+        $stmt->close();
 
-            error_log("Room ID: $roomId, Ready Players: $readyPlayers, Room Player Count: " . $room['players_count']);
+        $stmt = $conn->prepare("SELECT COUNT(*) as total_players FROM room_players WHERE room_id = ?");
+        $stmt->bind_param("i", $roomId);
+        $stmt->execute();
+        $totalPlayers = $stmt->get_result()->fetch_assoc()['total_players'];
+        $stmt->close();
 
-            if ($readyPlayers === 4) {
-                        dealCardsFor4Players($conn, $roomId);
-            }
-        }
-    }
-    // --- Placeholder for 8-Player Logic ---
-    elseif ($room['game_type'] === 'thirteen' && (int)$room['players_count'] === 8) {
-        if ($sub_action === 'ready') {
-            $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE room_id = ? AND user_id = ?");
-            $stmt->bind_param("ii", $roomId, $userId);
-            $stmt->execute();
-            $stmt->close();
+        $playersNeeded = (int)$room['players_count'];
 
-            // Check if all players are ready
-            $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
-            $stmt->bind_param("i", $roomId);
-            $stmt->execute();
-            $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
-            $stmt->close();
-
-            if ($readyPlayers === 8) {
+        if ($readyPlayers === $playersNeeded && $totalPlayers === $playersNeeded) {
+            if ($playersNeeded === 4) {
+                dealCardsFor4Players($conn, $roomId);
+            } elseif ($playersNeeded === 8) {
                 dealCardsFor8Players($conn, $roomId);
             }
         }
