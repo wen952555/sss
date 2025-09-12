@@ -5,12 +5,10 @@ const PlayerHand = ({ initialHand, onPlay, onPass, isMyTurn }) => {
   const [hand, setHand] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
 
-  // Effect to update the hand when the prop changes from the server
   useEffect(() => {
     setHand(initialHand);
   }, [initialHand]);
 
-  // Effect to clear selected cards if it's no longer our turn
   useEffect(() => {
     if (!isMyTurn) {
       setSelectedCards([]);
@@ -18,22 +16,16 @@ const PlayerHand = ({ initialHand, onPlay, onPass, isMyTurn }) => {
   }, [isMyTurn]);
 
   const handleCardClick = (card) => {
-    // Players should only be able to select cards on their turn
     if (!isMyTurn) return;
-
     setSelectedCards(currentSelected => {
-      const isSelected = currentSelected.some(selectedCard => selectedCard.name === card.name);
-      if (isSelected) {
-        return currentSelected.filter(selectedCard => selectedCard.name !== card.name);
-      } else {
-        return [...currentSelected, card];
-      }
+      const isSelected = currentSelected.some(sc => sc.name === card.name);
+      return isSelected
+        ? currentSelected.filter(sc => sc.name !== card.name)
+        : [...currentSelected, card];
     });
   };
 
-  const isCardSelected = (card) => {
-    return selectedCards.some(selectedCard => selectedCard.name === card.name);
-  };
+  const isCardSelected = (card) => selectedCards.some(sc => sc.name === card.name);
 
   const handlePlayClick = () => {
     if (onPlay && isMyTurn) {
@@ -48,18 +40,18 @@ const PlayerHand = ({ initialHand, onPlay, onPass, isMyTurn }) => {
     }
   };
 
-  if (!hand) {
-    return <div className="player-hand-container"><h3>Loading hand...</h3></div>;
-  }
+  if (!hand) return <div className="player-hand-container"><h3>Loading hand...</h3></div>;
+  if (hand.length === 0) return <div className="player-hand-container"><h3>Congratulations, you won!</h3></div>;
 
-  if (hand.length === 0) {
-    return <div className="player-hand-container"><h3>Congratulations, you won!</h3></div>;
-  }
+  // --- Card positioning logic ---
+  const cardWidth = 80;
+  const overlap = 50; // How many pixels of the card to hide
+  const totalHandWidth = (hand.length - 1) * (cardWidth - overlap) + cardWidth;
 
   return (
     <div className={`player-hand-container ${isMyTurn ? 'my-turn' : ''}`}>
-      <h3>Your Hand {isMyTurn && "(Your Turn)"}</h3>
-      <div className="cards-display">
+      <h3>Your Hand</h3>
+      <div className="cards-display" style={{ width: `${totalHandWidth}px` }}>
         {hand.map((card, index) => (
           <img
             key={card.name}
@@ -67,7 +59,7 @@ const PlayerHand = ({ initialHand, onPlay, onPass, isMyTurn }) => {
             alt={`${card.rank} of ${card.suit}`}
             className={`card ${isCardSelected(card) ? 'selected' : ''} ${!isMyTurn ? 'disabled' : ''}`}
             onClick={() => handleCardClick(card)}
-            style={{ left: `${index * 30}px` }} // Basic overlap styling
+            style={{ left: `${index * (cardWidth - overlap)}px` }}
           />
         ))}
       </div>
@@ -77,7 +69,7 @@ const PlayerHand = ({ initialHand, onPlay, onPass, isMyTurn }) => {
           disabled={!isMyTurn || selectedCards.length === 0}
           className="action-button play-button"
         >
-          Play Selected
+          Play
         </button>
         <button
           onClick={handlePassClick}

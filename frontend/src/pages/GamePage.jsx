@@ -1,19 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PlayerHand from '../components/game/PlayerHand';
 import './GamePage.css';
 
 // Configuration
 const API_BASE_URL = 'http://localhost/api/game.php';
-const POLLING_INTERVAL = 2000; // 2 seconds
+const POLLING_INTERVAL = 2000;
 
 const GamePage = () => {
   const [game, setGame] = useState(null);
   const [gameId, setGameId] = useState(null);
-  const [playerId, setPlayerId] = useState('player1'); // Hardcoded for this user
+  const [playerId] = useState('player1'); // Hardcoded for this user
   const [error, setError] = useState(null);
 
-  // Function to create a new game
-  const createNewGame = async () => {
+  const fetchGameState = useCallback(async (gid) => {
+    if (!gid) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}?action=getGameState&game_id=${gid}&player_id=${playerId}`);
+      const data = await response.json();
+      if (data.success) {
+        setGame(data.game_state);
+      } else if (response.status === 404) {
+        setError(data.message);
+        setGameId(null);
+      }
+    } catch (err) {
+      console.error('Error fetching game state:', err);
+    }
+  }, [playerId]);
+
+  const createNewGame = useCallback(async () => {
     try {
       setError(null);
       setGame(null);
@@ -28,31 +43,11 @@ const GamePage = () => {
       setError('Could not connect to the server. Is the backend running?');
       console.error(err);
     }
-  };
+  }, []);
 
-  // Function to fetch the game state
-  const fetchGameState = async (gid) => {
-    if (!gid) return;
-    try {
-      const response = await fetch(`${API_BASE_URL}?action=getGameState&game_id=${gid}&player_id=${playerId}`);
-      const data = await response.json();
-      if (data.success) {
-        setGame(data.game_state);
-      } else {
-        if (response.status === 404) {
-            setError(data.message);
-            setGameId(null);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching game state:', err);
-    }
-  };
-
-  // --- Action Handlers ---
-  const handlePlay = async (selectedCards) => {
+  const handlePlay = useCallback(async (selectedCards) => {
     if (!gameId || !playerId || selectedCards.length === 0) return;
-    setError(null); // Clear previous errors
+    setError(null);
     try {
       const response = await fetch(`${API_BASE_URL}?action=playHand`, {
         method: 'POST',
@@ -62,18 +57,17 @@ const GamePage = () => {
       const data = await response.json();
       if (!data.success) {
         setError(data.message || 'Invalid move.');
+      } else {
+        fetchGameState(gameId); // Immediately fetch state to reflect the change
       }
-      // Immediately fetch state to reflect the change
-      fetchGameState(gameId);
     } catch (err) {
       setError('Failed to play hand. Server connection error.');
-      console.error(err);
     }
-  };
+  }, [gameId, playerId, fetchGameState]);
 
-  const handlePass = async () => {
+  const handlePass = useCallback(async () => {
     if (!gameId || !playerId) return;
-    setError(null); // Clear previous errors
+    setError(null);
     try {
       const response = await fetch(`${API_BASE_URL}?action=passTurn`, {
         method: 'POST',
@@ -83,30 +77,23 @@ const GamePage = () => {
       const data = await response.json();
       if (!data.success) {
         setError(data.message || 'Cannot pass.');
+      } else {
+        fetchGameState(gameId); // Immediately fetch state to reflect the change
       }
-      // Immediately fetch state to reflect the change
-      fetchGameState(gameId);
     } catch (err) {
       setError('Failed to pass turn. Server connection error.');
-      console.error(err);
     }
-  };
+  }, [gameId, playerId, fetchGameState]);
 
-  // Effect to create a game on initial load
-  useEffect(() => {
-    createNewGame();
-  }, []);
+  useEffect(() => { createNewGame(); }, [createNewGame]);
 
-  // Effect to poll for game state
   useEffect(() => {
     if (gameId) {
-      fetchGameState(gameId);
       const interval = setInterval(() => fetchGameState(gameId), POLLING_INTERVAL);
       return () => clearInterval(interval);
     }
-  }, [gameId]);
+  }, [gameId, fetchGameState]);
 
-  // Effect to clear error messages after a delay
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => setError(null), 5000);
@@ -114,7 +101,30 @@ const GamePage = () => {
     }
   }, [error]);
 
-  const renderOpponents = () => { /* ... (same as before) ... */ };
+  const renderOpponent = (pId) => {
+    if (!game || !game.players[pId]) return null;
+    return (
+      <div className="opponent">
+        <h2>{pId}</h2>
+        <div className="card-placeholder">{game.players[pId].card_count} Cards</div>
+      </div>
+    );
+  };
+
+  const getOpponentIds = () => {
+    if (!game || !game.player_ids) return { top: null, left: null, right: null };
+    const playerIds = game.player_ids;
+    const myIndex = playerIds.indexOf(playerId);
+    if (myIndex === -1) return { top: null, left: null, right: null };
+
+    return {
+      left: playerIds[(myIndex + 3) % 4], // Swapped left and right for clockwise flow
+      top: playerIds[(myIndex + 2) % 4],
+      right: playerIds[(myIndex + 1) % 4],
+    };
+  }
+
+  const opponents = getOpponentIds();
 
   return (
     <div className="game-page">
@@ -128,21 +138,11 @@ const GamePage = () => {
 
       {game && (
         <div className="game-board">
-          {/* ... opponents rendering ... */}
-          <div className="opponents-container">
-            {Object.keys(game.players).map(pId => {
-              if (pId === playerId) return null;
-              return (
-                <div key={pId} className={`opponent opponent-${pId.replace('player', '')}`}>
-                  <h2>{pId}</h2>
-                  <div className="card-placeholder">{game.players[pId].card_count} Cards</div>
-                </div>
-              );
-            })}
-          </div>
+          <div className="opponent-top">{renderOpponent(opponents.top)}</div>
+          <div className="opponent-left">{renderOpponent(opponents.left)}</div>
+          <div className="opponent-right">{renderOpponent(opponents.right)}</div>
 
-          <div className="trick-area">
-            {/* Display the last played hand */}
+          <div className="center-area">
             {game.last_play && (
               <div className="last-play">
                 <p>Last Play by {game.last_play.player_id}:</p>
@@ -155,11 +155,7 @@ const GamePage = () => {
             )}
           </div>
 
-          <div className="game-info">
-            <p>Current Turn: <strong>{game.current_turn}</strong> {game.current_turn === playerId && "(Your Turn)"}</p>
-          </div>
-
-          <div className="player-hand-container">
+          <div className="player-area">
              <PlayerHand
                initialHand={game.my_hand}
                onPlay={handlePlay}
