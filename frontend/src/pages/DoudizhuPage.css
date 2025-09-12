@@ -9,7 +9,33 @@
 }
 
 .doudizhu-board {
-  text-align: center;
-  font-size: 1.5rem;
-  margin-top: 50px;
+  display: grid;
+  height: calc(100vh - 80px);
+  grid-template-columns: 200px 1fr 200px;
+  grid-template-rows: 1fr 1fr 2fr;
+  gap: 15px;
+  grid-template-areas:
+    "player2-area kitty-area player3-area"
+    ". center-info ."
+    "player1-area player1-area player1-area";
+}
+
+.player2-area { grid-area: player2-area; }
+.player3-area { grid-area: player3-area; }
+.kitty-area {
+  grid-area: kitty-area;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.center-info { grid-area: center-info; text-align: center; }
+.player1-area { grid-area: player1-area; }
+
+.kitty-card {
+  width: 50px;
+  height: 70px;
+  border-radius: 4px;
+  background-color: #5a0a0a;
+  border: 2px solid #a11b1b;
 }
