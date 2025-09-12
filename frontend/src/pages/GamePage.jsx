@@ -45,14 +45,19 @@ const GamePage = () => {
     }
   }, []);
 
-  const handlePlay = useCallback(async (selectedCards) => {
-    if (!gameId || !playerId || selectedCards.length === 0) return;
+  const handlePlay = useCallback(async (selectedCards, pId = playerId) => {
+    if (!gameId) return;
+    // The player ID is now dynamic
+    const effectivePlayerId = pId;
+
+    if (effectivePlayerId === playerId && selectedCards.length === 0) return; // Human must select cards
     setError(null);
+
     try {
       const response = await fetch(`${API_BASE_URL}?action=playHand`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game_id: gameId, player_id: playerId, cards: selectedCards }),
+        body: JSON.stringify({ game_id: gameId, player_id: effectivePlayerId, cards: selectedCards }),
       });
       const data = await response.json();
       if (!data.success) {
@@ -65,14 +70,16 @@ const GamePage = () => {
     }
   }, [gameId, playerId, fetchGameState]);
 
-  const handlePass = useCallback(async () => {
-    if (!gameId || !playerId) return;
+  const handlePass = useCallback(async (pId = playerId) => {
+    if (!gameId) return;
+    const effectivePlayerId = pId;
     setError(null);
+
     try {
       const response = await fetch(`${API_BASE_URL}?action=passTurn`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game_id: gameId, player_id: playerId }),
+        body: JSON.stringify({ game_id: gameId, player_id: effectivePlayerId }),
       });
       const data = await response.json();
       if (!data.success) {
@@ -100,6 +107,41 @@ const GamePage = () => {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  // --- AI Turn Logic ---
+  const triggerAiMove = useCallback(async (aiPlayerId) => {
+    if (!gameId) return;
+    console.log(`Triggering AI move for ${aiPlayerId}...`);
+    try {
+      const response = await fetch(`${API_BASE_URL}?action=getAiMove&game_id=${gameId}&player_id=${aiPlayerId}`);
+      const data = await response.json();
+
+      if (data.success && data.move) {
+        // Execute the move returned by the AI
+        if (data.move.action === 'play') {
+          // We need to pass the full card objects, not just names.
+          // This assumes the AI endpoint returns the full card objects.
+          handlePlay(data.move.cards, aiPlayerId);
+        } else {
+          handlePass(aiPlayerId);
+        }
+      }
+    } catch (err) {
+      console.error('Error triggering AI move:', err);
+    }
+  }, [gameId, handlePlay, handlePass]);
+
+  useEffect(() => {
+    const AI_PLAYER_IDS = ['player2', 'player3', 'player4'];
+    if (game && AI_PLAYER_IDS.includes(game.current_turn)) {
+      const aiPlayerId = game.current_turn;
+      const aiThinkTime = 1500;
+      const timer = setTimeout(() => {
+        triggerAiMove(aiPlayerId);
+      }, aiThinkTime);
+      return () => clearTimeout(timer);
+    }
+  }, [game, triggerAiMove]);
 
   const renderOpponent = (pId) => {
     if (!game || !game.players[pId]) return null;

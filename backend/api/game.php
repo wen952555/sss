@@ -190,6 +190,31 @@ switch ($action) {
         echo json_encode(["success" => true, "message" => "You passed."]);
         break;
 
+    case 'getAiMove':
+        $player_id = $_GET['player_id'] ?? null;
+
+        if (!$player_id || !isset($game_state['hands'][$player_id])) {
+            send_error(400, "AI Player not found in this game.");
+        }
+        if ($game_state['game_status'] !== 'in_progress') {
+            send_error(400, "The game is not in progress.");
+        }
+        if ($game_state['current_turn'] !== $player_id) {
+            send_error(400, "It's not the AI's turn.");
+        }
+
+        $ai_hand = $game_state['hands'][$player_id];
+        $last_play = $game_state['last_play'];
+
+        // Call the helper to determine the AI's move
+        $move = findBestAiMove($ai_hand, $last_play);
+
+        echo json_encode([
+            "success" => true,
+            "move" => $move
+        ]);
+        break;
+
     default:
         send_error(400, "Invalid action specified.");
         break;
