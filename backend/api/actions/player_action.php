@@ -42,6 +42,8 @@ try {
             $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
             $stmt->close();
 
+            error_log("Room ID: $roomId, Ready Players: $readyPlayers, Room Player Count: " . $room['players_count']);
+
             if ($readyPlayers === 4) {
                         dealCardsFor4Players($conn, $roomId);
             }
