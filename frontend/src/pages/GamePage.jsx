@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PlayerHand from '../components/game/PlayerHand';
 import './GamePage.css';
+import ApiWorker from '../workers/api.worker.js?worker';
 
-// Configuration
-const API_BASE_URL = 'http://localhost/api/game.php';
 const POLLING_INTERVAL = 2000;
 
 const GamePage = () => {
@@ -11,91 +10,114 @@ const GamePage = () => {
   const [gameId, setGameId] = useState(null);
   const [playerId] = useState('player1'); // Hardcoded for this user
   const [error, setError] = useState(null);
+  const worker = useRef(null);
 
-  const fetchGameState = useCallback(async (gid) => {
-    if (!gid) return;
-    try {
-      const response = await fetch(`${API_BASE_URL}?action=getGameState&game_id=${gid}&player_id=${playerId}`);
-      const data = await response.json();
-      if (data.success) {
-        setGame(data.game_state);
-      } else if (response.status === 404) {
-        setError(data.message);
-        setGameId(null);
+  // Initialize worker
+  useEffect(() => {
+    worker.current = new ApiWorker();
+
+    worker.current.onmessage = (event) => {
+      const { success, action, data, error: workerError } = event.data;
+      if (success) {
+        switch (action) {
+          case 'createGame':
+            setGameId(data.game_id);
+            break;
+          case 'getGameState':
+            if (data.game_state) {
+              setGame(data.game_state);
+            } else if (data.message) {
+              setError(data.message);
+              setGameId(null); // Stop polling on error
+            }
+            break;
+          case 'playHand':
+          case 'passTurn':
+            // The getGameState polling will update the view
+            break;
+          case 'getAiMove':
+            if (data.move) {
+              // Re-use existing handlers to perform the AI's move
+              if (data.move.action === 'play') {
+                // We need the current turn from the game state to pass to handlePlay
+                setGame(g => {
+                  if(g && g.current_turn) handlePlay(data.move.cards, g.current_turn);
+                  return g;
+                });
+              } else {
+                 setGame(g => {
+                  if(g && g.current_turn) handlePass(g.current_turn);
+                  return g;
+                });
+              }
+            }
+            break;
+          default:
+            break;
+        }
+      } else {
+        setError(workerError || 'An unknown worker error occurred.');
       }
-    } catch (err) {
-      console.error('获取游戏状态时出错:', err);
-    }
+    };
+
+    return () => {
+      worker.current.terminate();
+    };
+  }, []); // Only run on mount and unmount
+
+  const fetchGameState = useCallback((gid) => {
+    if (!gid || !worker.current) return;
+    worker.current.postMessage({
+      action: 'getGameState',
+      payload: { game: 'thirteen-cards', game_id: gid, player_id: playerId },
+    });
   }, [playerId]);
 
-  const createNewGame = useCallback(async () => {
-    try {
-      setError(null);
-      setGame(null);
-      const response = await fetch(`${API_BASE_URL}?action=createGame`, { method: 'POST' });
-      const data = await response.json();
-      if (data.success) {
-        setGameId(data.game_id);
-      } else {
-        setError(data.message || '创建游戏失败。');
-      }
-    } catch (err) {
-      setError('无法连接到服务器。后端服务是否已启动？');
-      console.error(err);
-    }
+  const createNewGame = useCallback(() => {
+    if (!worker.current) return;
+    setError(null);
+    setGame(null);
+    setGameId(null);
+    worker.current.postMessage({
+      action: 'createGame',
+      payload: { game: 'thirteen-cards' },
+    });
   }, []);
 
-  const handlePlay = useCallback(async (selectedCards, pId = playerId) => {
-    if (!gameId) return;
-    // The player ID is now dynamic
-    const effectivePlayerId = pId;
-
-    if (effectivePlayerId === playerId && selectedCards.length === 0) return; // Human must select cards
+  const handlePlay = useCallback((selectedCards, pId = playerId) => {
+    if (!gameId || !worker.current) return;
+    if (pId === playerId && selectedCards.length === 0) return;
     setError(null);
+    worker.current.postMessage({
+      action: 'playHand',
+      payload: { game: 'thirteen-cards', game_id: gameId, player_id: pId, cards: selectedCards },
+    });
+  }, [gameId, playerId]);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}?action=playHand`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game_id: gameId, player_id: effectivePlayerId, cards: selectedCards }),
-      });
-      const data = await response.json();
-      if (!data.success) {
-        setError(data.message || '无效的出牌。');
-      } else {
-        fetchGameState(gameId);
-      }
-    } catch (err) {
-      setError('出牌失败，服务器连接错误。');
-    }
-  }, [gameId, playerId, fetchGameState]);
-
-  const handlePass = useCallback(async (pId = playerId) => {
-    if (!gameId) return;
-    const effectivePlayerId = pId;
+  const handlePass = useCallback((pId = playerId) => {
+    if (!gameId || !worker.current) return;
     setError(null);
+    worker.current.postMessage({
+      action: 'passTurn',
+      payload: { game: 'thirteen-cards', game_id: gameId, player_id: pId },
+    });
+  }, [gameId, playerId]);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}?action=passTurn`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game_id: gameId, player_id: effectivePlayerId }),
-      });
-      const data = await response.json();
-      if (!data.success) {
-        setError(data.message || '无法过牌。');
-      } else {
-        fetchGameState(gameId);
-      }
-    } catch (err) {
-      setError('过牌失败，服务器连接错误。');
-    }
-  }, [gameId, playerId, fetchGameState]);
+  const triggerAiMove = useCallback((aiPlayerId) => {
+    if (!gameId || !worker.current) return;
+    console.log(`Triggering AI move for ${aiPlayerId}...`);
+    worker.current.postMessage({
+      action: 'getAiMove',
+      payload: { game: 'thirteen-cards', game_id: gameId, player_id: aiPlayerId },
+    });
+  }, [gameId]);
+
 
   useEffect(() => { createNewGame(); }, [createNewGame]);
 
   useEffect(() => {
     if (gameId) {
+      fetchGameState(gameId); // Fetch initial state right away
       const interval = setInterval(() => fetchGameState(gameId), POLLING_INTERVAL);
       return () => clearInterval(interval);
     }
@@ -107,29 +129,6 @@ const GamePage = () => {
       return () => clearTimeout(timer);
     }
   }, [error]);
-
-  // --- AI Turn Logic ---
-  const triggerAiMove = useCallback(async (aiPlayerId) => {
-    if (!gameId) return;
-    console.log(`Triggering AI move for ${aiPlayerId}...`);
-    try {
-      const response = await fetch(`${API_BASE_URL}?action=getAiMove&game_id=${gameId}&player_id=${aiPlayerId}`);
-      const data = await response.json();
-
-      if (data.success && data.move) {
-        // Execute the move returned by the AI
-        if (data.move.action === 'play') {
-          // We need to pass the full card objects, not just names.
-          // This assumes the AI endpoint returns the full card objects.
-          handlePlay(data.move.cards, aiPlayerId);
-        } else {
-          handlePass(aiPlayerId);
-        }
-      }
-    } catch (err) {
-      console.error('Error triggering AI move:', err);
-    }
-  }, [gameId, handlePlay, handlePass]);
 
   useEffect(() => {
     const AI_PLAYER_IDS = ['player2', 'player3', 'player4'];

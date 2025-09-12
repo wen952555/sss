@@ -29,14 +29,14 @@ const MainMenu = () => {
                 </Link>
 
                 {/* Panel 3: Mahjong */}
-                <div className="game-panel-link disabled">
+                <Link to="/mahjong" className="game-panel-link">
                     <div className="game-panel placeholder-panel">
                         <div className="panel-content">
                             <h2 className="panel-title">麻将</h2>
-                            <p className="panel-description">敬请期待</p>
+                            <p className="panel-description">经典棋牌游戏</p>
                         </div>
                     </div>
-                </div>
+                </Link>
             </div>
         </div>
     );

@@ -130,6 +130,43 @@ function analyzeDoudizhuCombination(array $cards) {
 }
 
 /**
+ * Checks if a play is a valid counter to the last play in Dou Di Zhu.
+ */
+function isValidDoudizhuMove(array $play, array $last_play): bool {
+    // Rocket (Joker pair) beats anything.
+    if ($play['type'] === 'rocket') {
+        return true;
+    }
+
+    // If the last play was a rocket, nothing can beat it.
+    if ($last_play['type'] === 'rocket') {
+        return false;
+    }
+
+    // A bomb can beat any non-bomb, non-rocket hand.
+    if ($play['type'] === 'bomb' && $last_play['type'] !== 'bomb') {
+        return true;
+    }
+
+    // If both are bombs, the higher rank wins.
+    if ($play['type'] === 'bomb' && $last_play['type'] === 'bomb') {
+        return $play['rank'] > $last_play['rank'];
+    }
+
+    // For all other plays, the type and length (for straights/airplanes) must match.
+    if ($play['type'] !== $last_play['type']) {
+        return false;
+    }
+    if (isset($play['length']) && (!isset($last_play['length']) || $play['length'] !== $last_play['length'])) {
+        return false;
+    }
+
+    // The rank of the new play must be higher.
+    return $play['rank'] > $last_play['rank'];
+}
+
+
+/**
  * A simple AI to find a valid move in Dou Di Zhu.
  */
 function findBestDoudizhuMove($ai_hand, $last_play_cards) {
