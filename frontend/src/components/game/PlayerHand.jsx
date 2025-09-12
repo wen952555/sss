@@ -40,8 +40,8 @@ const PlayerHand = ({ initialHand, onPlay, onPass, isMyTurn }) => {
     }
   };
 
-  if (!hand) return <div className="player-hand-container"><h3>Loading hand...</h3></div>;
-  if (hand.length === 0) return <div className="player-hand-container"><h3>Congratulations, you won!</h3></div>;
+  if (!hand) return <div className="player-hand-container"><h3>加载手牌中...</h3></div>;
+  if (hand.length === 0) return <div className="player-hand-container"><h3>恭喜你，你赢了！</h3></div>;
 
   // --- Card positioning logic ---
   const cardWidth = 80;
@@ -50,7 +50,7 @@ const PlayerHand = ({ initialHand, onPlay, onPass, isMyTurn }) => {
 
   return (
     <div className={`player-hand-container ${isMyTurn ? 'my-turn' : ''}`}>
-      <h3>Your Hand</h3>
+      <h3>你的手牌</h3>
       <div className="cards-display" style={{ width: `${totalHandWidth}px` }}>
         {hand.map((card, index) => (
           <img
@@ -69,14 +69,14 @@ const PlayerHand = ({ initialHand, onPlay, onPass, isMyTurn }) => {
           disabled={!isMyTurn || selectedCards.length === 0}
           className="action-button play-button"
         >
-          Play
+          出牌
         </button>
         <button
           onClick={handlePassClick}
           disabled={!isMyTurn}
           className="action-button pass-button"
         >
-          Pass
+          过牌
         </button>
       </div>
     </div>

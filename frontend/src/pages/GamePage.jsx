@@ -24,7 +24,7 @@ const GamePage = () => {
         setGameId(null);
       }
     } catch (err) {
-      console.error('Error fetching game state:', err);
+      console.error('获取游戏状态时出错:', err);
     }
   }, [playerId]);
 
@@ -37,10 +37,10 @@ const GamePage = () => {
       if (data.success) {
         setGameId(data.game_id);
       } else {
-        setError(data.message || 'Failed to create game.');
+        setError(data.message || '创建游戏失败。');
       }
     } catch (err) {
-      setError('Could not connect to the server. Is the backend running?');
+      setError('无法连接到服务器。后端服务是否已启动？');
       console.error(err);
     }
   }, []);
@@ -56,12 +56,12 @@ const GamePage = () => {
       });
       const data = await response.json();
       if (!data.success) {
-        setError(data.message || 'Invalid move.');
+        setError(data.message || '无效的出牌。');
       } else {
-        fetchGameState(gameId); // Immediately fetch state to reflect the change
+        fetchGameState(gameId);
       }
     } catch (err) {
-      setError('Failed to play hand. Server connection error.');
+      setError('出牌失败，服务器连接错误。');
     }
   }, [gameId, playerId, fetchGameState]);
 
@@ -76,12 +76,12 @@ const GamePage = () => {
       });
       const data = await response.json();
       if (!data.success) {
-        setError(data.message || 'Cannot pass.');
+        setError(data.message || '无法过牌。');
       } else {
-        fetchGameState(gameId); // Immediately fetch state to reflect the change
+        fetchGameState(gameId);
       }
     } catch (err) {
-      setError('Failed to pass turn. Server connection error.');
+      setError('过牌失败，服务器连接错误。');
     }
   }, [gameId, playerId, fetchGameState]);
 
@@ -106,7 +106,7 @@ const GamePage = () => {
     return (
       <div className="opponent">
         <h2>{pId}</h2>
-        <div className="card-placeholder">{game.players[pId].card_count} Cards</div>
+        <div className="card-placeholder">{game.players[pId].card_count} 张牌</div>
       </div>
     );
   };
@@ -118,7 +118,7 @@ const GamePage = () => {
     if (myIndex === -1) return { top: null, left: null, right: null };
 
     return {
-      left: playerIds[(myIndex + 3) % 4], // Swapped left and right for clockwise flow
+      left: playerIds[(myIndex + 3) % 4],
       top: playerIds[(myIndex + 2) % 4],
       right: playerIds[(myIndex + 1) % 4],
     };
@@ -129,12 +129,12 @@ const GamePage = () => {
   return (
     <div className="game-page">
       <div className="game-header">
-        <h1>Thirteen Cards</h1>
-        <button onClick={createNewGame} className="new-game-button">New Game</button>
+        <h1>十三张</h1>
+        <button onClick={createNewGame} className="new-game-button">新游戏</button>
       </div>
 
       {error && <div className="error-message">{error}</div>}
-      {!game && !error && <div className="loading">Loading...</div>}
+      {!game && !error && <div className="loading">加载中...</div>}
 
       {game && (
         <div className="game-board">
@@ -145,7 +145,7 @@ const GamePage = () => {
           <div className="center-area">
             {game.last_play && (
               <div className="last-play">
-                <p>Last Play by {game.last_play.player_id}:</p>
+                <p>上一手牌 ({game.last_play.player_id}):</p>
                 <div className="cards-display-mini">
                   {game.last_play.cards.map(card => (
                     <img key={card.name} src={`/ppp/${card.name}.svg`} alt={card.name} />
