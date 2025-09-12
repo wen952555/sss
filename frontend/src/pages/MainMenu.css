@@ -80,7 +80,8 @@
 
 /* Specific panel styles */
 .thirteen-panel {
-    background-image: url('/ppp/ace_of_spades.svg');
+    /* background-image: url('/ppp/ace_of_spades.svg'); */
+    /* Temporarily commented out to fix build error in Node.js v18 */
 }
 
 .placeholder-panel::after {
