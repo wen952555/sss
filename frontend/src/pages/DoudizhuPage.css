@@ -1,0 +1,15 @@
+.doudizhu-page {
+  width: 100vw;
+  height: 100vh;
+  padding: 10px;
+  box-sizing: border-box;
+  background-color: #0f4d1c; /* Same theme as the other game */
+  color: white;
+  font-family: sans-serif;
+}
+
+.doudizhu-board {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-top: 50px;
+}

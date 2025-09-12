@@ -17,14 +17,14 @@ const MainMenu = () => {
                 </Link>
 
                 {/* Panel 2: Dou Di Zhu */}
-                <div className="game-panel-link disabled">
+                <Link to="/doudizhu" className="game-panel-link">
                     <div className="game-panel placeholder-panel">
                         <div className="panel-content">
                             <h2 className="panel-title">斗地主</h2>
                             <p className="panel-description">敬请期待</p>
                         </div>
                     </div>
-                </div>
+                </Link>
 
                 {/* Panel 3: Mahjong */}
                 <div className="game-panel-link disabled">
