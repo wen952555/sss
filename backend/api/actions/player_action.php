@@ -34,21 +34,15 @@ try {
         $stmt->close();
 
         // Check if all players are ready
-        $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1");
+        $stmt = $conn->prepare("SELECT COUNT(*) as ready_players FROM room_players WHERE room_id = ? AND is_ready = 1 FOR UPDATE");
         $stmt->bind_param("i", $roomId);
         $stmt->execute();
         $readyPlayers = $stmt->get_result()->fetch_assoc()['ready_players'];
         $stmt->close();
 
-        $stmt = $conn->prepare("SELECT COUNT(*) as total_players FROM room_players WHERE room_id = ?");
-        $stmt->bind_param("i", $roomId);
-        $stmt->execute();
-        $totalPlayers = $stmt->get_result()->fetch_assoc()['total_players'];
-        $stmt->close();
-
         $playersNeeded = (int)$room['players_count'];
 
-        if ($readyPlayers === $playersNeeded && $totalPlayers === $playersNeeded) {
+        if ($readyPlayers === $playersNeeded) {
             if ($playersNeeded === 4) {
                 dealCardsFor4Players($conn, $roomId);
             } elseif ($playersNeeded === 8) {
