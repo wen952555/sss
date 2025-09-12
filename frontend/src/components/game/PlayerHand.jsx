@@ -1,77 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './PlayerHand.css';
 
-const PlayerHand = ({ initialHand }) => {
-  const [unassignedCards, setUnassignedCards] = useState(initialHand);
-  const [front, setFront] = useState([]);
-  const [middle, setMiddle] = useState([]);
-  const [back, setBack] = useState([]);
-  const [selectedCard, setSelectedCard] = useState(null);
+const PlayerHand = ({ initialHand, onPlay, onPass, isMyTurn }) => {
+  const [hand, setHand] = useState([]);
+  const [selectedCards, setSelectedCards] = useState([]);
 
-  const handleCardClick = (card, source) => {
-    if (selectedCard) {
-      // A card is already selected, do nothing.
-      // In a real implementation, we might want to swap cards.
-      return;
+  // Effect to update the hand when the prop changes from the server
+  useEffect(() => {
+    setHand(initialHand);
+  }, [initialHand]);
+
+  // Effect to clear selected cards if it's no longer our turn
+  useEffect(() => {
+    if (!isMyTurn) {
+      setSelectedCards([]);
     }
-    setSelectedCard({ card, source });
+  }, [isMyTurn]);
+
+  const handleCardClick = (card) => {
+    // Players should only be able to select cards on their turn
+    if (!isMyTurn) return;
+
+    setSelectedCards(currentSelected => {
+      const isSelected = currentSelected.some(selectedCard => selectedCard.name === card.name);
+      if (isSelected) {
+        return currentSelected.filter(selectedCard => selectedCard.name !== card.name);
+      } else {
+        return [...currentSelected, card];
+      }
+    });
   };
 
-  const handleSegmentClick = (segmentName) => {
-    if (!selectedCard) {
-      return; // No card selected to place.
-    }
-
-    let segment, setSegment, maxSize;
-    if (segmentName === 'front') {
-      [segment, setSegment, maxSize] = [front, setFront, 3];
-    } else if (segmentName === 'middle') {
-      [segment, setSegment, maxSize] = [middle, setMiddle, 5];
-    } else { // back
-      [segment, setSegment, maxSize] = [back, setBack, 5];
-    }
-
-    if (segment.length >= maxSize) {
-      alert(`The ${segmentName} hand is full.`);
-      return;
-    }
-
-    // Move card from source to destination
-    setSegment([...segment, selectedCard.card]);
-    if (selectedCard.source === 'unassigned') {
-      setUnassignedCards(unassignedCards.filter(c => c !== selectedCard.card));
-    } // TODO: Handle moving cards between segments
-
-    setSelectedCard(null);
+  const isCardSelected = (card) => {
+    return selectedCards.some(selectedCard => selectedCard.name === card.name);
   };
+
+  const handlePlayClick = () => {
+    if (onPlay && isMyTurn) {
+      onPlay(selectedCards);
+      setSelectedCards([]);
+    }
+  };
+
+  const handlePassClick = () => {
+    if (onPass && isMyTurn) {
+      onPass();
+    }
+  };
+
+  if (!hand) {
+    return <div className="player-hand-container"><h3>Loading hand...</h3></div>;
+  }
+
+  if (hand.length === 0) {
+    return <div className="player-hand-container"><h3>Congratulations, you won!</h3></div>;
+  }
 
   return (
-    <div className="player-hand-container">
-      <h3>Your Hand</h3>
-      <div className="unassigned-cards">
-        {unassignedCards.map(card => (
-          <div key={card} className={`card ${selectedCard?.card === card ? 'selected' : ''}`} onClick={() => handleCardClick(card, 'unassigned')}>
-            {card}
-          </div>
+    <div className={`player-hand-container ${isMyTurn ? 'my-turn' : ''}`}>
+      <h3>Your Hand {isMyTurn && "(Your Turn)"}</h3>
+      <div className="cards-display">
+        {hand.map((card, index) => (
+          <img
+            key={card.name}
+            src={`/ppp/${card.name}.svg`}
+            alt={`${card.rank} of ${card.suit}`}
+            className={`card ${isCardSelected(card) ? 'selected' : ''} ${!isMyTurn ? 'disabled' : ''}`}
+            onClick={() => handleCardClick(card)}
+            style={{ left: `${index * 30}px` }} // Basic overlap styling
+          />
         ))}
       </div>
-
-      <div className="segments">
-        <div className="segment" onClick={() => handleSegmentClick('front')}>
-          <h4>Front (3)</h4>
-          <div className="cards">{front.map(c => <div key={c} className="card">{c}</div>)}</div>
-        </div>
-        <div className="segment" onClick={() => handleSegmentClick('middle')}>
-          <h4>Middle (5)</h4>
-          <div className="cards">{middle.map(c => <div key={c} className="card">{c}</div>)}</div>
-        </div>
-        <div className="segment" onClick={() => handleSegmentClick('back')}>
-          <h4>Back (5)</h4>
-          <div className="cards">{back.map(c => <div key={c} className="card">{c}</div>)}</div>
-        </div>
+      <div className="play-actions">
+        <button
+          onClick={handlePlayClick}
+          disabled={!isMyTurn || selectedCards.length === 0}
+          className="action-button play-button"
+        >
+          Play Selected
+        </button>
+        <button
+          onClick={handlePassClick}
+          disabled={!isMyTurn}
+          className="action-button pass-button"
+        >
+          Pass
+        </button>
       </div>
-
-      <button className="confirm-button">Confirm Hand</button>
     </div>
   );
 };
