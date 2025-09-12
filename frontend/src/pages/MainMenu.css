@@ -104,3 +104,37 @@
     filter: grayscale(80%);
     opacity: 0.6;
 }
+
+@media (max-width: 768px) {
+    .main-menu {
+        justify-content: flex-start; /* Align to top on mobile */
+        padding-top: 40px;
+    }
+
+    .main-menu-title {
+        font-size: 2.5rem;
+        margin-bottom: 5px;
+    }
+
+    .main-menu-subtitle {
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+    }
+
+    .game-panels-container {
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+        align-items: center;
+    }
+
+    .game-panel {
+        width: 90vw;
+        max-width: 400px;
+        height: 220px; /* Shorter panels for mobile */
+    }
+
+    .placeholder-panel::after {
+        font-size: 2rem;
+    }
+}
