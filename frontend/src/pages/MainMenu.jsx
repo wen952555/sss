@@ -5,15 +5,15 @@ import './MainMenu.css';
 const MainMenu = () => {
     return (
         <div className="main-menu">
-            <h1 className="main-menu-title">Game Lobby</h1>
-            <p className="main-menu-subtitle">Select a game to play</p>
+            <h1 className="main-menu-title">游戏大厅</h1>
+            <p className="main-menu-subtitle">请选择一个游戏</p>
             <div className="game-panels-container">
                 {/* Panel 1: Thirteen Cards */}
                 <Link to="/thirteen-cards" className="game-panel-link">
                     <div className="game-panel thirteen-panel">
                         <div className="panel-content">
-                            <h2 className="panel-title">Thirteen</h2>
-                            <p className="panel-description">The classic Vietnamese shedding card game.</p>
+                            <h2 className="panel-title">十三张</h2>
+                            <p className="panel-description">经典的越南纸牌游戏。</p>
                         </div>
                     </div>
                 </Link>
@@ -22,8 +22,8 @@ const MainMenu = () => {
                 <div className="game-panel-link disabled">
                     <div className="game-panel placeholder-panel">
                         <div className="panel-content">
-                            <h2 className="panel-title">More Games</h2>
-                            <p className="panel-description">Coming Soon</p>
+                            <h2 className="panel-title">更多游戏</h2>
+                            <p className="panel-description">敬请期待</p>
                         </div>
                     </div>
                 </div>
@@ -32,8 +32,8 @@ const MainMenu = () => {
                 <div className="game-panel-link disabled">
                     <div className="game-panel placeholder-panel">
                         <div className="panel-content">
-                            <h2 className="panel-title">Even More</h2>
-                            <p className="panel-description">Coming Soon</p>
+                            <h2 className="panel-title">更多精彩</h2>
+                            <p className="panel-description">敬请期待</p>
                         </div>
                     </div>
                 </div>
