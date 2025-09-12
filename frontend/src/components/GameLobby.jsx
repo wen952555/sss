@@ -59,7 +59,10 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
         {/* 2分场 */}
         <div
           className={`game-card thirteen-bg ${matchingStatus.thirteen ? 'disabled' : ''}`}
-          onClick={() => !matchingStatus.thirteen && onSelectGameType('thirteen')}
+          onClick={() => {
+            console.log("Selected game type: thirteen");
+            !matchingStatus.thirteen && onSelectGameType('thirteen');
+          }}
         >
           <div className="game-card-overlay">
             <div className="game-content">
