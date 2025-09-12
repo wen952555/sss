@@ -3,98 +3,87 @@
 
 /**
  * Analyzes a set of cards to determine the combination type.
- *
- * @param array $cards The cards to analyze.
- * @return array An object describing the combination (e.g., {type: 'pair', rank: 10, high_card: {...}}) or {type: 'invalid'}.
+ * (This function is from the previous step)
  */
 function analyzeCombination(array $cards) {
     $count = count($cards);
-    if ($count === 0) {
-        return ['type' => 'invalid', 'reason' => 'No cards played.'];
-    }
+    if ($count === 0) return ['type' => 'invalid', 'reason' => 'No cards played.'];
+    usort($cards, fn($a, $b) => ($a['value'] === $b['value']) ? $a['suit_value'] <=> $b['suit_value'] : $a['value'] <=> $b['value']);
+    $high_card = end($cards);
 
-    // Sort cards by value then suit to make analysis easier.
-    // This is crucial for consistently identifying the high card and checking sequences.
-    usort($cards, function($a, $b) {
-        if ($a['value'] === $b['value']) {
-            return $a['suit_value'] <=> $b['suit_value'];
-        }
-        return $a['value'] <=> $b['value'];
-    });
+    if ($count === 1) return ['type' => 'single', 'rank' => $high_card['value'], 'high_card' => $high_card];
+    if ($count === 2 && $cards[0]['value'] === $cards[1]['value']) return ['type' => 'pair', 'rank' => $high_card['value'], 'high_card' => $high_card];
+    if ($count === 3 && $cards[0]['value'] === $cards[1]['value'] && $cards[1]['value'] === $cards[2]['value']) return ['type' => 'triple', 'rank' => $high_card['value'], 'high_card' => $high_card];
+    if ($count === 4 && $cards[0]['value'] === $cards[1]['value'] && $cards[1]['value'] === $cards[2]['value'] && $cards[2]['value'] === $cards[3]['value']) return ['type' => 'four_of_a_kind', 'rank' => $high_card['value'], 'high_card' => $high_card];
 
-    $high_card = end($cards); // The highest card is the last one after sorting.
-
-    // --- Check for basic combinations ---
-
-    // Single
-    if ($count === 1) {
-        return ['type' => 'single', 'rank' => $high_card['value'], 'high_card' => $high_card];
-    }
-
-    // Pair
-    if ($count === 2) {
-        if ($cards[0]['value'] === $cards[1]['value']) {
-            return ['type' => 'pair', 'rank' => $high_card['value'], 'high_card' => $high_card];
-        }
-    }
-
-    // Triple
-    if ($count === 3) {
-        if ($cards[0]['value'] === $cards[1]['value'] && $cards[1]['value'] === $cards[2]['value']) {
-            return ['type' => 'triple', 'rank' => $high_card['value'], 'high_card' => $high_card];
-        }
-    }
-
-    // Four of a Kind (Bomb)
-    if ($count === 4) {
-        if ($cards[0]['value'] === $cards[1]['value'] && $cards[1]['value'] === $cards[2]['value'] && $cards[2]['value'] === $cards[3]['value']) {
-            return ['type' => 'four_of_a_kind', 'rank' => $high_card['value'], 'high_card' => $high_card];
-        }
-    }
-
-    // --- Check for sequences (straights) ---
-    // Note: 2s cannot be part of a straight.
-    if ($count >= 3 && $high_card['rank'] !== '2') {
+    if ($count >= 5 && $high_card['rank'] !== '2') { // Straights must be 5+ cards in this version of rules
         $is_straight = true;
         for ($i = 0; $i < $count - 1; $i++) {
-            // Check if the next card's value is one greater than the current one.
-            if ($cards[$i+1]['value'] !== $cards[$i]['value'] + 1) {
-                $is_straight = false;
-                break;
-            }
+            if ($cards[$i+1]['value'] !== $cards[$i]['value'] + 1) { $is_straight = false; break; }
         }
-        if ($is_straight) {
-            return ['type' => 'straight', 'rank' => $high_card['value'], 'high_card' => $high_card, 'length' => $count];
-        }
+        if ($is_straight) return ['type' => 'straight', 'rank' => $high_card['value'], 'high_card' => $high_card, 'length' => $count];
     }
-
-    // --- Check for double sequences (double straights) ---
-    // Must be at least 3 pairs (6 cards)
-    if ($count >= 6 && $count % 2 === 0 && $high_card['rank'] !== '2') {
-        $is_double_straight = true;
-        // Check if all cards form pairs
-        for ($i = 0; $i < $count; $i += 2) {
-            if ($cards[$i]['value'] !== $cards[$i+1]['value']) {
-                $is_double_straight = false;
-                break;
-            }
-        }
-        // Check if the pairs are sequential
-        if ($is_double_straight) {
-            for ($i = 0; $i < $count - 2; $i += 2) {
-                if ($cards[$i+2]['value'] !== $cards[$i]['value'] + 1) {
-                    $is_double_straight = false;
-                    break;
-                }
-            }
-        }
-
-        if ($is_double_straight) {
-            return ['type' => 'double_straight', 'rank' => $high_card['value'], 'high_card' => $high_card, 'length' => $count / 2];
-        }
-    }
-
     return ['type' => 'invalid', 'reason' => 'The selected cards do not form a valid combination.'];
 }
 
+/**
+ * Finds all possible plays of a certain type from a hand.
+ */
+function findPlays($hand, $type, $length = 0) {
+    $plays = [];
+    $counts = array_count_values(array_column($hand, 'rank'));
+
+    if ($type === 'single') {
+        return array_map(fn($c) => [$c], $hand);
+    }
+    if ($type === 'pair') {
+        foreach ($counts as $rank => $count) {
+            if ($count >= 2) {
+                $cards_of_rank = array_filter($hand, fn($c) => $c['rank'] === $rank);
+                $plays[] = array_slice($cards_of_rank, 0, 2);
+            }
+        }
+    }
+    // Simplified: For now, AI will only play singles and pairs to keep it simple.
+    // Straights and other combos can be added later.
+    return $plays;
+}
+
+/**
+ * A simple AI to find a valid move.
+ *
+ * @param array $ai_hand The AI player's hand.
+ * @param array|null $last_play The last play made on the table.
+ * @return array An array describing the move, e.g., ['action' => 'play', 'cards' => [...]].
+ */
+function findBestAiMove($ai_hand, $last_play) {
+    // Sort AI hand to make decisions easier (lowest to highest)
+    usort($ai_hand, fn($a, $b) => ($a['value'] === $b['value']) ? $a['suit_value'] <=> $b['suit_value'] : $a['value'] <=> $b['value']);
+
+    // If AI is leading the trick, play the lowest single card.
+    if (!$last_play) {
+        return ['action' => 'play', 'cards' => [$ai_hand[0]]];
+    }
+
+    $last_combo = analyzeCombination($last_play['cards']);
+
+    // --- Simple AI: Only considers playing singles or pairs ---
+
+    // 1. Try to find a play of the same type
+    $possible_plays = findPlays($ai_hand, $last_combo['type']);
+
+    foreach ($possible_plays as $play) {
+        $play_combo = analyzeCombination($play);
+        // Check if this play beats the last one
+        if ($play_combo['rank'] > $last_combo['rank'] || ($play_combo['rank'] === $last_combo['rank'] && $play_combo['high_card']['suit_value'] > $last_combo['high_card']['suit_value'])) {
+             // Found the first (and lowest) possible move, play it.
+            return ['action' => 'play', 'cards' => $play];
+        }
+    }
+
+    // 2. TODO: Add logic to check for bombs (4-of-a-kind) if the last play was a 2.
+
+    // 3. If no valid move is found, pass.
+    return ['action' => 'pass'];
+}
 ?>
