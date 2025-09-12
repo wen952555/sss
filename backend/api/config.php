@@ -3,9 +3,9 @@
 
 // --- 数据库配置 ---
 $DB_HOST = 'localhost';
-$DB_USER = 'YOUR_DB_USER';  // 请填写实际数据库用户名
-$DB_PASS = 'YOUR_DB_PASS';  // 请填写实际数据库密码
-$DB_NAME = 'YOUR_DB_NAME';  // 请填写实际数据库名
+$DB_USER = 'wcn_user';
+$DB_PASS = 'wcn_password';
+$DB_NAME = 'wcn_game';
 
 // --- Telegram Bot 配置 ---
 $TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN'; // 请替换为你的 Telegram Bot Token
