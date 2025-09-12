@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import ForceLandscape from '../components/common/ForceLandscape';
 import BiddingControls from '../components/doudizhu/BiddingControls';
 import DoudizhuPlayer from '../components/doudizhu/DoudizhuPlayer';
 import './DoudizhuPage.css';
@@ -43,44 +42,41 @@ const DoudizhuPage = () => {
 
   return (
     <div className="doudizhu-page">
-      <ForceLandscape />
-      <div className="game-content-wrapper">
-        <div className="doudizhu-board">
+      <div className="doudizhu-board">
 
-          <div className="player2-area">
-            <DoudizhuPlayer {...getPlayer('player2')} />
-          </div>
+        <div className="player2-area">
+          <DoudizhuPlayer {...getPlayer('player2')} />
+        </div>
 
-          <div className="kitty-area">
-            {game.kitty.map((card, index) =>
-              game.landlord ? // Show kitty if landlord is decided
-              <img key={index} src={`/ppp/${card.name}.svg`} alt="kitty card" className="card-small" /> :
-              <div key={index} className="kitty-card"></div>
-            )}
-          </div>
+        <div className="kitty-area">
+          {game.kitty.map((card, index) =>
+            game.landlord ? // Show kitty if landlord is decided
+            <img key={index} src={`/ppp/${card.name}.svg`} alt="kitty card" className="card-small" /> :
+            <div key={index} className="kitty-card"></div>
+          )}
+        </div>
 
-          <div className="player3-area">
-            <DoudizhuPlayer {...getPlayer('player3')} />
-          </div>
+        <div className="player3-area">
+          <DoudizhuPlayer {...getPlayer('player3')} />
+        </div>
 
-          <div className="center-info">
-            {game.game_phase === 'bidding' && (
-              <>
-                <p>当前最高叫分: {game.bidding.highest_bid}分</p>
-                <BiddingControls
-                  currentBid={game.bidding.highest_bid}
-                  isMyTurn={game.bidding.turn === playerId}
-                  onBid={handleBid}
-                />
-              </>
-            )}
-             {game.game_phase === 'playing' && <p>轮到 {game.current_turn} 出牌</p>}
-          </div>
+        <div className="center-info">
+          {game.game_phase === 'bidding' && (
+            <>
+              <p>当前最高叫分: {game.bidding.highest_bid}分</p>
+              <BiddingControls
+                currentBid={game.bidding.highest_bid}
+                isMyTurn={game.bidding.turn === playerId}
+                onBid={handleBid}
+              />
+            </>
+          )}
+           {game.game_phase === 'playing' && <p>轮到 {game.current_turn} 出牌</p>}
+        </div>
 
-          <div className="player1-area">
-            <DoudizhuPlayer {...getPlayer('player1')} />
-             {/* We will add playing controls here later */}
-          </div>
+        <div className="player1-area">
+          <DoudizhuPlayer {...getPlayer('player1')} />
+           {/* We will add playing controls here later */}
         </div>
       </div>
     </div>
