@@ -1,11 +1,17 @@
-/* Failsafe CSS for MainMenu to ensure visibility */
+/* Failsafe, minimal CSS for MainMenu to ensure visibility */
+
 .main-menu {
-    background-color: #1a1a1a;
-    color: white;
-    padding: 40px 20px; /* Added more padding at the top */
-    box-sizing: border-box;
-    min-height: 100vh;
-    text-align: center;
+    padding: 20px;
+}
+
+.main-menu-title {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.main-menu-subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
 }
 
 .game-panels-container {
@@ -19,42 +25,37 @@
 .game-panel-link {
     text-decoration: none;
     color: inherit;
-    display: block;
-    transition: transform 0.2s ease-out;
-}
-
-.game-panel-link:hover:not(.disabled) {
-    transform: scale(1.05);
 }
 
 .game-panel {
     width: 300px;
-    height: 250px;
-    border: 2px solid #ff4500; /* Bright, visible border for debugging */
+    height: 200px;
+    border: 2px solid orangered; /* Bright color for visibility */
     border-radius: 15px;
     padding: 20px;
+    background-color: #f0f2f5; /* Light background to contrast with dark theme */
+    color: #333; /* Dark text for contrast */
+    text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: #333;
+}
+
+.panel-content {
+    /* No special styling for now */
 }
 
 .panel-title {
-    font-size: 2.2rem;
+    font-size: 2rem;
     margin: 0 0 10px 0;
 }
 
 .panel-description {
     font-size: 1rem;
-    color: #ccc;
 }
 
 .game-panel-link.disabled {
     cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.game-panel-link.disabled .game-panel {
-    border-color: #555;
+    opacity: 0.5;
 }

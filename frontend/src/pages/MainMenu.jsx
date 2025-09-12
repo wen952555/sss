@@ -5,6 +5,8 @@ import './MainMenu.css';
 const MainMenu = () => {
     return (
         <div className="main-menu">
+            <h1 className="main-menu-title">游戏大厅</h1>
+            <p className="main-menu-subtitle">请选择一个游戏</p>
             <div className="game-panels-container">
                 {/* Panel 1: Big Two */}
                 <Link to="/thirteen-cards" className="game-panel-link">
