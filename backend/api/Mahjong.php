@@ -214,7 +214,37 @@ class Mahjong extends Game {
                 break;
 
             case 'promoted':
-                $this->send_error("Promoted kong not implemented yet.");
+                $tile_name = $this->request_data['tile_name'] ?? null;
+                if (!$tile_name) {
+                    $this->send_error("Tile name is required for promoted kong.");
+                }
+
+                $tile_in_hand_index = -1;
+                foreach ($hand as $i => $tile) {
+                    if ($tile['name'] === $tile_name) {
+                        $tile_in_hand_index = $i;
+                        break;
+                    }
+                }
+                if ($tile_in_hand_index === -1) {
+                    $this->send_error("You do not have the tile to promote the pung.");
+                }
+
+                $pung_to_promote_index = -1;
+                foreach ($this->game_state['melds'][$this->player_id] as $i => $meld) {
+                    if ($meld['type'] === 'pung' && $meld['tiles'][0]['name'] === $tile_name) {
+                        $pung_to_promote_index = $i;
+                        break;
+                    }
+                }
+                if ($pung_to_promote_index === -1) {
+                    $this->send_error("You do not have a pung of this tile to promote.");
+                }
+
+                $promoted_tile = array_splice($hand, $tile_in_hand_index, 1);
+                $this->game_state['melds'][$this->player_id][$pung_to_promote_index]['type'] = 'kong';
+                $this->game_state['melds'][$this->player_id][$pung_to_promote_index]['kong_type'] = 'promoted';
+                $this->game_state['melds'][$this->player_id][$pung_to_promote_index]['tiles'][] = $promoted_tile[0];
                 break;
 
             default:
@@ -275,17 +305,20 @@ class Mahjong extends Game {
     private function check_for_actions($discarded_tile) {
         $actions = [];
         foreach ($this->game_state['players'] as $player_id) {
-            if ($player_id === $this->game_state['current_turn']) continue; // Can't act on your own discard
+            if ($player_id === $this->game_state['current_turn']) continue;
 
             $player_actions = [];
             $hand = $this->game_state['hands'][$player_id];
 
-            if (canPung($hand, $discarded_tile)) $player_actions[] = 'pung';
-            if (canKong($hand, $discarded_tile)) $player_actions[] = 'kong';
+            if (canPung($hand, $discarded_tile)) $player_actions['can_pung'] = true;
+            if (canKong($hand, $discarded_tile)) $player_actions['can_kong'] = true;
 
-            // Check for chow only for the next player
             if ($player_id === $this->get_next_player($this->game_state['current_turn'])) {
-                if (findChow($hand, $discarded_tile)) $player_actions[] = 'chow';
+                $chow_options = findChow($hand, $discarded_tile);
+                if ($chow_options) {
+                    $player_actions['can_chow'] = true;
+                    $player_actions['chow_options'] = $chow_options;
+                }
             }
 
             if (!empty($player_actions)) {

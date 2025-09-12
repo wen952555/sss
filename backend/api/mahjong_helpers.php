@@ -48,21 +48,29 @@ function findChow(array $hand, array $discarded_tile): ?array {
     $rank = $discarded_tile['rank'];
 
     $suit_hand = array_filter($hand, fn($t) => $t['type'] === 'suit' && $t['suit'] === $suit);
-    $ranks_in_hand = array_unique(array_column($suit_hand, 'rank'));
-    sort($ranks_in_hand);
 
     $chows = [];
+
+    $find_tile = function($r) use ($suit_hand) {
+        foreach($suit_hand as $tile) {
+            if ($tile['rank'] === $r) return $tile;
+        }
+        return null;
+    };
+
     // Check for [rank-2, rank-1, discard]
-    if (in_array($rank - 2, $ranks_in_hand) && in_array($rank - 1, $ranks_in_hand)) {
-        $chows[] = [$rank - 2, $rank - 1, $rank];
+    if (($t1 = $find_tile($rank - 2)) && ($t2 = $find_tile($rank - 1))) {
+        $chows[] = [$t1, $t2, $discarded_tile];
     }
+
     // Check for [rank-1, discard, rank+1]
-    if (in_array($rank - 1, $ranks_in_hand) && in_array($rank + 1, $ranks_in_hand)) {
-        $chows[] = [$rank - 1, $rank, $rank + 1];
+    if (($t1 = $find_tile($rank - 1)) && ($t2 = $find_tile($rank + 1))) {
+        $chows[] = [$t1, $discarded_tile, $t2];
     }
+
     // Check for [discard, rank+1, rank+2]
-    if (in_array($rank + 1, $ranks_in_hand) && in_array($rank + 2, $ranks_in_hand)) {
-        $chows[] = [$rank, $rank + 1, $rank + 2];
+    if (($t1 = $find_tile($rank + 1)) && ($t2 = $find_tile($rank + 2))) {
+        $chows[] = [$discarded_tile, $t1, $t2];
     }
 
     return !empty($chows) ? $chows : null;

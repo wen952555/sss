@@ -11,6 +11,8 @@ const MahjongPage = () => {
     const [error, setError] = useState(null);
     const worker = useRef(null);
     const [concealedKongOptions, setConcealedKongOptions] = useState([]);
+    const [promotedKongOptions, setPromotedKongOptions] = useState([]);
+    const [showChowModal, setShowChowModal] = useState(false);
 
     const handleAction = useCallback((action, payload = {}) => {
         if (!gameId && !['createGame', 'getGameState'].includes(action)) return;
@@ -73,8 +75,33 @@ const MahjongPage = () => {
         }
     }, [game, playerId]);
 
+    useEffect(() => {
+        if (game && game.hands[playerId] && game.melds[playerId]) {
+            const handNames = game.hands[playerId].map(t => t.name);
+            const pungs = game.melds[playerId].filter(m => m.type === 'pung');
+            const promotable = pungs.filter(p => handNames.includes(p.tiles[0].name));
+            setPromotedKongOptions(promotable);
+        }
+    }, [game, playerId]);
+
     const isMyTurn = game && game.current_turn === playerId;
     const playerHand = game ? game.hands[playerId] : [];
+
+    const handleChowClick = () => {
+        const options = game.action_options[playerId].chow_options;
+        if (options.length === 1) {
+            const tile_ids = options[0].filter(t => t.id !== game.last_discard.id).map(t => t.id);
+            handleAction('chow', { chow_tiles_ids: tile_ids });
+        } else {
+            setShowChowModal(true);
+        }
+    };
+
+    const selectChow = (chow) => {
+        const tile_ids = chow.filter(t => t.id !== game.last_discard.id).map(t => t.id);
+        handleAction('chow', { chow_tiles_ids: tile_ids });
+        setShowChowModal(false);
+    };
 
     if (!game) return <div className="loading"><h1>麻将</h1><p>加载中...</p></div>;
 
@@ -114,16 +141,34 @@ const MahjongPage = () => {
                 <div className="action-buttons">
                     {isMyTurn && playerHand.length % 3 !== 2 && <button onClick={() => handleAction('drawTile')}>摸牌</button>}
                     {isMyTurn && playerHand.length % 3 === 2 && selectedTile && <button onClick={() => handleAction('discardTile', { tile_id: selectedTile.id })}>出牌</button>}
-                    {game.action_options[playerId]?.includes('pung') && <button onClick={() => handleAction('pung')}>碰</button>}
-                    {game.action_options[playerId]?.includes('chow') && <button onClick={() => handleAction('chow', { chow_tiles_ids: [] })}>吃</button> /* TODO: UI for selecting which chow */}
-                    {game.action_options[playerId]?.includes('kong') && <button onClick={() => handleAction('kong', { kong_type: 'melded' })}>杠</button>}
+                    {game.action_options[playerId]?.can_pung && <button onClick={() => handleAction('pung')}>碰</button>}
+                    {game.action_options[playerId]?.can_chow && <button onClick={handleChowClick}>吃</button>}
+                    {game.action_options[playerId]?.can_kong && <button onClick={() => handleAction('kong', { kong_type: 'melded' })}>杠</button>}
                     {isMyTurn && concealedKongOptions.map(tileName => (
                         <button key={tileName} onClick={() => handleAction('kong', { kong_type: 'concealed', tile_name: tileName })}>
                             暗杠 {tileName.replace('_', ' ')}
                         </button>
                     ))}
+                    {isMyTurn && promotedKongOptions.map(meld => (
+                        <button key={meld.tiles[0].name} onClick={() => handleAction('kong', { kong_type: 'promoted', tile_name: meld.tiles[0].name })}>
+                            补杠 {meld.tiles[0].name.replace('_', ' ')}
+                        </button>
+                    ))}
                     {canWin && <button onClick={() => handleAction('win')} className="win-button">胡!</button>}
                 </div>
+
+                {showChowModal && (
+                    <div className="modal">
+                        <div className="modal-content">
+                            <h3>请选择要吃的组合</h3>
+                            {game.action_options[playerId].chow_options.map((chow, i) => (
+                                <div key={i} className="chow-option" onClick={() => selectChow(chow)}>
+                                    {chow.map(tile => <img key={tile.id} src={`/photo/${tile.name}.svg`} alt={tile.name} />)}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
