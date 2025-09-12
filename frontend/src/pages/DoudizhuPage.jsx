@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ForceLandscape from '../components/common/ForceLandscape';
 import './DoudizhuPage.css';
 
 const API_BASE_URL = 'http://localhost/api/doudizhu.php';
@@ -30,17 +31,20 @@ const DoudizhuPage = () => {
 
   return (
     <div className="doudizhu-page">
-      <div className="game-header">
-        <h1>斗地主</h1>
-      </div>
-      {error && <div className="error-message">{error}</div>}
-      {!game && !error && <div className="loading">加载中...</div>}
-      {game && (
-        <div className="doudizhu-board">
-          <p>“斗地主”游戏界面 - 施工中</p>
-          {/* The UI for the 3-player game, bidding, and landlord's kitty will be built here. */}
+      <ForceLandscape />
+      <div className="game-content-wrapper">
+        <div className="game-header">
+          <h1>斗地主</h1>
         </div>
-      )}
+        {error && <div className="error-message">{error}</div>}
+        {!game && !error && <div className="loading">加载中...</div>}
+        {game && (
+          <div className="doudizhu-board">
+            <p>“斗地主”游戏界面 - 施工中</p>
+            {/* The UI for the 3-player game, bidding, and landlord's kitty will be built here. */}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

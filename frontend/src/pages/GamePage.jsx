@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PlayerHand from '../components/game/PlayerHand';
+import ForceLandscape from '../components/common/ForceLandscape';
 import './GamePage.css';
 
 // Configuration
@@ -170,43 +171,46 @@ const GamePage = () => {
 
   return (
     <div className="game-page">
-      <div className="game-header">
-        <h1>十三张</h1>
-        <button onClick={createNewGame} className="new-game-button">新游戏</button>
-      </div>
-
-      {error && <div className="error-message">{error}</div>}
-      {!game && !error && <div className="loading">加载中...</div>}
-
-      {game && (
-        <div className="game-board">
-          <div className="opponent-top">{renderOpponent(opponents.top)}</div>
-          <div className="opponent-left">{renderOpponent(opponents.left)}</div>
-          <div className="opponent-right">{renderOpponent(opponents.right)}</div>
-
-          <div className="center-area">
-            {game.last_play && (
-              <div className="last-play">
-                <p>上一手牌 ({game.last_play.player_id}):</p>
-                <div className="cards-display-mini">
-                  {game.last_play.cards.map(card => (
-                    <img key={card.name} src={`/ppp/${card.name}.svg`} alt={card.name} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="player-area">
-             <PlayerHand
-               initialHand={game.my_hand}
-               onPlay={handlePlay}
-               onPass={handlePass}
-               isMyTurn={game.current_turn === playerId}
-             />
-          </div>
+      <ForceLandscape />
+      <div className="game-content-wrapper">
+        <div className="game-header">
+          <h1>十三张</h1>
+          <button onClick={createNewGame} className="new-game-button">新游戏</button>
         </div>
-      )}
+
+        {error && <div className="error-message">{error}</div>}
+        {!game && !error && <div className="loading">加载中...</div>}
+
+        {game && (
+          <div className="game-board">
+            <div className="opponent-top">{renderOpponent(opponents.top)}</div>
+            <div className="opponent-left">{renderOpponent(opponents.left)}</div>
+            <div className="opponent-right">{renderOpponent(opponents.right)}</div>
+
+            <div className="center-area">
+              {game.last_play && (
+                <div className="last-play">
+                  <p>上一手牌 ({game.last_play.player_id}):</p>
+                  <div className="cards-display-mini">
+                    {game.last_play.cards.map(card => (
+                      <img key={card.name} src={`/ppp/${card.name}.svg`} alt={card.name} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="player-area">
+              <PlayerHand
+                initialHand={game.my_hand}
+                onPlay={handlePlay}
+                onPass={handlePass}
+                isMyTurn={game.current_turn === playerId}
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
