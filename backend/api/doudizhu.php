@@ -65,18 +65,27 @@ switch ($action) {
         break;
 
     case 'getGameState':
-        // Placeholder for getting the game state
         if (!isset($_SESSION['doudizhu_game'])) {
             send_error(404, "No Dou Di Zhu game in session.");
         }
         $game_state = $_SESSION['doudizhu_game'];
         $player_id = $_GET['player_id'] ?? 'player1';
+        $show_all = $_GET['show_all'] ?? false;
 
-        // Simplify state for the player (hide other hands)
-        $game_state['hands'] = [
-            $player_id => $game_state['hands'][$player_id]
-        ];
-        // In a real implementation, we would show card counts for other players.
+        $original_hands = $game_state['hands'];
+
+        // Unless show_all is requested for debugging, hide other players' hands.
+        if (!$show_all) {
+            $player_hand = $original_hands[$player_id];
+            $game_state['hands'] = []; // Clear hands
+            foreach ($game_state['players'] as $p_id) {
+                if ($p_id === $player_id) {
+                    $game_state['hands'][$p_id] = $player_hand;
+                } else {
+                    $game_state['hands'][$p_id] = count($original_hands[$p_id]); // Show card count
+                }
+            }
+        }
 
         echo json_encode(["success" => true, "game_state" => $game_state]);
         break;

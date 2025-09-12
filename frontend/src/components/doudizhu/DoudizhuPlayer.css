@@ -1,0 +1,32 @@
+.doudizhu-player {
+  padding: 10px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  min-height: 100px;
+}
+
+.doudizhu-player.active {
+  box-shadow: 0 0 15px #ffeb3b;
+}
+
+.player-name {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.player-hand {
+  position: relative;
+  height: 70px; /* Height of the small cards */
+  display: flex;
+  justify-content: center;
+}
+
+.card-small {
+  width: 50px;
+  height: 70px;
+  position: absolute;
+  border-radius: 4px;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
