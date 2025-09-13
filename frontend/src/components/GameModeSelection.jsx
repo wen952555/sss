@@ -1,7 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './GameModeSelection.css';
 
 const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
+  const [gameModeCounts, setGameModeCounts] = useState({});
+
+  useEffect(() => {
+    const fetchCounts = () => {
+      fetch('/api/index.php?action=get_online_count')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.gameModeCounts) {
+            setGameModeCounts(data.gameModeCounts);
+          }
+        })
+        .catch(console.error);
+    };
+
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 5000); // Refresh every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   const gameTitles = {
     'thirteen': '2分场',
     'thirteen-5': '5分场',
@@ -16,6 +36,12 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
   ];
 
   const modesToRender = sharedModes;
+
+  const getPlayerCount = (modeKey) => {
+    const [players, type] = modeKey.split('-');
+    const fullKey = `${gameType}-${players}-${type}`;
+    return gameModeCounts[fullKey] || 0;
+  };
 
   return (
     <div className="mode-selection-container">
@@ -33,6 +59,10 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
           >
             <h2 className="mode-card-title">{mode.title}</h2>
             <p className="mode-card-description">{mode.desc}</p>
+            <div className="player-count">
+              <span className="player-count-icon">👥</span>
+              <span>{getPlayerCount(mode.key)} 人</span>
+            </div>
           </div>
         ))}
       </div>
