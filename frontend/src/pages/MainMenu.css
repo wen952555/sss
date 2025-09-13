@@ -10,7 +10,7 @@ html, body, #root {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    background: linear-gradient(to bottom, #0d1a26, #21415a);
     overflow: hidden;
     color: #fff;
 }
@@ -63,13 +63,15 @@ html, body, #root {
 
 .game-panels-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 40px;
     padding: 40px;
     flex-grow: 1;
     align-content: center;
     justify-items: center;
     overflow-y: auto;
+    max-width: 800px; /* Constrain width to maintain 2x2 grid */
+    margin: 0 auto; /* Center the container */
 }
 
 .game-panel-link {
@@ -122,16 +124,16 @@ html, body, #root {
 }
 
 .panel-yansan {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/ace_of_spades.svg');
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);
 }
 .panel-doudizhu {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/red_joker.svg');
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);
 }
 .panel-mahjong {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/photo/1m.svg');
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);
 }
 .panel-thirteen-waters {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/king_of_hearts.svg');
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);
 }
 
 @media (max-width: 768px) {
