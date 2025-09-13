@@ -1,12 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import ApiWorker from '../workers/api.worker.js?worker';
 import './MainMenu.css';
 
 const MainMenu = () => {
+    const [user, setUser] = useState(null);
+    const worker = useRef(null);
+
+    const handleLogout = () => {
+        worker.current.postMessage({ action: 'logout', payload: { resource: 'user' } });
+    };
+
+    useEffect(() => {
+        worker.current = new ApiWorker();
+        worker.current.onmessage = (event) => {
+            const { success, action, data } = event.data;
+            if (success) {
+                if (action === 'checkAuth') {
+                    if (data.isLoggedIn) {
+                        setUser(data.user);
+                    } else {
+                        setUser(null);
+                    }
+                } else if (action === 'logout') {
+                    setUser(null);
+                }
+            }
+        };
+
+        worker.current.postMessage({ action: 'checkAuth', payload: { resource: 'user' } });
+
+        return () => worker.current.terminate();
+    }, []);
+
     return (
         <div className="main-menu">
-            <h1 className="main-menu-title">游戏大厅</h1>
-            <p className="main-menu-subtitle">请选择一个游戏</p>
+            <header className="main-menu-header">
+                <div className="header-left">
+                    {user ? (
+                        <span className="username-display">欢迎, {user.username}</span>
+                    ) : (
+                        <Link to="/login" className="header-link">登录/注册</Link>
+                    )}
+                </div>
+                <div className="header-right">
+                    {user ? (
+                        <>
+                            <Link to="/points" className="header-link">积分: {user.points}</Link>
+                            <button onClick={handleLogout} className="header-link logout-button">登出</button>
+                        </>
+                    ) : (
+                         <Link to="/points" className="header-link">积分管理</Link>
+                    )}
+                </div>
+            </header>
             <div className="game-panels-container">
                 {/* Panel 1: Big Two */}
                 <Link to="/thirteen-cards" className="game-panel-link">
@@ -29,14 +76,14 @@ const MainMenu = () => {
                 </Link>
 
                 {/* Panel 3: Mahjong */}
-                <div className="game-panel-link disabled">
+                <Link to="/mahjong" className="game-panel-link">
                     <div className="game-panel placeholder-panel">
                         <div className="panel-content">
                             <h2 className="panel-title">麻将</h2>
-                            <p className="panel-description">敬请期待</p>
+                            <p className="panel-description">经典棋牌游戏</p>
                         </div>
                     </div>
-                </div>
+                </Link>
             </div>
         </div>
     );

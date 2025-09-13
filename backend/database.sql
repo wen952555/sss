@@ -1,4 +1,23 @@
--- SQL Schema for the Betting Game
+-- SQL Schema for the Game Platform
+
+--
+-- Table structure for table `users`
+--
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `points` decimal(10,2) NOT NULL DEFAULT '1000.00',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- The following tables are from a previous version of the project.
+-- They are kept here for now for reference.
 
 --
 -- Table structure for table `players`
@@ -11,12 +30,6 @@ CREATE TABLE `players` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Seeding data for table `players`
---
-INSERT INTO `players` (`id`, `score`) VALUES
-('user123', '1000.00');
 
 --
 -- Table structure for table `game_rounds`
@@ -48,17 +61,3 @@ CREATE TABLE `bets` (
   CONSTRAINT `bets_ibfk_1` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`),
   CONSTRAINT `bets_ibfk_2` FOREIGN KEY (`game_round_id`) REFERENCES `game_rounds` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Seeding data for table `bets`
---
--- Example of an open bet for user123
-INSERT INTO `bets` (`player_id`, `bet_numbers`, `amount`, `status`) VALUES
-('user123', '[1, 8, 15, 22, 29, 36, 43]', '10.00', 'open');
-
--- Example of another open bet for user123
-INSERT INTO `bets` (`player_id`, `bet_numbers`, `amount`, `status`) VALUES
-('user123', '[7, 14, 21, 28, 35, 42, 49]', '5.00', 'open');
-
--- Note: The database user will need privileges to create and modify these tables.
--- The application code in `config.php` should be updated with actual database credentials.
