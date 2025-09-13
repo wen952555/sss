@@ -69,7 +69,7 @@ const GamePage = () => {
     if (!gid || !worker.current) return;
     worker.current.postMessage({
       action: 'getGameState',
-      payload: { game: 'thirteen-cards', game_id: gid, player_id: playerId },
+      payload: { resource: 'thirteen-cards', game_id: gid, player_id: playerId },
     });
   }, [playerId]);
 
@@ -80,7 +80,7 @@ const GamePage = () => {
     setGameId(null);
     worker.current.postMessage({
       action: 'createGame',
-      payload: { game: 'thirteen-cards' },
+      payload: { resource: 'thirteen-cards' },
     });
   }, []);
 
@@ -90,7 +90,7 @@ const GamePage = () => {
     setError(null);
     worker.current.postMessage({
       action: 'playHand',
-      payload: { game: 'thirteen-cards', game_id: gameId, player_id: pId, cards: selectedCards },
+      payload: { resource: 'thirteen-cards', game_id: gameId, player_id: pId, cards: selectedCards },
     });
   }, [gameId, playerId]);
 
@@ -99,7 +99,7 @@ const GamePage = () => {
     setError(null);
     worker.current.postMessage({
       action: 'passTurn',
-      payload: { game: 'thirteen-cards', game_id: gameId, player_id: pId },
+      payload: { resource: 'thirteen-cards', game_id: gameId, player_id: pId },
     });
   }, [gameId, playerId]);
 
@@ -108,7 +108,7 @@ const GamePage = () => {
     console.log(`正在为 ${aiPlayerId} 生成AI走法...`);
     worker.current.postMessage({
       action: 'getAiMove',
-      payload: { game: 'thirteen-cards', game_id: gameId, player_id: aiPlayerId },
+      payload: { resource: 'thirteen-cards', game_id: gameId, player_id: aiPlayerId },
     });
   }, [gameId]);
 

@@ -1,25 +1,59 @@
-/* Failsafe, minimal CSS for MainMenu to ensure visibility */
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent scrolling on the whole page */
+}
 
 .main-menu {
-    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f0f2f5;
 }
 
-.main-menu-title {
-    font-size: 3rem;
-    margin-bottom: 20px;
+.main-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    flex-shrink: 0;
 }
 
-.main-menu-subtitle {
-    font-size: 1.2rem;
-    margin-bottom: 40px;
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-link {
+    text-decoration: none;
+    color: #007bff;
+    font-size: 1rem;
+}
+
+.logout-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.username-display {
+    font-weight: bold;
 }
 
 .game-panels-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    align-items: center;
     gap: 30px;
     padding: 20px;
+    flex-grow: 1;
+    overflow-y: auto; /* Allow scrolling only for the panels if they overflow */
 }
 
 .game-panel-link {
@@ -30,20 +64,22 @@
 .game-panel {
     width: 300px;
     height: 180px;
-    border: 2px solid orangered; /* Bright color for visibility */
+    border: 1px solid #ddd;
     border-radius: 15px;
     padding: 20px;
-    background-color: #f0f2f5; /* Light background to contrast with dark theme */
-    color: #333; /* Dark text for contrast */
+    background-color: #fff;
+    color: #333;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.panel-content {
-    /* No special styling for now */
+.game-panel:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .panel-title {
@@ -53,9 +89,4 @@
 
 .panel-description {
     font-size: 1rem;
-}
-
-.game-panel-link.disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
 }

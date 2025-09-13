@@ -19,7 +19,7 @@ const MahjongPage = () => {
         const game_id_to_use = action === 'createGame' ? null : (payload.game_id || gameId);
         worker.current.postMessage({
             action,
-            payload: { game: 'mahjong', game_id: game_id_to_use, player_id: playerId, ...payload },
+            payload: { resource: 'mahjong', game_id: game_id_to_use, player_id: playerId, ...payload },
         });
     }, [gameId, playerId]);
 

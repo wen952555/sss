@@ -32,7 +32,7 @@ const DoudizhuPage = () => {
         }
         worker.current.postMessage({
             action: 'playHand',
-            payload: { game: 'doudizhu', game_id: gameId, player_id: pId, cards: cards },
+            payload: { resource: 'doudizhu', game_id: gameId, player_id: pId, cards: cards },
         });
         if (pId === playerId) setSelectedCards([]);
     }, [gameId, playerId]);
@@ -41,7 +41,7 @@ const DoudizhuPage = () => {
         if (!gameId || !worker.current) return;
         worker.current.postMessage({
             action: 'passTurn',
-            payload: { game: 'doudizhu', game_id: gameId, player_id: pId },
+            payload: { resource: 'doudizhu', game_id: gameId, player_id: pId },
         });
     }, [gameId, playerId]);
 
@@ -49,7 +49,7 @@ const DoudizhuPage = () => {
         if (!gameId || !worker.current) return;
         worker.current.postMessage({
             action: 'getAiPlay',
-            payload: { game: 'doudizhu', game_id: gameId, player_id: aiPlayerId },
+            payload: { resource: 'doudizhu', game_id: gameId, player_id: aiPlayerId },
         });
     }, [gameId]);
 
@@ -57,7 +57,7 @@ const DoudizhuPage = () => {
         if (!gameId || !worker.current) return;
         worker.current.postMessage({
             action: 'makeBid',
-            payload: { game: 'doudizhu', game_id: gameId, player_id: pId, bid: bidAmount },
+            payload: { resource: 'doudizhu', game_id: gameId, player_id: pId, bid: bidAmount },
         });
     }, [gameId, playerId]);
 
@@ -65,7 +65,7 @@ const DoudizhuPage = () => {
         if (!gid || !worker.current) return;
         worker.current.postMessage({
             action: 'getGameState',
-            payload: { game: 'doudizhu', game_id: gid, player_id: playerId, show_all: true },
+            payload: { resource: 'doudizhu', game_id: gid, player_id: playerId, show_all: true },
         });
     }, [playerId]);
 
@@ -76,7 +76,7 @@ const DoudizhuPage = () => {
         setGameId(null);
         worker.current.postMessage({
             action: 'createGame',
-            payload: { game: 'doudizhu' },
+            payload: { resource: 'doudizhu' },
         });
     }, []);
 
@@ -84,7 +84,7 @@ const DoudizhuPage = () => {
         if (!gameId || !worker.current) return;
         worker.current.postMessage({
             action: 'getAiBid',
-            payload: { game: 'doudizhu', game_id: gameId, player_id: aiPlayerId },
+            payload: { resource: 'doudizhu', game_id: gameId, player_id: aiPlayerId },
         });
     }, [gameId]);
 

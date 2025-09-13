@@ -21,14 +21,18 @@ require_once 'config.php'; // Provides $pdo
 $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
-$game_name = null;
-// Updated regex to be more flexible with the base path
-if (preg_match('/(thirteen-cards|doudizhu|mahjong)/', $path, $matches)) {
-    $game_name = $matches[1];
+$resource = null;
+if (preg_match('/\/api\/(user|thirteen-cards|doudizhu|mahjong)/', $path, $matches)) {
+    $resource = $matches[1];
 }
 
 try {
-    switch ($game_name) {
+    switch ($resource) {
+        case 'user':
+            require_once 'User.php';
+            $user_handler = new User($pdo);
+            $user_handler->execute();
+            break;
         case 'thirteen-cards':
             require_once 'ThirteenCards.php';
             $game = new ThirteenCards($pdo);
