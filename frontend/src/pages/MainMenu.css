@@ -141,15 +141,20 @@ html, body, #root {
         padding: 10px 15px;
     }
     .game-panels-container {
-        grid-template-columns: 1fr;
-        padding: 20px;
-        gap: 20px;
+        grid-template-columns: repeat(2, 1fr); /* Enforce 2x2 grid */
+        padding: 15px;
+        gap: 15px;
     }
     .game-panel {
-        width: 85%;
-        height: 180px;
+        width: 100%; /* Fill the grid cell */
+        height: 140px; /* Adjust height for smaller screens */
+        padding: 10px;
     }
     .panel-title {
-        font-size: 2rem;
+        font-size: 1.5rem; /* Adjust font size */
+        margin-bottom: 5px;
+    }
+    .panel-description {
+        font-size: 0.8rem; /* Adjust font size */
     }
 }
