@@ -54,7 +54,7 @@ const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = f
                                     {lanes.map((laneCards, idx) => (
                                         <div key={idx} className="result-cards-row">
                                             {laneCards && laneCards.map((card, cardIdx) => (
-                                                <div key={cardIdx} className="result-card-wrapper">
+                                                <div key={cardIdx} className="result-card-wrapper" style={{'--i': cardIdx}}>
                                                     <Card card={card} />
                                                 </div>
                                             ))}
