@@ -57,40 +57,40 @@ const MainMenu = () => {
             <div className="game-panels-container">
                 {/* Panel 1: Yan San */}
                 <Link to="/thirteen-cards" className="game-panel-link">
-                    <div className="game-panel thirteen-panel">
+                    <div className="game-panel panel-yansan">
                         <div className="panel-content">
                             <h2 className="panel-title">烟三</h2>
-                            <p className="panel-description">经典扑克游戏</p>
+                            <p className="panel-description">经典扑克玩法</p>
                         </div>
                     </div>
                 </Link>
 
                 {/* Panel 2: Dou Di Zhu */}
                 <Link to="/doudizhu" className="game-panel-link">
-                    <div className="game-panel placeholder-panel">
+                    <div className="game-panel panel-doudizhu">
                         <div className="panel-content">
                             <h2 className="panel-title">斗地主</h2>
-                            <p className="panel-description">敬请期待</p>
+                            <p className="panel-description">三人策略对战</p>
                         </div>
                     </div>
                 </Link>
 
                 {/* Panel 3: Mahjong */}
                 <Link to="/mahjong" className="game-panel-link">
-                    <div className="game-panel placeholder-panel">
+                    <div className="game-panel panel-mahjong">
                         <div className="panel-content">
                             <h2 className="panel-title">麻将</h2>
-                            <p className="panel-description">经典棋牌游戏</p>
+                            <p className="panel-description">四人传统棋牌</p>
                         </div>
                     </div>
                 </Link>
 
                 {/* Panel 4: Thirteen Waters */}
                 <Link to="/thirteen-waters" className="game-panel-link">
-                    <div className="game-panel placeholder-panel">
+                    <div className="game-panel panel-thirteen-waters">
                         <div className="panel-content">
                             <h2 className="panel-title">十三水</h2>
-                            <p className="panel-description">即将推出</p>
+                            <p className="panel-description">福建特色玩法</p>
                         </div>
                     </div>
                 </Link>
