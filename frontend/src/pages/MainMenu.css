@@ -1,60 +1,75 @@
+/* Main Menu - New Dark Theme */
 html, body, #root {
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden; /* Prevent scrolling on the whole page */
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
 }
 
 .main-menu {
     display: flex;
     flex-direction: column;
-    height: 100%; /* Use 100% to fill parent, not viewport */
-    background-color: #f0f2f5;
-    padding: 0;
+    height: 100%;
+    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    overflow: hidden;
+    color: #fff;
 }
 
 .main-menu-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 15px 30px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid #c4a66a;
     flex-shrink: 0;
 }
 
 .header-left, .header-right {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 20px;
 }
 
 .header-link {
     text-decoration: none;
-    color: #007bff;
-    font-size: 1rem;
+    color: #c4a66a;
+    font-size: 1.1rem;
+    transition: color 0.3s;
+}
+.header-link:hover {
+    color: #fff;
 }
 
 .logout-button {
     background: none;
-    border: none;
+    border: 1px solid #c4a66a;
+    color: #c4a66a;
+    padding: 5px 10px;
+    border-radius: 5px;
     cursor: pointer;
-    padding: 0;
+    transition: background-color 0.3s, color 0.3s;
+}
+.logout-button:hover {
+    background-color: #c4a66a;
+    color: #1b2735;
 }
 
 .username-display {
     font-weight: bold;
+    font-size: 1.1rem;
+    color: #fff;
 }
 
 .game-panels-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 30px;
-    padding: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 40px;
+    padding: 40px;
     flex-grow: 1;
     align-content: center;
     justify-items: center;
-    overflow-y: auto; /* Allow this part to scroll if needed */
+    overflow-y: auto;
 }
 
 .game-panel-link {
@@ -63,47 +78,76 @@ html, body, #root {
 }
 
 .game-panel {
-    width: 300px;
-    height: 180px;
-    border: 1px solid #ddd;
+    width: 280px;
+    height: 200px;
+    border: 2px solid transparent;
     border-radius: 15px;
     padding: 20px;
-    background-color: #fff;
-    color: #333;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
     text-align: center;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-end; /* Align content to the bottom */
     align-items: center;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    border-image: linear-gradient(to bottom right, #b88a2d, #c4a66a) 1;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.panel-content {
+    position: relative;
+    z-index: 2;
 }
 
 .game-panel:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-10px) scale(1.05);
+    border-color: #c4a66a;
+    box-shadow: 0 10px 30px rgba(196, 166, 106, 0.3);
 }
 
 .panel-title {
-    font-size: 2rem;
+    font-size: 2.5rem;
+    color: #c4a66a;
     margin: 0 0 10px 0;
+    font-weight: 600;
 }
 
 .panel-description {
     font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.panel-yansan {
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/ace_of_spades.svg');
+}
+.panel-doudizhu {
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/red_joker.svg');
+}
+.panel-mahjong {
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/photo/1m.svg');
+}
+.panel-thirteen-waters {
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/king_of_hearts.svg');
 }
 
 @media (max-width: 768px) {
+    .main-menu-header {
+        padding: 10px 15px;
+    }
     .game-panels-container {
-        flex-direction: column;
-        justify-content: flex-start;
-        padding: 10px;
-        gap: 15px;
+        grid-template-columns: 1fr;
+        padding: 20px;
+        gap: 20px;
     }
     .game-panel {
-        width: 90%;
-        height: 150px;
+        width: 85%;
+        height: 180px;
     }
     .panel-title {
-        font-size: 1.5rem;
+        font-size: 2rem;
     }
 }
