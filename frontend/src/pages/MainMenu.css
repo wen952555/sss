@@ -8,9 +8,9 @@ html, body, #root {
 .main-menu {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100%; /* Use 100% to fill parent, not viewport */
     background-color: #f0f2f5;
-    padding: 0; /* Remove padding to use full viewport */
+    padding: 0;
 }
 
 .main-menu-header {
@@ -54,6 +54,7 @@ html, body, #root {
     gap: 30px;
     padding: 20px;
     flex-grow: 1;
+    overflow-y: auto; /* Allow this part to scroll if needed */
 }
 
 .game-panel-link {
