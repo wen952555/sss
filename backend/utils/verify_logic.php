@@ -89,27 +89,16 @@ $score_foul_vs_std = calculateSinglePairScore($foul_hand, $p1_full_house_hand);
 // The frontend has the same issue. I will assume this is intended and the score is 1 (high card).
 // Let's check `getSssAreaScore`. It returns 1 if the type is not found.
 // `getSssAreaType` will return "葫芦" for the bottom hand. `getSssAreaScore` will lookup SSS_SCORES['TAIL']['葫芦'], which is not set. It will return 1.
-// Top is high card (1), Middle is three of a kind (1), Bottom is full house (1). Total = 3.
-assert_equals(-3, $score_foul_vs_std, 'Foul vs Standard hand score should be negative base score of standard hand');
+// With the new scoring, p1 hand is: top(1) + mid(1) + bot(3) = 5.
+assert_equals(-5, $score_foul_vs_std, 'Foul vs Standard hand score should be negative base score of standard hand');
 
 // Test 3: Standard vs Standard
 $score_p1_vs_p2 = calculateSinglePairScore($p1_full_house_hand, $p2_flush_hand);
-// p1: top (high card), mid (3-kind), bottom (full house)
-// p2: top (high card), mid (flush), bottom (flush)
+// With new scoring:
 // top: draw (0)
-// mid: p2 wins (flush > 3-kind). p2 gets score for flush in middle. No, middle flush not in SSS_SCORES. Score is 1.
-// bottom: p1 wins (full house > flush). p1 gets score for full house in bottom. No, bottom FH not in SSS_SCORES. Score is 1.
-// So, score should be -1 (for p2 mid win) + 1 (for p1 bottom win) = 0.
-// This highlights that the SSS_SCORES table is very incomplete. This is a major logic issue I should have put in my plan.
-// For now, I will test with the current rules.
-// Let's re-check the scoring table.
-// 'MIDDLE' => ['铁支' => 8, '同花顺' => 10, '葫芦' => 2],
-// 'TAIL' => ['铁支' => 4, '同花顺' => 5],
-// OK, middle full house IS scored. It's 2 points.
-// So, p2 mid (flush) vs p1 mid (3-kind). Flush is higher rank, but not in score table. So score is 1. p1 3-kind not in table, score 1. p2 wins. p2 gets 1 point. p1 loses 1.
-// bottom: p1 (full house) vs p2 (flush). p1 wins. p1 full house not in score table. score 1. p1 gets 1 point.
-// Total score: -1 + 1 = 0.
-assert_equals(0, $score_p1_vs_p2, 'Standard P1 vs Standard P2 score should be 0');
+// mid: p2(flush) > p1(3-kind). p2 gets 4 points. score = -4
+// bot: p1(FH) > p2(flush). p1 gets 3 points. score = -4 + 3 = -1
+assert_equals(-1, $score_p1_vs_p2, 'Standard P1 vs Standard P2 score should be -1');
 
 // Test 4: Flush suit comparison
 $flush_spades = ['top'=>[], 'middle'=>[], 'bottom' => ['ace_of_spades', 'king_of_spades', 'queen_of_spades', 'jack_of_spades', '9_of_spades']];
