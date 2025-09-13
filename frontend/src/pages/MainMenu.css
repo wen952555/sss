@@ -10,6 +10,7 @@ html, body, #root {
     flex-direction: column;
     height: 100vh;
     background-color: #f0f2f5;
+    padding: 0; /* Remove padding to use full viewport */
 }
 
 .main-menu-header {
@@ -53,7 +54,6 @@ html, body, #root {
     gap: 30px;
     padding: 20px;
     flex-grow: 1;
-    overflow-y: auto; /* Allow scrolling only for the panels if they overflow */
 }
 
 .game-panel-link {
@@ -89,4 +89,20 @@ html, body, #root {
 
 .panel-description {
     font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .game-panels-container {
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: 10px;
+        gap: 15px;
+    }
+    .game-panel {
+        width: 90%;
+        height: 150px;
+    }
+    .panel-title {
+        font-size: 1.5rem;
+    }
 }
