@@ -55,11 +55,11 @@ const MainMenu = () => {
                 </div>
             </header>
             <div className="game-panels-container">
-                {/* Panel 1: Big Two */}
+                {/* Panel 1: Yan San */}
                 <Link to="/thirteen-cards" className="game-panel-link">
                     <div className="game-panel thirteen-panel">
                         <div className="panel-content">
-                            <h2 className="panel-title">锄大地</h2>
+                            <h2 className="panel-title">烟三</h2>
                             <p className="panel-description">经典扑克游戏</p>
                         </div>
                     </div>
@@ -81,6 +81,16 @@ const MainMenu = () => {
                         <div className="panel-content">
                             <h2 className="panel-title">麻将</h2>
                             <p className="panel-description">经典棋牌游戏</p>
+                        </div>
+                    </div>
+                </Link>
+
+                {/* Panel 4: Thirteen Waters */}
+                <Link to="/thirteen-waters" className="game-panel-link">
+                    <div className="game-panel placeholder-panel">
+                        <div className="panel-content">
+                            <h2 className="panel-title">十三水</h2>
+                            <p className="panel-description">即将推出</p>
                         </div>
                     </div>
                 </Link>

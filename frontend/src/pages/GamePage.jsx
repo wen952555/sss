@@ -170,7 +170,7 @@ const GamePage = () => {
   return (
     <div className="game-page">
       <div className="game-header">
-        <h1>十三张</h1>
+        <h1>烟三</h1>
         <button onClick={createNewGame} className="new-game-button">新游戏</button>
       </div>
 

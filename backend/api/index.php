@@ -22,7 +22,7 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 $resource = null;
-if (preg_match('/\/api\/(user|thirteen-cards|doudizhu|mahjong)/', $path, $matches)) {
+if (preg_match('/\/api\/(user|thirteen-cards|doudizhu|mahjong|thirteen-waters)/', $path, $matches)) {
     $resource = $matches[1];
 }
 
@@ -46,6 +46,11 @@ try {
         case 'mahjong':
             require_once 'Mahjong.php';
             $game = new Mahjong($pdo);
+            $game->execute();
+            break;
+        case 'thirteen-waters':
+            require_once 'ThirteenWaters.php';
+            $game = new ThirteenWaters($pdo);
             $game->execute();
             break;
         default:
