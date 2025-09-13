@@ -76,7 +76,7 @@ html, body, #root {
     align-content: center;
     justify-items: center;
     overflow-y: auto;
-    max-width: 800px; /* Constrain width to maintain 2x2 grid */
+    max-width: 1000px; /* Constrain width to maintain 2x2 grid */
     margin: 0 auto; /* Center the container */
 }
 
@@ -86,8 +86,8 @@ html, body, #root {
 }
 
 .game-panel {
-    width: 280px;
-    height: 200px;
+    width: 400px;
+    height: 250px;
     border: 2px solid transparent;
     border-radius: 15px;
     padding: 20px;
@@ -118,14 +118,14 @@ html, body, #root {
 }
 
 .panel-title {
-    font-size: 2.5rem;
+    font-size: 3rem;
     color: #c4a66a;
     margin: 0 0 10px 0;
     font-weight: 600;
 }
 
 .panel-description {
-    font-size: 1rem;
+    font-size: 1.2rem;
     color: rgba(255, 255, 255, 0.8);
 }
 
@@ -153,14 +153,14 @@ html, body, #root {
     }
     .game-panel {
         width: 100%; /* Fill the grid cell */
-        height: 140px; /* Adjust height for smaller screens */
+        height: 180px; /* Adjust height for smaller screens */
         padding: 10px;
     }
     .panel-title {
-        font-size: 1.5rem; /* Adjust font size */
+        font-size: 1.8rem; /* Adjust font size */
         margin-bottom: 5px;
     }
     .panel-description {
-        font-size: 0.8rem; /* Adjust font size */
+        font-size: 0.9rem; /* Adjust font size */
     }
 }
