@@ -39,8 +39,16 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
 
   const getPlayerCount = (modeKey) => {
     const [players, type] = modeKey.split('-');
+    const maxPlayers = parseInt(players, 10);
     const fullKey = `${gameType}-${players}-${type}`;
-    return gameModeCounts[fullKey] || 0;
+    const currentPlayers = gameModeCounts[fullKey] || 0;
+
+    // If the room is full, the next player will create a new room, so show 0.
+    if (currentPlayers >= maxPlayers) {
+      return 0;
+    }
+
+    return currentPlayers;
   };
 
   return (

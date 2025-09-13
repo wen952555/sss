@@ -52,6 +52,7 @@
 }
 
 .mode-card {
+  position: relative;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 16px;
   padding: 25px;
@@ -59,6 +60,23 @@
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid var(--text-color);
+}
+
+.player-count {
+  position: absolute;
+  top: 50%;
+  right: 25px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.player-count-icon {
+  font-size: 1.5rem;
 }
 
 .mode-card:hover {
