@@ -192,10 +192,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
   }, [fetchGameStatus]);
 
   useEffect(() => {
-    handleReady(false);
-  }, []);
-
-  useEffect(() => {
     if (gameResult && gameResult.players) {
       const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
       if (user.id === playerIds[0]) {
@@ -229,33 +225,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     });
   }, [user, roomId, onBackToLobby]);
 
-  const handleReady = useCallback(async (isReady) => {
-    if (!user || !roomId) return;
-    const action = isReady ? 'unready' : 'ready';
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/index.php?action=player_action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, roomId, action }),
-      });
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.message || `Failed to ${action}.`);
-      }
-      // If the 'ready' action caused cards to be dealt, the hand will be in the response.
-      if (data.cardsDealt && data.hand) {
-        setInitialLanes(data.hand);
-      }
-      // We still call this to get the latest state for all players
-      fetchGameStatus();
-    } catch (error) {
-      setErrorMessage(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, roomId, fetchGameStatus]);
-
   const handleAutoSort = useCallback(() => {
     const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
     if (allCardKeys.length !== 13) return;
@@ -277,8 +246,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     });
   }, [topLane, middleLane, bottomLane, sortStrategy, setInitialLanes]);
 
-  const me = players.find(p => p.id === user.id);
-  const isReady = me ? me.is_ready : false;
   const isGameInProgress = playerState === 'arranging' || playerState === 'submitted';
 
   return (
@@ -298,7 +265,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}
-      isReady={isReady}
       isGameInProgress={isGameInProgress}
       isOnline={isOnline}
       onBackToLobby={handleLeaveRoom}
