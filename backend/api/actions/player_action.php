@@ -28,56 +28,6 @@ $conn->begin_transaction();
 
 try {
     switch ($action) {
-        case 'ready':
-            $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE user_id = ? AND room_id = ?");
-            $stmt->bind_param("ii", $userId, $roomId);
-            $stmt->execute();
-            $stmt->close();
-
-            // Check if all players are ready
-            $stmt = $conn->prepare("SELECT player_count FROM game_rooms WHERE id = ?");
-            $stmt->bind_param("i", $roomId);
-            $stmt->execute();
-            $room = $stmt->get_result()->fetch_assoc();
-            $playerCount = $room['player_count'];
-            $stmt->close();
-
-            $stmt = $conn->prepare("SELECT COUNT(*) as ready_count FROM room_players WHERE room_id = ? AND is_ready = 1");
-            $stmt->bind_param("i", $roomId);
-            $stmt->execute();
-            $readyCount = $stmt->get_result()->fetch_assoc()['ready_count'];
-            $stmt->close();
-
-            $response = ['success' => true, 'message' => 'Player is ready.'];
-
-            if ($readyCount === $playerCount) {
-                // All players are ready, deal cards
-                if ($playerCount <= 4) {
-                    dealCardsFor4Players($conn, $roomId);
-                } else {
-                    dealCardsFor8Players($conn, $roomId);
-                }
-
-                // Fetch the hand for the current player to return
-                $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
-                $stmt->bind_param("ii", $roomId, $userId);
-                $stmt->execute();
-                $handResult = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-
-                $response['cardsDealt'] = true;
-                $response['hand'] = json_decode($handResult['initial_hand'], true);
-            }
-            break;
-
-        case 'unready':
-            $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE user_id = ? AND room_id = ?");
-            $stmt->bind_param("ii", $userId, $roomId);
-            $stmt->execute();
-            $stmt->close();
-            $response = ['success' => true, 'message' => 'Player is no longer ready.'];
-            break;
-
         case 'submit_hand':
             $hand = $data['hand'] ?? null;
             if (!$hand) {
