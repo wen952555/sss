@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PlayerHand from '../components/game/PlayerHand';
-import './GamePage.css';
+import './ThirteenCardsPage.css';
 import ApiWorker from '../workers/api.worker.js?worker';
 
 const POLLING_INTERVAL = 2000;
 
-const GamePage = () => {
+const ThirteenCardsPage = () => {
   const [game, setGame] = useState(null);
   const [gameId, setGameId] = useState(null);
   const [playerId] = useState('player1'); // Hardcoded for this user
@@ -210,4 +210,4 @@ const GamePage = () => {
   );
 };
 
-export default GamePage;
+export default ThirteenCardsPage;

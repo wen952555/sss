@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MainMenu from './pages/MainMenu';
-import GamePage from './pages/GamePage';
+import ThirteenCardsPage from './pages/ThirteenCardsPage';
 import DoudizhuPage from './pages/DoudizhuPage';
 import MahjongPage from './pages/MahjongPage';
 import LoginPage from './pages/LoginPage';
@@ -12,7 +12,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<MainMenu />} />
-      <Route path="/thirteen-cards" element={<GamePage />} />
+      <Route path="/thirteen-cards" element={<ThirteenCardsPage />} />
       <Route path="/doudizhu" element={<DoudizhuPage />} />
       <Route path="/mahjong" element={<MahjongPage />} />
       <Route path="/thirteen-waters" element={<ThirteenWatersPage />} />
