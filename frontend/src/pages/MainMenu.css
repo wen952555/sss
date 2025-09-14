@@ -1,4 +1,10 @@
 /* Main Menu - New Dark Theme */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 html, body, #root {
     height: 100%;
     margin: 0;
@@ -10,7 +16,7 @@ html, body, #root {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    background: #1a202c;
     overflow: hidden;
     color: #fff;
 }
@@ -63,9 +69,9 @@ html, body, #root {
 
 .game-panels-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 40px;
-    padding: 40px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 20px;
     flex-grow: 1;
     align-content: center;
     justify-items: center;
@@ -75,16 +81,15 @@ html, body, #root {
 .game-panel-link {
     text-decoration: none;
     color: inherit;
+    width: 100%;
+    height: 100%;
 }
 
 .game-panel {
-    width: 280px;
-    height: 200px;
     border: 2px solid transparent;
     border-radius: 15px;
     padding: 20px;
-    background-color: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
+    background-color: #2d3748;
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -110,28 +115,24 @@ html, body, #root {
 }
 
 .panel-title {
-    font-size: 2.5rem;
+    font-size: 4rem;
     color: #c4a66a;
     margin: 0 0 10px 0;
     font-weight: 600;
 }
 
 .panel-description {
-    font-size: 1rem;
+    font-size: 1.5rem;
     color: rgba(255, 255, 255, 0.8);
 }
 
 .panel-yansan {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/ace_of_spades.svg');
 }
 .panel-doudizhu {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/red_joker.svg');
 }
 .panel-mahjong {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/photo/1m.svg');
 }
 .panel-thirteen-waters {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/king_of_hearts.svg');
 }
 
 @media (max-width: 768px) {
@@ -139,15 +140,20 @@ html, body, #root {
         padding: 10px 15px;
     }
     .game-panels-container {
-        grid-template-columns: 1fr;
-        padding: 20px;
-        gap: 20px;
+        grid-template-columns: repeat(2, 1fr); /* Enforce 2x2 grid */
+        padding: 15px;
+        gap: 15px;
     }
     .game-panel {
-        width: 85%;
-        height: 180px;
+        width: 100%; /* Fill the grid cell */
+        /* Height is now implicit to fill the grid row */
+        padding: 10px;
     }
     .panel-title {
-        font-size: 2rem;
+        font-size: 2rem; /* Adjust font size */
+        margin-bottom: 5px;
+    }
+    .panel-description {
+        font-size: 1rem; /* Adjust font size */
     }
 }
