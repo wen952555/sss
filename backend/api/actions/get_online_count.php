@@ -38,7 +38,12 @@ $gameModeCounts = [];
 if ($gameModeResult) {
     while ($row = $gameModeResult->fetch_assoc()) {
         $key = "{$row['game_type']}-{$row['player_count']}-{$row['game_mode']}";
-        $gameModeCounts[$key] = (int)$row['current_players'];
+        // Here we handle the logic of not showing a full room.
+        // If current_players equals the max player_count, we don't add it,
+        // so the frontend will show the default of 0.
+        if ((int)$row['current_players'] < (int)$row['player_count']) {
+            $gameModeCounts[$key] = (int)$row['current_players'];
+        }
     }
     $gameModeResult->free();
 }
