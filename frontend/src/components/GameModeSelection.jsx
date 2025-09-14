@@ -32,7 +32,7 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
     { key: '4-normal', title: '4人普通场', desc: '标准4人对局' },
     { key: '4-double', title: '4人翻倍场', desc: '4人刺激挑战' },
     { key: '8-normal', title: '8人普通场', desc: '标准8人对局' },
-    { key: '8-double', title: '8人终极对决', desc: '8人终极对决' },
+    { key: '8-double', title: '8人终极对决', desc: '8人刺激对决' },
   ];
 
   const getPlayerCount = (modeKey) => {
