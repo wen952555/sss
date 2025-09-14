@@ -181,23 +181,15 @@
 }
 
 .result-cards-row {
-  position: relative;
-  height: 75px; /* Provide enough height for the cards */
-  margin-bottom: 5px; /* Add some space between rows */
+  display: flex;
+  justify-content: flex-start; /* Align cards to the left of the row */
+  /* No flex-wrap, to keep cards in a single line as requested */
 }
 
 .result-card-wrapper {
   width: 50px;
   height: 70px;
-  position: absolute;
-  top: 0;
-  left: calc(var(--i) * 25px); /* Stack cards with a 25px offset */
-  transition: transform 0.2s ease;
-}
-
-.result-card-wrapper:hover {
-    transform: translateY(-10px) scale(1.1);
-    z-index: 100; /* Bring hovered card to the front */
+  margin: 0 2px;
 }
 
 .result-cards-row .card {
