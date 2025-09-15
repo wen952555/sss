@@ -204,7 +204,6 @@ function App() {
             user={user}
             onProfile={() => setCurrentView('profile')}
             onShowRules={() => setCurrentView('rules')}
-            onLogout={handleLogout}
             onLoginClick={() => setShowAuthModal(true)}
           />
         );
