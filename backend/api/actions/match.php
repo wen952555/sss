@@ -45,9 +45,9 @@ try {
     $roomId = null;
 
     if ($room) {
-        // 3. Join existing room
+        // 3. Join existing room, ensuring is_ready is set to 0
         $roomId = $room['id'];
-        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id) VALUES (?, ?)");
+        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready) VALUES (?, ?, 0)");
         $stmt->bind_param("ii", $roomId, $userId);
         $stmt->execute();
         $stmt->close();
@@ -59,31 +59,13 @@ try {
         $roomId = $stmt->insert_id;
         $stmt->close();
 
-        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id) VALUES (?, ?)");
+        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready) VALUES (?, ?, 0)");
         $stmt->bind_param("ii", $roomId, $userId);
         $stmt->execute();
         $stmt->close();
     }
 
-    // 5. Check if room is full
-    $stmt = $conn->prepare("SELECT COUNT(*) as player_count FROM room_players WHERE room_id = ?");
-    $stmt->bind_param("i", $roomId);
-    $stmt->execute();
-    $result = $stmt->get_result()->fetch_assoc();
-    $currentPlayers = (int)$result['player_count'];
-    $stmt->close();
-
-    if ($currentPlayers === $playerCount) {
-        // 6. Deal cards
-        if ($gameType === 'thirteen' || $gameType === 'thirteen-5') {
-            if ($playerCount <= 4) {
-                dealCardsFor4Players($conn, $roomId);
-            } else {
-                dealCardsFor8Players($conn, $roomId);
-            }
-        }
-        // Add logic for other game types if necessary
-    }
+    // Dealing logic is now handled by player_action.php when all players are ready.
 
     $conn->commit();
     echo json_encode(['success' => true, 'roomId' => $roomId]);
