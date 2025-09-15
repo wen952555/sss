@@ -47,7 +47,7 @@ try {
     if ($room) {
         // 3. Join existing room
         $roomId = $room['id'];
-        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id) VALUES (?, ?)");
+        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready) VALUES (?, ?, 0)");
         $stmt->bind_param("ii", $roomId, $userId);
         $stmt->execute();
         $stmt->close();
@@ -69,7 +69,7 @@ try {
         $roomId = $stmt->insert_id;
         $stmt->close();
 
-        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id) VALUES (?, ?)");
+        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready) VALUES (?, ?, 0)");
         $stmt->bind_param("ii", $roomId, $userId);
         $stmt->execute();
         $stmt->close();
