@@ -7,11 +7,10 @@ $data = json_decode(file_get_contents('php://input'), true);
 $userId = $data['userId'] ?? null;
 $roomId = $data['roomId'] ?? null;
 $action = $data['action'] ?? null;
-$hand = $data['hand'] ?? null;
 
-if (!$userId || !$roomId || $action !== 'submit_hand' || !$hand) {
+if (!$userId || !$roomId || !$action) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Missing required parameters.']);
+    echo json_encode(['success' => false, 'message' => 'Missing required parameters (userId, roomId, action).']);
     exit;
 }
 
@@ -22,32 +21,78 @@ if (!$conn) {
     exit;
 }
 
-$response = ['success' => false, 'message' => 'An error occurred.'];
+$response = ['success' => false, 'message' => 'Invalid action.'];
 
 $conn->begin_transaction();
+
 try {
-    // The hand from the frontend is already in the correct format of {top, middle, bottom} with card strings.
-    // My submitPlayerHand expects card objects. I need to convert them.
-    // Correction: my `isSssFoul` takes card strings. But `submitPlayerHand` expects objects.
-    // The `submitPlayerHand` I wrote in `utils.php` takes card *strings*. Let's double check.
-    // `isSssFoul` in `scorer.php` takes an array of strings.
-    // `submitPlayerHand` takes a hand object. Let's see what `isSssFoul` expects.
-    // `isSssFoul` expects `['top' => ['ace_of_spades'], ...]`. This is what the frontend sends.
-    // So my `submitPlayerHand` function in `utils.php` is correct. It takes the hand object with string arrays.
+    switch ($action) {
+        case 'ready':
+            $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE user_id = ? AND room_id = ?");
+            $stmt->bind_param("ii", $userId, $roomId);
+            $stmt->execute();
+            $stmt->close();
 
-    // Let's re-read the `submitPlayerHand` I wrote in `utils.php`.
-    // It calls `isSssFoul($hand)`. `isSssFoul` takes a hand with card strings. This is correct.
-    // Then it json_encodes the hand and saves it. This is correct.
-    // The `calculateSinglePairScore` takes a hand object and decodes the `submitted_hand` which is a json string of the hand object.
+            // Check if all players are ready
+            $stmt = $conn->prepare("SELECT player_count FROM game_rooms WHERE id = ?");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $room = $stmt->get_result()->fetch_assoc();
+            $playerCount = $room['player_count'];
+            $stmt->close();
 
-    // The frontend sends card strings. My `submitPlayerHand` expects card strings. It seems correct.
+            $stmt = $conn->prepare("SELECT COUNT(*) as ready_count FROM room_players WHERE room_id = ? AND is_ready = 1");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $readyCount = $stmt->get_result()->fetch_assoc()['ready_count'];
+            $stmt->close();
 
-    submitPlayerHand($conn, $userId, $roomId, $hand);
-    $response = ['success' => true, 'message' => 'Hand submitted successfully.'];
+            $response = ['success' => true, 'message' => 'Player is ready.'];
+
+            if ($readyCount === $playerCount) {
+                if ($playerCount <= 4) {
+                    dealCardsFor4Players($conn, $roomId);
+                } else {
+                    dealCardsFor8Players($conn, $roomId);
+                }
+
+                $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
+                $stmt->bind_param("ii", $roomId, $userId);
+                $stmt->execute();
+                $handResult = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+
+                $response['cardsDealt'] = true;
+                $response['hand'] = json_decode($handResult['initial_hand'], true);
+            }
+            break;
+
+        case 'unready':
+            $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE user_id = ? AND room_id = ?");
+            $stmt->bind_param("ii", $userId, $roomId);
+            $stmt->execute();
+            $stmt->close();
+            $response = ['success' => true, 'message' => 'Player is no longer ready.'];
+            break;
+
+        case 'submit_hand':
+            $hand = $data['hand'] ?? null;
+            if (!$hand) {
+                throw new Exception("Hand data is missing.");
+            }
+            submitPlayerHand($conn, $userId, $roomId, $hand);
+            $response = ['success' => true, 'message' => 'Hand submitted successfully.'];
+            break;
+
+        default:
+            http_response_code(400);
+            $response = ['success' => false, 'message' => 'Unknown action provided.'];
+            break;
+    }
     $conn->commit();
 } catch (Exception $e) {
     $conn->rollback();
-    http_response_code(400); // Use 400 for client errors like submitting a foul hand
+    http_response_code(400);
     $response = ['success' => false, 'message' => $e->getMessage()];
 }
 

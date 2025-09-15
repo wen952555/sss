@@ -192,10 +192,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
   }, [fetchGameStatus]);
 
   useEffect(() => {
-    handleReady(false);
-  }, []);
-
-  useEffect(() => {
     if (gameResult && gameResult.players) {
       const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
       if (user.id === playerIds[0]) {
@@ -229,9 +225,13 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     });
   }, [user, roomId, onBackToLobby]);
 
-  const handleReady = useCallback(async (isReady) => {
+  const handleReady = useCallback(async () => {
     if (!user || !roomId) return;
-    const action = isReady ? 'unready' : 'ready';
+    // Find the current player to determine their ready state
+    const me = players.find(p => p.id === user.id);
+    const currentIsReady = me ? me.is_ready : false;
+    const action = currentIsReady ? 'unready' : 'ready';
+
     setIsLoading(true);
     try {
       const response = await fetch('/api/index.php?action=player_action', {
@@ -243,18 +243,18 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       if (!data.success) {
         throw new Error(data.message || `Failed to ${action}.`);
       }
-      // If the 'ready' action caused cards to be dealt, the hand will be in the response.
+
       if (data.cardsDealt && data.hand) {
         setInitialLanes(data.hand);
       }
-      // We still call this to get the latest state for all players
+      // Refresh game state for all players to show updated ready status
       fetchGameStatus();
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
       setIsLoading(false);
     }
-  }, [user, roomId, fetchGameStatus]);
+  }, [user, roomId, players, fetchGameStatus, setInitialLanes]);
 
   const handleAutoSort = useCallback(() => {
     const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
@@ -298,9 +298,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}
-      isReady={isReady}
       isGameInProgress={isGameInProgress}
       isOnline={isOnline}
+      isReady={isReady}
+      onReady={handleReady}
       onBackToLobby={handleLeaveRoom}
       onConfirm={() => handleConfirm()}
       onAutoSort={handleAutoSort}

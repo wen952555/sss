@@ -26,7 +26,11 @@ if (!is_readable($actionsDir)) {
 
 // --- Action Processing ---
 $action = $_REQUEST['action'] ?? '';
-error_log("Full request: " . print_r($_REQUEST, true));
+error_log("--- NEW REQUEST ---");
+error_log("ACTION: " . $action);
+error_log("GET: " . print_r($_GET, true));
+error_log("POST: " . file_get_contents('php://input'));
+error_log("-------------------");
 
 $sanitized_action = preg_replace('/[^a-z0-9_]/', '', $action);
 error_log("Sanitized action: " . $sanitized_action);

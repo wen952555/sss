@@ -65,25 +65,7 @@ try {
         $stmt->close();
     }
 
-    // 5. Check if room is full
-    $stmt = $conn->prepare("SELECT COUNT(*) as player_count FROM room_players WHERE room_id = ?");
-    $stmt->bind_param("i", $roomId);
-    $stmt->execute();
-    $result = $stmt->get_result()->fetch_assoc();
-    $currentPlayers = (int)$result['player_count'];
-    $stmt->close();
-
-    if ($currentPlayers === $playerCount) {
-        // 6. Deal cards
-        if ($gameType === 'thirteen' || $gameType === 'thirteen-5') {
-            if ($playerCount <= 4) {
-                dealCardsFor4Players($conn, $roomId);
-            } else {
-                dealCardsFor8Players($conn, $roomId);
-            }
-        }
-        // Add logic for other game types if necessary
-    }
+    // The dealing logic is now moved to player_action.php, triggered by all players being ready.
 
     $conn->commit();
     echo json_encode(['success' => true, 'roomId' => $roomId]);
