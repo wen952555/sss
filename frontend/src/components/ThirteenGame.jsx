@@ -119,7 +119,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
         }
         setPlayers(data.players);
         setPlayerState(data.gameStatus);
-        if (data.gameStatus === 'playing' && data.hand) {
+        if ((data.gameStatus === 'playing' || data.gameStatus === 'arranging') && data.hand) {
           setInitialLanes(data.hand);
         }
         if (data.gameStatus === 'finished' && data.result) {
