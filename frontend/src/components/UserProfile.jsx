@@ -2,7 +2,7 @@
 import React from 'react';
 import './UserProfile.css';
 
-const UserProfile = ({ userId, user, onLogout, onTransferClick, onBack }) => {
+const UserProfile = ({ userId, user, onTransferClick, onBack }) => {
   return (
     <div className="user-profile-container">
       <div className="user-profile-panel">
@@ -27,7 +27,6 @@ const UserProfile = ({ userId, user, onLogout, onTransferClick, onBack }) => {
         {/* 使用新的按钮容器和样式类 */}
         <div className="user-profile-btns">
           <button onClick={onTransferClick} className="transfer">赠送积分</button>
-          <button onClick={onLogout} className="logout">退出登录</button>
         </div>
       </div>
     </div>

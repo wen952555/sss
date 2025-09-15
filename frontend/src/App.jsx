@@ -192,7 +192,7 @@ function App() {
       case 'rules':
         return <GameRules onBack={() => setCurrentView('lobby')} />;
       case 'profile':
-        return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
+        return <UserProfile userId={user.id} user={user} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
       case 'modeSelection':
         return <GameModeSelection gameType={viewingGame} onSelectMode={handleSelectMode} onBack={handleBackToLobby} />;
       case 'lobby':
@@ -204,6 +204,7 @@ function App() {
             user={user}
             onProfile={() => setCurrentView('profile')}
             onShowRules={() => setCurrentView('rules')}
+            onLogout={handleLogout}
             onLoginClick={() => setShowAuthModal(true)}
           />
         );
