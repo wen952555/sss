@@ -80,6 +80,7 @@ try {
             if (!$hand) {
                 throw new Exception("Hand data is missing.");
             }
+            // The submitPlayerHand function is in utils.php
             submitPlayerHand($conn, $userId, $roomId, $hand);
             $response = ['success' => true, 'message' => 'Hand submitted successfully.'];
             break;

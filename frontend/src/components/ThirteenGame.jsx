@@ -4,7 +4,6 @@ import { getSmartSortedHand } from '../utils/autoSorter.js';
 import GameTable from './GameTable';
 import { isSssFoul, calculateSinglePairScore, getSpecialType, compareSssArea } from '../utils/scorer.js';
 
-// The component now only accepts props relevant for an online game
 const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerCount }) => {
   const {
     topLane,
@@ -17,8 +16,8 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     handleLaneClick,
   } = useCardArrangement();
 
-  const [playerState, setPlayerState] = useState('waiting'); // e.g., 'waiting', 'arranging', 'submitted'
-  const [sortStrategy, setSortStrategy] = useState('bottom'); // 'bottom', 'middle', 'top'
+  const [playerState, setPlayerState] = useState('waiting');
+  const [sortStrategy, setSortStrategy] = useState('bottom');
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -29,14 +28,12 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
   const handleConfirm = useCallback((hand = null) => {
     let handToSend;
     if (hand && hand.top && hand.top.length > 0 && hand.top[0].rank) {
-      // Hand is from auto-sorter, format { top: [cardObj], ... }
       handToSend = {
         top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
         middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
         bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
       };
     } else {
-      // Hand is from user arrangement in the state
       handToSend = {
         top: topLane.map(c => c.key),
         middle: middleLane.map(c => c.key),
@@ -65,7 +62,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       if (!data.success) {
         throw new Error(data.message || 'Failed to submit hand.');
       }
-      // The game state will be updated by the polling mechanism
       console.log('Hand submitted successfully.');
     })
     .catch(error => {
@@ -115,7 +111,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       if (data.success) {
         if (!isOnline) {
           setIsOnline(true);
-          setErrorMessage(''); // Clear connection error on success
+          setErrorMessage('');
         }
         setPlayers(data.players);
         setPlayerState(data.gameStatus);
@@ -130,10 +126,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
           }, {});
 
           const playerIds = resultPlayers.map(p => p.id);
-          const scores = playerIds.reduce((acc, id) => {
-            acc[id] = 0;
-            return acc;
-          }, {});
+          const scores = playerIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
 
           for (let i = 0; i < playerIds.length; i++) {
             for (let j = i + 1; j < playerIds.length; j++) {
@@ -148,7 +141,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
           }
 
           const pointMultiplier = gameType === 'thirteen' ? 2 : (gameType === 'thirteen-5' ? 5 : 1);
-
           resultPlayers.forEach(p => {
             p.score = scores[p.id] * pointMultiplier;
           });
@@ -173,7 +165,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
           setGameResult({ players: resultPlayers });
         }
       } else {
-        // Handle backend-specific errors if necessary
         setErrorMessage(data.message || '获取游戏状态失败');
       }
     } catch (error) {
@@ -183,7 +174,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       }
       console.error("Failed to fetch game status:", error);
     }
-  }, [roomId, user, setInitialLanes, isOnline]);
+  }, [roomId, user, setInitialLanes, isOnline, gameType]);
 
   useEffect(() => {
     fetchGameStatus();
@@ -195,10 +186,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     if (gameResult && gameResult.players) {
       const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
       if (user.id === playerIds[0]) {
-        const scores = gameResult.players.reduce((acc, p) => {
-          acc[p.id] = p.score;
-          return acc;
-        }, {});
+        const scores = gameResult.players.reduce((acc, p) => ({ ...acc, [p.id]: p.score }), {});
         fetch('/api/index.php?action=save_scores', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -213,21 +201,18 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       onBackToLobby();
       return;
     }
-    // Send a request to the backend to leave the room
     fetch('/api/index.php?action=leave_room', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, roomId }),
     })
     .then(() => {
-      // Regardless of success or failure, navigate back to lobby
       onBackToLobby();
     });
   }, [user, roomId, onBackToLobby]);
 
   const handleReady = useCallback(async () => {
     if (!user || !roomId) return;
-    // Find the current player to determine their ready state
     const me = players.find(p => p.id === user.id);
     const currentIsReady = me ? me.is_ready : false;
     const action = currentIsReady ? 'unready' : 'ready';
@@ -243,11 +228,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       if (!data.success) {
         throw new Error(data.message || `Failed to ${action}.`);
       }
-
       if (data.cardsDealt && data.hand) {
         setInitialLanes(data.hand);
       }
-      // Refresh game state for all players to show updated ready status
       fetchGameStatus();
     } catch (error) {
       setErrorMessage(error.message);
@@ -298,11 +281,11 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}
+      isReady={isReady}
       isGameInProgress={isGameInProgress}
       isOnline={isOnline}
-      isReady={isReady}
-      onReady={handleReady}
       onBackToLobby={handleLeaveRoom}
+      onReady={handleReady}
       onConfirm={() => handleConfirm()}
       onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
