@@ -146,7 +146,7 @@ function App() {
       }
       // Pass both gameMode and gameType for polling
       await handleSelectMode(gameState.gameMode, gameState.gameType);
-    }, 2000);
+    }, 1000);
     return () => clearInterval(intervalId);
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
 
@@ -192,7 +192,7 @@ function App() {
       case 'rules':
         return <GameRules onBack={() => setCurrentView('lobby')} />;
       case 'profile':
-        return <UserProfile userId={user.id} user={user} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
+        return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
       case 'modeSelection':
         return <GameModeSelection gameType={viewingGame} onSelectMode={handleSelectMode} onBack={handleBackToLobby} />;
       case 'lobby':

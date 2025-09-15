@@ -119,7 +119,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
         }
         setPlayers(data.players);
         setPlayerState(data.gameStatus);
-        if ((data.gameStatus === 'playing' || data.gameStatus === 'arranging') && data.hand) {
+        if (data.gameStatus === 'playing' && data.hand) {
           setInitialLanes(data.hand);
         }
         if (data.gameStatus === 'finished' && data.result) {
@@ -192,6 +192,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
   }, [fetchGameStatus]);
 
   useEffect(() => {
+    handleReady(false);
+  }, []);
+
+  useEffect(() => {
     if (gameResult && gameResult.players) {
       const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
       if (user.id === playerIds[0]) {
@@ -225,13 +229,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     });
   }, [user, roomId, onBackToLobby]);
 
-  const handleReady = useCallback(async () => {
+  const handleReady = useCallback(async (isReady) => {
     if (!user || !roomId) return;
-    // Find the current player to determine their ready state
-    const me = players.find(p => p.id === user.id);
-    const currentIsReady = me ? me.is_ready : false;
-    const action = currentIsReady ? 'unready' : 'ready';
-
+    const action = isReady ? 'unready' : 'ready';
     setIsLoading(true);
     try {
       const response = await fetch('/api/index.php?action=player_action', {
@@ -243,18 +243,18 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       if (!data.success) {
         throw new Error(data.message || `Failed to ${action}.`);
       }
-
+      // If the 'ready' action caused cards to be dealt, the hand will be in the response.
       if (data.cardsDealt && data.hand) {
         setInitialLanes(data.hand);
       }
-      // Refresh game state for all players to show updated ready status
+      // We still call this to get the latest state for all players
       fetchGameStatus();
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
       setIsLoading(false);
     }
-  }, [user, roomId, players, fetchGameStatus, setInitialLanes]);
+  }, [user, roomId, fetchGameStatus]);
 
   const handleAutoSort = useCallback(() => {
     const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
@@ -298,10 +298,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       isLoading={isLoading}
       gameResult={gameResult}
       errorMessage={errorMessage}
+      isReady={isReady}
       isGameInProgress={isGameInProgress}
       isOnline={isOnline}
-      isReady={isReady}
-      onReady={handleReady}
       onBackToLobby={handleLeaveRoom}
       onConfirm={() => handleConfirm()}
       onAutoSort={handleAutoSort}

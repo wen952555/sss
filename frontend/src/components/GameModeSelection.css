@@ -52,10 +52,6 @@
 }
 
 .mode-card {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 16px;
   padding: 25px;
@@ -63,16 +59,11 @@
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid var(--text-color);
-  text-align: left;
 }
 
 .mode-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 40px rgba(0, 77, 64, 0.15);
-}
-
-.mode-card-text {
-  flex-grow: 1;
 }
 
 .mode-card-title {
@@ -86,18 +77,4 @@
   font-size: 1rem;
   color: var(--text-color);
   margin: 0;
-}
-
-.player-count {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--primary-color);
-  padding-left: 20px; /* Add some space between text and count */
-}
-
-.player-count-icon {
-  font-size: 1.5rem;
 }

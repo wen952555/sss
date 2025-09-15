@@ -14,7 +14,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
     };
 
     fetchOnlineCount();
-    const intervalId = setInterval(fetchOnlineCount, 15000);
+    const intervalId = setInterval(fetchOnlineCount, 1000);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -30,7 +30,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
         } catch (error) { /* ignore */ }
       };
       updateActivity();
-      const intervalId = setInterval(updateActivity, 60000);
+      const intervalId = setInterval(updateActivity, 1000);
       return () => clearInterval(intervalId);
     }
   }, [user]);
