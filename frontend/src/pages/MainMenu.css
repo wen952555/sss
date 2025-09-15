@@ -122,16 +122,16 @@ html, body, #root {
 }
 
 .panel-yansan {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/ace_of_spades.svg');
+    background-color: #2a3a5e; /* A deep blue */
 }
 .panel-doudizhu {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/red_joker.svg');
+    background-color: #6a2e2e; /* A deep red */
 }
 .panel-mahjong {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/photo/1m.svg');
+    background-color: #2e6a3e; /* A deep green */
 }
 .panel-thirteen-waters {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/king_of_hearts.svg');
+    background-color: #4a2e6a; /* A deep purple */
 }
 
 @media (max-width: 768px) {
