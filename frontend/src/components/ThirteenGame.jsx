@@ -225,6 +225,37 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     });
   }, [user, roomId, onBackToLobby]);
 
+  const handleReady = useCallback(async () => {
+    if (!user || !roomId) return;
+    // Find the current player to determine their ready state
+    const me = players.find(p => p.id === user.id);
+    const currentIsReady = me ? me.is_ready : false;
+    const action = currentIsReady ? 'unready' : 'ready';
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/index.php?action=player_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, roomId, action }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || `Failed to ${action}.`);
+      }
+
+      if (data.cardsDealt && data.hand) {
+        setInitialLanes(data.hand);
+      }
+      // Refresh game state for all players to show updated ready status
+      fetchGameStatus();
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, roomId, players, fetchGameStatus, setInitialLanes]);
+
   const handleAutoSort = useCallback(() => {
     const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
     if (allCardKeys.length !== 13) return;
@@ -246,6 +277,8 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
     });
   }, [topLane, middleLane, bottomLane, sortStrategy, setInitialLanes]);
 
+  const me = players.find(p => p.id === user.id);
+  const isReady = me ? me.is_ready : false;
   const isGameInProgress = playerState === 'arranging' || playerState === 'submitted';
 
   return (
@@ -267,6 +300,8 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       errorMessage={errorMessage}
       isGameInProgress={isGameInProgress}
       isOnline={isOnline}
+      isReady={isReady}
+      onReady={handleReady}
       onBackToLobby={handleLeaveRoom}
       onConfirm={() => handleConfirm()}
       onAutoSort={handleAutoSort}
