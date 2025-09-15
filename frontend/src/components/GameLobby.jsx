@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './GameLobby.css';
 
-const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLoginClick, onShowRules }) => {
+const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick, onShowRules }) => {
   const [onlineCount, setOnlineCount] = useState(null);
 
   useEffect(() => {
@@ -42,6 +42,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLoginC
           {user ? (
             <>
               <button className="header-btn profile-btn" onClick={onProfile}>我的资料</button>
+              <button className="header-btn logout-btn" onClick={onLogout}>退出登录</button>
             </>
           ) : (
             <button className="header-btn login-btn" onClick={onLoginClick}>注册/登录</button>
