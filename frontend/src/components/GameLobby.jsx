@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './GameLobby.css';
 
-const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick, onShowRules }) => {
+const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLoginClick, onShowRules }) => {
   const [onlineCount, setOnlineCount] = useState(null);
 
   useEffect(() => {

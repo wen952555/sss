@@ -52,9 +52,19 @@ try {
         $stmt->execute();
         $stmt->close();
     } else {
-        // 4. Create new room
-        $stmt = $conn->prepare("INSERT INTO game_rooms (game_type, game_mode, status, player_count) VALUES (?, ?, 'waiting', ?)");
-        $stmt->bind_param("ssi", $gameType, $gameMode, $playerCount);
+        // 4. Create new room with a unique room_code
+        $roomCode = '';
+        do {
+            $roomCode = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $checkStmt = $conn->prepare("SELECT id FROM game_rooms WHERE room_code = ?");
+            $checkStmt->bind_param("s", $roomCode);
+            $checkStmt->execute();
+            $result = $checkStmt->get_result();
+            $checkStmt->close();
+        } while ($result->num_rows > 0);
+
+        $stmt = $conn->prepare("INSERT INTO game_rooms (game_type, game_mode, status, player_count, room_code) VALUES (?, ?, 'waiting', ?, ?)");
+        $stmt->bind_param("ssis", $gameType, $gameMode, $playerCount, $roomCode);
         $stmt->execute();
         $roomId = $stmt->insert_id;
         $stmt->close();
