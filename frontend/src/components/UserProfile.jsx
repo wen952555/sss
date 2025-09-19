@@ -27,7 +27,6 @@ const UserProfile = ({ userId, user, onLogout, onTransferClick, onBack }) => {
         {/* 使用新的按钮容器和样式类 */}
         <div className="user-profile-btns">
           <button onClick={onTransferClick} className="transfer">赠送积分</button>
-          <button onClick={onLogout} className="logout">退出登录</button>
         </div>
       </div>
     </div>
