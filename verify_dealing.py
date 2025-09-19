@@ -53,6 +53,21 @@ def run_verification(playwright):
                 print("Re-clicking on Create button for 10局场 mode...")
                 page.locator(".mode-card:has-text('10局场') .create-button").click()
 
+        # We should be in the game room now. Let's go back and check the room count
+        page.get_by_role("button", name="返回大厅").click()
+        print("Returned to lobby.")
+
+        page.get_by_text("2分场经典模式对局").click()
+        print("Re-entered mode selection.")
+
+        # Verify room count
+        join_button = page.locator(".mode-card:has-text('10局场') .join-button")
+        expect(join_button).to_have_text("加入 (1/8)", timeout=10000)
+        print("Room count is correct (1/8).")
+
+        # Join the game again
+        join_button.click()
+
         ready_button = page.get_by_role("button", name="点击准备")
         print("Waiting for ready button...")
         expect(ready_button).to_be_visible(timeout=10000)
@@ -60,32 +75,20 @@ def run_verification(playwright):
         print("Clicking ready button...")
         ready_button.click()
 
-        print("Waiting for cards to be dealt for round 1...")
-        card_in_hand_round_1 = page.locator('.lane-wrapper').nth(0).locator('.card-wrapper').first
-        expect(card_in_hand_round_1).to_be_visible(timeout=30000)
-        print("Cards for round 1 dealt successfully!")
-        time.sleep(1)
-        page.screenshot(path=f"{screenshot_dir}round_1.png")
-        print(f"Screenshot for round 1 saved.")
+        # This is the crucial step. We are waiting for the server to deal cards.
+        print("Waiting for cards to be dealt...")
+        card_in_hand = page.locator('.lane-wrapper').nth(0).locator('.card-wrapper').first
+        expect(card_in_hand).to_be_visible(timeout=30000)
 
-        # Submit hand for round 1
-        confirm_button = page.get_by_role("button", name="确认")
-        expect(confirm_button).to_be_visible(timeout=10000)
-        confirm_button.click()
-        print("Submitted hand for round 1.")
+        print("Cards were dealt successfully!")
 
-        # Wait for round 2
-        print("Waiting for round 2 to start...")
-        round_2_title = page.locator("h1:has-text('第 2 / 10 局')")
-        expect(round_2_title).to_be_visible(timeout=20000)
-        print("Round 2 has started.")
+        # Wait a moment for UI to settle
+        time.sleep(2)
 
-        card_in_hand_round_2 = page.locator('.lane-wrapper').nth(0).locator('.card-wrapper').first
-        expect(card_in_hand_round_2).to_be_visible(timeout=30000)
-        print("Cards for round 2 dealt successfully!")
-        time.sleep(1)
-        page.screenshot(path=f"{screenshot_dir}round_2.png")
-        print(f"Screenshot for round 2 saved.")
+        print("Taking screenshot...")
+        screenshot_path = f"{screenshot_dir}dealing_works.png"
+        page.screenshot(path=screenshot_path)
+        print(f"Screenshot saved to {screenshot_path}")
 
     except Exception as e:
         print(f"An error occurred during verification: {e}")

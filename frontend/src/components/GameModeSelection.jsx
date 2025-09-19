@@ -1,7 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './GameModeSelection.css';
 
 const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
+  const [roomCounts, setRoomCounts] = useState({});
+
+  useEffect(() => {
+    const fetchRoomCounts = async () => {
+      try {
+        const response = await fetch('/api/actions/get_room_counts.php');
+        const data = await response.json();
+        if (data.success) {
+          setRoomCounts(data.roomCounts);
+        }
+      } catch (error) {
+        console.error("Failed to fetch room counts:", error);
+      }
+    };
+
+    fetchRoomCounts();
+    const intervalId = setInterval(fetchRoomCounts, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   const gameTitles = {
     'thirteen': '2分场',
     'thirteen-5': '5分场',
@@ -25,21 +46,26 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
       <h1 className="mode-selection-title">{gameTitle}</h1>
       <p className="mode-selection-subtitle">请选择游戏模式</p>
       <div className="mode-options">
-        {modesToRender.map(mode => (
-          <div
-            key={mode.key}
-            className={`mode-card ${mode.className || ''}`}
-          >
-            <div className="mode-card-left">
-              <h2 className="mode-card-title">{mode.title}</h2>
-              <p className="mode-card-description">{mode.desc}</p>
+        {modesToRender.map(mode => {
+          const count = roomCounts[mode.key] || { players: 0, max_players: 0 };
+          return (
+            <div
+              key={mode.key}
+              className={`mode-card ${mode.className || ''}`}
+            >
+              <div className="mode-card-left">
+                <h2 className="mode-card-title">{mode.title}</h2>
+                <p className="mode-card-description">{mode.desc}</p>
+              </div>
+              <div className="mode-card-right">
+                <button className="join-button" onClick={() => onSelectMode(mode.key, 'join')}>
+                  加入 ({count.players}/{count.max_players})
+                </button>
+                <button className="create-button" onClick={() => onSelectMode(mode.key, 'create')}>创建</button>
+              </div>
             </div>
-            <div className="mode-card-right">
-              <button className="join-button" onClick={() => onSelectMode(mode.key, 'join')}>加入</button>
-              <button className="create-button" onClick={() => onSelectMode(mode.key, 'create')}>创建</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
