@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - 'backend/**'
+      - 'database_schema.sql'
+      - '.github/workflows/deploy-backend.yml'
 
 jobs:
   deploy:
