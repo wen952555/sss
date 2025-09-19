@@ -5,7 +5,7 @@
 // Set timezone to avoid warnings
 date_default_timezone_set('UTC');
 
-require_once __DIR__ . '/backend/api/db_connect.php';
+require_once __DIR__ . '/api/db_connect.php';
 
 echo "Starting database migration...\n";
 
