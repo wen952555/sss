@@ -23,8 +23,8 @@ def run_verification(playwright):
         game_mode_button = page.get_by_text("10局场")
         expect(game_mode_button).to_be_visible(timeout=10000)
 
-        print("Clicking on 10局场 mode...")
-        game_mode_button.click()
+        print("Clicking on Create button for 10局场 mode...")
+        page.locator(".mode-card:has-text('10局场') .create-button").click()
 
         # Handle login/registration if modal appears
         if page.locator(".auth-modal-backdrop").is_visible():
@@ -50,8 +50,8 @@ def run_verification(playwright):
                 print("Registration and login successful.")
 
                 # After login, re-click the game mode
-                print("Re-clicking on 10局场 mode...")
-                page.get_by_text("10局场").click()
+                print("Re-clicking on Create button for 10局场 mode...")
+                page.locator(".mode-card:has-text('10局场') .create-button").click()
 
         ready_button = page.get_by_role("button", name="点击准备")
         print("Waiting for ready button...")
