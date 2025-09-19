@@ -34,13 +34,13 @@ if ($userId > 0) {
     $updateStmt->close();
 }
 
-$stmt = $conn->prepare("SELECT status FROM game_rooms WHERE id = ?");
+$stmt = $conn->prepare("SELECT status, current_round, total_rounds FROM game_rooms WHERE id = ?");
 $stmt->bind_param("i", $roomId);
 $stmt->execute();
 $room = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-if (!$room) { echo json_encode(['success'=>false]); exit; }
+if (!$room) { echo json_encode(['success'=>false, 'message' => 'Room not found.']); exit; }
 
 $stmt = $conn->prepare("SELECT u.id, u.phone, rp.is_ready, rp.is_auto_managed FROM room_players rp JOIN users u ON rp.user_id = u.id WHERE rp.room_id = ?");
 $stmt->bind_param("i", $roomId);
@@ -59,17 +59,29 @@ $stmt->close();
 $response = [
     'success' => true,
     'gameStatus' => $room['status'],
-    'players' => $players
+    'players' => $players,
+    'currentRound' => $room['current_round'],
+    'totalRounds' => $room['total_rounds']
 ];
 
-if ($room['status'] === 'playing' || $room['status'] === 'arranging') {
-    $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
-    $stmt->bind_param("ii", $roomId, $userId);
+if ($room['status'] === 'playing' || $room['status'] === 'arranging' || $room['status'] === 'submitted') {
+    $stmt = $conn->prepare("SELECT hand FROM game_rounds WHERE room_id = ? AND user_id = ? AND round_number = ?");
+    $stmt->bind_param("iii", $roomId, $userId, $room['current_round']);
     $stmt->execute();
     $handResult = $stmt->get_result()->fetch_assoc();
     $stmt->close();
-    if ($handResult) {
-        $response['hand'] = json_decode($handResult['initial_hand'], true);
+    if ($handResult && $handResult['hand']) {
+        $response['hand'] = json_decode($handResult['hand'], true);
+    } else {
+        // Attempt to get hand from initial_hand as a fallback for older games
+        $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $roomId, $userId);
+        $stmt->execute();
+        $handResult = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if ($handResult && $handResult['initial_hand']) {
+            $response['hand'] = json_decode($handResult['initial_hand'], true);
+        }
     }
 }
 if ($room['status'] === 'finished') {

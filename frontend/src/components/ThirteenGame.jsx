@@ -3,6 +3,7 @@ import { useCardArrangement } from '../hooks/useCardArrangement';
 import { getSmartSortedHand } from '../utils/autoSorter.js';
 import GameTable from './GameTable';
 import { isSssFoul, calculateSinglePairScore, getSpecialType, compareSssArea } from '../utils/scorer.js';
+import { parseCard } from '../utils/pokerEvaluator.js';
 
 const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerCount }) => {
   const {
@@ -24,6 +25,20 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
+  const [currentRound, setCurrentRound] = useState(0);
+  const [totalRounds, setTotalRounds] = useState(0);
+
+  const handleHandData = useCallback((handData) => {
+    if (Array.isArray(handData)) {
+      const cardObjects = handData.map(c => (typeof c === 'string' ? parseCard(c) : c));
+      const sortedHand = getSmartSortedHand(cardObjects, 'bottom');
+      if (sortedHand) {
+        setInitialLanes(sortedHand);
+      }
+    } else {
+      setInitialLanes(handData);
+    }
+  }, [setInitialLanes]);
 
   const handleConfirm = useCallback((hand = null) => {
     let handToSend;
@@ -41,7 +56,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
       };
     }
 
-    if (isSssFoul(handToSend)) {
+    if (isSssFoul(handToSend.top, handToSend.middle, handToSend.bottom)) {
       setErrorMessage('你的牌组不符合规则（倒水）');
       return;
     }
@@ -115,8 +130,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
         }
         setPlayers(data.players);
         setPlayerState(data.gameStatus);
-        if ((data.gameStatus === 'playing' || data.gameStatus === 'arranging') && data.hand) {
-          setInitialLanes(data.hand);
+        setCurrentRound(data.currentRound);
+        setTotalRounds(data.totalRounds);
+        if ((data.gameStatus === 'playing' || data.gameStatus === 'arranging' || data.gameStatus === 'submitted') && data.hand) {
+          handleHandData(data.hand);
         }
         if (data.gameStatus === 'finished' && data.result) {
           const { players: resultPlayers } = data.result;
@@ -229,7 +246,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
         throw new Error(data.message || `Failed to ${action}.`);
       }
       if (data.cardsDealt && data.hand) {
-        setInitialLanes(data.hand);
+        handleHandData(data.hand);
       }
       fetchGameStatus();
     } catch (error) {
@@ -267,7 +284,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
   return (
     <GameTable
       gameType={gameType}
-      title={`玩家: ${players.length} / ${playerCount || 4}`}
+      title={`第 ${currentRound} / ${totalRounds} 局 - 玩家: ${players.length} / ${playerCount || 4}`}
       players={players}
       user={user}
       topLane={topLane}
