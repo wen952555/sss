@@ -1,6 +1,27 @@
 <?php
-require_once __DIR__ . '/api/db_connect.php';
+require_once __DIR__ . '/api/config.php';
 
+// 1. Connect to MySQL server without selecting a database
+$conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error . "\n");
+}
+
+// 2. Create the database if it doesn't exist
+$dbName = $DB_NAME;
+$sqlCreateDb = "CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
+if ($conn->query($sqlCreateDb) === TRUE) {
+    echo "Database '$dbName' created successfully or already exists.\n";
+} else {
+    die("Error creating database: " . $conn->error . "\n");
+}
+$conn->close();
+
+// 3. Now connect to the specific database
+require_once __DIR__ . '/api/db_connect.php';
+$conn = db_connect();
+
+// 4. SQL to create tables
 $sql = "
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -32,23 +53,39 @@ CREATE TABLE IF NOT EXISTS `room_players` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `room_id_user_id` (`room_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Insert some test users
-INSERT INTO `users` (`id`, `phone`, `password`, `points`) VALUES
-(1, 'user1', 'password', 1000),
-(2, 'user2', 'password', 1000),
-(3, 'user3', 'password', 1000),
-(4, 'user4', 'password', 1000),
-(5, 'user5', 'password', 1000);
 ";
 
-$conn = db_connect();
-
 if ($conn->multi_query($sql)) {
-    echo "Database tables created successfully.\n";
+    // To prevent "Commands out of sync" error, we need to handle all results.
+    do {
+        if ($result = $conn->store_result()) {
+            $result->free();
+        }
+    } while ($conn->more_results() && $conn->next_result());
+    echo "Tables created successfully.\n";
 } else {
     echo "Error creating tables: " . $conn->error . "\n";
 }
+
+// 5. Insert test users with hashed passwords
+$users = [
+    ['user1', 'password'],
+    ['user2', 'password'],
+    ['user3', 'password'],
+    ['user4', 'password'],
+    ['user5', 'password'],
+];
+
+$stmt = $conn->prepare("INSERT INTO users (phone, password, points) VALUES (?, ?, 1000) ON DUPLICATE KEY UPDATE password = VALUES(password)");
+foreach ($users as $user) {
+    $phone = $user[0];
+    $passwordHash = password_hash($user[1], PASSWORD_DEFAULT);
+    $stmt->bind_param("ss", $phone, $passwordHash);
+    $stmt->execute();
+}
+$stmt->close();
+echo "Test users inserted or updated successfully.\n";
+
 
 $conn->close();
 ?>
