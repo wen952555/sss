@@ -7,7 +7,8 @@ require_once __DIR__ . '/../../utils/utils.php';
 $gameType = $_GET['gameType'] ?? null;
 $gameMode = $_GET['gameMode'] ?? null;
 $userId = $_GET['userId'] ?? null;
-$playerCount = (int)($_GET['playerCount'] ?? 4);
+$playerCount = (int)($_GET['playerCount'] ?? 8);
+$matchAction = $_GET['matchAction'] ?? 'join'; // 'join' or 'create'
 
 if (!$gameType || !$gameMode || !$userId) {
     http_response_code(400);
@@ -22,7 +23,7 @@ $conn->begin_transaction();
 
 try {
     // 1. Check if the user is already in an active room for this game type
-    $stmt = $conn->prepare("SELECT r.id FROM game_rooms r JOIN room_players rp ON r.id = rp.room_id WHERE rp.user_id = ? AND r.game_type = ? AND r.status IN ('waiting', 'arranging', 'playing')");
+    $stmt = $conn->prepare("SELECT r.id FROM game_rooms r JOIN room_players rp ON r.id = rp.room_id WHERE rp.user_id = ? AND r.game_type = ? AND r.status IN ('waiting', 'arranging', 'playing', 'submitted')");
     $stmt->bind_param("is", $userId, $gameType);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -34,25 +35,10 @@ try {
     }
     $stmt->close();
 
-    // 2. Find an available room
-    $stmt = $conn->prepare("SELECT r.id, COUNT(rp.user_id) as player_count FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.game_type = ? AND r.game_mode = ? AND r.status = 'waiting' AND r.player_count = ? GROUP BY r.id HAVING player_count < ? ORDER BY r.created_at ASC LIMIT 1");
-    $stmt->bind_param("ssii", $gameType, $gameMode, $playerCount, $playerCount);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $room = $result->fetch_assoc();
-    $stmt->close();
-
     $roomId = null;
 
-    if ($room) {
-        // 3. Join existing room, ensuring is_ready is set to 0
-        $roomId = $room['id'];
-        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready) VALUES (?, ?, 0) ON DUPLICATE KEY UPDATE room_id=room_id");
-        $stmt->bind_param("ii", $roomId, $userId);
-        $stmt->execute();
-        $stmt->close();
-    } else {
-        // 4. Create new room
+    if ($matchAction === 'create') {
+        // Always create a new room
         $gameModeParts = explode('-', $gameMode);
         $totalRounds = count($gameModeParts) > 1 ? (int)$gameModeParts[1] : 1;
 
@@ -66,9 +52,28 @@ try {
         $stmt->bind_param("ii", $roomId, $userId);
         $stmt->execute();
         $stmt->close();
-    }
+    } else { // 'join' or default 'match' action
+        // Find an available room
+        $stmt = $conn->prepare("SELECT r.id, COUNT(rp.user_id) as player_count FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.game_type = ? AND r.game_mode = ? AND r.status = 'waiting' AND r.player_count = ? GROUP BY r.id HAVING player_count < ? ORDER BY r.created_at ASC LIMIT 1");
+        $stmt->bind_param("ssii", $gameType, $gameMode, $playerCount, $playerCount);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $room = $result->fetch_assoc();
+        $stmt->close();
 
-    // Dealing logic is now handled by player_action.php when all players are ready.
+        if ($room) {
+            $roomId = $room['id'];
+            $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready) VALUES (?, ?, 0) ON DUPLICATE KEY UPDATE room_id=room_id");
+            $stmt->bind_param("ii", $roomId, $userId);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            // No waiting rooms found, return error for 'join' action
+            echo json_encode(['success' => false, 'message' => '没有找到可加入的房间，您可以自己创建一个。']);
+            $conn->commit();
+            exit;
+        }
+    }
 
     $conn->commit();
     echo json_encode(['success' => true, 'roomId' => $roomId]);

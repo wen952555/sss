@@ -29,10 +29,15 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
           <div
             key={mode.key}
             className={`mode-card ${mode.className || ''}`}
-            onClick={() => onSelectMode(mode.key)}
           >
-            <h2 className="mode-card-title">{mode.title}</h2>
-            <p className="mode-card-description">{mode.desc}</p>
+            <div className="mode-card-left">
+              <h2 className="mode-card-title">{mode.title}</h2>
+              <p className="mode-card-description">{mode.desc}</p>
+            </div>
+            <div className="mode-card-right">
+              <button className="join-button" onClick={() => onSelectMode(mode.key, 'join')}>加入</button>
+              <button className="create-button" onClick={() => onSelectMode(mode.key, 'create')}>创建</button>
+            </div>
           </div>
         ))}
       </div>

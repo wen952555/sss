@@ -75,7 +75,7 @@ function App() {
     setCurrentView('modeSelection');
   };
 
-  const handleSelectMode = async (gameMode, gameType = viewingGame) => {
+  const handleSelectMode = async (gameMode, matchAction, gameType = viewingGame) => {
     if (!user) {
       setShowAuthModal(true);
       return;
@@ -83,25 +83,17 @@ function App() {
 
     if (!gameType || matchingStatus[gameType]) return;
 
-    let playerCount = 4; // Default player count
-    let finalGameMode = gameMode;
+    const gameModeParts = gameMode.split('-');
+    const playerCount = parseInt(gameModeParts[0], 10);
 
-    // If the gameMode string contains player count info (e.g., "4-normal"), parse it.
-    if (gameMode.includes('-')) {
-      const parts = gameMode.split('-');
-      playerCount = parseInt(parts[0], 10);
-      finalGameMode = parts[1];
-    }
-
-    const currentUser = user; // Capture user state at time of call
+    const currentUser = user;
     const userId = currentUser.id;
 
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
-    // Reset game state but keep mode info
     setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser, playerCount });
 
     try {
-      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${finalGameMode}&userId=${userId}&playerCount=${playerCount}`);
+      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${userId}&playerCount=${playerCount}&matchAction=${matchAction}`);
       const data = await response.json();
       if (data.success && data.roomId) {
         const newGameState = {
@@ -133,7 +125,7 @@ function App() {
   // This effect is for polling for a match for logged-in users.
   useEffect(() => {
     const currentGame = gameState.gameType;
-    if (!currentGame || !matchingStatus[currentGame] || !user || (user && user.id === 0)) return; // Only for logged in users
+    if (!currentGame || !matchingStatus[currentGame] || !user || (user && user.id === 0)) return;
     const intervalId = setInterval(async () => {
       if (gameState.roomId) {
         setMatchingStatus(prev => ({ ...prev, [currentGame]: false }));
@@ -144,8 +136,8 @@ function App() {
         clearInterval(intervalId);
         return;
       }
-      // Pass both gameMode and gameType for polling
-      await handleSelectMode(gameState.gameMode, gameState.gameType);
+      // Default to 'join' action when polling
+      await handleSelectMode(gameState.gameMode, 'join', gameState.gameType);
     }, 1000);
     return () => clearInterval(intervalId);
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
