@@ -24,3 +24,21 @@
 .confirm-id { font-weight: bold; color: var(--text-color); margin-left: 6px; }
 .back-btn { background: #005a4a; color: var(--text-color); margin-top: 12px; }
 .modal-error { color: var(--text-color); background: #8b0000; border-radius: 8px; padding: 8px; text-align: center; margin-top: 10px; border: 1px solid var(--text-color); }
+
+.amount-selection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.amount-selection button {
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary-color);
+  color: var(--text-color);
+  font-weight: bold;
+  cursor: pointer;
+}

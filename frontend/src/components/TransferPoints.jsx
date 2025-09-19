@@ -6,7 +6,6 @@ import './TransferPoints.css';
 const TransferPoints = ({ fromId, onClose, onSuccess }) => {
   const [phone, setPhone] = useState('');
   const [foundUserId, setFoundUserId] = useState(null);
-  const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
@@ -35,7 +34,7 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
     }
   };
 
-  const handleTransfer = async () => {
+  const handleTransfer = async (amount) => {
     const parsedAmount = parseInt(amount, 10);
     if (isNaN(parsedAmount) || parsedAmount <= 0) return setError('请输入有效的积分数量。');
     setIsLoading(true);
@@ -86,16 +85,13 @@ const TransferPoints = ({ fromId, onClose, onSuccess }) => {
               {/* --- 核心修复：将 foundUserId 强制转换为字符串再 slice --- */}
               <span className="confirm-id">{String(foundUserId).slice(-2)}</span>
             </div>
-            <p>第二步：输入赠送的积分数量</p>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="要赠送的积分"
-            />
-            <button onClick={handleTransfer} disabled={isLoading}>
-              {isLoading ? '正在处理...' : '确认赠送'}
-            </button>
+            <p>第二步：选择赠送的积分数量</p>
+            <div className="amount-selection">
+              <button onClick={() => handleTransfer(100)} disabled={isLoading}>100</button>
+              <button onClick={() => handleTransfer(200)} disabled={isLoading}>200</button>
+              <button onClick={() => handleTransfer(300)} disabled={isLoading}>300</button>
+              <button onClick={() => handleTransfer(500)} disabled={isLoading}>500</button>
+            </div>
             <button onClick={() => setStep(1)} className="back-btn">返回上一步</button>
           </div>
         )}
