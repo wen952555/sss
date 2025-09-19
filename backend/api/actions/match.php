@@ -47,14 +47,17 @@ try {
     if ($room) {
         // 3. Join existing room, ensuring is_ready is set to 0
         $roomId = $room['id'];
-        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready) VALUES (?, ?, 0)");
+        $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready) VALUES (?, ?, 0) ON DUPLICATE KEY UPDATE room_id=room_id");
         $stmt->bind_param("ii", $roomId, $userId);
         $stmt->execute();
         $stmt->close();
     } else {
         // 4. Create new room
-        $stmt = $conn->prepare("INSERT INTO game_rooms (game_type, game_mode, status, player_count) VALUES (?, ?, 'waiting', ?)");
-        $stmt->bind_param("ssi", $gameType, $gameMode, $playerCount);
+        $gameModeParts = explode('-', $gameMode);
+        $totalRounds = count($gameModeParts) > 1 ? (int)$gameModeParts[1] : 1;
+
+        $stmt = $conn->prepare("INSERT INTO game_rooms (game_type, game_mode, status, player_count, total_rounds) VALUES (?, ?, 'waiting', ?, ?)");
+        $stmt->bind_param("ssii", $gameType, $gameMode, $playerCount, $totalRounds);
         $stmt->execute();
         $roomId = $stmt->insert_id;
         $stmt->close();

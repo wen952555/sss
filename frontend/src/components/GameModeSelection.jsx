@@ -9,10 +9,10 @@ const GameModeSelection = ({ gameType, onSelectMode, onBack }) => {
   const gameTitle = gameTitles[gameType] || '游戏'; // Fallback to '游戏'
 
   const sharedModes = [
-    { key: '4-normal', title: '4人10局场', desc: '标准4人对局' },
-    { key: '4-double', title: '4人20局场', desc: '4人刺激挑战' },
-    { key: '8-normal', title: '8人10局场', desc: '标准8人对局' },
-    { key: '8-double', title: '8人20局场', desc: '8人终极对决' },
+    { key: '8-10', title: '10局场', desc: '快速对决' },
+    { key: '8-20', title: '20局场', desc: '标准对决' },
+    { key: '8-30', title: '30局场', desc: '耐力挑战' },
+    { key: '8-50', title: '50局场', desc: '终极马拉松' },
   ];
 
   const modesToRender = sharedModes;

@@ -49,21 +49,25 @@ try {
 
             $response = ['success' => true, 'message' => 'Player is ready.'];
 
-            if ($readyCount === $playerCount) {
-                if ($playerCount <= 4) {
-                    dealCardsFor4Players($conn, $roomId);
-                } else {
-                    dealCardsFor8Players($conn, $roomId);
-                }
+            if ($readyCount >= 4 && $readyCount === $playerCount) {
+                $stmt = $conn->prepare("SELECT game_mode FROM game_rooms WHERE id = ?");
+                $stmt->bind_param("i", $roomId);
+                $stmt->execute();
+                $room = $stmt->get_result()->fetch_assoc();
+                $gameModeParts = explode('-', $room['game_mode']);
+                $totalRounds = (int) $gameModeParts[1];
+                $stmt->close();
 
-                $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
+                dealCards($conn, $roomId, $playerCount, $totalRounds);
+
+                $stmt = $conn->prepare("SELECT hand FROM game_rounds WHERE room_id = ? AND user_id = ? AND round_number = 1");
                 $stmt->bind_param("ii", $roomId, $userId);
                 $stmt->execute();
                 $handResult = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
 
                 $response['cardsDealt'] = true;
-                $response['hand'] = json_decode($handResult['initial_hand'], true);
+                $response['hand'] = json_decode($handResult['hand'], true);
             }
             break;
 
@@ -80,7 +84,6 @@ try {
             if (!$hand) {
                 throw new Exception("Hand data is missing.");
             }
-            // The submitPlayerHand function is in utils.php
             submitPlayerHand($conn, $userId, $roomId, $hand);
             $response = ['success' => true, 'message' => 'Hand submitted successfully.'];
             break;
