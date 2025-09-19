@@ -178,7 +178,7 @@ if (isset($update["message"])) {
         exit();
     }
 
-    // --- 新增的直接命令处理 ---
+    // --- 新增直接命令处理 ---
     if (strpos($text, '/') === 0) {
         $parts = explode(' ', $text);
         $command = $parts[0];
