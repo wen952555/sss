@@ -42,14 +42,21 @@ if (empty($sanitized_action)) {
 
 $actionFile = $actionsDir . '/' . $sanitized_action . '.php';
 error_log("Checking for file: " . $actionFile);
+error_log("Absolute path of action file: " . realpath($actionFile));
 
-if (file_exists($actionFile)) {
+clearstatcache();
+$fileExists = file_exists($actionFile);
+error_log("file_exists check result: " . ($fileExists ? 'true' : 'false'));
+
+if ($fileExists) {
     error_log("File found. Including: " . $actionFile);
     require_once $actionFile;
 } else {
     http_response_code(404);
     $errorMessage = 'Unknown API action provided.';
     error_log("File not found: " . $actionFile);
+    $all_files_in_actions_dir = scandir($actionsDir);
+    error_log("Files in actions dir: " . print_r($all_files_in_actions_dir, true));
     echo json_encode(['success' => false, 'message' => $errorMessage]);
 }
 
