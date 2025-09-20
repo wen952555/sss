@@ -35,6 +35,13 @@ export const useCardArrangement = () => {
     if (selectedCards.length === 0) return;
 
     const currentLanes = { top: topLane, middle: middleLane, bottom: bottomLane };
+    const targetLane = currentLanes[laneName];
+
+    if (targetLane.length + selectedCards.length > LANE_LIMITS[laneName]) {
+      // Prevent adding cards if it exceeds the lane limit.
+      // The UI should provide feedback for this action.
+      return;
+    }
 
     // Create a mutable copy of lanes
     const newLanes = {
