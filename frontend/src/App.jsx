@@ -68,10 +68,12 @@ function App() {
   };
 
   const handleEnterGame = (gameType) => {
+    console.log('handleEnterGame called with gameType:', gameType);
     handleSelectMode(8, 'join', gameType);
   };
 
   const handleSelectMode = async (playerCount, matchAction, gameType, isRetry = false) => {
+    console.log('handleSelectMode called with:', { playerCount, matchAction, gameType, isRetry });
     if (!user) {
       setShowAuthModal(true);
       return;
@@ -86,7 +88,9 @@ function App() {
     setGameState({ gameType, roomId: null, error: null, gameUser: currentUser, playerCount });
 
     try {
-      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&userId=${userId}&playerCount=${playerCount}&matchAction=${matchAction}`);
+      const url = `/api/index.php?action=match&gameType=${gameType}&userId=${userId}&playerCount=${playerCount}&matchAction=${matchAction}`;
+      console.log('Fetching URL:', url);
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success && data.roomId) {
         const newGameState = {
@@ -104,7 +108,7 @@ function App() {
         }));
       } else {
         if (!isRetry && data.message && data.message.includes("没有找到可加入的房间")) {
-          await handleSelectMode(gameMode, 'create', gameType, true);
+          await handleSelectMode(playerCount, 'create', gameType, true);
         } else {
           setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
           setGameState(prev => ({ ...prev, error: data.message || '匹配失败，请重试' }));
@@ -131,10 +135,10 @@ function App() {
         return;
       }
       // Default to 'join' action when polling
-      await handleSelectMode(gameState.gameMode, 'join', gameState.gameType);
+      await handleSelectMode(gameState.playerCount, 'join', gameState.gameType);
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
+  }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.playerCount]);
 
   const handleBackToLobby = () => {
     localStorage.removeItem('activeGame');
@@ -160,7 +164,6 @@ function App() {
     if (isInGame) {
       const gameProps = {
         roomId: gameState.roomId,
-        gameMode: gameState.gameMode,
         onBackToLobby: handleBackToLobby,
         user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
