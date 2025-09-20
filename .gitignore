@@ -22,6 +22,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 php_server.log
+backend.log
+frontend/npm_dev.log
 
 # Secrets
 backend/config.php
