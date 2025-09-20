@@ -50,7 +50,7 @@ try {
         $stmt->close();
     } else { // 'join' or default 'match' action
         // Find an available room
-        $stmt = $conn->prepare("SELECT r.id, COUNT(rp.user_id) as player_count FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.game_type = ? AND r.status = 'waiting' AND r.player_count = ? GROUP BY r.id HAVING player_count < ? ORDER BY r.created_at ASC LIMIT 1");
+        $stmt = $conn->prepare("SELECT r.id, COUNT(rp.user_id) as player_count FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.game_type = ? AND r.status IN ('waiting', 'finished') AND r.player_count = ? GROUP BY r.id HAVING player_count < ? ORDER BY r.created_at ASC LIMIT 1");
         $stmt->bind_param("sii", $gameType, $playerCount, $playerCount);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -61,6 +61,12 @@ try {
             $roomId = $room['id'];
             $stmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready) VALUES (?, ?, 0) ON DUPLICATE KEY UPDATE room_id=room_id");
             $stmt->bind_param("ii", $roomId, $userId);
+            $stmt->execute();
+            $stmt->close();
+
+            // If the room was finished, reset its status to waiting
+            $stmt = $conn->prepare("UPDATE game_rooms SET status = 'waiting' WHERE id = ? AND status = 'finished'");
+            $stmt->bind_param("i", $roomId);
             $stmt->execute();
             $stmt->close();
         } else {

@@ -54,6 +54,15 @@ CREATE TABLE IF NOT EXISTS `room_players` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `room_id_user_id` (`room_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `pre_dealt_hands` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `player_count` int(11) NOT NULL,
+  `hands` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`hands`)),
+  `is_used` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ";
 
 if ($conn->multi_query($sql)) {

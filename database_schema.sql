@@ -47,6 +47,20 @@ CREATE TABLE `users` (
   `last_active` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pre_dealt_hands`
+--
+
+CREATE TABLE `pre_dealt_hands` (
+  `id` int(11) NOT NULL,
+  `player_count` int(11) NOT NULL,
+  `hands` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`hands`)),
+  `is_used` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 --
 -- Indexes for dumped tables
 --
@@ -73,6 +87,12 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `phone` (`phone`);
 
 --
+-- Indexes for table `pre_dealt_hands`
+--
+ALTER TABLE `pre_dealt_hands`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -93,4 +113,10 @@ ALTER TABLE `room_players`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pre_dealt_hands`
+--
+ALTER TABLE `pre_dealt_hands`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
