@@ -1,11 +1,18 @@
-/* Main Menu - Modern Dark Theme */
+/* Main Menu - New Dark Theme */
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
 
 .main-menu {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background-color: var(--background-dark);
-    color: var(--text-primary);
+    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    overflow: hidden;
+    color: #fff;
 }
 
 .main-menu-header {
@@ -13,8 +20,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 15px 30px;
-    background-color: var(--background-light);
-    border-bottom: 1px solid var(--border-color);
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid #c4a66a;
     flex-shrink: 0;
 }
 
@@ -26,38 +33,38 @@
 
 .header-link {
     text-decoration: none;
-    color: var(--primary-accent);
+    color: #c4a66a;
     font-size: 1.1rem;
     transition: color 0.3s;
 }
 .header-link:hover {
-    color: var(--secondary-accent);
+    color: #fff;
 }
 
 .logout-button {
     background: none;
-    border: 1px solid var(--primary-accent);
-    color: var(--primary-accent);
+    border: 1px solid #c4a66a;
+    color: #c4a66a;
     padding: 5px 10px;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
 }
 .logout-button:hover {
-    background-color: var(--primary-accent);
-    color: var(--background-dark);
+    background-color: #c4a66a;
+    color: #1b2735;
 }
 
 .username-display {
     font-weight: bold;
     font-size: 1.1rem;
-    color: var(--text-primary);
+    color: #fff;
 }
 
 .game-panels-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
+    gap: 40px;
     padding: 40px;
     flex-grow: 1;
     align-content: center;
@@ -73,16 +80,21 @@
 .game-panel {
     width: 280px;
     height: 200px;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border: 2px solid transparent;
+    border-radius: 15px;
     padding: 20px;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
     text-align: center;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-end; /* Align content to the bottom */
     align-items: center;
     transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
     cursor: pointer;
+    border-image: linear-gradient(to bottom right, #b88a2d, #c4a66a) 1;
+    background-size: cover;
+    background-position: center;
     position: relative;
 }
 
@@ -92,32 +104,34 @@
 }
 
 .game-panel:hover {
-    transform: translateY(-5px);
-    border-color: var(--primary-accent);
-    box-shadow: 0 5px 20px rgba(0, 188, 212, 0.2);
+    transform: translateY(-10px) scale(1.05);
+    border-color: #c4a66a;
+    box-shadow: 0 10px 30px rgba(196, 166, 106, 0.3);
 }
 
 .panel-title {
-    font-size: 2rem;
-    color: var(--text-primary);
+    font-size: 2.5rem;
+    color: #c4a66a;
     margin: 0 0 10px 0;
     font-weight: 600;
 }
 
 .panel-description {
     font-size: 1rem;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.8);
 }
 
-/* New solid background colors */
+.panel-yansan {
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/ace_of_spades.svg');
+}
 .panel-doudizhu {
-    background-color: #2c3e50; /* Slate Blue */
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/red_joker.svg');
 }
 .panel-mahjong {
-    background-color: #27ae60; /* Emerald Green */
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/photo/1m.svg');
 }
 .panel-thirteen-waters {
-    background-color: #8e44ad; /* Wisteria Purple */
+    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/king_of_hearts.svg');
 }
 
 @media (max-width: 768px) {
@@ -131,9 +145,9 @@
     }
     .game-panel {
         width: 85%;
-        height: 150px;
+        height: 180px;
     }
     .panel-title {
-        font-size: 1.8rem;
+        font-size: 2rem;
     }
 }
