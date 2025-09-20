@@ -60,15 +60,16 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     }
 
     setIsLoading(true);
+    const formData = new URLSearchParams();
+    formData.append('userId', user.id);
+    formData.append('roomId', roomId);
+    formData.append('action', 'submit_hand');
+    formData.append('hand', JSON.stringify(handToSend));
+
     fetch('/api/index.php?action=player_action', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: user.id,
-        roomId,
-        action: 'submit_hand',
-        hand: handToSend,
-      }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData.toString(),
     })
     .then(res => res.json())
     .then(data => {
@@ -234,10 +235,15 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
 
     setIsLoading(true);
     try {
+      const formData = new URLSearchParams();
+      formData.append('userId', user.id);
+      formData.append('roomId', roomId);
+      formData.append('action', action);
+
       const response = await fetch('/api/index.php?action=player_action', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, roomId, action }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString(),
       });
       const data = await response.json();
       if (!data.success) {
