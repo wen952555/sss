@@ -50,8 +50,8 @@ try {
         $stmt->close();
     } else { // 'join' or default 'match' action
         // Find an available room
-        $stmt = $conn->prepare("SELECT r.id, COUNT(rp.user_id) as player_count FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.game_type = ? AND r.status IN ('waiting', 'finished') AND r.player_count = ? GROUP BY r.id HAVING player_count < ? ORDER BY r.created_at ASC LIMIT 1");
-        $stmt->bind_param("sii", $gameType, $playerCount, $playerCount);
+        $stmt = $conn->prepare("SELECT r.id, COUNT(rp.user_id) as player_count FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.game_type = ? AND r.status IN ('waiting', 'finished') GROUP BY r.id HAVING player_count < r.player_count ORDER BY r.created_at ASC LIMIT 1");
+        $stmt->bind_param("s", $gameType);
         $stmt->execute();
         $result = $stmt->get_result();
         $room = $result->fetch_assoc();

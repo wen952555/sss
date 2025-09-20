@@ -62,6 +62,21 @@ CREATE TABLE `pre_dealt_hands` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
+-- Table structure for table `game_hand_comparisons`
+--
+
+CREATE TABLE `game_hand_comparisons` (
+  `id` int(11) NOT NULL,
+  `room_id` int(11) NOT NULL,
+  `player1_id` int(11) NOT NULL,
+  `player2_id` int(11) NOT NULL,
+  `lane` enum('top','middle','bottom') NOT NULL,
+  `result` enum('win','loss','draw') NOT NULL,
+  `score_change` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
 -- Indexes for dumped tables
 --
 
@@ -93,6 +108,12 @@ ALTER TABLE `pre_dealt_hands`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `game_hand_comparisons`
+--
+ALTER TABLE `game_hand_comparisons`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -119,4 +140,10 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `pre_dealt_hands`
 --
 ALTER TABLE `pre_dealt_hands`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `game_hand_comparisons`
+--
+ALTER TABLE `game_hand_comparisons`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
