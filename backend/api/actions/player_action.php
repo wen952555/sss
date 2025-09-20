@@ -34,40 +34,32 @@ try {
             $stmt->close();
 
             // Check if all players are ready
-            $stmt = $conn->prepare("SELECT player_count FROM game_rooms WHERE id = ?");
+            $stmt = $conn->prepare("SELECT COUNT(*) as total_players, SUM(is_ready) as ready_players FROM room_players WHERE room_id = ?");
             $stmt->bind_param("i", $roomId);
             $stmt->execute();
-            $room = $stmt->get_result()->fetch_assoc();
-            $playerCount = $room['player_count'];
-            $stmt->close();
-
-            $stmt = $conn->prepare("SELECT COUNT(*) as ready_count FROM room_players WHERE room_id = ? AND is_ready = 1");
-            $stmt->bind_param("i", $roomId);
-            $stmt->execute();
-            $readyCount = $stmt->get_result()->fetch_assoc()['ready_count'];
+            $result = $stmt->get_result()->fetch_assoc();
             $stmt->close();
 
             $response = ['success' => true, 'message' => 'Player is ready.'];
 
-            if ($readyCount >= 4 && $readyCount === $playerCount) {
-                $stmt = $conn->prepare("SELECT game_mode FROM game_rooms WHERE id = ?");
+            if ($result['ready_players'] >= 4 && $result['ready_players'] == $result['total_players']) {
+                $stmt = $conn->prepare("SELECT player_count FROM game_rooms WHERE id = ?");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
                 $room = $stmt->get_result()->fetch_assoc();
-                $gameModeParts = explode('-', $room['game_mode']);
-                $totalRounds = (int) $gameModeParts[1];
+                $playerCount = $room['player_count'];
                 $stmt->close();
 
-                dealCards($conn, $roomId, $playerCount, $totalRounds);
+                dealCards($conn, $roomId, $playerCount);
 
-                $stmt = $conn->prepare("SELECT hand FROM game_rounds WHERE room_id = ? AND user_id = ? AND round_number = 1");
+                $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE room_id = ? AND user_id = ?");
                 $stmt->bind_param("ii", $roomId, $userId);
                 $stmt->execute();
                 $handResult = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
 
                 $response['cardsDealt'] = true;
-                $response['hand'] = json_decode($handResult['hand'], true);
+                $response['hand'] = json_decode($handResult['initial_hand'], true);
             }
             break;
 
