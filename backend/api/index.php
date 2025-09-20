@@ -7,7 +7,7 @@ error_log("--- backend/api/index.php execution started ---");
 header("Content-Type: application/json; charset=UTF-8");
 
 // --- Directory and Action Sanity Checks ---
-$actionsDir = dirname(__FILE__) . '/actions';
+$actionsDir = 'actions';
 if (!is_dir($actionsDir)) {
     http_response_code(500);
     $errorMessage = 'Internal Server Error: Actions directory not found.';
