@@ -5,3 +5,5 @@ ALTER TABLE `game_rooms`
   DROP COLUMN `game_mode`;
 
 DROP TABLE IF EXISTS `game_rounds`;
+
+-- Migration to add game_hand_comparisons table

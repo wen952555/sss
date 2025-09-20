@@ -113,35 +113,55 @@ function submitPlayerHand($conn, $userId, $roomId, $hand) {
     $stmt->close();
 
     if ($result['total_players'] > 0 && $result['total_players'] === $result['submitted_players']) {
-        // All players have submitted, process scores and check for next round or game end
-        $roomStmt = $conn->prepare("SELECT current_round, total_rounds FROM game_rooms WHERE id = ?");
-        $roomStmt->bind_param("i", $roomId);
-        $roomStmt->execute();
-        $room = $roomStmt->get_result()->fetch_assoc();
-        $roomStmt->close();
+        // All players have submitted, calculate scores
+        $stmt = $conn->prepare("SELECT user_id, submitted_hand FROM room_players WHERE room_id = ?");
+        $stmt->bind_param("i", $roomId);
+        $stmt->execute();
+        $playersResult = $stmt->get_result();
+        $players = [];
+        while ($row = $playersResult->fetch_assoc()) {
+            $players[] = [
+                'id' => $row['user_id'],
+                'hand' => json_decode($row['submitted_hand'], true)
+            ];
+        }
+        $stmt->close();
 
-        // (Score calculation logic will be added here later)
+        $scores = array_fill_keys(array_column($players, 'id'), 0);
 
-        if ($room['current_round'] < $room['total_rounds']) {
-            // Advance to the next round
-            $nextRound = $room['current_round'] + 1;
-            $updateRoomStmt = $conn->prepare("UPDATE game_rooms SET current_round = ?, status = 'arranging' WHERE id = ?");
-            $updateRoomStmt->bind_param("ii", $nextRound, $roomId);
-            $updateRoomStmt->execute();
-            $updateRoomStmt->close();
+        for ($i = 0; $i < count($players); $i++) {
+            for ($j = $i + 1; $j < count($players); $j++) {
+                $p1 = $players[$i];
+                $p2 = $players[$j];
 
-            // Clear submitted hands for the next round
-            $clearHandsStmt = $conn->prepare("UPDATE room_players SET submitted_hand = NULL, is_ready = 0 WHERE room_id = ?");
-            $clearHandsStmt->bind_param("i", $roomId);
-            $clearHandsStmt->execute();
-            $clearHandsStmt->close();
-        } else {
-            // All rounds finished
-            $stmt = $conn->prepare("UPDATE game_rooms SET status='finished' WHERE id=?");
-            $stmt->bind_param("i", $roomId);
+                $scoreResult = calculateSinglePairScorePhp($p1['hand'], $p2['hand']);
+                $pairScore = $scoreResult['total_score'];
+                $laneResults = $scoreResult['lane_results'];
+
+                $scores[$p1['id']] += $pairScore;
+                $scores[$p2['id']] -= $pairScore;
+
+                foreach ($laneResults as $lane => $laneResult) {
+                    $stmt = $conn->prepare("INSERT INTO game_hand_comparisons (room_id, player1_id, player2_id, lane, result, score_change) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt->bind_param("iiisss", $roomId, $p1['id'], $p2['id'], $lane, $laneResult['result'], $laneResult['score_change']);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+            }
+        }
+
+        foreach ($scores as $userId => $score) {
+            $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?");
+            $stmt->bind_param("iii", $score, $roomId, $userId);
             $stmt->execute();
             $stmt->close();
         }
+
+        // All players have submitted, game is finished
+        $stmt = $conn->prepare("UPDATE game_rooms SET status='finished' WHERE id=?");
+        $stmt->bind_param("i", $roomId);
+        $stmt->execute();
+        $stmt->close();
     } else {
         // Not all players have submitted yet, just update status
         $stmt = $conn->prepare("UPDATE room_players SET is_ready = 0 WHERE user_id = ? AND room_id = ?");
@@ -150,4 +170,6 @@ function submitPlayerHand($conn, $userId, $roomId, $hand) {
         $stmt->close();
     }
 }
+
+require_once __DIR__ . '/scorer.php';
 ?>
