@@ -119,7 +119,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   const fetchGameStatus = useCallback(async () => {
     if (!roomId || !user) return;
     try {
-      const response = await fetch(`/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`);
+      const url = `/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`;
+      console.log('Fetching game status:', url);
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
         if (!isOnline) {
