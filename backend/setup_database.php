@@ -36,11 +36,8 @@ CREATE TABLE IF NOT EXISTS `users` (
 CREATE TABLE IF NOT EXISTS `game_rooms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `game_type` varchar(50) NOT NULL,
-  `game_mode` varchar(50) NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'waiting',
   `player_count` int(11) NOT NULL,
-  `current_round` INT NOT NULL DEFAULT 0,
-  `total_rounds` INT NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -58,14 +55,13 @@ CREATE TABLE IF NOT EXISTS `room_players` (
   UNIQUE KEY `room_id_user_id` (`room_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS `game_rounds` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `room_id` INT NOT NULL,
-  `round_number` INT NOT NULL,
-  `user_id` INT NOT NULL,
-  `hand` TEXT,
-  PRIMARY KEY (`id`),
-  INDEX `room_round_user_idx` (`room_id`, `round_number`, `user_id`)
+CREATE TABLE IF NOT EXISTS `pre_dealt_hands` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `player_count` int(11) NOT NULL,
+  `hands` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`hands`)),
+  `is_used` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ";
 

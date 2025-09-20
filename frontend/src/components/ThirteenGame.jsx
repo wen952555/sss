@@ -5,7 +5,7 @@ import GameTable from './GameTable';
 import { isSssFoul, calculateSinglePairScore, getSpecialType, compareSssArea } from '../utils/scorer.js';
 import { parseCard } from '../utils/pokerEvaluator.js';
 
-const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerCount }) => {
+const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) => {
   const {
     topLane,
     middleLane,
@@ -25,8 +25,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
-  const [currentRound, setCurrentRound] = useState(0);
-  const [totalRounds, setTotalRounds] = useState(0);
 
   const handleHandData = useCallback((handData) => {
     if (Array.isArray(handData)) {
@@ -130,8 +128,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
         }
         setPlayers(data.players);
         setPlayerState(data.gameStatus);
-        setCurrentRound(data.currentRound);
-        setTotalRounds(data.totalRounds);
         if ((data.gameStatus === 'playing' || data.gameStatus === 'arranging' || data.gameStatus === 'submitted') && data.hand) {
           handleHandData(data.hand);
         }
@@ -284,7 +280,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, gameMode, playerC
   return (
     <GameTable
       gameType={gameType}
-      title={`第 ${currentRound} / ${totalRounds} 局 - 玩家: ${players.length} / ${playerCount || 4}`}
+      title={`玩家: ${players.length} / ${playerCount || 4}`}
       players={players}
       user={user}
       topLane={topLane}

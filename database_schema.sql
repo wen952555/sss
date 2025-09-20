@@ -11,26 +11,9 @@
 CREATE TABLE `game_rooms` (
   `id` int(11) NOT NULL,
   `game_type` varchar(50) NOT NULL,
-  `game_mode` varchar(50) NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'waiting',
   `player_count` int(11) NOT NULL,
-  `current_round` int(11) NOT NULL DEFAULT 0,
-  `total_rounds` int(11) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `game_rounds`
---
-
-CREATE TABLE `game_rounds` (
-  `id` int(11) NOT NULL,
-  `room_id` int(11) NOT NULL,
-  `round_number` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `hand` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -64,6 +47,20 @@ CREATE TABLE `users` (
   `last_active` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pre_dealt_hands`
+--
+
+CREATE TABLE `pre_dealt_hands` (
+  `id` int(11) NOT NULL,
+  `player_count` int(11) NOT NULL,
+  `hands` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`hands`)),
+  `is_used` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 --
 -- Indexes for dumped tables
 --
@@ -75,12 +72,6 @@ ALTER TABLE `game_rooms`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `game_rounds`
---
-ALTER TABLE `game_rounds`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `room_round_user_idx` (`room_id`,`round_number`,`user_id`);
-
 --
 -- Indexes for table `room_players`
 --
@@ -96,6 +87,12 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `phone` (`phone`);
 
 --
+-- Indexes for table `pre_dealt_hands`
+--
+ALTER TABLE `pre_dealt_hands`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -106,11 +103,6 @@ ALTER TABLE `game_rooms`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `game_rounds`
---
-ALTER TABLE `game_rounds`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
 --
 -- AUTO_INCREMENT for table `room_players`
 --
@@ -121,4 +113,10 @@ ALTER TABLE `room_players`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pre_dealt_hands`
+--
+ALTER TABLE `pre_dealt_hands`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;

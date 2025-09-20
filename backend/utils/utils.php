@@ -4,7 +4,7 @@
 /**
  * Deals cards for multiple rounds and stores them in the database.
  */
-function dealCards($conn, $roomId, $playerCount, $totalRounds) {
+function dealCards($conn, $roomId, $playerCount) {
     $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
     $suits = ['spades', 'hearts', 'clubs', 'diamonds'];
     $base_deck = [];
@@ -16,8 +16,7 @@ function dealCards($conn, $roomId, $playerCount, $totalRounds) {
 
     $cards_per_player = 13;
     $cards_per_round = $playerCount * $cards_per_player;
-    $total_cards_needed = $cards_per_round * $totalRounds;
-    $num_decks_needed = ceil($total_cards_needed / 52);
+    $num_decks_needed = ceil($cards_per_round / 52);
 
     $full_deck = [];
     for ($i = 0; $i < $num_decks_needed; $i++) {
@@ -37,23 +36,21 @@ function dealCards($conn, $roomId, $playerCount, $totalRounds) {
     $stmt->close();
 
     $card_offset = 0;
-    for ($round = 1; $round <= $totalRounds; $round++) {
-        for ($i = 0; $i < count($player_ids); $i++) {
-            $hand = array_slice($full_deck, $card_offset, $cards_per_player);
-            $card_offset += $cards_per_player;
+    for ($i = 0; $i < count($player_ids); $i++) {
+        $hand = array_slice($full_deck, $card_offset, $cards_per_player);
+        $card_offset += $cards_per_player;
 
-            $handJson = json_encode($hand);
+        $handJson = json_encode($hand);
 
-            $insertStmt = $conn->prepare("INSERT INTO game_rounds (room_id, round_number, user_id, hand) VALUES (?, ?, ?, ?)");
-            $insertStmt->bind_param("iiis", $roomId, $round, $player_ids[$i], $handJson);
-            $insertStmt->execute();
-            $insertStmt->close();
-        }
+        $updateStmt = $conn->prepare("UPDATE room_players SET initial_hand = ? WHERE room_id = ? AND user_id = ?");
+        $updateStmt->bind_param("sii", $handJson, $roomId, $player_ids[$i]);
+        $updateStmt->execute();
+        $updateStmt->close();
     }
 
-    // Update room status to 'arranging' and set rounds
-    $stmt = $conn->prepare("UPDATE game_rooms SET status='arranging', current_round=1, total_rounds=? WHERE id=?");
-    $stmt->bind_param("ii", $totalRounds, $roomId);
+    // Update room status to 'arranging'
+    $stmt = $conn->prepare("UPDATE game_rooms SET status='arranging' WHERE id=?");
+    $stmt->bind_param("i", $roomId);
     $stmt->execute();
     $stmt->close();
 }

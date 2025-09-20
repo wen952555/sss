@@ -4,7 +4,6 @@ import Auth from './components/Auth';
 import UserProfile from './components/UserProfile';
 import TransferPoints from './components/TransferPoints';
 import ThirteenGame from './components/ThirteenGame';
-import GameModeSelection from './components/GameModeSelection';
 import GameRules from './components/GameRules';
 import './App.css';
 import { Browser } from '@capacitor/browser';
@@ -32,7 +31,6 @@ function App() {
   const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, 'thirteen-5': false });
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
-  const [viewingGame, setViewingGame] = useState(null); // null, 'thirteen', or 'eight'
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
@@ -67,38 +65,36 @@ function App() {
     setUser(null);
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setMatchingStatus({ thirteen: false, 'thirteen-5': false });
-    setViewingGame(null);
   };
 
-  const handleSelectGameType = (gameType) => {
-    setViewingGame(gameType);
-    setCurrentView('modeSelection');
+  const handleEnterGame = (gameType) => {
+    console.log('handleEnterGame called with gameType:', gameType);
+    handleSelectMode(8, 'join', gameType);
   };
 
-  const handleSelectMode = async (gameMode, matchAction, gameType = viewingGame) => {
+  const handleSelectMode = async (playerCount, matchAction, gameType, isRetry = false) => {
+    console.log('handleSelectMode called with:', { playerCount, matchAction, gameType, isRetry });
     if (!user) {
       setShowAuthModal(true);
       return;
     }
 
-    if (!gameType || matchingStatus[gameType]) return;
-
-    const gameModeParts = gameMode.split('-');
-    const playerCount = parseInt(gameModeParts[0], 10);
+    if (!gameType || (matchingStatus[gameType] && !isRetry)) return;
 
     const currentUser = user;
     const userId = currentUser.id;
 
     setMatchingStatus(prev => ({ ...prev, [gameType]: true }));
-    setGameState({ gameType, gameMode, roomId: null, error: null, gameUser: currentUser, playerCount });
+    setGameState({ gameType, roomId: null, error: null, gameUser: currentUser, playerCount });
 
     try {
-      const response = await fetch(`/api/index.php?action=match&gameType=${gameType}&gameMode=${gameMode}&userId=${userId}&playerCount=${playerCount}&matchAction=${matchAction}`);
+      const url = `/api/index.php?action=match&gameType=${gameType}&userId=${userId}&playerCount=${playerCount}&matchAction=${matchAction}`;
+      console.log('Fetching URL:', url);
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success && data.roomId) {
         const newGameState = {
           gameType,
-          gameMode,
           roomId: data.roomId,
           error: null,
           gameUser: currentUser,
@@ -108,13 +104,15 @@ function App() {
         localStorage.setItem('activeGame', JSON.stringify({
           roomId: data.roomId,
           gameType,
-          gameMode,
           playerCount
         }));
-        setViewingGame(null);
       } else {
-        setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
-        setGameState(prev => ({ ...prev, error: data.message || '匹配失败，请重试' }));
+        if (!isRetry && data.message && data.message.includes("没有找到可加入的房间")) {
+          await handleSelectMode(playerCount, 'create', gameType, true);
+        } else {
+          setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
+          setGameState(prev => ({ ...prev, error: data.message || '匹配失败，请重试' }));
+        }
       }
     } catch (err) {
       setMatchingStatus(prev => ({ ...prev, [gameType]: false }));
@@ -137,17 +135,16 @@ function App() {
         return;
       }
       // Default to 'join' action when polling
-      await handleSelectMode(gameState.gameMode, 'join', gameState.gameType);
+      await handleSelectMode(gameState.playerCount, 'join', gameState.gameType);
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.gameMode]);
+  }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.playerCount]);
 
   const handleBackToLobby = () => {
     localStorage.removeItem('activeGame');
     setGameState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
     setCurrentView('lobby');
     setMatchingStatus({ thirteen: false, 'thirteen-5': false });
-    setViewingGame(null);
   };
 
   const handleUpdate = async () => {
@@ -167,7 +164,6 @@ function App() {
     if (isInGame) {
       const gameProps = {
         roomId: gameState.roomId,
-        gameMode: gameState.gameMode,
         onBackToLobby: handleBackToLobby,
         user: gameState.gameUser || user, // Use gameUser if it exists, otherwise fallback to logged-in user
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
@@ -185,13 +181,11 @@ function App() {
         return <GameRules onBack={() => setCurrentView('lobby')} />;
       case 'profile':
         return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
-      case 'modeSelection':
-        return <GameModeSelection gameType={viewingGame} onSelectMode={handleSelectMode} onBack={handleBackToLobby} />;
       case 'lobby':
       default:
         return (
           <GameLobby
-            onSelectGameType={handleSelectGameType}
+            onSelectGameType={handleEnterGame}
             matchingStatus={matchingStatus}
             user={user}
             onProfile={() => setCurrentView('profile')}

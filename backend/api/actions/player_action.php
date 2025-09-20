@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
+require_once __DIR__ . '/../../utils/pre_dealer.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -34,40 +35,72 @@ try {
             $stmt->close();
 
             // Check if all players are ready
-            $stmt = $conn->prepare("SELECT player_count FROM game_rooms WHERE id = ?");
+            $stmt = $conn->prepare("SELECT COUNT(*) as total_players, SUM(is_ready) as ready_players FROM room_players WHERE room_id = ?");
             $stmt->bind_param("i", $roomId);
             $stmt->execute();
-            $room = $stmt->get_result()->fetch_assoc();
-            $playerCount = $room['player_count'];
-            $stmt->close();
-
-            $stmt = $conn->prepare("SELECT COUNT(*) as ready_count FROM room_players WHERE room_id = ? AND is_ready = 1");
-            $stmt->bind_param("i", $roomId);
-            $stmt->execute();
-            $readyCount = $stmt->get_result()->fetch_assoc()['ready_count'];
+            $result = $stmt->get_result()->fetch_assoc();
             $stmt->close();
 
             $response = ['success' => true, 'message' => 'Player is ready.'];
 
-            if ($readyCount >= 4 && $readyCount === $playerCount) {
-                $stmt = $conn->prepare("SELECT game_mode FROM game_rooms WHERE id = ?");
+            if ($result['ready_players'] >= 4 && $result['ready_players'] == $result['total_players']) {
+                $playerCount = $result['total_players'];
+
+                // Fetch a pre-dealt hand
+                $stmt = $conn->prepare("SELECT id, hands FROM pre_dealt_hands WHERE player_count = ? AND is_used = 0 ORDER BY RAND() LIMIT 1");
+                $stmt->bind_param("i", $playerCount);
+                $stmt->execute();
+                $preDealtHand = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+
+                if (!$preDealtHand) {
+                    // No pre-dealt hands available, create one on the fly
+                    $hands = deal_new_game($playerCount);
+                } else {
+                    $hands = json_decode($preDealtHand['hands'], true);
+                    // Mark the hand as used
+                    $stmt = $conn->prepare("UPDATE pre_dealt_hands SET is_used = 1 WHERE id = ?");
+                    $stmt->bind_param("i", $preDealtHand['id']);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+
+                // Distribute hands to players
+                $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id = ? ORDER BY id ASC");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
-                $room = $stmt->get_result()->fetch_assoc();
-                $gameModeParts = explode('-', $room['game_mode']);
-                $totalRounds = (int) $gameModeParts[1];
+                $playerIdsResult = $stmt->get_result();
+                $player_ids = [];
+                while ($row = $playerIdsResult->fetch_assoc()) {
+                    $player_ids[] = $row['user_id'];
+                }
                 $stmt->close();
 
-                dealCards($conn, $roomId, $playerCount, $totalRounds);
+                $userHand = null;
+                for ($i = 0; $i < count($player_ids); $i++) {
+                    $handJson = json_encode($hands[$i]);
+                    $stmt = $conn->prepare("UPDATE room_players SET initial_hand = ? WHERE room_id = ? AND user_id = ?");
+                    $stmt->bind_param("sii", $handJson, $roomId, $player_ids[$i]);
+                    $stmt->execute();
+                    $stmt->close();
+                    if ($player_ids[$i] == $userId) {
+                        $userHand = $hands[$i];
+                    }
+                }
 
-                $stmt = $conn->prepare("SELECT hand FROM game_rounds WHERE room_id = ? AND user_id = ? AND round_number = 1");
-                $stmt->bind_param("ii", $roomId, $userId);
+                // Update room status
+                $stmt = $conn->prepare("UPDATE game_rooms SET status = 'arranging' WHERE id = ?");
+                $stmt->bind_param("i", $roomId);
                 $stmt->execute();
-                $handResult = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
+
+                // Replenish hands in the background
+                $php_path = '/usr/bin/php';
+                $replenish_script_path = __DIR__ . '/../../utils/pre_dealer.php';
+                exec("$php_path $replenish_script_path > /dev/null 2>&1 &");
 
                 $response['cardsDealt'] = true;
-                $response['hand'] = json_decode($handResult['hand'], true);
+                $response['hand'] = $userHand;
             }
             break;
 
