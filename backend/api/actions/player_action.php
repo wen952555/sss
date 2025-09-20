@@ -3,11 +3,9 @@ require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 require_once __DIR__ . '/../../utils/pre_dealer.php';
 
-$data = json_decode(file_get_contents('php://input'), true);
-
-$userId = $data['userId'] ?? null;
-$roomId = $data['roomId'] ?? null;
-$action = $data['action'] ?? null;
+$userId = $_POST['userId'] ?? null;
+$roomId = $_POST['roomId'] ?? null;
+$action = $_POST['action'] ?? null;
 
 if (!$userId || !$roomId || !$action) {
     http_response_code(400);
@@ -113,7 +111,7 @@ try {
             break;
 
         case 'submit_hand':
-            $hand = $data['hand'] ?? null;
+            $hand = isset($_POST['hand']) ? json_decode($_POST['hand'], true) : null;
             if (!$hand) {
                 throw new Exception("Hand data is missing.");
             }
