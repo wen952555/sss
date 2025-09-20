@@ -3,6 +3,12 @@ require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 require_once __DIR__ . '/../../utils/pre_dealer.php';
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Method Not Allowed. This endpoint only accepts POST requests.']);
+    exit;
+}
+
 $userId = $_POST['userId'] ?? null;
 $roomId = $_POST['roomId'] ?? null;
 $action = $_POST['action'] ?? null;

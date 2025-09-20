@@ -9,7 +9,7 @@ def run_verification(playwright):
         # 1. Navigate to the app and start the trial game
         page.goto("http://localhost:5173/", wait_until="domcontentloaded")
         expect(page.locator('.lobby-container')).to_be_visible(timeout=15000)
-        page.locator('.game-card.thirteen-bg').click()
+        page.locator('.game-card.thirteen-bg').first.click()
         expect(page.locator('.mode-card.trial-mode')).to_be_visible(timeout=10000)
         page.locator('.mode-card.trial-mode').click()
         ready_button = page.get_by_role("button", name="点击准备")
