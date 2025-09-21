@@ -134,8 +134,8 @@ function App() {
         clearInterval(intervalId);
         return;
       }
-      // Default to 'join' action when polling
-      await handleSelectMode(gameState.playerCount, 'join', gameState.gameType);
+      // Default to 'join' action when polling, with isRetry = true to bypass the click guard
+      await handleSelectMode(gameState.playerCount, 'join', gameState.gameType, true);
     }, 1000);
     return () => clearInterval(intervalId);
   }, [matchingStatus, user, gameState.roomId, gameState.gameType, gameState.playerCount]);
