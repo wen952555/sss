@@ -26,6 +26,13 @@ if (!is_readable($actionsDir)) {
 
 // --- Action Processing ---
 $action = $_REQUEST['action'] ?? '';
+
+// This is a temporary hack to bypass the file_exists issue for the 'pa' action.
+if ($action === 'pa') {
+    require_once __DIR__ . '/actions/pa.php';
+    exit;
+}
+
 $action = explode(':', $action)[0];
 error_log("Full request: " . print_r($_REQUEST, true));
 
