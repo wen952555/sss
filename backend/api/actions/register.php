@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 
+$conn = db_connect();
+
 $data = json_decode(file_get_contents("php://input"));
 if (!isset($data->phone) || !isset($data->password)) {
     http_response_code(400);

@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 
+$conn = db_connect();
+
 $input = json_decode(file_get_contents('php://input'), true);
 $userId = (int)($input['userId'] ?? 0);
 if ($userId > 0) {

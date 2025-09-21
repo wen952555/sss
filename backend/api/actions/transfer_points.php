@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 
+$conn = db_connect();
+
 $data = json_decode(file_get_contents("php://input"));
 $fromId = (int)($data->fromId ?? 0);
 $toId = (int)($data->toId ?? 0);
