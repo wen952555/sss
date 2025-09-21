@@ -26,6 +26,7 @@ $conn->begin_transaction();
 
 try {
     switch ($action) {
+        case 'prepare':
         case 'ready':
             $stmt = $conn->prepare("UPDATE room_players SET is_ready = 1 WHERE user_id = ? AND room_id = ?");
             $stmt->bind_param("ii", $userId, $roomId);
