@@ -1,4 +1,5 @@
 <?php
+die("index.php was executed");
 // More robust version of backend/api/index.php
 
 // --- Start of Script ---
