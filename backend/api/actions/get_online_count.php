@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 
+$conn = db_connect();
+
 $onlineCount = 0;
 $query = "
     SELECT COUNT(DISTINCT id) as onlineCount
