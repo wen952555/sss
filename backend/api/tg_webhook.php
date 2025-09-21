@@ -90,8 +90,9 @@ if (isset($update['message'])) {
     }
 
     // --- COMMAND PARSING AND EXECUTION ---
-    // Example: /add_score player123 100
-    if (preg_match('/^\/(\w+)\s+(\S+)\s+(-?\d+)$/', $text, $matches)) {
+
+    // Handle /add_score and /set_score (3 parts)
+    if (preg_match('/^\/(add_score|set_score)\s+(\S+)\s+(-?\d+)$/', $text, $matches)) {
         $command = $matches[1];
         $player_id = $matches[2];
         $points = (int)$matches[3];
@@ -129,8 +130,34 @@ if (isset($update['message'])) {
             error_log("General Error: " . $e->getMessage());
             sendMessage($chat_id, "❌ A critical error occurred. Please check the server logs.", $TELEGRAM_BOT_TOKEN);
         }
+    }
+    // Handle /delete_user (2 parts)
+    else if (preg_match('/^\/(delete_user)\s+(\S+)$/', $text, $matches)) {
+        $command = $matches[1];
+        $username = $matches[2];
+
+        try {
+            if (!$pdo) {
+                throw new Exception("Database connection is not available.");
+            }
+            $stmt = $pdo->prepare("DELETE FROM users WHERE username = ?");
+            $stmt->execute([$username]);
+
+            if ($stmt->rowCount() > 0) {
+                sendMessage($chat_id, "✅ Success! User '$username' has been deleted.", $TELEGRAM_BOT_TOKEN);
+            } else {
+                sendMessage($chat_id, "⚠️ User '$username' not found.", $TELEGRAM_BOT_TOKEN);
+            }
+        } catch (PDOException $e) {
+            error_log("Database Error: " . $e->getMessage());
+            sendMessage($chat_id, "❌ An error occurred with the database.", $TELEGRAM_BOT_TOKEN);
+        } catch (Throwable $e) {
+            error_log("General Error: " . $e->getMessage());
+            sendMessage($chat_id, "❌ A critical error occurred.", $TELEGRAM_BOT_TOKEN);
+        }
+
     } else {
-        sendMessage($chat_id, "Invalid command format. Use:\n/add_score [player_id] [points]\n/set_score [player_id] [points]", $TELEGRAM_BOT_TOKEN);
+        sendMessage($chat_id, "Invalid command format. Use:\n/add_score [player_id] [points]\n/set_score [player_id] [points]\n/delete_user [username]", $TELEGRAM_BOT_TOKEN);
     }
 }
 
