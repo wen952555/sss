@@ -11,7 +11,7 @@ $actionsDir = realpath(dirname(__FILE__) . '/actions');
 if ($actionsDir === false || !is_dir($actionsDir)) {
     http_response_code(500);
     $errorMessage = 'Internal Server Error: Actions directory not found.';
-    error_log($errorMessage);
+    error_log($errorMessage . ' Path: ' . dirname(__FILE__) . '/actions');
     echo json_encode(['success' => false, 'message' => $errorMessage]);
     exit;
 }
