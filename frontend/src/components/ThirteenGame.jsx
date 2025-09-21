@@ -66,7 +66,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     formData.append('action', 'submit_hand');
     formData.append('hand', JSON.stringify(handToSend));
 
-    fetch('/api/index.php?action=pa', {
+    fetch('/api/index.php?action=player_action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData.toString(),
@@ -240,7 +240,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       formData.append('roomId', roomId);
       formData.append('action', action);
 
-      const response = await fetch('/api/index.php?action=pa', {
+      const response = await fetch('/api/index.php?action=player_action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: formData.toString(),

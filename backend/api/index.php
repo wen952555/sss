@@ -7,8 +7,8 @@ error_log("--- backend/api/index.php execution started ---");
 header("Content-Type: application/json; charset=UTF-8");
 
 // --- Directory and Action Sanity Checks ---
-$actionsDir = realpath(dirname(__FILE__) . '/actions');
-if ($actionsDir === false || !is_dir($actionsDir)) {
+$actionsDir = dirname(__FILE__) . '/actions';
+if (!is_dir($actionsDir)) {
     http_response_code(500);
     $errorMessage = 'Internal Server Error: Actions directory not found.';
     error_log($errorMessage);
@@ -42,6 +42,15 @@ if (empty($sanitized_action)) {
 
 $actionFile = $actionsDir . '/' . $sanitized_action . '.php';
 error_log("Checking for file: " . $actionFile);
+
+// --- Sanity Check ---
+$self_check_path = __DIR__ . '/index.php';
+if (file_exists($self_check_path)) {
+    error_log("Sanity check passed: index.php exists at " . $self_check_path);
+} else {
+    error_log("Sanity check FAILED: index.php does not exist at " . $self_check_path);
+}
+// --- End Sanity Check ---
 
 if (file_exists($actionFile)) {
     error_log("File found. Including: " . $actionFile);
