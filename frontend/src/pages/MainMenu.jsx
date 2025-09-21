@@ -55,16 +55,6 @@ const MainMenu = () => {
                 </div>
             </header>
             <div className="game-panels-container">
-                {/* Panel 1: Yan San */}
-                <Link to="/thirteen-cards" className="game-panel-link">
-                    <div className="game-panel panel-yansan">
-                        <div className="panel-content">
-                            <h2 className="panel-title">烟三</h2>
-                            <p className="panel-description">经典扑克玩法</p>
-                        </div>
-                    </div>
-                </Link>
-
                 {/* Panel 2: Dou Di Zhu */}
                 <Link to="/doudizhu" className="game-panel-link">
                     <div className="game-panel panel-doudizhu">
