@@ -49,6 +49,35 @@
  *       https://api.telegram.org/bot<YOUR_B_TOKEN>/setWebhook?url=https://<YOUR_DOMAIN>/path/to/tg_webhook.php
  */
 
+// --- Global Exception Handler ---
+// This will catch any fatal errors (like a DB connection failure)
+// and report them to the admin, so the bot doesn't just "go silent".
+set_exception_handler('exception_handler');
+
+function exception_handler($exception) {
+    error_log("Unhandled exception: " . $exception->getMessage());
+
+    // These might not be available if the script fails early, so we need fallbacks.
+    global $TELEGRAM_BOT_TOKEN, $ADMIN_USER_IDS;
+
+    // Try to get the chat ID from the incoming request to notify the specific admin
+    $content = file_get_contents("php://input");
+    $update = json_decode($content, true);
+    $chat_id = $update['message']['chat']['id'] ?? ($ADMIN_USER_IDS[0] ?? null);
+
+    if ($chat_id && $TELEGRAM_BOT_TOKEN && $TELEGRAM_BOT_TOKEN !== 'YOUR_BOT_TOKEN') {
+        $error_message = "🤖 Bot Error 🤖\n\n";
+        $error_message .= "An uncaught exception occurred:\n";
+        $error_message .= "<b>Type:</b> " . get_class($exception) . "\n";
+        $error_message .= "<b>Message:</b> " . $exception->getMessage() . "\n";
+        $error_message .= "<b>File:</b> " . $exception->getFile() . "\n";
+        $error_message .= "<b>Line:</b> " . $exception->getLine();
+
+        // Use the existing sendMessage function to notify the admin
+        sendMessage($chat_id, $error_message, $TELEGRAM_BOT_TOKEN);
+    }
+}
+
 // Enable error reporting for debugging during development
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -58,6 +87,18 @@ error_reporting(E_ALL);
 // The BOT_TOKEN and ADMIN_IDS are now loaded from config.php
 require_once 'config.php';
 require_once 'telegram_helpers.php';
+
+// --- Proactive Configuration Checks ---
+if (empty($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
+    error_log("FATAL: Telegram Bot Token is not configured in config.php");
+    // We can't send a message without the token, so we just exit.
+    exit();
+}
+if (empty($ADMIN_USER_IDS) || $ADMIN_USER_IDS === [123456789]) {
+    sendMessage($ADMIN_USER_IDS[0], "⚠️ Configuration Warning: ADMIN_USER_IDS is not set correctly in config.php. You may not be able to receive all notifications.", $TELEGRAM_BOT_TOKEN);
+}
+// We can't check for a null PDO here because the script might be used for non-DB commands.
+// The check is now inside the command handlers that require it.
 
 // --- HELPER FUNCTION TO SEND A MESSAGE VIA TELEGRAM API ---
 // The sendMessage function is now in telegram_helpers.php
