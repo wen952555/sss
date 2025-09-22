@@ -184,10 +184,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
         setErrorMessage(data.message || '获取游戏状态失败');
       }
     } catch (error) {
-      if (isOnline) {
-        setIsOnline(false);
-        setErrorMessage("网络连接已断开，正在尝试重新连接...");
-      }
+      // if (isOnline) {
+      //   setIsOnline(false);
+      //   setErrorMessage("网络连接已断开，正在尝试重新连接...");
+      // }
       console.error("Failed to fetch game status:", error);
     }
   }, [roomId, user, setInitialLanes, isOnline, gameType]);
