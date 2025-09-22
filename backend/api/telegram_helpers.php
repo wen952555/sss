@@ -9,21 +9,13 @@
  * @param string $token The Telegram Bot Token.
  * @return bool|string The response from the Telegram API, or false on failure.
  */
-function sendMessage($chat_id, $text, $token, $keyboard = null) {
+function sendMessage($chat_id, $text, $token) {
     $url = 'https://api.telegram.org/bot' . $token . '/sendMessage';
     $post_fields = [
         'chat_id' => $chat_id,
         'text' => $text,
         'parse_mode' => 'HTML'
     ];
-
-    if ($keyboard) {
-        $post_fields['reply_markup'] = json_encode([
-            'keyboard' => $keyboard,
-            'resize_keyboard' => true,
-            'one_time_keyboard' => false
-        ]);
-    }
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type:application/json']);
