@@ -4,6 +4,7 @@ import { getSmartSortedHand } from '../utils/autoSorter.js';
 import GameTable from './GameTable';
 import { isSssFoul, calculateSinglePairScore, getSpecialType, compareSssArea } from '../utils/scorer.js';
 import { parseCard } from '../utils/pokerEvaluator.js';
+import { sanitizeHand } from '../utils/cardUtils.js';
 
 const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) => {
   const {
@@ -28,13 +29,16 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
 
   const handleHandData = useCallback((handData) => {
     if (Array.isArray(handData)) {
-      const cardObjects = handData.map(c => (typeof c === 'string' ? parseCard(c) : c));
+      // This path is for when the server deals a fresh hand as a flat array.
+      const cardObjects = handData.map(c => (typeof c === 'string' ? parseCard(c) : c)).filter(Boolean);
       const sortedHand = getSmartSortedHand(cardObjects, 'bottom');
       if (sortedHand) {
         setInitialLanes(sortedHand);
       }
     } else {
-      setInitialLanes(handData);
+      // This path is for when the server sends a pre-arranged hand object.
+      // We sanitize it to ensure it's safe to use.
+      setInitialLanes(sanitizeHand(handData));
     }
   }, [setInitialLanes]);
 
@@ -135,7 +139,11 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
           handleHandData(data.hand);
         }
         if (data.gameStatus === 'finished' && data.result) {
-          const { players: resultPlayers } = data.result;
+          const resultPlayers = data.result.players.map(p => ({
+            ...p,
+            hand: sanitizeHand(p.hand),
+          }));
+
           const playerHands = resultPlayers.reduce((acc, p) => {
             acc[p.id] = p.hand;
             return acc;
@@ -184,10 +192,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
         setErrorMessage(data.message || '获取游戏状态失败');
       }
     } catch (error) {
-      // if (isOnline) {
-      //   setIsOnline(false);
-      //   setErrorMessage("网络连接已断开，正在尝试重新连接...");
-      // }
+      if (isOnline) {
+        setIsOnline(false);
+        setErrorMessage("网络连接已断开，正在尝试重新连接...");
+      }
       console.error("Failed to fetch game status:", error);
     }
   }, [roomId, user, setInitialLanes, isOnline, gameType]);

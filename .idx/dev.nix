@@ -6,18 +6,12 @@
 
   # Use https://search.nixos.org/packages to find packages
   packages = [
-    pkgs.php
     # pkgs.go
     # pkgs.python311
     # pkgs.python311Packages.pip
     # pkgs.nodejs_20
     # pkgs.nodePackages.nodemon
   ];
-
-  services.mysql = {
-    enable = true;
-    package = pkgs.mysql80;
-  };
 
   # Sets environment variables in the workspace
   env = {};
