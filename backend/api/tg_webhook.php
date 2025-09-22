@@ -55,7 +55,7 @@
 set_exception_handler('exception_handler');
 
 function exception_handler($exception) {
-    error_log("Unhandled exception: " . $exception->getMessage());
+    error_log("未处理的异常: " . $exception->getMessage());
 
     // These might not be available if the script fails early, so we need fallbacks.
     global $TELEGRAM_BOT_TOKEN, $ADMIN_USER_IDS;
@@ -66,12 +66,12 @@ function exception_handler($exception) {
     $chat_id = $update['message']['chat']['id'] ?? ($ADMIN_USER_IDS[0] ?? null);
 
     if ($chat_id && $TELEGRAM_BOT_TOKEN && $TELEGRAM_BOT_TOKEN !== 'YOUR_BOT_TOKEN') {
-        $error_message = "🤖 Bot Error 🤖\n\n";
-        $error_message .= "An uncaught exception occurred:\n";
-        $error_message .= "<b>Type:</b> " . get_class($exception) . "\n";
-        $error_message .= "<b>Message:</b> " . $exception->getMessage() . "\n";
-        $error_message .= "<b>File:</b> " . $exception->getFile() . "\n";
-        $error_message .= "<b>Line:</b> " . $exception->getLine();
+        $error_message = "🤖 机器人错误 🤖\n\n";
+        $error_message .= "发生了一个未捕获的异常:\n";
+        $error_message .= "<b>类型:</b> " . get_class($exception) . "\n";
+        $error_message .= "<b>信息:</b> " . $exception->getMessage() . "\n";
+        $error_message .= "<b>文件:</b> " . $exception->getFile() . "\n";
+        $error_message .= "<b>行号:</b> " . $exception->getLine();
 
         // Use the existing sendMessage function to notify the admin
         sendMessage($chat_id, $error_message, $TELEGRAM_BOT_TOKEN);
@@ -90,12 +90,12 @@ require_once 'telegram_helpers.php';
 
 // --- Proactive Configuration Checks ---
 if (empty($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
-    error_log("FATAL: Telegram Bot Token is not configured in config.php");
+    error_log("致命错误: Telegram Bot Token 未在 config.php 中配置");
     // We can't send a message without the token, so we just exit.
     exit();
 }
 if (empty($ADMIN_USER_IDS) || $ADMIN_USER_IDS === [123456789]) {
-    sendMessage($ADMIN_USER_IDS[0], "⚠️ Configuration Warning: ADMIN_USER_IDS is not set correctly in config.php. You may not be able to receive all notifications.", $TELEGRAM_BOT_TOKEN);
+    sendMessage($ADMIN_USER_IDS[0], "⚠️ 配置警告: ADMIN_USER_IDS 未在 config.php 中正确设置。您可能无法接收所有通知。", $TELEGRAM_BOT_TOKEN);
 }
 // We can't check for a null PDO here because the script might be used for non-DB commands.
 // The check is now inside the command handlers that require it.
@@ -126,7 +126,7 @@ if (isset($update['message'])) {
 
     // --- ADMIN AUTHENTICATION ---
     if (!in_array($from_id, $ADMIN_USER_IDS)) {
-        sendMessage($chat_id, "Sorry, you are not authorized to use this bot.", $TELEGRAM_BOT_TOKEN);
+        sendMessage($chat_id, "抱歉，您无权使用此机器人。", $TELEGRAM_BOT_TOKEN);
         exit();
     }
 
@@ -147,7 +147,7 @@ if (isset($update['message'])) {
             } elseif ($command === 'set_score') {
                 $stmt = $pdo->prepare("UPDATE players SET score = ? WHERE id = ?");
             } else {
-                sendMessage($chat_id, "Unknown command: $command", $TELEGRAM_BOT_TOKEN);
+                sendMessage($chat_id, "未知命令: $command", $TELEGRAM_BOT_TOKEN);
                 exit();
             }
 
@@ -157,19 +157,19 @@ if (isset($update['message'])) {
                 $affected_rows = $stmt->rowCount();
 
                 if ($affected_rows > 0) {
-                    $action_desc = ($command === 'add_score') ? "Added $points points to" : "Set score for";
-                    sendMessage($chat_id, "✅ Success! $action_desc player '$player_id'.", $TELEGRAM_BOT_TOKEN);
+                    $action_desc = ($command === 'add_score') ? "为玩家 '$player_id' 增加了 $points 积分" : "已将玩家 '$player_id' 的积分设置为";
+                    sendMessage($chat_id, "✅ 操作成功！$action_desc。", $TELEGRAM_BOT_TOKEN);
                 } else {
-                    sendMessage($chat_id, "⚠️ Warning: Player '$player_id' not found or score was not changed.", $TELEGRAM_BOT_TOKEN);
+                    sendMessage($chat_id, "⚠️ 警告: 未找到玩家 '$player_id' 或积分未发生变化。", $TELEGRAM_BOT_TOKEN);
                 }
             }
         } catch (PDOException $e) {
             // Log the error to a file for the admin to see, not to the user.
-            error_log("Database Error: " . $e->getMessage());
-            sendMessage($chat_id, "❌ An error occurred with the database. Please check the server logs.", $TELEGRAM_BOT_TOKEN);
+            error_log("数据库错误: " . $e->getMessage());
+            sendMessage($chat_id, "❌ 发生数据库错误，请检查服务器日志。", $TELEGRAM_BOT_TOKEN);
         } catch (Throwable $e) {
-            error_log("General Error: " . $e->getMessage());
-            sendMessage($chat_id, "❌ A critical error occurred. Please check the server logs.", $TELEGRAM_BOT_TOKEN);
+            error_log("常规错误: " . $e->getMessage());
+            sendMessage($chat_id, "❌ 发生严重错误，请检查服务器日志。", $TELEGRAM_BOT_TOKEN);
         }
     }
     // Handle /delete_user (2 parts)
@@ -179,26 +179,32 @@ if (isset($update['message'])) {
 
         try {
             if (!$pdo) {
-                throw new Exception("Database connection is not available.");
+                throw new Exception("数据库连接不可用。");
             }
             $stmt = $pdo->prepare("DELETE FROM users WHERE username = ?");
             $stmt->execute([$username]);
 
             if ($stmt->rowCount() > 0) {
-                sendMessage($chat_id, "✅ Success! User '$username' has been deleted.", $TELEGRAM_BOT_TOKEN);
+                sendMessage($chat_id, "✅ 操作成功！用户 '$username' 已被删除。", $TELEGRAM_BOT_TOKEN);
             } else {
-                sendMessage($chat_id, "⚠️ User '$username' not found.", $TELEGRAM_BOT_TOKEN);
+                sendMessage($chat_id, "⚠️ 未找到用户 '$username'。", $TELEGRAM_BOT_TOKEN);
             }
         } catch (PDOException $e) {
-            error_log("Database Error: " . $e->getMessage());
-            sendMessage($chat_id, "❌ An error occurred with the database.", $TELEGRAM_BOT_TOKEN);
+            error_log("数据库错误: " . $e->getMessage());
+            sendMessage($chat_id, "❌ 发生数据库错误。", $TELEGRAM_BOT_TOKEN);
         } catch (Throwable $e) {
-            error_log("General Error: " . $e->getMessage());
-            sendMessage($chat_id, "❌ A critical error occurred.", $TELEGRAM_BOT_TOKEN);
+            error_log("常规错误: " . $e->getMessage());
+            sendMessage($chat_id, "❌ 发生严重错误。", $TELEGRAM_BOT_TOKEN);
         }
 
     } else {
-        sendMessage($chat_id, "Invalid command format. Use:\n/add_score [player_id] [points]\n/set_score [player_id] [points]\n/delete_user [username]", $TELEGRAM_BOT_TOKEN);
+        $keyboard = [
+            [['text' => '/set_score player_id points']],
+            [['text' => '/add_score player_id points']],
+            [['text' => '/delete_user username']]
+        ];
+        $help_text = "请选择一个命令或使用以下格式:\n/add_score [player_id] [points]\n/set_score [player_id] [points]\n/delete_user [username]";
+        sendMessage($chat_id, $help_text, $TELEGRAM_BOT_TOKEN, $keyboard);
     }
 }
 
