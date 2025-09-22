@@ -126,7 +126,7 @@ if (isset($update['message'])) {
 
     // --- ADMIN AUTHENTICATION ---
     if (!in_array($from_id, $ADMIN_USER_IDS)) {
-        sendMessage($chat_id, "抱歉，您无权使用此机器人。", $TELEGRAM_BOT_TOKEN);
+        sendMessage($chat_id, "🚫 权限不足。您无权执行此操作。", $TELEGRAM_BOT_TOKEN);
         exit();
     }
 
@@ -157,19 +157,23 @@ if (isset($update['message'])) {
                 $affected_rows = $stmt->rowCount();
 
                 if ($affected_rows > 0) {
-                    $action_desc = ($command === 'add_score') ? "为玩家 '$player_id' 增加了 $points 积分" : "已将玩家 '$player_id' 的积分设置为";
-                    sendMessage($chat_id, "✅ 操作成功！$action_desc。", $TELEGRAM_BOT_TOKEN);
+                    if ($command === 'add_score') {
+                        $message = "✅ 分数更新成功！已为玩家 '$player_id' 增加了 $points 积分。";
+                    } else { // set_score
+                        $message = "✅ 分数设置成功！已将玩家 '$player_id' 的积分设置为 $points。";
+                    }
+                    sendMessage($chat_id, $message, $TELEGRAM_BOT_TOKEN);
                 } else {
-                    sendMessage($chat_id, "⚠️ 警告: 未找到玩家 '$player_id' 或积分未发生变化。", $TELEGRAM_BOT_TOKEN);
+                    sendMessage($chat_id, "⚠️ 操作未完成: 无法找到ID为 '$player_id' 的玩家，或该玩家的积分无需变更。", $TELEGRAM_BOT_TOKEN);
                 }
             }
         } catch (PDOException $e) {
             // Log the error to a file for the admin to see, not to the user.
             error_log("数据库错误: " . $e->getMessage());
-            sendMessage($chat_id, "❌ 发生数据库错误，请检查服务器日志。", $TELEGRAM_BOT_TOKEN);
+            sendMessage($chat_id, "❌ 数据库操作失败。管理员请检查服务器日志。", $TELEGRAM_BOT_TOKEN);
         } catch (Throwable $e) {
             error_log("常规错误: " . $e->getMessage());
-            sendMessage($chat_id, "❌ 发生严重错误，请检查服务器日志。", $TELEGRAM_BOT_TOKEN);
+            sendMessage($chat_id, "❌ 系统发生未知错误。管理员请检查服务器日志。", $TELEGRAM_BOT_TOKEN);
         }
     }
     // Handle /delete_user (2 parts)
@@ -185,25 +189,25 @@ if (isset($update['message'])) {
             $stmt->execute([$username]);
 
             if ($stmt->rowCount() > 0) {
-                sendMessage($chat_id, "✅ 操作成功！用户 '$username' 已被删除。", $TELEGRAM_BOT_TOKEN);
+                sendMessage($chat_id, "✅ 用户删除成功！用户 '$username' 已被移除。", $TELEGRAM_BOT_TOKEN);
             } else {
                 sendMessage($chat_id, "⚠️ 未找到用户 '$username'。", $TELEGRAM_BOT_TOKEN);
             }
         } catch (PDOException $e) {
             error_log("数据库错误: " . $e->getMessage());
-            sendMessage($chat_id, "❌ 发生数据库错误。", $TELEGRAM_BOT_TOKEN);
+            sendMessage($chat_id, "❌ 数据库操作失败。管理员请检查服务器日志。", $TELEGRAM_BOT_TOKEN);
         } catch (Throwable $e) {
             error_log("常规错误: " . $e->getMessage());
-            sendMessage($chat_id, "❌ 发生严重错误。", $TELEGRAM_BOT_TOKEN);
+            sendMessage($chat_id, "❌ 系统发生未知错误。管理员请检查服务器日志。", $TELEGRAM_BOT_TOKEN);
         }
 
     } else {
         $keyboard = [
-            [['text' => '/set_score player_id points']],
-            [['text' => '/add_score player_id points']],
-            [['text' => '/delete_user username']]
+            [['text' => '设置分数 (/set_score)']],
+            [['text' => '增加分数 (/add_score)']],
+            [['text' => '删除用户 (/delete_user)']]
         ];
-        $help_text = "请选择一个命令或使用以下格式:\n/add_score [player_id] [points]\n/set_score [player_id] [points]\n/delete_user [username]";
+        $help_text = "欢迎使用玩家分数管理机器人！\n\n请从下方的键盘选择一个操作，或直接发送命令。\n\n可用命令:\n`/set_score [玩家ID] [分数]` - 设置玩家的分数\n`/add_score [玩家ID] [分数]` - 增加玩家的分数\n`/delete_user [用户名]` - 删除一个用户";
         sendMessage($chat_id, $help_text, $TELEGRAM_BOT_TOKEN, $keyboard);
     }
 }
