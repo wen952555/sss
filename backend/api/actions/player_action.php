@@ -3,9 +3,15 @@ require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 require_once __DIR__ . '/../../utils/pre_dealer.php';
 
-$userId = $_POST['userId'] ?? null;
-$roomId = $_POST['roomId'] ?? null;
-$action = $_POST['action'] ?? null;
+// If $_POST is empty, try to parse the raw input stream
+$post_data = $_POST;
+if (empty($post_data)) {
+    parse_str(file_get_contents("php://input"), $post_data);
+}
+
+$userId = $post_data['userId'] ?? null;
+$roomId = $post_data['roomId'] ?? null;
+$action = $post_data['action'] ?? null;
 
 if (!$userId || !$roomId || !$action) {
     http_response_code(400);
@@ -112,7 +118,7 @@ try {
             break;
 
         case 'submit_hand':
-            $hand = isset($_POST['hand']) ? json_decode($_POST['hand'], true) : null;
+            $hand = isset($post_data['hand']) ? json_decode($post_data['hand'], true) : null;
             if (!$hand) {
                 throw new Exception("Hand data is missing.");
             }
