@@ -25,7 +25,7 @@ if (!is_readable($actionsDir)) {
 }
 
 // --- Action Processing ---
-$action = $_REQUEST['action'] ?? '';
+$action = $_GET['action'] ?? '';
 $action = explode(':', $action)[0];
 error_log("Full request: " . print_r($_REQUEST, true));
 
