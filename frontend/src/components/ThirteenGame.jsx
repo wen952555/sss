@@ -63,13 +63,32 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       return;
     }
 
-    if (ws) {
-      ws.send(JSON.stringify({
-        type: 'submit_hand',
-        payload: { userId: user.id, roomId, hand: handToSend }
-      }));
-    }
-  }, [ws, roomId, user, topLane, middleLane, bottomLane]);
+    setIsLoading(true);
+    const formData = new URLSearchParams();
+    formData.append('userId', user.id);
+    formData.append('roomId', roomId);
+    formData.append('action', 'submit_hand');
+    formData.append('hand', JSON.stringify(handToSend));
+
+    fetch('/api/index.php?action=player_action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData.toString(),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to submit hand.');
+      }
+      console.log('Hand submitted successfully.');
+    })
+    .catch(error => {
+      setErrorMessage(error.message);
+    })
+    .finally(() => {
+      setIsLoading(false);
+    });
+  }, [roomId, user, topLane, middleLane, bottomLane]);
 
   const handleAutoConfirm = useCallback(() => {
     const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
@@ -102,75 +121,90 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     return () => clearInterval(intervalId);
   }, [timeLeft, handleAutoConfirm]);
 
-  const [ws, setWs] = useState(null);
-
-  // This useEffect hook manages the WebSocket connection.
-  useEffect(() => {
-    // Do not connect if we don't have a user or room
-    if (!user || !roomId) return;
-
-    // Create a new WebSocket connection to the server
-    const socket = new WebSocket('ws://localhost:8080');
-
-    socket.onopen = () => {
-      console.log('WebSocket connection established.');
-      setIsOnline(true);
-      // Register the client with the server for this specific room
-      socket.send(JSON.stringify({ type: 'register', userId: user.id, roomId }));
-    };
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('Received data from server:', data);
-
-      // The server will send different types of messages.
-      // We'll handle a 'gameStateUpdate' message here.
-      if (data.type === 'gameStateUpdate') {
-        const { players, gameStatus, hand, result } = data.payload;
-
-        setPlayers(players || []);
-        setPlayerState(gameStatus || 'waiting');
-
-        if ((gameStatus === 'playing' || gameStatus === 'arranging' || gameStatus === 'submitted') && hand) {
-          handleHandData(hand);
+  const fetchGameStatus = useCallback(async () => {
+    if (!roomId || !user) return;
+    try {
+      const url = `/api/index.php?action=game_status&roomId=${roomId}&userId=${user.id}`;
+      console.log('Fetching game status:', url);
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.success) {
+        if (!isOnline) {
+          setIsOnline(true);
+          setErrorMessage('');
         }
-
-        if (gameStatus === 'finished' && result) {
-          const resultPlayers = result.players.map(p => ({
+        setPlayers(data.players);
+        setPlayerState(data.gameStatus);
+        if ((data.gameStatus === 'playing' || data.gameStatus === 'arranging' || data.gameStatus === 'submitted') && data.hand) {
+          handleHandData(data.hand);
+        }
+        if (data.gameStatus === 'finished' && data.result) {
+          const resultPlayers = data.result.players.map(p => ({
             ...p,
             hand: sanitizeHand(p.hand),
           }));
 
-          // The scoring logic can be moved to the server, but for now we'll keep it here
-          // to demonstrate the data flow.
+          const playerHands = resultPlayers.reduce((acc, p) => {
+            acc[p.id] = p.hand;
+            return acc;
+          }, {});
+
+          const playerIds = resultPlayers.map(p => p.id);
+          const scores = playerIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
+
+          for (let i = 0; i < playerIds.length; i++) {
+            for (let j = i + 1; j < playerIds.length; j++) {
+              const p1_id = playerIds[i];
+              const p2_id = playerIds[j];
+              const p1_hand = playerHands[p1_id];
+              const p2_hand = playerHands[p2_id];
+              const pair_score = calculateSinglePairScore(p1_hand, p2_hand);
+              scores[p1_id] += pair_score;
+              scores[p2_id] -= pair_score;
+            }
+          }
+
+          const pointMultiplier = gameType === 'thirteen' ? 2 : (gameType === 'thirteen-5' ? 5 : 1);
+          resultPlayers.forEach(p => {
+            p.score = scores[p.id] * pointMultiplier;
+          });
+
+          const humanPlayer = resultPlayers.find(p => p.id === user.id);
+          if (humanPlayer) {
+            const humanPlayerHand = humanPlayer.hand;
+            resultPlayers.forEach(player => {
+              if (player.id === user.id) {
+                player.laneResults = ['draw', 'draw', 'draw'];
+              } else {
+                player.laneResults = ['top', 'middle', 'bottom'].map(area => {
+                  const cmp = compareSssArea(player.hand[area], humanPlayerHand[area], area);
+                  if (cmp > 0) return 'win';
+                  if (cmp < 0) return 'loss';
+                  return 'draw';
+                });
+              }
+            });
+          }
+
           setGameResult({ players: resultPlayers });
         }
-      } else if (data.type === 'error') {
-        setErrorMessage(data.message);
+      } else {
+        setErrorMessage(data.message || '获取游戏状态失败');
       }
-    };
+    } catch (error) {
+      if (isOnline) {
+        setIsOnline(false);
+        setErrorMessage("网络连接已断开，正在尝试重新连接...");
+      }
+      console.error("Failed to fetch game status:", error);
+    }
+  }, [roomId, user, setInitialLanes, isOnline, gameType]);
 
-    socket.onclose = () => {
-      console.log('WebSocket connection closed.');
-      setIsOnline(false);
-      setErrorMessage('与服务器断开连接');
-    };
-
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setErrorMessage('WebSocket 连接出现错误');
-    };
-
-    setWs(socket);
-
-    // Cleanup function: close the socket when the component unmounts
-    return () => {
-      socket.close();
-    };
-  }, [roomId, user]); // Re-run this effect if roomId or user changes
-
-  // The old fetchGameStatus function is now obsolete and replaced by WebSocket messages.
-  // We can comment it out or remove it. For now, it's removed to keep the code clean.
+  useEffect(() => {
+    fetchGameStatus();
+    const intervalId = setInterval(fetchGameStatus, 1000);
+    return () => clearInterval(intervalId);
+  }, [fetchGameStatus]);
 
   useEffect(() => {
     if (gameResult && gameResult.players) {
@@ -202,16 +236,37 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   }, [user, roomId, onBackToLobby]);
 
   const handleReady = useCallback(async () => {
-    if (!ws || !user || !roomId) return;
+    if (!user || !roomId) return;
     const me = players.find(p => p.id === user.id);
     const currentIsReady = me ? me.is_ready : false;
     const action = currentIsReady ? 'unready' : 'ready';
 
-    ws.send(JSON.stringify({
-      type: 'player_action',
-      payload: { userId: user.id, roomId, action }
-    }));
-  }, [ws, user, roomId, players]);
+    setIsLoading(true);
+    try {
+      const formData = new URLSearchParams();
+      formData.append('userId', user.id);
+      formData.append('roomId', roomId);
+      formData.append('action', action);
+
+      const response = await fetch('/api/index.php?action=player_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString(),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || `Failed to ${action}.`);
+      }
+      if (data.cardsDealt && data.hand) {
+        handleHandData(data.hand);
+      }
+      fetchGameStatus();
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, roomId, players, fetchGameStatus, setInitialLanes]);
 
   const handleAutoSort = useCallback(() => {
     const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
