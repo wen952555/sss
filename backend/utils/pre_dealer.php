@@ -65,17 +65,22 @@ function replenish_pre_dealt_hands() {
         $result = $stmt->get_result()->fetch_assoc();
         $stmt->close();
 
-        $needed = 3 - $result['count'];
+        $target_stock = 10;
+        $replenish_threshold = 3;
 
-        for ($i = 0; $i < $needed; $i++) {
-            $hands = deal_new_game($playerCount);
-            $handsJson = json_encode($hands);
+        if ($result['count'] <= $replenish_threshold) {
+            $needed = $target_stock - $result['count'];
+
+            for ($i = 0; $i < $needed; $i++) {
+                $hands = deal_new_game($playerCount);
+                $handsJson = json_encode($hands);
 
             $insertStmt = $conn->prepare("INSERT INTO pre_dealt_hands (player_count, hands) VALUES (?, ?)");
             $insertStmt->bind_param("is", $playerCount, $handsJson);
             $insertStmt->execute();
             $insertStmt->close();
         }
+    }
     }
 
     $conn->close();
