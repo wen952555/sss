@@ -194,7 +194,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     } catch (error) {
       if (isOnline) {
         setIsOnline(false);
-        setErrorMessage("网络连接已断开，正在尝试重新连接...");
+        // setErrorMessage("网络连接已断开，正在尝试重新连接..."); // Removed to make reconnection silent
       }
       console.error("Failed to fetch game status:", error);
     }

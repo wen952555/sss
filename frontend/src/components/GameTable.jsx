@@ -45,15 +45,12 @@ const GameTable = ({
 
   return (
     <div className="game-table-container">
-      {!isOnline && (
-        <div className="connection-status-overlay">
-          <div className="spinner"></div>
-          网络连接已断开，正在尝试重新连接...
-        </div>
-      )}
       <div className="game-table-header">
         <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
-        <div className="game-table-title">{title}</div>
+        <div className="game-table-title">
+          {title}
+          <span className={`connection-status-indicator ${isOnline ? 'online' : 'offline'}`}></span>
+        </div>
         {user && <div className="user-points">积分: {user.points}</div>}
       </div>
 
