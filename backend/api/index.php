@@ -22,7 +22,8 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 $resource = null;
-if (preg_match('/\/api\/(user|thirteen-cards|doudizhu|mahjong|thirteen-waters)/', $path, $matches)) {
+// The router now only recognizes the 'user' endpoint.
+if (preg_match('/\/api\/(user)/', $path, $matches)) {
     $resource = $matches[1];
 }
 
@@ -33,26 +34,7 @@ try {
             $user_handler = new User($pdo);
             $user_handler->execute();
             break;
-        case 'thirteen-cards':
-            require_once 'ThirteenCards.php';
-            $game = new ThirteenCards($pdo);
-            $game->execute();
-            break;
-        case 'doudizhu':
-            require_once 'Doudizhu.php';
-            $game = new Doudizhu($pdo);
-            $game->execute();
-            break;
-        case 'mahjong':
-            require_once 'Mahjong.php';
-            $game = new Mahjong($pdo);
-            $game->execute();
-            break;
-        case 'thirteen-waters':
-            require_once 'ThirteenWaters.php';
-            $game = new ThirteenWaters($pdo);
-            $game->execute();
-            break;
+        // All old game cases have been removed.
         default:
             http_response_code(404);
             echo json_encode([
