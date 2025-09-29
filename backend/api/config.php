@@ -1,19 +1,17 @@
 <?php
-// backend/config.php
+// backend/api/config.php
 
-// --- 数据库配置 ---
+// --- Database Configuration ---
 $DB_HOST = 'localhost';
-$DB_USER = 'YOUR_DB_USER';  // 请填写实际数据库用户名
-$DB_PASS = 'YOUR_DB_PASS';  // 请填写实际数据库密码
-$DB_NAME = 'YOUR_DB_NAME';  // 请填写实际数据库名
+$DB_USER = 'YOUR_DB_USER';  // Please enter your actual database username
+$DB_PASS = 'YOUR_DB_PASS';  // Please enter your actual database password
+$DB_NAME = 'YOUR_DB_NAME';  // Please enter your actual database name
 
-// --- Telegram Bot 配置 ---
-$TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN'; // 请替换为你的 Telegram Bot Token
-$ADMIN_USER_IDS = [123456789]; // 可选: 管理员TG chat_id数组, 用于tg_webhook.php
+// --- Shared Secret for Cloudflare Worker ---
+// IMPORTANT: This MUST match the 'WORKER_SECRET' environment variable set in your Cloudflare Worker settings.
+$WORKER_SECRET = 'your-super-secret-random-string-goes-here';
 
 // --- Database Connection ---
-// This follows the recommended setup from tg_webhook.php's documentation.
-// It establishes a PDO connection or throws an exception on failure.
 $pdo = null;
 try {
     $dsn = "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4";
@@ -25,9 +23,7 @@ try {
     $pdo = new PDO($dsn, $DB_USER, $DB_PASS, $options);
 } catch (\PDOException $e) {
     // The calling script is responsible for catching this exception
-    // and handling the error appropriately (e.g., JSON response, log, etc.).
+    // and handling the error appropriately.
     throw new \PDOException($e->getMessage(), (int)$e->getCode());
 }
-
-// --- END OF FILE backend/config.php ---
 ?>
