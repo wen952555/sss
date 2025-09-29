@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ChatModal from '../components/ChatModal'; // Will be created in the next step
 import './BetParserPage.css';
 
 const BetParserPage = () => {
@@ -7,7 +8,9 @@ const BetParserPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // An updated sample text to showcase the new AI capabilities
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [currentItem, setCurrentItem] = useState(null);
+
     const sampleText = "香港：10, 22, 34, 46, 鼠, 马, 红波 各 5元\n澳门: 01-10, 单, 大 各 10块\n15.27.39各2元";
 
     const handleParse = async () => {
@@ -20,9 +23,7 @@ const BetParserPage = () => {
                 body: JSON.stringify({ text: inputText }),
             });
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || `HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(data.error || `HTTP error! status: ${response.status}`);
             setParsedData(data);
         } catch (e) {
             setError(`解析失败: ${e.message}`);
@@ -32,13 +33,27 @@ const BetParserPage = () => {
         }
     };
 
+    const handleCorrectClick = (item) => {
+        setCurrentItem(item);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setCurrentItem(null);
+    };
+
+    const handleCorrection = (originalText, updatedItem) => {
+        const updatedData = parsedData.map(item =>
+            item.original_text === originalText ? { ...item, ...updatedItem, original_text: originalText } : item
+        );
+        setParsedData(updatedData);
+        handleCloseModal();
+    };
+
     const renderNumbers = (numbers) => {
-        if (!numbers || numbers.length === 0) {
-            return 'N/A';
-        }
-        if (numbers.length > 10) {
-            return `${numbers.slice(0, 10).join(', ')}... (${numbers.length}个)`;
-        }
+        if (!numbers || numbers.length === 0) return 'N/A';
+        if (numbers.length > 10) return `${numbers.slice(0, 10).join(', ')}... (${numbers.length}个)`;
         return numbers.join(', ');
     };
 
@@ -58,9 +73,7 @@ const BetParserPage = () => {
                     rows={10}
                 />
                 <div className="button-container">
-                    <button className="sample-button" onClick={() => setInputText(sampleText)}>
-                        Load Sample
-                    </button>
+                    <button className="sample-button" onClick={() => setInputText(sampleText)}>Load Sample</button>
                     <button className="parse-button" onClick={handleParse} disabled={isLoading || !inputText.trim()}>
                         {isLoading ? 'Parsing...' : 'Parse'}
                     </button>
@@ -80,6 +93,7 @@ const BetParserPage = () => {
                                     <th>Parsed Numbers</th>
                                     <th>Amount/Bet</th>
                                     <th>Source Line</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -91,6 +105,11 @@ const BetParserPage = () => {
                                         <td className="numbers-cell">{renderNumbers(item.numbers)}</td>
                                         <td>{item.amount_per_number}</td>
                                         <td className="original-text-cell">{item.original_text}</td>
+                                        <td>
+                                            <button className="correct-button" onClick={() => handleCorrectClick(item)}>
+                                                Correct with AI
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -98,6 +117,14 @@ const BetParserPage = () => {
                     </div>
                 )}
             </div>
+
+            {isModalOpen && currentItem && (
+                <ChatModal
+                    item={currentItem}
+                    onClose={handleCloseModal}
+                    onCorrect={handleCorrection}
+                />
+            )}
         </div>
     );
 };
