@@ -42,8 +42,10 @@ const PointsPage = () => {
                     <div className="points-display">
                         <h2>Welcome, {username}!</h2>
                         {points !== null ? (
-                            <p>Your current points balance is:</p>
-                            <span className="points-balance">{points}</span>
+                            <>
+                                <p>Your current points balance is:</p>
+                                <span className="points-balance">{points}</span>
+                            </>
                         ) : (
                             <p>Loading points...</p>
                         )}
