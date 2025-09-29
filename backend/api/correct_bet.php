@@ -1,7 +1,7 @@
 <?php
 // backend/api/correct_bet.php
 
-require_once 'config.php'; // Provides OPENAI_API_KEY (when added)
+require_once 'config.php'; // Provides GEMINI_API_KEY (when added)
 require_once 'bet_parser.php'; // Provides ZODIAC_MAP and other constants
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -79,30 +79,33 @@ function get_placeholder_ai_response($instruction, $original_item) {
 
 
 /*
-// --- Live OpenAI API Call (Commented Out) ---
-// To enable this, you must have an OpenAI API key set in your config.php file.
-// 1. Add your key: $OPENAI_API_KEY = "sk-...";
+// --- Live Google Gemini API Call (Commented Out) ---
+// To enable this, you must have a Google Gemini API key set in your config.php file.
+// 1. Add your key: $GEMINI_API_KEY = "...";
 // 2. Uncomment the code below.
 // 3. Remove the "Placeholder AI Logic" section above.
 
-function call_openai_api($api_key, $prompt) {
+function call_gemini_api($api_key, $prompt) {
+    $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' . $api_key;
+
+    $payload = json_encode([
+        "contents" => [[
+            "parts" => [["text" => $prompt]]
+        ]],
+        "generationConfig" => [
+            "responseMimeType" => "application/json",
+        ]
+    ]);
+
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, 'https://api.openai.com/v1/chat/completions');
+    curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-        "model" => "gpt-3.5-turbo", // Or another model like gpt-4
-        "messages" => [["role" => "user", "content" => $prompt]],
-        "response_format" => ["type" => "json_object"] // Ensure JSON output
-    ]));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $api_key
-    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 
     $result = curl_exec($ch);
     if (curl_errno($ch)) {
-        // Handle cURL error
         $error_msg = curl_error($ch);
         curl_close($ch);
         return ["reply" => "API connection error: " . $error_msg];
@@ -110,15 +113,19 @@ function call_openai_api($api_key, $prompt) {
     curl_close($ch);
 
     $response_data = json_decode($result, true);
-    $ai_response_content = $response_data['choices'][0]['message']['content'] ?? null;
+
+    // Gemini's JSON response is often wrapped in markdown, so we need to clean it.
+    $ai_response_content = $response_data['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
     if ($ai_response_content) {
-        return json_decode($ai_response_content, true);
+        // Clean potential markdown code block fences
+        $json_string = preg_replace('/^```json\s*|\s*```$/', '', $ai_response_content);
+        return json_decode($json_string, true);
     }
     return ["reply" => "The AI returned an invalid response. Please try again."];
 }
 
-// $ai_response = call_openai_api($OPENAI_API_KEY, $prompt);
+// $ai_response = call_gemini_api($GEMINI_API_KEY, $prompt);
 */
 
 // Use the placeholder logic for now

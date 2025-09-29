@@ -11,9 +11,9 @@ $DB_NAME = 'YOUR_DB_NAME';  // Please enter your actual database name
 // IMPORTANT: This MUST match the 'WORKER_SECRET' environment variable set in your Cloudflare Worker settings.
 $WORKER_SECRET = 'your-super-secret-random-string-goes-here';
 
-// --- OpenAI API Key for Chat Feature ---
-// IMPORTANT: To enable the live AI correction chat, replace this with your actual OpenAI API key.
-$OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_GOES_HERE';
+// --- Google Gemini API Key for Chat Feature ---
+// IMPORTANT: To enable the live AI correction chat, replace this with your actual Google Gemini API key.
+$GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_GOES_HERE';
 
 // --- Database Connection ---
 $pdo = null;
