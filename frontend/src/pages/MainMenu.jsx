@@ -54,46 +54,12 @@ const MainMenu = () => {
                     )}
                 </div>
             </header>
-            <div className="game-panels-container">
-                {/* Panel 1: Yan San */}
-                <Link to="/thirteen-cards" className="game-panel-link">
-                    <div className="game-panel panel-yansan">
-                        <div className="panel-content">
-                            <h2 className="panel-title">烟三</h2>
-                            <p className="panel-description">经典扑克玩法</p>
-                        </div>
-                    </div>
-                </Link>
-
-                {/* Panel 2: Dou Di Zhu */}
-                <Link to="/doudizhu" className="game-panel-link">
-                    <div className="game-panel panel-doudizhu">
-                        <div className="panel-content">
-                            <h2 className="panel-title">斗地主</h2>
-                            <p className="panel-description">三人策略对战</p>
-                        </div>
-                    </div>
-                </Link>
-
-                {/* Panel 3: Mahjong */}
-                <Link to="/mahjong" className="game-panel-link">
-                    <div className="game-panel panel-mahjong">
-                        <div className="panel-content">
-                            <h2 className="panel-title">麻将</h2>
-                            <p className="panel-description">四人传统棋牌</p>
-                        </div>
-                    </div>
-                </Link>
-
-                {/* Panel 4: Thirteen Waters */}
-                <Link to="/thirteen-waters" className="game-panel-link">
-                    <div className="game-panel panel-thirteen-waters">
-                        <div className="panel-content">
-                            <h2 className="panel-title">十三水</h2>
-                            <p className="panel-description">福建特色玩法</p>
-                        </div>
-                    </div>
-                </Link>
+            <div className="main-content">
+                <div className="tool-card">
+                    <h2>AI 下注单解析器</h2>
+                    <p>自动识别和整理您的下注记录。</p>
+                    <Link to="/bet-parser" className="tool-link">开始使用</Link>
+                </div>
             </div>
         </div>
     );

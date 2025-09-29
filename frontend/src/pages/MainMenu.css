@@ -1,18 +1,18 @@
-/* Main Menu - New Dark Theme */
+/* Main Menu - New AI Tool Theme */
 html, body, #root {
     height: 100%;
     margin: 0;
     padding: 0;
     font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background-color: #f4f7f9; /* Light, clean background */
 }
 
 .main-menu {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
     overflow: hidden;
-    color: #fff;
+    color: #333;
 }
 
 .main-menu-header {
@@ -20,9 +20,10 @@ html, body, #root {
     justify-content: space-between;
     align-items: center;
     padding: 15px 30px;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid #c4a66a;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
     flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .header-left, .header-right {
@@ -33,121 +34,86 @@ html, body, #root {
 
 .header-link {
     text-decoration: none;
-    color: #c4a66a;
+    color: #007bff;
     font-size: 1.1rem;
     transition: color 0.3s;
 }
 .header-link:hover {
-    color: #fff;
+    color: #0056b3;
 }
 
 .logout-button {
     background: none;
-    border: 1px solid #c4a66a;
-    color: #c4a66a;
+    border: 1px solid #007bff;
+    color: #007bff;
     padding: 5px 10px;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
 }
 .logout-button:hover {
-    background-color: #c4a66a;
-    color: #1b2735;
+    background-color: #007bff;
+    color: #fff;
 }
 
 .username-display {
     font-weight: bold;
     font-size: 1.1rem;
-    color: #fff;
+    color: #333;
 }
 
-.game-panels-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 40px;
-    padding: 40px;
-    flex-grow: 1;
-    align-content: center;
-    justify-items: center;
-    overflow-y: auto;
-}
-
-.game-panel-link {
-    text-decoration: none;
-    color: inherit;
-}
-
-.game-panel {
-    width: 280px;
-    height: 200px;
-    border: 2px solid transparent;
-    border-radius: 15px;
-    padding: 20px;
-    background-color: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    text-align: center;
+.main-content {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-end; /* Align content to the bottom */
+    justify-content: center;
     align-items: center;
-    transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
-    cursor: pointer;
-    border-image: linear-gradient(to bottom right, #b88a2d, #c4a66a) 1;
-    background-size: cover;
-    background-position: center;
-    position: relative;
+    flex-grow: 1;
+    padding: 40px;
+    background-color: #f4f7f9;
 }
 
-.panel-content {
-    position: relative;
-    z-index: 2;
+.tool-card {
+    background-color: #ffffff;
+    color: #333;
+    border-radius: 15px;
+    padding: 40px 50px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    max-width: 500px;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.game-panel:hover {
-    transform: translateY(-10px) scale(1.05);
-    border-color: #c4a66a;
-    box-shadow: 0 10px 30px rgba(196, 166, 106, 0.3);
+.tool-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.12);
 }
 
-.panel-title {
+.tool-card h2 {
     font-size: 2.5rem;
-    color: #c4a66a;
-    margin: 0 0 10px 0;
-    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #0056b3;
 }
 
-.panel-description {
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.8);
+.tool-card p {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 30px;
 }
 
-.panel-yansan {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/ace_of_spades.svg');
-}
-.panel-doudizhu {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/red_joker.svg');
-}
-.panel-mahjong {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/photo/1m.svg');
-}
-.panel-thirteen-waters {
-    background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%), url('/ppp/king_of_hearts.svg');
+.tool-link {
+    display: inline-block;
+    padding: 15px 40px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 50px;
+    transition: all 0.3s;
 }
 
-@media (max-width: 768px) {
-    .main-menu-header {
-        padding: 10px 15px;
-    }
-    .game-panels-container {
-        grid-template-columns: 1fr;
-        padding: 20px;
-        gap: 20px;
-    }
-    .game-panel {
-        width: 85%;
-        height: 180px;
-    }
-    .panel-title {
-        font-size: 2rem;
-    }
+.tool-link:hover {
+    background-color: #0056b3;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,123,255,0.3);
 }
