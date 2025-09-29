@@ -1,0 +1,56 @@
+/* --- Points Page Styling --- */
+.points-page {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top */
+    min-height: 100vh;
+    background-color: #f0f2f5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    padding: 40px 20px;
+}
+
+.points-container {
+    padding: 45px 50px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.points-container h1 {
+    margin-bottom: 25px;
+    color: #1a202c;
+    font-size: 2.2rem;
+    font-weight: 700;
+}
+
+.points-display h2 {
+    font-size: 1.5rem;
+    color: #2d3748;
+    margin-bottom: 10px;
+}
+
+.points-display p {
+    font-size: 1.1rem;
+    color: #4a5568;
+    margin-bottom: 15px;
+}
+
+.points-balance {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: #3182ce;
+    display: block;
+    margin-top: 10px;
+}
+
+.error-message {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    color: #c53030;
+    background-color: #fed7d7;
+}

@@ -1,59 +1,114 @@
+/* --- Login Page Styling --- */
 .login-page {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     background-color: #f0f2f5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    padding: 20px;
 }
+
 .login-form-container {
-    padding: 40px;
+    padding: 45px 50px;
     background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     text-align: center;
 }
+
 .login-form-container h2 {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+    color: #1a202c;
+    font-size: 2rem;
+    font-weight: 700;
 }
+
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     text-align: left;
 }
+
 .form-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2d3748;
 }
+
 .form-group input {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 12px 15px;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    box-sizing: border-box; /* Important for consistent sizing */
+    transition: border-color 0.3s, box-shadow 0.3s;
 }
-button {
+
+.form-group input:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+    outline: none;
+}
+
+.login-button {
     width: 100%;
-    padding: 10px;
+    padding: 14px;
     border: none;
-    border-radius: 5px;
-    background-color: #007bff;
+    border-radius: 8px;
+    background-color: #3182ce;
     color: white;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
     margin-top: 10px;
+    transition: all 0.25s ease-out;
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.25);
 }
-button:hover {
-    background-color: #0056b3;
+
+.login-button:hover:not(:disabled) {
+    background-color: #2b6cb0;
+    transform: translateY(-2px);
+    box-shadow: 0 7px 15px rgba(49, 130, 206, 0.35);
 }
+
+.login-button:disabled {
+    background-color: #a0aec0;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
 .toggle-button {
     background: none;
     border: none;
-    color: #007bff;
+    color: #3182ce;
     cursor: pointer;
-    margin-top: 15px;
+    margin-top: 20px;
     padding: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
+.toggle-button:hover {
+    text-decoration: underline;
+}
+
+.success-message, .error-message {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
 .success-message {
-    color: green;
-    margin-top: 10px;
+    color: #2f855a;
+    background-color: #c6f6d5;
+}
+
+.error-message {
+    color: #c53030;
+    background-color: #fed7d7;
 }

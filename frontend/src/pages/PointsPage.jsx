@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ApiWorker from '../workers/api.worker.js?worker';
+import './PointsPage.css'; // Linking the new stylesheet
 
 const PointsPage = () => {
     const [points, setPoints] = useState(null);
@@ -13,22 +14,17 @@ const PointsPage = () => {
         worker.current.onmessage = (event) => {
             const { success, action, data, error: workerError } = event.data;
             if (success) {
-                if (action === 'getPoints') {
-                    setPoints(data.points);
-                } else if (action === 'checkAuth') {
-                    if (data.isLoggedIn) {
-                        setUsername(data.user.username);
-                        setPoints(data.user.points);
-                    } else {
-                        setError('请先登录。');
-                    }
+                if (action === 'checkAuth' && data.isLoggedIn) {
+                    setUsername(data.user.username);
+                    setPoints(data.user.points);
+                } else if (!data.isLoggedIn) {
+                    setError('Please log in to view your points.');
                 }
             } else {
-                setError(workerError || '无法获取积分。');
+                setError(workerError || 'Could not fetch points data.');
             }
         };
 
-        // Check auth status first to get username and points
         worker.current.postMessage({
             action: 'checkAuth',
             payload: { resource: 'user' }
@@ -38,17 +34,26 @@ const PointsPage = () => {
     }, []);
 
     return (
-        <div className="points-page" style={{ padding: '20px' }}>
-            <h1>积分管理</h1>
-            {error && <div className="error-message">{error}</div>}
-            {username ? (
-                <h2>欢迎, {username}!</h2>
-            ) : null}
-            {points !== null ? (
-                <p>你当前的积分为: {points}</p>
-            ) : (
-                <p>正在加载积分...</p>
-            )}
+        <div className="points-page">
+            <div className="points-container">
+                <h1>Points Management</h1>
+                {error && <div className="error-message">{error}</div>}
+                {username ? (
+                    <div className="points-display">
+                        <h2>Welcome, {username}!</h2>
+                        {points !== null ? (
+                            <>
+                                <p>Your current points balance is:</p>
+                                <span className="points-balance">{points}</span>
+                            </>
+                        ) : (
+                            <p>Loading points...</p>
+                        )}
+                    </div>
+                ) : !error && (
+                     <p>Loading user data...</p>
+                )}
+            </div>
         </div>
     );
 };
