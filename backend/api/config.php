@@ -26,8 +26,9 @@ try {
     ];
     $pdo = new PDO($dsn, $DB_USER, $DB_PASS, $options);
 } catch (\PDOException $e) {
-    // The calling script is responsible for catching this exception
-    // and handling the error appropriately.
-    throw new \PDOException($e->getMessage(), (int)$e->getCode());
+    // Gracefully handle connection failure without halting the script.
+    // The $pdo object will remain null, and other scripts should handle this.
+    // For debugging, you can log this error to a private file.
+    error_log("Database connection failed: " . $e->getMessage());
 }
 ?>
