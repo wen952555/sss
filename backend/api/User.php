@@ -32,37 +32,27 @@ class User {
     }
 
     private function register() {
-        if (!$this->pdo) {
-            $this->send_error("Database connection not available.");
-        }
         $data = json_decode(file_get_contents("php://input"), true);
-        $email = $data['email'] ?? '';
+        $username = $data['username'] ?? '';
         $password = $data['password'] ?? '';
-        $odds_multiplier = $data['odds_multiplier'] ?? '45.00';
 
-        if (empty($email) || empty($password)) {
-            $this->send_error("邮箱和密码不能为空。");
-        }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->send_error("无效的邮箱格式。");
+        if (empty($username) || empty($password)) {
+            $this->send_error("用户名和密码不能为空。");
         }
         if (strlen($password) < 6) {
             $this->send_error("密码长度不能少于6位。");
         }
-        if (!in_array($odds_multiplier, ['45.00', '45'])) {
-             $this->send_error("无效的赔率选择。");
-        }
 
-        $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ?");
-        $stmt->execute([$email]);
+        $stmt = $this->pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
         if ($stmt->fetch()) {
-            $this->send_error("该邮箱已被注册。");
+            $this->send_error("用户名已存在。");
         }
 
         $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-        $stmt = $this->pdo->prepare("INSERT INTO users (email, password_hash, odds_multiplier) VALUES (?, ?, ?)");
-        if ($stmt->execute([$email, $password_hash, $odds_multiplier])) {
+        $stmt = $this->pdo->prepare("INSERT INTO users (username, password_hash) VALUES (?, ?)");
+        if ($stmt->execute([$username, $password_hash])) {
             $this->send_response(["message" => "注册成功。"]);
         } else {
             $this->send_error("注册失败，请稍后再试。");
@@ -70,37 +60,31 @@ class User {
     }
 
     private function login() {
-        if (!$this->pdo) {
-            $this->send_error("Database connection not available.");
-        }
         $data = json_decode(file_get_contents("php://input"), true);
-        $email = $data['email'] ?? '';
+        $username = $data['username'] ?? '';
         $password = $data['password'] ?? '';
 
-        if (empty($email) || empty($password)) {
-            $this->send_error("邮箱和密码不能为空。");
+        if (empty($username) || empty($password)) {
+            $this->send_error("用户名和密码不能为空。");
         }
 
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->execute([$email]);
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->execute([$username]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
             // session_start() is already called in index.php
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['email'] = $user['email'];
-            $this->send_response(["message" => "登录成功。", "user" => ['email' => $user['email'], 'points' => $user['points'], 'odds_multiplier' => $user['odds_multiplier']]]);
+            $_SESSION['username'] = $user['username'];
+            $this->send_response(["message" => "登录成功。", "user" => ['username' => $user['username'], 'points' => $user['points']]]);
         } else {
-            $this->send_error("邮箱或密码错误。");
+            $this->send_error("用户名或密码错误。");
         }
     }
 
     private function getPoints() {
         if (!isset($_SESSION['user_id'])) {
             $this->send_error("用户未登录。", 401);
-        }
-        if (!$this->pdo) {
-            $this->send_error("Database connection not available.");
         }
 
         $stmt = $this->pdo->prepare("SELECT points FROM users WHERE id = ?");
@@ -115,16 +99,11 @@ class User {
     }
 
     private function checkAuth() {
-        if (isset($_SESSION['user_id']) && isset($_SESSION['email'])) {
-            if (!$this->pdo) {
-                // If there's a session but no DB, log them in but show an error state for DB-dependent actions.
-                $this->send_response(["isLoggedIn" => true, "user" => ['email' => $_SESSION['email'], 'points' => 'N/A', 'odds_multiplier' => 'N/A'], "db_error" => "Database connection not available."]);
-                return;
-            }
-             $stmt = $this->pdo->prepare("SELECT points, odds_multiplier FROM users WHERE id = ?");
+        if (isset($_SESSION['user_id']) && isset($_SESSION['username'])) {
+             $stmt = $this->pdo->prepare("SELECT points FROM users WHERE id = ?");
              $stmt->execute([$_SESSION['user_id']]);
              $user = $stmt->fetch();
-             $this->send_response(["isLoggedIn" => true, "user" => ['email' => $_SESSION['email'], 'points' => $user['points'], 'odds_multiplier' => $user['odds_multiplier']]]);
+             $this->send_response(["isLoggedIn" => true, "user" => ['username' => $_SESSION['username'], 'points' => $user['points']]]);
         } else {
             $this->send_response(["isLoggedIn" => false]);
         }
