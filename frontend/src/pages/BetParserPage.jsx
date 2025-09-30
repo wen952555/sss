@@ -31,6 +31,12 @@ const BetParserPage = () => {
         fetchEmails();
     }, []);
 
+    const handleClear = () => {
+        setInputText('');
+        setParsedData([]);
+        setError(null);
+    };
+
     const handleParse = async (textToParse, emailId = null) => {
         setIsLoading(true);
         setError(null);
@@ -82,30 +88,30 @@ const BetParserPage = () => {
     };
 
     const renderNumbers = (numbers) => {
-        if (!numbers || numbers.length === 0) return 'N/A';
-        if (numbers.length > 10) return `${numbers.slice(0, 10).join(', ')}... (${numbers.length}个)`;
+        if (!numbers || numbers.length === 0) return '不适用';
+        if (numbers.length > 10) return `${numbers.slice(0, 10).join(', ')}... (共${numbers.length}个)`;
         return numbers.join(', ');
     };
 
     return (
         <div className="bet-parser-page">
             <header className="parser-header">
-                <h1>AI Bet Slip Parser</h1>
-                <p>Paste your betting records below or process an incoming email.</p>
+                <h1>AI下注单解析器</h1>
+                <p>请在下方粘贴您的投注记录，或处理收到的邮件。</p>
             </header>
 
             {unprocessedEmails.length > 0 && (
                 <div className="email-container">
-                    <h2>Unprocessed Emails</h2>
+                    <h2>未处理的邮件</h2>
                     <ul className="email-list">
                         {unprocessedEmails.map(email => (
                             <li key={email.id} className="email-item">
                                 <div className="email-info">
-                                    <span>From: {email.from_address}</span>
-                                    <span>Received: {new Date(email.created_at).toLocaleString()}</span>
+                                    <span>来自: {email.from_address}</span>
+                                    <span>收到时间: {new Date(email.created_at).toLocaleString()}</span>
                                 </div>
                                 <button className="parse-email-button" onClick={() => handleParseEmail(email)} disabled={isLoading}>
-                                    Parse Email
+                                    解析邮件
                                 </button>
                             </li>
                         ))}
@@ -118,13 +124,14 @@ const BetParserPage = () => {
                     className="input-textarea"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    placeholder="Paste your bet slip here, or click 'Parse Email' above..."
+                    placeholder="请在此处粘贴您的投注单，或点击上方的“解析邮件”..."
                     rows={10}
                 />
                 <div className="button-container">
-                    <button className="sample-button" onClick={() => setInputText(sampleText)}>Load Sample</button>
+                    <button className="sample-button" onClick={() => setInputText(sampleText)}>加载示例</button>
+                    <button className="clear-button" onClick={handleClear}>清空</button>
                     <button className="parse-button" onClick={() => handleParse(inputText)} disabled={isLoading || !inputText.trim()}>
-                        {isLoading ? 'Parsing...' : 'Parse Manually'}
+                        {isLoading ? '解析中...' : '手动解析'}
                     </button>
                 </div>
 
@@ -132,17 +139,17 @@ const BetParserPage = () => {
 
                 {parsedData.length > 0 && (
                     <div className="results-container">
-                        <h2>Parsing Results</h2>
+                        <h2>解析结果</h2>
                         <table className="results-table">
                             <thead>
                                 <tr>
-                                    <th>Region</th>
-                                    <th>Bet Type</th>
-                                    <th>Bet Content</th>
-                                    <th>Parsed Numbers</th>
-                                    <th>Amount/Bet</th>
-                                    <th>Source Line</th>
-                                    <th>Actions</th>
+                                    <th>地区</th>
+                                    <th>投注类型</th>
+                                    <th>投注内容</th>
+                                    <th>解析出的号码</th>
+                                    <th>每注金额</th>
+                                    <th>来源行</th>
+                                    <th>操作</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -156,7 +163,7 @@ const BetParserPage = () => {
                                         <td className="original-text-cell">{item.original_text}</td>
                                         <td>
                                             <button className="correct-button" onClick={() => handleCorrectClick(item)}>
-                                                Correct with AI
+                                                使用AI纠正
                                             </button>
                                         </td>
                                     </tr>
