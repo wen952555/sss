@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { API_BASE_URL } from '../config';
 import './ChatModal.css';
 
 const ChatModal = ({ item, onClose, onCorrect }) => {
@@ -32,7 +33,7 @@ const ChatModal = ({ item, onClose, onCorrect }) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/correct_bet.php', {
+            const response = await fetch(`${API_BASE_URL}/api/correct_bet.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

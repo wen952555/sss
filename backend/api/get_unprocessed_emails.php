@@ -3,7 +3,16 @@
 
 require_once 'config.php'; // Provides $pdo
 
+header("Access-Control-Allow-Origin: https://xxx.9525.ip-ddns.com");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
+
+// Handle pre-flight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);

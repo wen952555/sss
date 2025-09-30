@@ -1,6 +1,5 @@
 // frontend/src/workers/api.worker.js
-
-const API_BASE_URL = '/api';
+import { API_BASE_URL } from '../config.js';
 
 self.onmessage = async (event) => {
     const { action, payload } = event.data;
@@ -19,7 +18,7 @@ self.onmessage = async (event) => {
     };
 
     // Default POST URL
-    url = `${API_BASE_URL}/${resource}?action=${action}`;
+    url = `${API_BASE_URL}/api/${resource}?action=${action}`;
 
     // Handle GET requests
     const getActions = ['getGameState', 'getAiMove', 'getAiBid', 'getPoints', 'checkAuth', 'logout'];
@@ -27,7 +26,7 @@ self.onmessage = async (event) => {
         options.method = 'GET';
         options.body = undefined;
         const params = new URLSearchParams(body);
-        url = `${API_BASE_URL}/${resource}?action=${action}&${params.toString()}`;
+        url = `${API_BASE_URL}/api/${resource}?action=${action}&${params.toString()}`;
     }
 
     try {

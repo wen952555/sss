@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ChatModal from '../components/ChatModal';
+import { API_BASE_URL } from '../config';
 import './BetParserPage.css';
 
 const BetParserPage = () => {
@@ -18,7 +19,7 @@ const BetParserPage = () => {
     useEffect(() => {
         const fetchEmails = async () => {
             try {
-                const response = await fetch('/api/get_unprocessed_emails.php');
+                const response = await fetch(`${API_BASE_URL}/api/get_unprocessed_emails.php`);
                 const result = await response.json();
                 if (result.success) {
                     setUnprocessedEmails(result.data);
@@ -34,7 +35,7 @@ const BetParserPage = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/bet_parser.php', {
+            const response = await fetch(`${API_BASE_URL}/api/bet_parser.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: textToParse, email_id: emailId }),
