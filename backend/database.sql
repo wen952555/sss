@@ -15,3 +15,20 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `incoming_emails`
+-- This table stores raw emails received from the Cloudflare Worker for AI processing.
+--
+DROP TABLE IF EXISTS `incoming_emails`;
+CREATE TABLE `incoming_emails` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `from_address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `to_address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `raw_content` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

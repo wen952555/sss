@@ -1,0 +1,138 @@
+/* --- Modal Backdrop --- */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* --- Modal Content --- */
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 600px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* --- Modal Header --- */
+.modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #1a202c;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: #718096;
+    padding: 0 10px;
+}
+.close-button:hover {
+    color: #2d3748;
+}
+
+/* --- Messages Container --- */
+.messages-container {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message {
+    display: flex;
+    max-width: 80%;
+}
+
+.message p {
+    margin: 0;
+    padding: 12px 18px;
+    border-radius: 18px;
+    line-height: 1.5;
+}
+
+.message.user {
+    align-self: flex-end;
+}
+
+.message.user p {
+    background-color: #3182ce;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message.ai {
+    align-self: flex-start;
+}
+
+.message.ai p {
+    background-color: #edf2f7;
+    color: #2d3748;
+    border-bottom-left-radius: 4px;
+}
+
+
+/* --- Message Form --- */
+.message-form {
+    display: flex;
+    padding: 15px;
+    border-top: 1px solid #e2e8f0;
+    gap: 10px;
+}
+
+.message-input {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border: 1px solid #cbd5e0;
+    border-radius: 20px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.message-input:focus {
+    border-color: #3182ce;
+}
+
+.send-button {
+    background-color: #3182ce;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 0 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover:not(:disabled) {
+    background-color: #2b6cb0;
+}
+
+.send-button:disabled {
+    background-color: #a0aec0;
+    cursor: not-allowed;
+}
