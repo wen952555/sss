@@ -2,7 +2,7 @@
 // backend/api/index.php
 
 // --- Pre-flight and Headers ---
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: https://xxx.9525.ip-ddns.com");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Max-Age: 3600");
