@@ -32,3 +32,23 @@ CREATE TABLE `incoming_emails` (
   PRIMARY KEY (`id`),
   KEY `status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `parsed_bet_slips`
+-- This table stores the structured results from the Bet Parser AI.
+--
+DROP TABLE IF EXISTS `parsed_bet_slips`;
+CREATE TABLE `parsed_bet_slips` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `email_id` int(11) DEFAULT NULL,
+  `region` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bet_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bet_content` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `parsed_numbers` text COLLATE utf8mb4_unicode_ci,
+  `amount_per_bet` decimal(10,2) DEFAULT NULL,
+  `source_text` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `email_id` (`email_id`),
+  CONSTRAINT `parsed_bet_slips_ibfk_1` FOREIGN KEY (`email_id`) REFERENCES `incoming_emails` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
