@@ -2,7 +2,7 @@
 // backend/api/index.php
 
 // --- Pre-flight and Headers ---
-header("Access-Control-Allow-Origin: https://xxx.9525.ip-ddns.com");
+header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Max-Age: 3600");
@@ -22,8 +22,8 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 $resource = null;
-// The router now only recognizes the 'user' endpoint.
-if (preg_match('/\/api\/(user)/', $path, $matches)) {
+// The router now recognizes 'user' and 'verify_email' endpoints.
+if (preg_match('/\/api\/(user|verify_email)/', $path, $matches)) {
     $resource = $matches[1];
 }
 
@@ -34,7 +34,10 @@ try {
             $user_handler = new User($pdo);
             $user_handler->execute();
             break;
-        // All old game cases have been removed.
+        case 'verify_email':
+            require_once 'verify_email.php';
+            // The script handles its own logic and output
+            break;
         default:
             http_response_code(404);
             echo json_encode([
