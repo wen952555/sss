@@ -38,7 +38,7 @@ const MainMenu = () => {
             <header className="main-menu-header">
                 <div className="header-left">
                     {user ? (
-                        <span className="username-display">欢迎, {user.email}</span>
+                        <span className="username-display">欢迎, {user.username}</span>
                     ) : (
                         <Link to="/login" className="header-link">登录/注册</Link>
                     )}

@@ -1,0 +1,3 @@
+2025-09-30 11:46:09 - Received update: {"message":{"from":{"id":"YOUR_TELEGRAM_ADMIN_ID"},"chat":{"id":12345},"text":"\/deleteuser test@example.com"}}
+2025-09-30 11:46:09 - Admin command '/deleteuser' received with argument 'test@example.com'
+2025-09-30 11:46:09 - Cannot send message: TELEGRAM_BOT_TOKEN is not set.
