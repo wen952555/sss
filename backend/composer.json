@@ -1,9 +1,0 @@
-{
-    "description": "PHP dependencies for the backend.",
-    "require-dev": {
-        "phpunit/phpunit": "^9.5"
-    },
-    "scripts": {
-        "test": "vendor/bin/phpunit --testdox api/tests"
-    }
-}
