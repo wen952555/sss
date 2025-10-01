@@ -1,0 +1,35 @@
+/* client/src/App.css */
+.app {
+  text-align: center;
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: white;
+}
+
+.app-header {
+  padding: 20px;
+  border-bottom: 1px solid #444;
+}
+
+.app-header button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 5px;
+  border: none;
+  background-color: #61dafb;
+}
+
+.app-header button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.game-board {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
