@@ -2,7 +2,7 @@
 // backend/api/index.php
 
 // --- Pre-flight and Headers ---
-header("Access-Control-Allow-Origin: https://xxx.9525.ip-ddns.com");
+header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Max-Age: 3600");
@@ -22,8 +22,8 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($request_uri, PHP_URL_PATH);
 
 $resource = null;
-// The router now recognizes 'user' and 'tg_webhook' endpoints.
-if (preg_match('/\/api\/(user|tg_webhook)/', $path, $matches)) {
+// The router now recognizes 'user' and 'email_receiver' endpoints.
+if (preg_match('/\/api\/(user|email_receiver)/', $path, $matches)) {
     $resource = $matches[1];
 }
 
@@ -34,9 +34,9 @@ try {
             $user_handler = new User($pdo);
             $user_handler->execute();
             break;
-        case 'tg_webhook':
+        case 'email_receiver':
             // This script handles its own logic and output
-            require_once 'tg_webhook.php';
+            require_once 'email_receiver.php';
             break;
         default:
             http_response_code(404);

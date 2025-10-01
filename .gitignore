@@ -1,5 +1,0 @@
-# Log files
-*.log
-
-# API Key files
-backend/api/gemini_api_key.txt

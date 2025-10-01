@@ -12,14 +12,8 @@ $DB_NAME = 'YOUR_DB_NAME';  // Please enter your actual database name
 $WORKER_SECRET = 'your-super-secret-random-string-goes-here';
 
 // --- Google Gemini API Key for Chat Feature ---
-// The key is read from a separate, non-executable file for better security.
-$key_file = __DIR__ . '/gemini_api_key.txt';
-$GEMINI_API_KEY = file_exists($key_file) ? trim(file_get_contents($key_file)) : '';
-
-// --- Telegram Bot Configuration ---
-// IMPORTANT: To enable the Telegram admin webhook, set your bot token and your numeric Telegram user ID.
-$TELEGRAM_BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN';
-$TELEGRAM_ADMIN_ID = 'YOUR_TELEGRAM_ADMIN_ID'; // This must be a numeric ID
+// IMPORTANT: To enable the live AI correction chat, replace this with your actual Google Gemini API key.
+$GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_GOES_HERE';
 
 // --- Database Connection ---
 $pdo = null;
