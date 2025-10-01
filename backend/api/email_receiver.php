@@ -39,6 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // --- Database Interaction ---
     try {
+        if (!$pdo) {
+            throw new PDOException("Database connection is not available. Please check the server configuration.");
+        }
+
         $stmt = $pdo->prepare(
             "INSERT INTO incoming_emails (from_address, to_address, raw_content, status) VALUES (?, ?, ?, 'new')"
         );
