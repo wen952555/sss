@@ -1,0 +1,17 @@
+{
+  "name": "sss-backend",
+  "version": "1.0.0",
+  "description": "Backend for the SSS game",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "author": "",
+  "license": "ISC"
+}

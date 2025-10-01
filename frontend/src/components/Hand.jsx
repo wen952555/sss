@@ -3,17 +3,28 @@ import React from 'react';
 import Card from './Card';
 import './Hand.css';
 
-const Hand = ({ name, cards, onCardClick, onSlotClick, selectedCard }) => {
+const Hand = ({ name, cards, handInfo, onCardClick, onSlotClick, selectedCard }) => {
+    const isSelected = (card) => {
+        if (!selectedCard) return false;
+        return selectedCard.card.suit === card.suit && selectedCard.card.rank === card.rank;
+    };
+
+    const handClass = `hand-slot ${name.toLowerCase().split(' ')[0]}`;
+
     return (
-        <div className="hand-container" onClick={onSlotClick}>
-            <h3>{name}</h3>
-            <div className="hand-slot">
-                {cards.map(card => (
-                    <Card
-                        key={`${card.suit}-${card.rank}`}
-                        card={card}
-                        onClick={() => onCardClick(card)}
-                        isSelected={selectedCard && selectedCard.card.suit === card.suit && selectedCard.card.rank === card.rank}
+        <div className={handClass} onClick={onSlotClick}>
+            <div className="hand-header">
+                <span className="hand-name">{name}</span>
+                {handInfo && <span className="hand-type">{handInfo.type.name}</span>}
+            </div>
+            <div className="cards-container">
+                {cards.map((card, index) => (
+                    <Card 
+                        key={index} 
+                        suit={card.suit} 
+                        rank={card.rank} 
+                        onClick={() => onCardClick(card)} 
+                        isSelected={isSelected(card)}
                     />
                 ))}
             </div>

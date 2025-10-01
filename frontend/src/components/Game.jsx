@@ -2,23 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import PlayerHand from './PlayerHand';
-import Hand from './Hand'; // We will create this component
-import Results from './Results'; // We will create this component
+import Hand from './Hand';
+import Results from './Results';
 import { sortHand } from '../utils/cardUtils';
 import './Game.css';
 
-const socket = io(import.meta.env.VITE_BACKEND_URL);
+const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
 
-// Helper to create initial empty hands
-const createEmptyHands = () => ({
-    front: [],
-    middle: [],
-    back: []
-});
+const createEmptyHands = () => ({ front: [], middle: [], back: [] });
 
 const Game = () => {
     const [isConnected, setIsConnected] = useState(socket.connected);
     const [players, setPlayers] = useState([]);
+    const [submittedPlayers, setSubmittedPlayers] = useState([]);
     const [myHand, setMyHand] = useState([]);
     const [arrangedHands, setArrangedHands] = useState(createEmptyHands());
     const [selectedCard, setSelectedCard] = useState(null);
@@ -27,52 +23,45 @@ const Game = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        function onConnect() {
-            setIsConnected(true);
-            console.log('Connected!');
-        }
-        function onDisconnect() {
-            setIsConnected(false);
-            console.log('Disconnected.');
-        }
-        function onPlayersUpdate(updatedPlayers) {
-            setPlayers(updatedPlayers);
-        }
-        function onDealHand(hand) {
-            setMyHand(sortHand(hand));
+        const onConnect = () => setIsConnected(true);
+        const onDisconnect = () => setIsConnected(false);
+        const onPlayersUpdate = (updatedPlayers) => setPlayers(updatedPlayers);
+        const onGameStarted = () => {
+            console.log("Game has started!");
             setGameState('playing');
             setArrangedHands(createEmptyHands());
+            setSubmittedPlayers([]);
             setGameResult(null);
             setError('');
-        }
-        function onGameStarted() {
-            console.log("Game has started!");
-        }
-        function onPlayerSubmitted(playerId) {
-            console.log(`Player ${playerId} has submitted their hand.`);
-            // Optionally, update UI to show which players are ready
-        }
-        function onGameOver(results) {
+        };
+        const onDealHand = (hand) => setMyHand(sortHand(hand));
+        const onPlayerSubmitted = (player) => {
+            console.log(`Player ${player.name} has submitted.`);
+            setSubmittedPlayers(prev => [...prev, player]);
+        };
+        const onGameOver = (results) => {
+            console.log("Game over, results:", results);
             setGameResult(results);
             setGameState('results');
-        }
-        function onErrorMessage(message) {
+        };
+        const onErrorMessage = (message) => {
             setError(message);
-            setTimeout(() => setError(''), 3000); // Clear error after 3s
-        }
-        function onGameReset() {
+            setTimeout(() => setError(''), 4000);
+        };
+        const onGameReset = () => {
             alert("A player disconnected. The game has been reset.");
             setMyHand([]);
             setArrangedHands(createEmptyHands());
             setGameState('waiting');
             setGameResult(null);
-        }
+            setSubmittedPlayers([]);
+        };
 
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('players_update', onPlayersUpdate);
-        socket.on('deal_hand', onDealHand);
         socket.on('game_started', onGameStarted);
+        socket.on('deal_hand', onDealHand);
         socket.on('player_submitted', onPlayerSubmitted);
         socket.on('game_over', onGameOver);
         socket.on('error_message', onErrorMessage);
@@ -82,8 +71,8 @@ const Game = () => {
             socket.off('connect', onConnect);
             socket.off('disconnect', onDisconnect);
             socket.off('players_update', onPlayersUpdate);
-            socket.off('deal_hand', onDealHand);
             socket.off('game_started', onGameStarted);
+            socket.off('deal_hand', onDealHand);
             socket.off('player_submitted', onPlayerSubmitted);
             socket.off('game_over', onGameOver);
             socket.off('error_message', onErrorMessage);
@@ -91,16 +80,11 @@ const Game = () => {
         };
     }, []);
 
-    const handleStartGame = () => {
-        socket.emit('start_game');
-    };
+    const handleStartGame = () => socket.emit('start_game');
 
     const handleCardClick = (card, source) => {
-        if (selectedCard) {
-            // Deselect if clicking the same card
-            if (selectedCard.card.rank === card.rank && selectedCard.card.suit === card.suit) {
-                setSelectedCard(null);
-            }
+        if (selectedCard && selectedCard.card.rank === card.rank && selectedCard.card.suit === card.suit) {
+            setSelectedCard(null); // Deselect
         } else {
             setSelectedCard({ card, source });
         }
@@ -111,51 +95,41 @@ const Game = () => {
 
         const { card, source } = selectedCard;
         const targetHand = arrangedHands[targetHandName];
-
-        // Define hand size limits
         const handLimits = { front: 3, middle: 5, back: 5 };
+
         if (targetHand.length >= handLimits[targetHandName]) {
             setError(`The ${targetHandName} hand is already full.`);
             return;
         }
 
-        // Move card from source to target
-        let sourceHand;
-        if (source === 'myHand') {
-            sourceHand = myHand;
-        } else {
-            sourceHand = arrangedHands[source];
-        }
+        // Move card logic
+        const sourceIsArranged = source !== 'myHand';
+        const sourceHand = sourceIsArranged ? arrangedHands[source] : myHand;
 
         const newSourceHand = sourceHand.filter(c => !(c.rank === card.rank && c.suit === card.suit));
         const newTargetHand = sortHand([...targetHand, card]);
 
-        const newArrangedHands = {
-            ...arrangedHands,
-            [targetHandName]: newTargetHand
-        };
-
-        if (source === 'myHand') {
-            setMyHand(newSourceHand);
+        if (sourceIsArranged) {
+            setArrangedHands({ ...arrangedHands, [source]: newSourceHand, [targetHandName]: newTargetHand });
         } else {
-            newArrangedHands[source] = newSourceHand;
+            setMyHand(newSourceHand);
+            setArrangedHands({ ...arrangedHands, [targetHandName]: newTargetHand });
         }
-
-        setArrangedHands(newArrangedHands);
+        
         setSelectedCard(null);
         setError('');
     };
 
     const handleSubmitHand = () => {
         if (myHand.length > 0) {
-            setError("You must arrange all 13 cards.");
-            return;
+            return setError("You must arrange all 13 cards.");
         }
-        // Additional validation can be done here if needed
         socket.emit('submit_hand', arrangedHands);
         setGameState('submitted');
         setError('');
     };
+
+    const getSubmittedNames = () => submittedPlayers.map(p => p.name).join(', ');
 
     return (
         <div className="game-container">
@@ -167,34 +141,37 @@ const Game = () => {
 
             {gameState === 'waiting' && (
                 <button onClick={handleStartGame} disabled={!isConnected || players.length < 2}>
-                    Start Game ({players.length}/4 players)
+                    Start Game ({players.length} / 4 players)
                 </button>
             )}
 
             {gameState === 'playing' && (
                 <>
                     <div className="arranged-hands">
-                        <Hand name="Front (3)" cards={arrangedHands.front} onCardClick={(card) => handleCardClick(card, 'front')} onSlotClick={() => handleHandSlotClick('front')} selectedCard={selectedCard} />
-                        <Hand name="Middle (5)" cards={arrangedHands.middle} onCardClick={(card) => handleCardClick(card, 'middle')} onSlotClick={() => handleHandSlotClick('middle')} selectedCard={selectedCard} />
-                        <Hand name="Back (5)" cards={arrangedHands.back} onCardClick={(card) => handleCardClick(card, 'back')} onSlotClick={() => handleHandSlotClick('back')} selectedCard={selectedCard} />
+                        <Hand name="前墩 (3)" cards={arrangedHands.front} onCardClick={(card) => handleCardClick(card, 'front')} onSlotClick={() => handleHandSlotClick('front')} selectedCard={selectedCard} />
+                        <Hand name="中墩 (5)" cards={arrangedHands.middle} onCardClick={(card) => handleCardClick(card, 'middle')} onSlotClick={() => handleHandSlotClick('middle')} selectedCard={selectedCard} />
+                        <Hand name="后墩 (5)" cards={arrangedHands.back} onCardClick={(card) => handleCardClick(card, 'back')} onSlotClick={() => handleHandSlotClick('back')} selectedCard={selectedCard} />
                     </div>
                     <div className="player-main-hand">
                         <h2>Your Hand</h2>
                         <PlayerHand cards={myHand} onCardClick={(card) => handleCardClick(card, 'myHand')} selectedCard={selectedCard} />
                     </div>
-                    <button onClick={handleSubmitHand} disabled={myHand.length > 0}>
+                    <button onClick={handleSubmitHand} disabled={myHand.length > 0 || gameState === 'submitted'}>
                         Submit Hand
                     </button>
                 </>
             )}
 
             {gameState === 'submitted' && (
-                <h2>Hand Submitted! Waiting for other players...</h2>
+                <div className="waiting-submission">
+                    <h2>Hand Submitted! Waiting for others...</h2>
+                    <p>Ready: {getSubmittedNames()}</p>
+                </div>
             )}
 
             {gameState === 'results' && gameResult && (
                 <>
-                    <Results results={gameResult} />
+                    <Results results={gameResult} playerInfo={players} />
                     <button onClick={handleStartGame}>Play Again</button>
                 </>
             )}

@@ -1,56 +1,89 @@
 /* frontend/src/components/Results.css */
 .results-container {
-    width: 90%;
+    width: 100%;
     max-width: 1200px;
-    margin-top: 20px;
+    margin: 20px auto;
     padding: 20px;
-    background-color: #fdfdfd;
-    border: 1px solid #eee;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: #1e1e1e;
+    border-radius: 12px;
 }
 
-.results-container h2 {
+.results-title {
     text-align: center;
+    color: #e0e0e0;
     margin-bottom: 25px;
-    color: #2c3e50;
+    font-size: 2.5em;
 }
 
 .results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
     gap: 20px;
 }
 
-.player-result {
+.player-result-card {
+    background-color: #282c34;
+    border: 1px solid #444;
+    border-radius: 10px;
     padding: 15px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.player-result h4 {
-    margin: 0 0 15px 0;
-    text-align: center;
-    color: #34495e;
-    font-size: 1.2em;
-    word-break: break-all;
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
 }
 
-.player-hands-display .hand-container {
-    border-style: solid;
-    cursor: default;
+.player-name {
+    margin: 0;
+    color: #61dafb;
+    font-size: 1.4em;
 }
 
-.player-hands-display .hand-container:hover {
-    background-color: #f9f9f9;
-    border-color: #a2a2a2;
-}
-
-.total-score {
-    text-align: center;
-    font-size: 1.3em;
+.player-total-score {
+    font-size: 1.4em;
     font-weight: bold;
-    margin-top: 15px;
-    color: #3498db;
 }
+
+.player-total-score.positive {
+    color: #4caf50; /* Green for positive */
+}
+
+.player-total-score.negative {
+    color: #f44336; /* Red for negative */
+}
+
+.special-hand-announcement {
+    text-align: center;
+    font-size: 1.2em;
+    color: #ffd700; /* Gold */
+    padding: 10px;
+    background-color: rgba(255, 215, 0, 0.1);
+    border-radius: 5px;
+}
+
+.player-hands-display {
+    display: flex;
+    flex-direction: column; /* Stack hands vertically */
+    gap: 10px;
+}
+
+/* Override Hand.css to fit inside the results card */
+.player-hands-display .hand-slot {
+    margin: 0;
+    min-height: auto; /* Let content define height */
+}
+
+.player-hands-display .cards-container {
+    justify-content: flex-start; /* Align cards to the left */
+}
+
+.player-hands-display .hand-header {
+    font-size: 1em;
+}
+

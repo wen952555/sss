@@ -1,48 +1,39 @@
-// client/src/utils/cardUtils.js
+// frontend/src/utils/cardUtils.js
 
-const RANK_MAP_IMAGES = {
-  'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', '10': '10', '9': '9',
-  '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2',
-};
-
-export const RANK_VALUES = {
+const SUIT_ORDER = { "spades": 4, "hearts": 3, "diamonds": 2, "clubs": 1 };
+const RANK_VALUES = {
     "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10,
     "J": 11, "Q": 12, "K": 13, "A": 14
 };
 
-const SUIT_VALUES = {
-    "spades": 4,
-    "hearts": 3,
-    "diamonds": 2,
-    "clubs": 1
-};
-
 /**
- * 根据卡片对象获取对应的图片 URL
- * @param {Object} card - 例如 { suit: 'spades', rank: 'A' }
- * @returns {string} - 图片的路径, e.g., "/cards/ace_of_spades.svg"
- */
-export const getCardImageUrl = (card) => {
-  if (!card || !card.suit || !card.rank) {
-    return '/cards/back.svg';
-  }
-  const rankStr = RANK_MAP_IMAGES[card.rank];
-  const suitStr = card.suit;
-  return `/cards/${rankStr}_of_${suitStr}.svg`;
-};
-
-/**
- * Sorts a hand of cards, first by rank, then by suit.
- * @param {Array<Object>} hand - Array of card objects.
+ * Sorts a hand of cards, typically by rank and then by suit.
+ * @param {Array<Object>} hand - An array of card objects { suit, rank }.
  * @returns {Array<Object>} - The sorted hand.
  */
 export const sortHand = (hand) => {
     if (!hand) return [];
-    return hand.sort((a, b) => {
-        const rankComparison = RANK_VALUES[a.rank] - RANK_VALUES[b.rank];
+    
+    return [...hand].sort((a, b) => {
+        const rankComparison = RANK_VALUES[b.rank] - RANK_VALUES[a.rank];
         if (rankComparison !== 0) {
             return rankComparison;
         }
-        return SUIT_VALUES[b.suit] - SUIT_VALUES[a.suit]; // Sort by suit if ranks are equal
+        return SUIT_ORDER[b.suit] - SUIT_ORDER[a.suit];
     });
+};
+
+/**
+ * Generates the image URL for a given card.
+ * @param {Object} card - A card object with suit and rank.
+ * @returns {string} - The path to the card image.
+ */
+export const getCardImageUrl = (card) => {
+    if (!card) {
+        // Return a path to a card back or a placeholder
+        return '/cards/back.png'; 
+    }
+    // Note: In Vite, files in the `public` directory are served at the root.
+    // So the path is relative to the public root, e.g., /cards/spades_A.png
+    return `/cards/${card.suit}_${card.rank}.png`;
 };

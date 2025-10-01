@@ -1,5 +1,6 @@
 // server/gameLogic.js
 
+// --- Constants ---
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 const RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
 const RANK_VALUES = {
@@ -7,191 +8,277 @@ const RANK_VALUES = {
     "J": 11, "Q": 12, "K": 13, "A": 14
 };
 
-// Hand types, from highest to lowest
+// --- Hand Type Definitions ---
 const HAND_TYPES = {
-    ROYAL_FLUSH: 10,
-    STRAIGHT_FLUSH: 9,
-    FOUR_OF_A_KIND: 8,
-    FULL_HOUSE: 7,
-    FLUSH: 6,
-    STRAIGHT: 5,
-    THREE_OF_A_KIND: 4,
-    TWO_PAIR: 3,
-    ONE_PAIR: 2,
-    HIGH_CARD: 1
+    // 5-Card Hands
+    ROYAL_FLUSH: { value: 10, name: '同花大顺' },
+    STRAIGHT_FLUSH: { value: 9, name: '同花顺' },
+    FOUR_OF_A_KIND: { value: 8, name: '铁支' },
+    FULL_HOUSE: { value: 7, name: '葫芦' },
+    FLUSH: { value: 6, name: '同花' },
+    STRAIGHT: { value: 5, name: '顺子' },
+    // 3-Card Hands
+    THREE_OF_A_KIND: { value: 4, name: '三条' },
+    // Universal Hand Types
+    TWO_PAIR: { value: 3, name: '两对' },
+    ONE_PAIR: { value: 2, name: '对子' },
+    HIGH_CARD: { value: 1, name: '高牌' }
 };
 
-/**
- * 创建一副标准的52张扑克牌
- * @returns {Array<Object>} deck - 一副牌
- */
-function createDeck() {
-  const deck = [];
-  for (const suit of SUITS) {
-    for (const rank of RANKS) {
-      deck.push({ suit, rank });
+// Special 13-Card hands, ordered by rank
+const SPECIAL_HAND_TYPES = {
+    DRAGON: { value: 13, name: '一条龙', score: 13 },
+    THIRTEEN_ORPHANS: { value: 12, name: '十三幺', score: 13}, // Example, not standard
+    ALL_SUITS: { value: 11, name: '全花色', score: 10}, // J,Q,K,A in various suits
+    THREE_FLUSHES: { value: 5, name: '三同花', score: 5 },
+    THREE_STRAIGHTS: { value: 4, name: '三顺子', score: 4 },
+    SIX_PAIRS: { value: 3, name: '六对半', score: 3 },
+    // No special hand
+    NONE: { value: 0, name: '无特殊牌', score: 0 }
+};
+
+// Scores for specific hand types in specific segments
+const SEGMENT_SCORES = {
+    front: {
+        THREE_OF_A_KIND: 3 // 冲三
+    },
+    middle: {
+        FULL_HOUSE: 2, // 中墩葫芦
+        FOUR_OF_A_KIND: 8, // 中墩铁支
+        STRAIGHT_FLUSH: 10 // 中墩同花顺
+    },
+    back: {
+        FOUR_OF_A_KIND: 4, // 后墩铁支
+        STRAIGHT_FLUSH: 5, // 后墩同花顺
+        ROYAL_FLUSH: 10 // 后墩同花大顺
     }
-  }
-  return deck;
+};
+
+// --- Deck Operations ---
+function createDeck() {
+    const deck = [];
+    for (const suit of SUITS) {
+        for (const rank of RANKS) {
+            deck.push({ suit, rank, value: RANK_VALUES[rank] });
+        }
+    }
+    return deck;
 }
 
-/**
- * Fisher-Yates (aka Knuth) 洗牌算法
- * @param {Array<Object>} deck - 要洗的牌堆
- * @returns {Array<Object>} - 洗好的牌堆
- */
 function shuffleDeck(deck) {
-  let currentIndex = deck.length, randomIndex;
-
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [deck[currentIndex], deck[randomIndex]] = [deck[randomIndex], deck[currentIndex]];
-  }
-
-  return deck;
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    return deck;
 }
 
-/**
- * 发牌给四位玩家
- * @returns {Object} - 包含四个玩家手牌的对象
- */
 function dealCards() {
-    const deck = createDeck();
-    const shuffledDeck = shuffleDeck(deck);
-
-    const players = {
-        player1: shuffledDeck.slice(0, 13),
-        player2: shuffledDeck.slice(13, 26),
-        player3: shuffledDeck.slice(26, 39),
-        player4: shuffledDeck.slice(39, 52),
+    const deck = shuffleDeck(createDeck());
+    return {
+        player1: deck.slice(0, 13),
+        player2: deck.slice(13, 26),
+        player3: deck.slice(26, 39),
+        player4: deck.slice(39, 52),
     };
-    return players;
 }
 
-// --- Hand Evaluation Logic ---
+// --- Hand Evaluation ---
 
 function getCounts(hand) {
-    const counts = {};
-    for (const card of hand) {
-        counts[card.rank] = (counts[card.rank] || 0) + 1;
-    }
-    return counts;
+    const rankCounts = hand.reduce((acc, card) => {
+        acc[card.rank] = (acc[card.rank] || 0) + 1;
+        return acc;
+    }, {});
+    const suitCounts = hand.reduce((acc, card) => {
+        acc[card.suit] = (acc[card.suit] || 0) + 1;
+        return acc;
+    }, {});
+    return { rankCounts, suitCounts };
 }
 
 function isFlush(hand) {
-    const firstSuit = hand[0].suit;
-    return hand.every(card => card.suit === firstSuit);
+    return new Set(hand.map(c => c.suit)).size === 1;
 }
 
 function isStraight(hand) {
-    const sortedRanks = hand.map(c => RANK_VALUES[c.rank]).sort((a, b) => a - b);
-    // Handle A-2-3-4-5 straight
-    if (JSON.stringify(sortedRanks) === JSON.stringify([2, 3, 4, 5, 14])) {
-        // In A-5 straight, A is low, but for ranking purposes, we use 5 as high card.
-        return { isStraight: true, highCard: 5, ranks: [5, 4, 3, 2, 1] }; // Return sorted ranks for comparison
+    const sortedRanks = [...new Set(hand.map(c => c.value))].sort((a, b) => a - b);
+    if (sortedRanks.length !== hand.length) return { isStraight: false }; // Not unique ranks
+
+    // Ace-low straight (A, 2, 3, 4, 5)
+    const isAceLow = JSON.stringify(sortedRanks) === JSON.stringify([2, 3, 4, 5, 14]);
+    if (isAceLow) {
+        return { isStraight: true, highCard: 5, ranks: [5, 4, 3, 2, 1] };
     }
-    let isStraight = true;
+
     for (let i = 0; i < sortedRanks.length - 1; i++) {
         if (sortedRanks[i+1] - sortedRanks[i] !== 1) {
-            isStraight = false;
-            break;
+            return { isStraight: false };
         }
     }
-    if (!isStraight) return { isStraight: false };
-
-    return { isStraight: true, highCard: sortedRanks[sortedRanks.length - 1], ranks: sortedRanks.reverse() };
+    return { isStraight: true, highCard: sortedRanks[sortedRanks.length - 1], ranks: sortedRanks.slice().reverse() };
 }
 
-function evaluate5CardHand(hand) {
-    if (!hand || hand.length !== 5) return null;
-    const counts = getCounts(hand);
-    const rankCounts = Object.values(counts).sort((a, b) => b - a);
-    const flush = isFlush(hand);
-    const { isStraight: straight, highCard: straightHigh, ranks: straightRanks } = isStraight(hand);
-    const sortedRanks = hand.map(c => RANK_VALUES[c.rank]).sort((a, b) => b - a);
+// --- 13-Card Special Hand Evaluation ---
+function evaluate13CardHand(hand) {
+    if (hand.length !== 13) return SPECIAL_HAND_TYPES.NONE;
 
-    if (straight && flush) {
-        if (straightHigh === 14) return { type: HAND_TYPES.ROYAL_FLUSH, ranks: straightRanks };
-        return { type: HAND_TYPES.STRAIGHT_FLUSH, ranks: straightRanks };
+    const ranks = hand.map(c => c.value).sort((a, b) => a - b);
+    const uniqueRanks = [...new Set(ranks)];
+    const { rankCounts, suitCounts } = getCounts(hand);
+
+    // 一条龙: A to K straight
+    if (uniqueRanks.length === 13) {
+        return SPECIAL_HAND_TYPES.DRAGON;
     }
-    if (rankCounts[0] === 4) {
-        const fourRank = Object.keys(counts).find(rank => counts[rank] === 4);
-        const kicker = Object.keys(counts).find(rank => counts[rank] === 1);
-        return { type: HAND_TYPES.FOUR_OF_A_KIND, ranks: [RANK_VALUES[fourRank], RANK_VALUES[kicker]] };
+
+    // 六对半: 6 pairs and one kicker
+    const pairCount = Object.values(rankCounts).filter(count => count === 2).length;
+    if (pairCount === 6) {
+        return SPECIAL_HAND_TYPES.SIX_PAIRS;
     }
-    if (rankCounts[0] === 3 && rankCounts[1] === 2) {
-        const threeRank = Object.keys(counts).find(rank => counts[rank] === 3);
-        const pairRank = Object.keys(counts).find(rank => counts[rank] === 2);
-        return { type: HAND_TYPES.FULL_HOUSE, ranks: [RANK_VALUES[threeRank], RANK_VALUES[pairRank]] };
-    }
-    if (flush) {
-        return { type: HAND_TYPES.FLUSH, ranks: sortedRanks };
-    }
-    if (straight) {
-        return { type: HAND_TYPES.STRAIGHT, ranks: straightRanks };
-    }
-    if (rankCounts[0] === 3) {
-        const threeRank = Object.keys(counts).find(rank => counts[rank] === 3);
-        const kickers = hand.filter(c => c.rank !== threeRank).map(c => RANK_VALUES[c.rank]).sort((a, b) => b - a);
-        return { type: HAND_TYPES.THREE_OF_A_KIND, ranks: [RANK_VALUES[threeRank], ...kickers] };
-    }
-    if (rankCounts[0] === 2 && rankCounts[1] === 2) {
-        const pairs = Object.keys(counts).filter(rank => counts[rank] === 2).map(r => RANK_VALUES[r]).sort((a, b) => b - a);
-        const kicker = Object.keys(counts).find(rank => counts[rank] === 1);
-        return { type: HAND_TYPES.TWO_PAIR, ranks: [...pairs, RANK_VALUES[kicker]] };
-    }
-    if (rankCounts[0] === 2) {
-        const pairRank = Object.keys(counts).find(rank => counts[rank] === 2);
-        const kickers = hand.filter(c => c.rank !== pairRank).map(c => RANK_VALUES[c.rank]).sort((a, b) => b - a);
-        return { type: HAND_TYPES.ONE_PAIR, ranks: [RANK_VALUES[pairRank], ...kickers] };
-    }
-    return { type: HAND_TYPES.HIGH_CARD, ranks: sortedRanks };
+    
+    // 三顺子 / 三同花: Needs to check arranged hands, so this is tricky here.
+    // We will check this after the user has arranged their hand.
+    // This is a placeholder for a more complex check on the arranged hand.
+    // For now, we will only check for Dragon and Six Pairs.
+    
+    return SPECIAL_HAND_TYPES.NONE;
 }
 
+// --- 3-Card Hand Evaluation ---
 function evaluate3CardHand(hand) {
     if (!hand || hand.length !== 3) return null;
-    const counts = getCounts(hand);
-    const rankCounts = Object.values(counts).sort((a, b) => b - a);
-    const sortedRanks = hand.map(c => RANK_VALUES[c.rank]).sort((a, b) => b - a);
+    const { rankCounts } = getCounts(hand);
+    const sortedHand = [...hand].sort((a, b) => b.value - a.value);
+    const ranks = sortedHand.map(c => c.value);
 
-    if (rankCounts[0] === 3) {
-        return { type: HAND_TYPES.THREE_OF_A_KIND, ranks: [sortedRanks[0]] };
+    const counts = Object.values(rankCounts);
+    if (counts.includes(3)) {
+        const rank = Object.keys(rankCounts).find(r => rankCounts[r] === 3);
+        return { type: HAND_TYPES.THREE_OF_A_KIND, ranks: [RANK_VALUES[rank]], hand: sortedHand };
     }
-    if (rankCounts[0] === 2) {
-        const pairRank = Object.keys(counts).find(rank => counts[rank] === 2);
-        const kicker = Object.keys(counts).find(rank => counts[rank] === 1);
-        return { type: HAND_TYPES.ONE_PAIR, ranks: [RANK_VALUES[pairRank], RANK_VALUES[kicker]] };
+    if (counts.includes(2)) {
+        const pairRank = Object.keys(rankCounts).find(r => rankCounts[r] === 2);
+        const kickerRank = Object.keys(rankCounts).find(r => rankCounts[r] === 1);
+        return { type: HAND_TYPES.ONE_PAIR, ranks: [RANK_VALUES[pairRank], RANK_VALUES[kickerRank]], hand: sortedHand };
     }
-    return { type: HAND_TYPES.HIGH_CARD, ranks: sortedRanks };
+    return { type: HAND_TYPES.HIGH_CARD, ranks, hand: sortedHand };
 }
 
-// Returns 1 if hand1 > hand2, -1 if hand2 > hand1, 0 if equal
-function compareHands(hand1, hand2) {
-    const eval1 = hand1.length === 5 ? evaluate5CardHand(hand1) : evaluate3CardHand(hand1);
-    const eval2 = hand2.length === 5 ? evaluate5CardHand(hand2) : evaluate3CardHand(hand2);
+// --- 5-Card Hand Evaluation ---
+function evaluate5CardHand(hand) {
+    if (!hand || hand.length !== 5) return null;
+    const { rankCounts } = getCounts(hand);
+    const sortedHand = [...hand].sort((a, b) => b.value - a.value);
+    const ranks = sortedHand.map(c => c.value);
 
-    if (eval1.type !== eval2.type) {
-        return eval1.type > eval2.type ? 1 : -1;
+    const flush = isFlush(hand);
+    const straight = isStraight(hand);
+    
+    // Straight Flush / Royal Flush
+    if (straight.isStraight && flush) {
+        if (straight.highCard === 14) return { type: HAND_TYPES.ROYAL_FLUSH, ranks: straight.ranks, hand: sortedHand };
+        return { type: HAND_TYPES.STRAIGHT_FLUSH, ranks: straight.ranks, hand: sortedHand };
+    }
+
+    const counts = Object.values(rankCounts).sort((a, b) => b - a);
+    
+    // Four of a Kind
+    if (counts[0] === 4) {
+        const fourRank = Object.keys(rankCounts).find(r => rankCounts[r] === 4);
+        const kickerRank = Object.keys(rankCounts).find(r => rankCounts[r] === 1);
+        return { type: HAND_TYPES.FOUR_OF_A_KIND, ranks: [RANK_VALUES[fourRank], RANK_VALUES[kickerRank]], hand: sortedHand };
+    }
+
+    // Full House
+    if (counts[0] === 3 && counts[1] === 2) {
+        const threeRank = Object.keys(rankCounts).find(r => rankCounts[r] === 3);
+        const pairRank = Object.keys(rankCounts).find(r => rankCounts[r] === 2);
+        return { type: HAND_TYPES.FULL_HOUSE, ranks: [RANK_VALUES[threeRank], RANK_VALUES[pairRank]], hand: sortedHand };
+    }
+
+    // Flush
+    if (flush) {
+        return { type: HAND_TYPES.FLUSH, ranks, hand: sortedHand };
+    }
+
+    // Straight
+    if (straight.isStraight) {
+        return { type: HAND_TYPES.STRAIGHT, ranks: straight.ranks, hand: sortedHand };
+    }
+
+    // Three of a Kind
+    if (counts[0] === 3) {
+        const threeRank = Object.keys(rankCounts).find(r => rankCounts[r] === 3);
+        const kickers = Object.keys(rankCounts).filter(r => rankCounts[r] === 1).map(r => RANK_VALUES[r]).sort((a, b) => b - a);
+        return { type: HAND_TYPES.THREE_OF_A_KIND, ranks: [RANK_VALUES[threeRank], ...kickers], hand: sortedHand };
+    }
+
+    // Two Pair
+    if (counts[0] === 2 && counts[1] === 2) {
+        const pairRanks = Object.keys(rankCounts).filter(r => rankCounts[r] === 2).map(r => RANK_VALUES[r]).sort((a, b) => b - a);
+        const kickerRank = Object.keys(rankCounts).find(r => rankCounts[r] === 1);
+        return { type: HAND_TYPES.TWO_PAIR, ranks: [...pairRanks, RANK_VALUES[kickerRank]], hand: sortedHand };
+    }
+
+    // One Pair
+    if (counts[0] === 2) {
+        const pairRank = Object.keys(rankCounts).find(r => rankCounts[r] === 2);
+        const kickers = Object.keys(rankCounts).filter(r => rankCounts[r] === 1).map(r => RANK_VALUES[r]).sort((a, b) => b - a);
+        return { type: HAND_TYPES.ONE_PAIR, ranks: [RANK_VALUES[pairRank], ...kickers], hand: sortedHand };
+    }
+    
+    // High Card
+    return { type: HAND_TYPES.HIGH_CARD, ranks, hand: sortedHand };
+}
+
+// --- Comparison and Validation ---
+
+function compareEvaluatedHands(eval1, eval2) {
+    if (eval1.type.value !== eval2.type.value) {
+        return eval1.type.value > eval2.type.value ? 1 : -1;
     }
     for (let i = 0; i < eval1.ranks.length; i++) {
         if (eval1.ranks[i] !== eval2.ranks[i]) {
             return eval1.ranks[i] > eval2.ranks[i] ? 1 : -1;
         }
     }
-    return 0;
+    return 0; // Hands are identical
 }
 
+
 function isValidHand(front, middle, back) {
+    if (front.length !== 3 || middle.length !== 5 || back.length !== 5) {
+        return false;
+    }
+
     const frontEval = evaluate3CardHand(front);
     const middleEval = evaluate5CardHand(middle);
     const backEval = evaluate5CardHand(back);
 
-    const middleVsBack = compareHands(middle, back);
-    const frontVsMiddle = compareHands(front, middle);
+    if (!frontEval || !middleEval || !backEval) return false;
 
-    return middleVsBack <= 0 && frontVsMiddle <= 0;
+    // Compare back vs middle
+    if (compareEvaluatedHands(middleEval, backEval) > 0) {
+        return false; // Middle cannot be stronger than back
+    }
+
+    // Compare middle vs front
+    if (compareEvaluatedHands(frontEval, middleEval) > 0) {
+        return false; // Front cannot be stronger than middle
+    }
+
+    return true;
 }
 
-
-module.exports = { dealCards, evaluate5CardHand, evaluate3CardHand, compareHands, isValidHand };
+module.exports = {
+    dealCards,
+    evaluate13CardHand,
+    evaluate5CardHand,
+    evaluate3CardHand,
+    isValidHand,
+    compareEvaluatedHands,
+    SEGMENT_SCORES,
+    SPECIAL_HAND_TYPES
+};
