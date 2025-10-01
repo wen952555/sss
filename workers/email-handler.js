@@ -1,10 +1,10 @@
 /**
- * Cloudflare Worker for Handling Incoming Emails
+ * Cloudflare Worker for Handling Incoming Emails (with enhanced debugging)
  *
  * This worker is triggered whenever an email is sent to a configured address.
- * It captures the raw email content and securely forwards it to a backend API endpoint for processing and storage.
- *
- * @see https://developers.cloudflare.com/workers/runtime-apis/email-event/
+ * It now includes robust error handling to catch any failure during execution.
+ * If an error occurs, it rejects the email with a detailed error message, which
+ * will be sent back to the original sender in a bounce notification.
  */
 export default {
     /**
@@ -13,52 +13,47 @@ export default {
      * @param {object} ctx - The execution context.
      */
     async email(message, env, ctx) {
-        // --- Configuration ---
-        // These secrets must be set in your Cloudflare dashboard under:
-        // Your Worker > Settings > Variables
-        const apiEndpoint = env.API_ENDPOINT_URL; // e.g., "https://yourdomain.com/api/email_receiver.php"
-        const workerSecret = env.WORKER_SECRET;   // A shared secret to authenticate the worker with your backend
-
-        if (!apiEndpoint || !workerSecret) {
-            console.error("Worker is not configured. API_ENDPOINT_URL and WORKER_SECRET must be set.");
-            // Reject the email to signal a configuration error
-            message.setReject("Upstream service misconfigured");
-            return;
-        }
-
-        // --- Process the Email ---
-        // Read the raw email content from the stream into a single string
-        const rawEmail = await streamToString(message.raw);
-
-        // --- Forward to Backend ---
         try {
+            // --- Configuration ---
+            const apiEndpoint = env.API_ENDPOINT_URL;
+            const workerSecret = env.WORKER_SECRET;
+
+            if (!apiEndpoint || !workerSecret) {
+                // This is a critical configuration error.
+                throw new Error("Worker is not configured. API_ENDPOINT_URL and WORKER_SECRET must be set.");
+            }
+
+            // --- Process the Email ---
+            const rawEmail = await streamToString(message.raw);
+
+            // --- Forward to Backend ---
             const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // Use a secret header to verify the request is coming from our worker
                     'X-Worker-Secret': workerSecret,
                 },
                 body: JSON.stringify({
                     from: message.from,
                     to: message.to,
-                    headers: [...message.headers], // Convert headers to a plain array
+                    headers: [...message.headers],
                     raw_email: rawEmail,
                 }),
             });
 
             if (!response.ok) {
-                // If the backend returns an error, log it and reject the email
+                // The backend returned an error. We include the backend's response in our error.
                 const errorText = await response.text();
-                console.error(`Backend API request failed with status ${response.status}: ${errorText}`);
-                message.setReject(`Upstream backend API failed: ${response.status}`);
+                throw new Error(`Backend API request failed with status ${response.status}: ${errorText}`);
             }
-            // If successful, the email is implicitly accepted and will not bounce.
+
+            // If everything is successful, the email is implicitly accepted.
 
         } catch (error) {
-            console.error("Error forwarding email to backend API:", error);
-            // If we can't even reach the backend, reject the email
-            message.setReject("Upstream backend service is unreachable");
+            // If ANY error occurs in the try block, catch it and reject the email
+            // with a detailed error message for debugging.
+            console.error("Error processing email:", error.stack);
+            message.setReject(`The email could not be processed due to an error in the worker: ${error.stack}`);
         }
     }
 };
@@ -78,10 +73,6 @@ async function streamToString(stream) {
         }
         chunks.push(value);
     }
-
-    // Combine the chunks (Uint8Array) into a single Uint8Array
     const combinedChunks = new Uint8Array(chunks.reduce((acc, chunk) => [...acc, ...chunk], []));
-
-    // Decode the Uint8Array into a string, assuming UTF-8
     return new TextDecoder("utf-8").decode(combinedChunks);
 }
