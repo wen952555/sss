@@ -1,12 +1,15 @@
-/* client/src/components/PlayerHand.css */
+/* frontend/src/components/PlayerHand.css */
 .player-hand {
-  display: flex;
-  justify-content: center;
-  padding: 40px; /* 给悬浮的牌留出空间 */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
 }
 
 .player-hand-empty {
-  font-size: 1.5rem;
-  color: #ccc;
-  margin-top: 50px;
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
 }
