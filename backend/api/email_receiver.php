@@ -2,7 +2,7 @@
 // backend/api/email_receiver.php
 
 // --- Pre-flight and Headers ---
-header("Access-Control-Allow-Origin: *"); // Or lock down to Cloudflare IPs if needed
+header("Access-Control-Allow-Origin: https://xxx.9525.ip-ddns.com");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Max-Age: 3600");
