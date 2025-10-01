@@ -1,0 +1,35 @@
+/* frontend/src/components/Hand.css */
+.hand-container {
+    padding: 15px;
+    border: 2px dashed #a2a2a2;
+    border-radius: 10px;
+    min-height: 120px; /* Adjust based on card size */
+    min-width: 200px; /* Adjust based on hand size */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.hand-container:hover {
+    background-color: #e8f4fd;
+    border-color: #3498db;
+}
+
+.hand-container h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1em;
+}
+
+.hand-slot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    min-height: 90px; /* Ensure space for cards */
+}

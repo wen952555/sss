@@ -1,13 +1,14 @@
-// client/src/components/Card.jsx
+// frontend/src/components/Card.jsx
 import React from 'react';
 import { getCardImageUrl } from '../utils/cardUtils';
-import './Card.css'; // 我们会添加一些样式
+import './Card.css';
 
-const Card = ({ card }) => {
+const Card = ({ card, onClick, isSelected }) => {
   const imageUrl = getCardImageUrl(card);
+  const cardClasses = `card ${isSelected ? 'selected' : ''}`;
 
   return (
-    <div className="card">
+    <div className={cardClasses} onClick={onClick}>
       <img src={imageUrl} alt={`${card.rank} of ${card.suit}`} />
     </div>
   );

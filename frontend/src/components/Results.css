@@ -1,0 +1,56 @@
+/* frontend/src/components/Results.css */
+.results-container {
+    width: 90%;
+    max-width: 1200px;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #fdfdfd;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.results-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #2c3e50;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.player-result {
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.player-result h4 {
+    margin: 0 0 15px 0;
+    text-align: center;
+    color: #34495e;
+    font-size: 1.2em;
+    word-break: break-all;
+}
+
+.player-hands-display .hand-container {
+    border-style: solid;
+    cursor: default;
+}
+
+.player-hands-display .hand-container:hover {
+    background-color: #f9f9f9;
+    border-color: #a2a2a2;
+}
+
+.total-score {
+    text-align: center;
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-top: 15px;
+    color: #3498db;
+}
