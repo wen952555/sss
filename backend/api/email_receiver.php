@@ -44,13 +44,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         $stmt = $pdo->prepare(
-            "INSERT INTO incoming_emails (from_address, to_address, raw_content, status) VALUES (?, ?, ?, 'new')"
+            "INSERT INTO incoming_emails (from_address, to_address, raw_content, status, error_message) VALUES (?, ?, ?, ?, ?)"
         );
 
         $from = $data['from'] ?? 'unknown@example.com';
         $to = $data['to'] ?? 'unknown@example.com';
+        $raw_email = $data['raw_email'] ?? '';
+        $error_message = $data['error_message'] ?? null; // Can be null
+        $status = $error_message ? 'failed' : 'new';
 
-        if ($stmt->execute([$from, $to, $data['raw_email']])) {
+        if ($stmt->execute([$from, $to, $raw_email, $status, $error_message])) {
             http_response_code(201); // 201 Created
             echo json_encode(["success" => true, "message" => "Email successfully received and stored."]);
         } else {

@@ -13,52 +13,67 @@ export default {
      * @param {object} ctx - The execution context.
      */
     async email(message, env, ctx) {
-        // --- Configuration ---
-        // These secrets must be set in your Cloudflare dashboard under:
-        // Your Worker > Settings > Variables
-        const apiEndpoint = env.API_ENDPOINT_URL; // e.g., "https://yourdomain.com/api/email_receiver.php"
-        const workerSecret = env.WORKER_SECRET;   // A shared secret to authenticate the worker with your backend
+        const { API_ENDPOINT_URL, WORKER_SECRET } = env;
 
-        if (!apiEndpoint || !workerSecret) {
+        // If the worker's core configuration is missing, we cannot proceed.
+        if (!API_ENDPOINT_URL || !WORKER_SECRET) {
             console.error("Worker is not configured. API_ENDPOINT_URL and WORKER_SECRET must be set.");
-            // Reject the email to signal a configuration error
-            message.setReject("Upstream service misconfigured");
+            message.setReject("Upstream service critically misconfigured. Cannot forward email.");
             return;
         }
 
-        // --- Process the Email ---
-        // Read the raw email content from the stream into a single string
-        const rawEmail = await streamToString(message.raw);
+        let rawEmail = '';
+        let errorMessage = null;
 
-        // --- Forward to Backend ---
         try {
-            const response = await fetch(apiEndpoint, {
+            // Attempt to process the email. Any failure in this block will be caught.
+            rawEmail = await streamToString(message.raw);
+
+            // Placeholder for any future processing logic that might fail.
+            // For example:
+            // if (someCondition) {
+            //   throw new Error("A custom processing error occurred.");
+            // }
+
+        } catch (e) {
+            // If an error occurs, we capture it to be logged in the database.
+            errorMessage = `Error during worker processing: ${e.message}`;
+
+            // If we failed to read the stream, the body will be empty.
+            // We still want to log that the email arrived.
+            if (!rawEmail) {
+                rawEmail = "[Worker failed to read email stream]";
+            }
+        }
+
+        // Always attempt to forward the email and any captured error to the backend.
+        try {
+            const response = await fetch(API_ENDPOINT_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // Use a secret header to verify the request is coming from our worker
-                    'X-Worker-Secret': workerSecret,
+                    'X-Worker-Secret': WORKER_SECRET,
                 },
                 body: JSON.stringify({
                     from: message.from,
                     to: message.to,
-                    headers: [...message.headers], // Convert headers to a plain array
+                    headers: [...message.headers],
                     raw_email: rawEmail,
+                    error_message: errorMessage, // Pass the error message to the backend.
                 }),
             });
 
             if (!response.ok) {
-                // If the backend returns an error, log it and reject the email
+                // The backend responded with an error. We must reject the email
+                // so the sender is notified of a persistent failure.
                 const errorText = await response.text();
-                console.error(`Backend API request failed with status ${response.status}: ${errorText}`);
-                message.setReject(`Upstream backend API failed: ${response.status}`);
+                message.setReject(`Backend API rejected the email with status ${response.status}: ${errorText}`);
             }
-            // If successful, the email is implicitly accepted and will not bounce.
+            // On a successful backend response (2xx), the email is accepted.
 
-        } catch (error) {
-            console.error("Error forwarding email to backend API:", error);
-            // If we can't even reach the backend, reject the email
-            message.setReject("Upstream backend service is unreachable");
+        } catch (networkError) {
+            // This is a fatal network error where we can't reach the backend at all.
+            message.setReject(`Fatal: Upstream backend service is unreachable. ${networkError.message}`);
         }
     }
 };

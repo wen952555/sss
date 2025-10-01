@@ -27,6 +27,7 @@ CREATE TABLE `incoming_emails` (
   `to_address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `raw_content` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
+  `error_message` text COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
