@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 import PlayerHand from './PlayerHand';
 import Hand from './Hand';
 import Results from './Results';
+import AuthModal from './AuthModal'; // Import the modal
 import { sortHand } from '../utils/cardUtils';
 import './Game.css';
 
@@ -21,6 +22,10 @@ const Game = () => {
     const [gameState, setGameState] = useState('waiting'); // waiting, playing, submitted, results
     const [gameResult, setGameResult] = useState(null);
     const [error, setError] = useState('');
+
+    // New state for authentication
+    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [showAuthModal, setShowAuthModal] = useState(false);
 
     useEffect(() => {
         const onConnect = () => setIsConnected(true);
@@ -49,7 +54,7 @@ const Game = () => {
             setTimeout(() => setError(''), 4000);
         };
         const onGameReset = () => {
-            alert("A player disconnected. The game has been reset.");
+            alert("有玩家离线，游戏已重置。");
             setMyHand([]);
             setArrangedHands(createEmptyHands());
             setGameState('waiting');
@@ -80,7 +85,24 @@ const Game = () => {
         };
     }, []);
 
-    const handleStartGame = () => socket.emit('start_game');
+    const handleSetToken = (newToken) => {
+        localStorage.setItem('token', newToken);
+        setToken(newToken);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        setToken(null);
+    };
+
+    const handleStartGame = () => {
+        if (!token) {
+            alert("请先登录再开始游戏！");
+            setShowAuthModal(true);
+            return;
+        }
+        socket.emit('start_game');
+    };
 
     const handleCardClick = (card, source) => {
         if (selectedCard && selectedCard.card.rank === card.rank && selectedCard.card.suit === card.suit) {
@@ -98,11 +120,10 @@ const Game = () => {
         const handLimits = { front: 3, middle: 5, back: 5 };
 
         if (targetHand.length >= handLimits[targetHandName]) {
-            setError(`The ${targetHandName} hand is already full.`);
+            setError(`此墩已满`);
             return;
         }
 
-        // Move card logic
         const sourceIsArranged = source !== 'myHand';
         const sourceHand = sourceIsArranged ? arrangedHands[source] : myHand;
 
@@ -122,7 +143,7 @@ const Game = () => {
 
     const handleSubmitHand = () => {
         if (myHand.length > 0) {
-            return setError("You must arrange all 13 cards.");
+            return setError("请摆完所有13张牌。");
         }
         socket.emit('submit_hand', arrangedHands);
         setGameState('submitted');
@@ -133,15 +154,23 @@ const Game = () => {
 
     return (
         <div className="game-container">
+            <AuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} setToken={handleSetToken} />
             <header className="game-header">
+                <div className="auth-status">
+                    {token ? (
+                        <button onClick={handleLogout} className="auth-button">退出登录</button>
+                    ) : (
+                        <button onClick={() => setShowAuthModal(true)} className="auth-button">注册/登录</button>
+                    )}
+                </div>
                 <h1>十三水</h1>
-                <p>Status: {isConnected ? 'Connected' : 'Disconnected'} | Players: {players.length}</p>
+                <p>状态: {isConnected ? '已连接' : '已断开'} | 玩家: {players.length}</p>
                 {error && <p className="error-message">{error}</p>}
             </header>
 
             {gameState === 'waiting' && (
                 <button onClick={handleStartGame} disabled={!isConnected || players.length < 2}>
-                    Start Game ({players.length} / 4 players)
+                    开始游戏 ({players.length} / 4 玩家)
                 </button>
             )}
 
@@ -153,26 +182,26 @@ const Game = () => {
                         <Hand name="后墩 (5)" cards={arrangedHands.back} onCardClick={(card) => handleCardClick(card, 'back')} onSlotClick={() => handleHandSlotClick('back')} selectedCard={selectedCard} />
                     </div>
                     <div className="player-main-hand">
-                        <h2>Your Hand</h2>
+                        <h2>我的手牌</h2>
                         <PlayerHand cards={myHand} onCardClick={(card) => handleCardClick(card, 'myHand')} selectedCard={selectedCard} />
                     </div>
                     <button onClick={handleSubmitHand} disabled={myHand.length > 0 || gameState === 'submitted'}>
-                        Submit Hand
+                        提交手牌
                     </button>
                 </>
             )}
 
             {gameState === 'submitted' && (
                 <div className="waiting-submission">
-                    <h2>Hand Submitted! Waiting for others...</h2>
-                    <p>Ready: {getSubmittedNames()}</p>
+                    <h2>手牌已提交！等待其他玩家...</h2>
+                    <p>已准备: {getSubmittedNames()}</p>
                 </div>
             )}
 
             {gameState === 'results' && gameResult && (
                 <>
                     <Results results={gameResult} playerInfo={players} />
-                    <button onClick={handleStartGame}>Play Again</button>
+                    <button onClick={handleStartGame}>再玩一局</button>
                 </>
             )}
         </div>
