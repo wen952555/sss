@@ -2,7 +2,7 @@
 > sss-backend@1.0.0 start
 > node server/index.js
 
-[MockDB] Initializing in-memory mock database.
+[MockDB] Initializing self-contained in-memory mock database.
 node:internal/modules/cjs/loader:1404
   throw err;
   ^

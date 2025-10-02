@@ -4,9 +4,10 @@ const http = require('http');
 const { Server } = require("socket.io");
 const cors = require('cors');
 const path = require('path');
-const db = require('../db'); // Import database connection pool
+const db = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
 const {
     dealCards,
     isValidHand,
@@ -21,10 +22,8 @@ const {
 const app = express();
 
 // --- Middleware ---
-// Use CORS for all routes. For a production environment, you might want to
-// restrict the origin to your actual domain.
 app.use(cors());
-app.use(express.json()); // Middleware to parse JSON bodies
+app.use(express.json());
 
 // Serve static files from the React frontend app
 const frontendDistPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
@@ -33,7 +32,7 @@ app.use(express.static(frontendDistPath));
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", // Allow all origins for Socket.IO
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
@@ -134,7 +133,6 @@ async function calculateResults() {
     io.emit('game_over', gameState.results);
     console.log("游戏结束，结果已公布:", JSON.stringify(gameState.results, null, 2));
 
-    // --- Persist to Database ---
     try {
         const [gameResult] = await db.query('INSERT INTO games () VALUES ()');
         const gameId = gameResult.insertId;
@@ -207,7 +205,6 @@ io.on('connection', (socket) => {
 // --- API Routes ---
 app.get('/api/test-db', async (req, res) => {
   try {
-    // A simple query to test the connection
     const [rows] = await db.query('SELECT 1 + 1 AS solution');
     res.json({ success: true, message: 'Database connection successful!', data: rows[0] });
   } catch (error) {
@@ -233,34 +230,23 @@ app.get('/api/games', async (req, res) => {
 // --- Auth Routes ---
 app.post('/api/auth/register', async (req, res) => {
     const { username, password } = req.body;
-    console.log(`[Register] Received request for username: ${username}`);
-
     if (!username || !password) {
-        console.log('[Register] Validation failed: Username or password missing.');
         return res.status(400).json({ success: false, message: 'Username and password are required.' });
     }
 
     try {
-        console.log(`[Register] Checking if user ${username} exists...`);
         const [existingUser] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
-
         if (existingUser.length > 0) {
-            console.log(`[Register] User ${username} already exists.`);
             return res.status(409).json({ success: false, message: 'Username already exists.' });
         }
-        console.log(`[Register] User ${username} does not exist. Proceeding...`);
 
-        console.log(`[Register] Hashing password for ${username}...`);
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log(`[Register] Password hashed. Inserting new user into database...`);
-
         await db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword]);
-        console.log(`[Register] User ${username} successfully inserted.`);
 
         res.status(201).json({ success: true, message: 'User registered successfully.' });
     } catch (error) {
-        console.error('[Register] CRITICAL: An error occurred during registration:', error);
-        res.status(500).json({ success: false, message: 'An internal server error occurred during registration.' });
+        console.error('Registration failed:', error);
+        res.status(500).json({ success: false, message: 'Registration failed.' });
     }
 });
 
@@ -294,7 +280,6 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // --- Fallback Route ---
-// This will serve the main index.html file for any request that doesn't match the static files
 app.get('*', (req, res) => {
   res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
