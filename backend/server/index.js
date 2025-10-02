@@ -3,7 +3,10 @@ const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const cors = require('cors');
-const path = require('path'); // Import path module
+const path = require('path');
+const db = require('../db'); // Import database connection pool
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const {
     dealCards,
     isValidHand,
@@ -21,6 +24,7 @@ const app = express();
 // Use CORS for all routes. For a production environment, you might want to
 // restrict the origin to your actual domain.
 app.use(cors());
+app.use(express.json()); // Middleware to parse JSON bodies
 
 // Serve static files from the React frontend app
 const frontendDistPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
@@ -83,9 +87,10 @@ function comparePlayerHands(p1_id, p2_id, p1_evals, p2_evals) {
     return { p1_score, p2_score };
 }
 
-function calculateResults() {
+async function calculateResults() {
     const playerIds = Object.keys(gameState.submittedHands);
     if (playerIds.length === 0) return;
+
     const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null } }), {});
     for (const id of playerIds) {
         const { front, middle, back } = gameState.submittedHands[id];
@@ -97,10 +102,10 @@ function calculateResults() {
         const allCards = [...front, ...middle, ...back];
         gameState.specialHands[id] = evaluate13CardHand(allCards);
     }
+
     const specialPlayer = playerIds.find(id => gameState.specialHands[id].value > SPECIAL_HAND_TYPES.NONE.value);
     if (specialPlayer) {
         const specialHand = gameState.specialHands[specialPlayer];
-        console.log(`玩家 ${specialPlayer} 有特殊牌型: ${specialHand.name}!`);
         const score = specialHand.score;
         let totalScoreReceived = 0;
         for (const id of playerIds) {
@@ -123,10 +128,32 @@ function calculateResults() {
         }
         for (const id of playerIds) { finalScores[id].total = playerScores[id]; }
     }
+
     gameState.results = { scores: finalScores, hands: gameState.submittedHands, evals: gameState.evaluatedHands };
     gameState.status = 'finished';
     io.emit('game_over', gameState.results);
     console.log("游戏结束，结果已公布:", JSON.stringify(gameState.results, null, 2));
+
+    // --- Persist to Database ---
+    try {
+        const [gameResult] = await db.query('INSERT INTO games () VALUES ()');
+        const gameId = gameResult.insertId;
+
+        for (const playerId of playerIds) {
+            const { front, middle, back } = gameState.submittedHands[playerId];
+            const score = finalScores[playerId].total;
+            const specialHandType = finalScores[playerId].special || null;
+            const playerName = players[playerId]?.name || 'Unknown';
+
+            await db.query(
+                'INSERT INTO player_scores (game_id, player_id, player_name, hand_front, hand_middle, hand_back, score, special_hand_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [gameId, playerId, playerName, JSON.stringify(front), JSON.stringify(middle), JSON.stringify(back), score, specialHandType]
+            );
+        }
+        console.log(`Game ${gameId} results saved to database.`);
+    } catch (error) {
+        console.error('Failed to save game results to database:', error);
+    }
 }
 
 // --- Socket Handlers ---
@@ -149,7 +176,7 @@ io.on('connection', (socket) => {
     gameState.status = 'playing';
     io.emit('game_started');
   });
-  socket.on('submit_hand', (hand) => {
+  socket.on('submit_hand', async (hand) => {
     if (gameState.status !== 'playing') return;
     const { front, middle, back } = hand;
     if (!isValidHand(front, middle, back)) return socket.emit('error_message', '牌型不合法 (前墩>中墩 或 中墩>后墩)');
@@ -159,7 +186,7 @@ io.on('connection', (socket) => {
     const activePlayerIds = Object.keys(gameState.hands);
     if (Object.keys(gameState.submittedHands).length === activePlayerIds.length) {
         console.log("所有玩家已提交, 开始计算结果...");
-        calculateResults();
+        await calculateResults();
     }
   });
   socket.on('disconnect', () => {
@@ -175,6 +202,95 @@ io.on('connection', (socket) => {
     }
     io.emit('players_update', Object.values(players));
   });
+});
+
+// --- API Routes ---
+app.get('/api/test-db', async (req, res) => {
+  try {
+    // A simple query to test the connection
+    const [rows] = await db.query('SELECT 1 + 1 AS solution');
+    res.json({ success: true, message: 'Database connection successful!', data: rows[0] });
+  } catch (error) {
+    console.error('Database query failed:', error);
+    res.status(500).json({ success: false, message: 'Database query failed.' });
+  }
+});
+
+app.get('/api/games', async (req, res) => {
+  try {
+    const [games] = await db.query('SELECT * FROM games ORDER BY created_at DESC LIMIT 10');
+    for (let game of games) {
+      const [scores] = await db.query('SELECT * FROM player_scores WHERE game_id = ?', [game.id]);
+      game.players = scores;
+    }
+    res.json({ success: true, data: games });
+  } catch (error) {
+    console.error('Failed to retrieve game history:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve game history.' });
+  }
+});
+
+// --- Auth Routes ---
+app.post('/api/auth/register', async (req, res) => {
+    const { username, password } = req.body;
+    console.log(`[Register] Received request for username: ${username}`);
+
+    if (!username || !password) {
+        console.log('[Register] Validation failed: Username or password missing.');
+        return res.status(400).json({ success: false, message: 'Username and password are required.' });
+    }
+
+    try {
+        console.log(`[Register] Checking if user ${username} exists...`);
+        const [existingUser] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+
+        if (existingUser.length > 0) {
+            console.log(`[Register] User ${username} already exists.`);
+            return res.status(409).json({ success: false, message: 'Username already exists.' });
+        }
+        console.log(`[Register] User ${username} does not exist. Proceeding...`);
+
+        console.log(`[Register] Hashing password for ${username}...`);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        console.log(`[Register] Password hashed. Inserting new user into database...`);
+
+        await db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword]);
+        console.log(`[Register] User ${username} successfully inserted.`);
+
+        res.status(201).json({ success: true, message: 'User registered successfully.' });
+    } catch (error) {
+        console.error('[Register] CRITICAL: An error occurred during registration:', error);
+        res.status(500).json({ success: false, message: 'An internal server error occurred during registration.' });
+    }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ success: false, message: 'Username and password are required.' });
+    }
+
+    try {
+        const [users] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+        if (users.length === 0) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+        }
+
+        const user = users[0];
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+        }
+
+        const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET || 'your_default_secret', {
+            expiresIn: '1h'
+        });
+
+        res.json({ success: true, message: 'Logged in successfully.', token });
+    } catch (error) {
+        console.error('Login failed:', error);
+        res.status(500).json({ success: false, message: 'Login failed.' });
+    }
 });
 
 // --- Fallback Route ---
