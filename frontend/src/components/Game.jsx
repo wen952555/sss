@@ -21,6 +21,8 @@ const Game = () => {
     const [gameState, setGameState] = useState('waiting'); // waiting, playing, submitted, results
     const [gameResult, setGameResult] = useState(null);
     const [error, setError] = useState('');
+    const [qrCodeImage, setQrCodeImage] = useState('');
+    const [showQRCode, setShowQRCode] = useState(false);
 
     useEffect(() => {
         const onConnect = () => setIsConnected(true);
@@ -131,6 +133,23 @@ const Game = () => {
 
     const getSubmittedNames = () => submittedPlayers.map(p => p.name).join(', ');
 
+    const handleToggleQRCode = () => {
+        if (!showQRCode) {
+            try {
+                const typeNumber = 4;
+                const errorCorrectionLevel = 'L';
+                const qr = window.qrcode(typeNumber, errorCorrectionLevel);
+                qr.addData(window.location.href);
+                qr.make();
+                setQrCodeImage(qr.createDataURL());
+            } catch (err) {
+                console.error('Failed to generate QR code on client', err);
+                setError('Could not generate invite code.');
+            }
+        }
+        setShowQRCode(!showQRCode);
+    };
+
     return (
         <div className="game-container">
             <header className="game-header">
@@ -140,9 +159,20 @@ const Game = () => {
             </header>
 
             {gameState === 'waiting' && (
-                <button onClick={handleStartGame} disabled={!isConnected || players.length < 2}>
-                    Start Game ({players.length} / 4 players)
-                </button>
+                <div className="waiting-room">
+                    <button onClick={handleStartGame} disabled={!isConnected || players.length < 2}>
+                        Start Game ({players.length} / 4 players)
+                    </button>
+                    <button onClick={handleToggleQRCode} className="qr-toggle-button">
+                        {showQRCode ? 'Hide' : 'Show'} Invite QR Code
+                    </button>
+                    {showQRCode && qrCodeImage && (
+                        <div className="qr-code-container">
+                            <img src={qrCodeImage} alt="Invite QR Code" />
+                            <p>Scan to join the game!</p>
+                        </div>
+                    )}
+                </div>
             )}
 
             {gameState === 'playing' && (
