@@ -62,15 +62,3 @@ button:disabled {
 button:hover:not(:disabled) {
     background-color: #2980b9;
 }
-
-.waiting-room {
-    text-align: center;
-}
-
-.qr-toggle-button {
-    margin-left: 10px;
-}
-
-.qr-code-container {
-    margin-top: 20px;
-}
