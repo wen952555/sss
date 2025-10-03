@@ -284,7 +284,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 14722;
 server.listen(PORT, () => {
   console.log(`服务器正在 http://localhost:${PORT} 上运行`);
 });
