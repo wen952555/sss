@@ -4,9 +4,8 @@
     max-width: 1200px;
     margin: 20px auto;
     padding: 20px;
-    background-color: #282c34;
+    background-color: #1e1e1e;
     border-radius: 12px;
-    color: #e0e0e0;
 }
 
 .results-title {
@@ -16,26 +15,34 @@
     font-size: 2.5em;
 }
 
-.results-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1rem;
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    gap: 20px;
 }
 
-.results-table th, .results-table td {
+.player-result-card {
+    background-color: #282c34;
     border: 1px solid #444;
-    padding: 12px;
-    text-align: center;
-    vertical-align: middle;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.results-table th {
-    background-color: #3e4451;
-    font-size: 1.2em;
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
 }
 
-.results-table tbody tr:nth-child(even) {
-    background-color: #333842;
+.player-name {
+    margin: 0;
+    color: #61dafb;
+    font-size: 1.5em;
 }
 
 .player-total-score {
@@ -44,9 +51,49 @@
 }
 
 .player-total-score.positive {
-    color: #4caf50; /* Green for positive */
+    color: #4caf50;
 }
 
 .player-total-score.negative {
-    color: #f44336; /* Red for negative */
+    color: #f44336;
+}
+
+.special-hand-announcement {
+    text-align: center;
+    font-size: 1.2em;
+    color: #ffd700;
+    padding: 10px;
+    background-color: rgba(255, 215, 0, 0.1);
+    border-radius: 5px;
+}
+
+.player-hands-display {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #444;
+}
+
+.comparison-details h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #ccc;
+    text-align: center;
+}
+
+.comparison-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.comparison-details li {
+    background-color: #3e4451;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
 }
