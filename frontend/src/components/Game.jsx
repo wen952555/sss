@@ -8,11 +8,9 @@ import AuthModal from './AuthModal'; // Import the modal
 import { sortHand } from '../utils/cardUtils';
 import './Game.css';
 
-// Dynamically determine the backend URL
-// In production, it uses the same host as the frontend, but on port 14722.
-// In development, it falls back to localhost:14722.
-const backendUrl = import.meta.env.VITE_BACKEND_URL || `${window.location.protocol}//${window.location.hostname}:14722`;
-const socket = io(backendUrl);
+// Connect to the backend via the _worker.js proxy by connecting to the root path.
+// The worker will intercept requests to /socket.io/ and forward them.
+const socket = io({ path: '/socket.io' });
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
 
