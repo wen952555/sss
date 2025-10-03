@@ -1,20 +1,21 @@
 // frontend/src/components/Game.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { socket } from '../socket'; // Use the shared socket instance
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { socket } from '../socket';
 import PlayerHand from './PlayerHand';
 import Hand from './Hand';
 import Results from './Results';
 import { sortHand } from '../utils/cardUtils';
+import { isValidHand } from '../utils/gameLogic'; // Import for client-side validation
 import './Game.css';
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
 
 const Game = ({ token }) => {
-    const { roomId } = useParams(); // Get roomId from URL
+    const { roomId } = useParams();
+    const navigate = useNavigate();
     const [isConnected, setIsConnected] = useState(socket.connected);
     const [players, setPlayers] = useState([]);
-    const [submittedPlayers, setSubmittedPlayers] = useState([]);
     const [myHand, setMyHand] = useState([]);
     const [arrangedHands, setArrangedHands] = useState(createEmptyHands());
     const [selectedCard, setSelectedCard] = useState(null);
@@ -23,88 +24,81 @@ const Game = ({ token }) => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        // Automatically join the room when the component mounts or token/roomId changes
-        if (token && roomId) {
-            console.log(`Joining room: ${roomId}`);
-            socket.emit('join_room', roomId, token);
+        if (!token) {
+            navigate('/'); // Redirect to lobby if no token
+            return;
         }
 
-        const onConnect = () => {
+        const handleConnect = () => {
             setIsConnected(true);
-            // If we reconnect, automatically try to re-join the room
-            if (token && roomId) {
-                socket.emit('join_room', roomId, token);
-            }
+            console.log(`Joining room: ${roomId}`);
+            socket.emit('join_room', roomId, token);
         };
 
-        const onDisconnect = () => setIsConnected(false);
-        const onPlayersUpdate = (updatedPlayers) => setPlayers(updatedPlayers);
-        const onGameStarted = () => {
-            console.log("Game has started!");
+        const handleDisconnect = () => setIsConnected(false);
+        const handlePlayersUpdate = (updatedPlayers) => setPlayers(updatedPlayers);
+
+        const handleGameStarted = () => {
             setGameState('playing');
             setArrangedHands(createEmptyHands());
-            setSubmittedPlayers([]);
             setGameResult(null);
             setError('');
         };
-        const onDealHand = (hand) => setMyHand(sortHand(hand));
-        const onPlayerSubmitted = (player) => setSubmittedPlayers(prev => [...prev, player]);
-        const onGameOver = (results) => {
-            console.log("Game over, results:", results);
+
+        const handleDealHand = (hand) => setMyHand(sortHand(hand));
+        const handleGameOver = (results) => {
             setGameResult(results);
             setGameState('results');
         };
-        const onErrorMessage = (message) => setError(message);
-        const onGameReset = () => {
-            alert("有玩家离线，游戏已重置。");
+        const handleErrorMessage = (message) => setError(message);
+
+        const handleGameReset = () => {
+            alert("有玩家离线或房主重置了游戏。");
             setMyHand([]);
             setArrangedHands(createEmptyHands());
             setGameState('waiting');
             setGameResult(null);
-            setSubmittedPlayers([]);
         };
 
-        socket.on('connect', onConnect);
-        socket.on('disconnect', onDisconnect);
-        socket.on('players_update', onPlayersUpdate);
-        socket.on('game_started', onGameStarted);
-        socket.on('deal_hand', onDealHand);
-        socket.on('player_submitted', onPlayerSubmitted);
-        socket.on('game_over', onGameOver);
-        socket.on('error_message', onErrorMessage);
-        socket.on('game_reset', onGameReset);
+        socket.on('connect', handleConnect);
+        socket.on('disconnect', handleDisconnect);
+        socket.on('players_update', handlePlayersUpdate);
+        socket.on('game_started', handleGameStarted);
+        socket.on('deal_hand', handleDealHand);
+        socket.on('game_over', handleGameOver);
+        socket.on('error_message', handleErrorMessage);
+        socket.on('game_reset', handleGameReset);
 
-        // This is the key to leaving the room when the component unmounts
-        return () => {
-            console.log(`Leaving room: ${roomId}`);
-            socket.emit('leave_room', roomId);
-
-            // Clean up all listeners
-            socket.off('connect', onConnect);
-            socket.off('disconnect', onDisconnect);
-            socket.off('players_update', onPlayersUpdate);
-            socket.off('game_started', onGameStarted);
-            socket.off('deal_hand', onDealHand);
-            socket.off('player_submitted', onPlayerSubmitted);
-            socket.off('game_over', onGameOver);
-            socket.off('error_message', onErrorMessage);
-            socket.off('game_reset', onGameReset);
-        };
-    }, [token, roomId]); // Rerun effect if token or roomId changes
-
-    const handleStartGame = () => {
-        socket.emit('start_game');
-    };
-
-    const handleReadyClick = () => {
-        const me = players.find(p => p.socketId === socket.id);
-        if (me) {
-            socket.emit('player_ready', !me.isReady);
+        if (socket.connected) {
+            handleConnect();
+        } else {
+            socket.connect();
         }
+
+        return () => {
+            socket.emit('leave_room', roomId);
+            socket.off('connect', handleConnect);
+            socket.off('disconnect', handleDisconnect);
+            socket.off('players_update', handlePlayersUpdate);
+            socket.off('game_started', handleGameStarted);
+            socket.off('deal_hand', handleDealHand);
+            socket.off('game_over', handleGameOver);
+            socket.off('error_message', handleErrorMessage);
+            socket.off('game_reset', handleGameReset);
+        };
+    }, [token, roomId, navigate]);
+
+    const me = players.find(p => p.socketId === socket.id);
+    const otherPlayers = players.filter(p => p.socketId !== socket.id);
+    const allOthersReady = otherPlayers.length > 0 && otherPlayers.every(p => p.isReady);
+
+    const handleStartGame = () => socket.emit('start_game');
+    const handleReadyClick = () => {
+        if (me) socket.emit('player_ready', !me.isReady);
     };
 
     const handleCardClick = (card, source) => {
-        if (selectedCard && selectedCard.card.rank === card.rank && selectedCard.card.suit === card.suit) {
+        if (selectedCard?.card.suit === card.suit && selectedCard?.card.rank === card.rank) {
             setSelectedCard(null);
         } else {
             setSelectedCard({ card, source });
@@ -116,38 +110,28 @@ const Game = ({ token }) => {
         const { card, source } = selectedCard;
         const targetHand = arrangedHands[targetHandName];
         const handLimits = { front: 3, middle: 5, back: 5 };
+        if (targetHand.length >= handLimits[targetHandName]) return setError(`此墩已满`);
 
-        if (targetHand.length >= handLimits[targetHandName]) {
-            setError(`此墩已满`);
-            return;
-        }
-
-        const sourceIsArranged = source !== 'myHand';
-        const sourceHand = sourceIsArranged ? arrangedHands[source] : myHand;
+        const sourceHand = source === 'myHand' ? myHand : arrangedHands[source];
         const newSourceHand = sourceHand.filter(c => !(c.rank === card.rank && c.suit === card.suit));
         const newTargetHand = sortHand([...targetHand, card]);
 
-        if (sourceIsArranged) {
-            setArrangedHands({ ...arrangedHands, [source]: newSourceHand, [targetHandName]: newTargetHand });
-        } else {
+        if (source === 'myHand') {
             setMyHand(newSourceHand);
-            setArrangedHands({ ...arrangedHands, [targetHandName]: newTargetHand });
+        } else {
+            setArrangedHands(prev => ({ ...prev, [source]: newSourceHand }));
         }
-        
+        setArrangedHands(prev => ({ ...prev, [targetHandName]: newTargetHand }));
         setSelectedCard(null);
         setError('');
     };
 
     const handleSubmitHand = () => {
-        if (myHand.length > 0) {
-            return setError("请摆完所有13张牌。");
-        }
+        if (myHand.length > 0) return setError("请摆完所有13张牌。");
+        if (!isValidHand(arrangedHands.front, arrangedHands.middle, arrangedHands.back)) return setError("牌型不合法 (倒水)，请重新摆牌。");
         socket.emit('submit_hand', arrangedHands);
         setGameState('submitted');
-        setError('');
     };
-
-    const getSubmittedNames = () => submittedPlayers.map(p => p.name).join(', ');
 
     return (
         <div className="game-container">
@@ -155,12 +139,11 @@ const Game = ({ token }) => {
                 <Link to="/" className="back-to-lobby-button">返回大厅</Link>
                 <h1>十三水 - 房间: {roomId}</h1>
                 <div className="game-info">
-                    <span>状态: {isConnected ? '已连接' : '已断开'}</span>
-                    <div className="player-list">
+                     <div className="player-list">
                         <span>玩家列表:</span>
                         <ul>
                             {players.map(p => (
-                                <li key={p.id}>{p.name} {p.isReady ? '✅' : '❌'}</li>
+                                <li key={p.id || p.socketId}>{p.name} {p.isHost ? '👑' : (p.isReady ? '✅' : '❌')}</li>
                             ))}
                         </ul>
                     </div>
@@ -170,17 +153,21 @@ const Game = ({ token }) => {
 
             {gameState === 'waiting' && (
                 <div className="waiting-controls">
-                    <button onClick={handleReadyClick}>
-                        {players.find(p => p.socketId === socket.id)?.isReady ? '取消准备' : '准备'}
-                    </button>
-                    <button onClick={handleStartGame} disabled={!isConnected || players.length < 2}>
-                        开始游戏 ({players.length} / 4 玩家)
-                    </button>
+                    {!me?.isHost && (
+                        <button onClick={handleReadyClick} className="ready-button">
+                            {me?.isReady ? '取消准备' : '准备'}
+                        </button>
+                    )}
+                    {me?.isHost && (
+                        <button onClick={handleStartGame} disabled={!isConnected || players.length < 2 || !allOthersReady}>
+                            开始游戏 ({players.length}/4)
+                        </button>
+                    )}
                 </div>
             )}
 
             {gameState === 'playing' && (
-                <>
+                 <>
                     <div className="arranged-hands">
                         <Hand name="前墩 (3)" cards={arrangedHands.front} onCardClick={(card) => handleCardClick(card, 'front')} onSlotClick={() => handleHandSlotClick('front')} selectedCard={selectedCard} />
                         <Hand name="中墩 (5)" cards={arrangedHands.middle} onCardClick={(card) => handleCardClick(card, 'middle')} onSlotClick={() => handleHandSlotClick('middle')} selectedCard={selectedCard} />
@@ -190,24 +177,16 @@ const Game = ({ token }) => {
                         <h2>我的手牌</h2>
                         <PlayerHand cards={myHand} onCardClick={(card) => handleCardClick(card, 'myHand')} selectedCard={selectedCard} />
                     </div>
-                    <button onClick={handleSubmitHand} disabled={myHand.length > 0 || gameState === 'submitted'}>
-                        提交手牌
-                    </button>
+                    <button onClick={handleSubmitHand} disabled={myHand.length > 0}>提交手牌</button>
                 </>
             )}
 
             {gameState === 'submitted' && (
-                <div className="waiting-submission">
-                    <h2>手牌已提交！等待其他玩家...</h2>
-                    <p>已准备: {getSubmittedNames()}</p>
-                </div>
+                <div className="waiting-submission"><h2>手牌已提交！等待其他玩家...</h2></div>
             )}
 
             {gameState === 'results' && gameResult && (
-                <>
-                    <Results results={gameResult} playerInfo={players} />
-                    <button onClick={handleStartGame}>再玩一局</button>
-                </>
+                <Results results={gameResult} />
             )}
         </div>
     );

@@ -55,8 +55,12 @@ function createNewGameState() {
 }
 
 function resetGame(roomId) {
-    if (gameRooms[roomId]) {
+    const room = gameRooms[roomId];
+    if (room) {
+        const players = room.players;
         gameRooms[roomId] = createNewGameState();
+        gameRooms[roomId].players = players;
+        Object.values(gameRooms[roomId].players).forEach(p => p.isReady = false);
         console.log(`Room ${roomId} has been reset.`);
     }
 }
@@ -72,40 +76,13 @@ function broadcastRoomsUpdate(io) {
 }
 
 // --- Scoring Logic ---
-function comparePlayerHands(p1_id, p2_id, p1_evals, p2_evals) {
-    let p1_score = 0;
-    let p2_score = 0;
-    let p1_wins_count = 0;
-    const segments = ['front', 'middle', 'back'];
-    for (const segment of segments) {
-        const comparison = compareEvaluatedHands(p1_evals[segment], p2_evals[segment]);
-        const p1Type = p1_evals[segment]?.type?.name;
-        const p2Type = p2_evals[segment]?.type?.name;
-        if (comparison > 0) {
-            const baseScore = SEGMENT_SCORES[segment]?.[p1Type] || 1;
-            p1_score += baseScore;
-            p2_score -= baseScore;
-            p1_wins_count++;
-        } else if (comparison < 0) {
-            const baseScore = SEGMENT_SCORES[segment]?.[p2Type] || 1;
-            p1_score -= baseScore;
-            p2_score += baseScore;
-        }
-    }
-    if (p1_wins_count === 3) { p1_score *= 2; p2_score *= 2; }
-    else if (p1_wins_count === 0 && (p1_evals.front && p2_evals.front)) { p1_score *= 2; p2_score *= 2; }
-    return { p1_score, p2_score };
-}
-
 async function calculateResults(roomId, io) {
     const room = gameRooms[roomId];
     if (!room) return;
-
     const { players, gameState } = room;
-    const playerIds = Object.keys(gameState.submittedHands); // These are socket.ids
+    const playerIds = Object.keys(gameState.submittedHands);
     if (playerIds.length === 0) return;
 
-    // 1. Evaluate all hands first
     playerIds.forEach(id => {
         const { front, middle, back } = gameState.submittedHands[id];
         gameState.evaluatedHands[id] = {
@@ -117,81 +94,56 @@ async function calculateResults(roomId, io) {
         gameState.specialHands[id] = evaluate13CardHand(allCards);
     });
 
-    // 2. Initialize scores and detailed comparison report
     const finalScores = playerIds.reduce((acc, id) => {
         acc[id] = { total: 0, special: null, comparisons: {} };
         return acc;
     }, {});
 
-    // 3. Handle special hands (these override normal scoring)
     const specialPlayerId = playerIds.find(id => gameState.specialHands[id].value > SPECIAL_HAND_TYPES.NONE.value);
     if (specialPlayerId) {
         const specialHand = gameState.specialHands[specialPlayerId];
         const score = specialHand.score;
         finalScores[specialPlayerId].special = specialHand.name;
-
         playerIds.forEach(id => {
-            if (id === specialPlayerId) {
-                finalScores[id].total = score * (playerIds.length - 1);
-            } else {
-                finalScores[id].total = -score;
-            }
+            finalScores[id].total = (id === specialPlayerId) ? score * (playerIds.length - 1) : -score;
         });
     } else {
-        // 4. Standard scoring if no special hands
         for (let i = 0; i < playerIds.length; i++) {
             for (let j = i + 1; j < playerIds.length; j++) {
                 const p1_id = playerIds[i];
                 const p2_id = playerIds[j];
-
-                const p1_evals = gameState.evaluatedHands[p1_id];
-                const p2_evals = gameState.evaluatedHands[p2_id];
-
-                const { p1_score, p2_score } = comparePlayerHands(p1_id, p2_id, p1_evals, p2_evals);
-
+                const { p1_score, p2_score } = comparePlayerHands(p1_id, p2_id, gameState.evaluatedHands[p1_id], gameState.evaluatedHands[p2_id]);
                 finalScores[p1_id].total += p1_score;
                 finalScores[p2_id].total += p2_score;
-
-                // Store detailed comparison for the UI
                 finalScores[p1_id].comparisons[p2_id] = p1_score;
                 finalScores[p2_id].comparisons[p1_id] = p2_score;
             }
         }
     }
 
-    // 5. Finalize results object and emit
-    gameState.results = {
-        scores: finalScores,
-        hands: gameState.submittedHands,
-        evals: gameState.evaluatedHands,
-        playerDetails: players // Send player details for name mapping on client
-    };
+    gameState.results = { scores: finalScores, hands: gameState.submittedHands, evals: gameState.evaluatedHands, playerDetails: players };
     gameState.status = 'finished';
     io.to(roomId).emit('game_over', gameState.results);
-    console.log(`Room ${roomId} game over. Results:`, JSON.stringify(gameState.results, null, 2));
+    console.log(`Room ${roomId} game over. Results sent.`);
 
-    // 6. Persist to Database
     try {
         const [gameResult] = await db.query('INSERT INTO games (room_id) VALUES (?)', [roomId]);
         const gameId = gameResult.insertId;
-
         for (const playerId of playerIds) {
             const { front, middle, back } = gameState.submittedHands[playerId];
             const score = finalScores[playerId].total;
             const specialHandType = finalScores[playerId].special || null;
             const playerName = players[playerId]?.name || 'Unknown';
-            const dbPlayerId = players[playerId]?.id; // The actual user ID from the database
-
-            if (!dbPlayerId) continue; // Don't save if player doesn't have a DB id
-
+            const dbPlayerId = players[playerId]?.id;
+            if (!dbPlayerId) continue;
             await db.query(
                 'INSERT INTO player_scores (game_id, player_id, player_name, hand_front, hand_middle, hand_back, score, special_hand_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 [gameId, dbPlayerId, playerName, JSON.stringify(front), JSON.stringify(middle), JSON.stringify(back), score, specialHandType]
             );
         }
-        console.log(`Game ${gameId} results for room ${roomId} saved to database.`);
+        console.log(`Game ${gameId} results for room ${roomId} saved.`);
     } catch (error) {
-        console.error(`Failed to save game results for room ${roomId} to database:`, error);
+        console.error(`Failed to save game results for room ${roomId}:`, error);
     }
 }
 
@@ -200,7 +152,6 @@ io.on('connection', (socket) => {
     console.log('Player connected:', socket.id);
     let currentRoomId = null;
 
-    // Send the initial list of rooms to the newly connected client
     socket.on('get_rooms', () => {
         const rooms = Object.entries(gameRooms).map(([id, room]) => ({
             id,
@@ -215,7 +166,6 @@ io.on('connection', (socket) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_default_secret');
             const username = decoded.username;
             const userId = decoded.id;
-
             currentRoomId = roomId;
             socket.join(roomId);
 
@@ -223,75 +173,59 @@ io.on('connection', (socket) => {
                 gameRooms[roomId] = createNewGameState();
                 console.log(`Room ${roomId} created.`);
             }
-
             const room = gameRooms[roomId];
-            // Use the real user data for the player, and add a ready status
-            room.players[socket.id] = { id: userId, socketId: socket.id, name: username, isReady: false };
+            const isHost = Object.keys(room.players).length === 0;
+            room.players[socket.id] = { id: userId, socketId: socket.id, name: username, isReady: false, isHost };
 
             io.to(roomId).emit('players_update', Object.values(room.players));
-            console.log(`Player ${socket.id} (User: ${username}, ID: ${userId}) joined room ${roomId}`);
-
-            // Broadcast the updated room list to everyone
+            console.log(`Player ${socket.id} (User: ${username}) joined room ${roomId} ${isHost ? 'as host' : ''}.`);
             broadcastRoomsUpdate(io);
-
         } catch (error) {
-            console.error('Authentication error on join_room:', error.message);
             socket.emit('error_message', '无效的认证凭证，请重新登录。');
         }
     });
 
     socket.on('player_ready', (isReady) => {
-        if (!currentRoomId || !gameRooms[currentRoomId] || !gameRooms[currentRoomId].players[socket.id]) return;
-
+        if (!currentRoomId || !gameRooms[currentRoomId]?.players[socket.id]) return;
         const room = gameRooms[currentRoomId];
         room.players[socket.id].isReady = isReady;
-
         io.to(currentRoomId).emit('players_update', Object.values(room.players));
-        console.log(`Player ${room.players[socket.id].name} in room ${currentRoomId} is now ${isReady ? 'ready' : 'not ready'}`);
     });
 
     socket.on('start_game', () => {
         if (!currentRoomId || !gameRooms[currentRoomId]) return;
-
         const room = gameRooms[currentRoomId];
+        const player = room.players[socket.id];
+        if (!player?.isHost) return socket.emit('error_message', '只有房主才能开始游戏');
+
         const playersInRoom = Object.values(room.players);
+        if (playersInRoom.length < 2) return socket.emit('error_message', '需要至少2位玩家才能开始游戏');
 
-        if (playersInRoom.length < 2) {
-            return socket.emit('error_message', '需要至少2位玩家才能开始游戏');
-        }
+        const allReady = playersInRoom.every(p => p.isHost || p.isReady);
+        if (!allReady) return socket.emit('error_message', '所有玩家都准备好后才能开始游戏');
 
-        const allReady = playersInRoom.every(p => p.isReady);
-        if (!allReady) {
-            return socket.emit('error_message', '所有玩家都准备好后才能开始游戏');
-        }
-
-        console.log(`Player ${socket.id} started game in room ${currentRoomId}`);
+        console.log(`Game started in room ${currentRoomId} by host ${player.name}`);
+        Object.values(room.players).forEach(p => p.isReady = false); // Reset ready status for next round
         room.gameState.status = 'playing';
-
         const dealtCards = dealCards();
         const playerIds = Object.keys(room.players);
-        let i = 0;
-        for (const socketId of playerIds) {
-            const hand = dealtCards[`player${++i}`];
-            if (!hand) continue;
-            room.gameState.hands[socketId] = hand;
-            io.to(socketId).emit('deal_hand', hand);
-        }
+        playerIds.forEach((socketId, i) => {
+            const hand = dealtCards[`player${i + 1}`];
+            if (hand) {
+                room.gameState.hands[socketId] = hand;
+                io.to(socketId).emit('deal_hand', hand);
+            }
+        });
 
         io.to(currentRoomId).emit('game_started');
-        broadcastRoomsUpdate(io); // Update room status to 'playing'
+        broadcastRoomsUpdate(io);
     });
 
     socket.on('submit_hand', async (hand) => {
         if (!currentRoomId || !gameRooms[currentRoomId]) return;
-
         const room = gameRooms[currentRoomId];
         if (room.gameState.status !== 'playing') return;
-
-        const { front, middle, back } = hand;
-        if (!isValidHand(front, middle, back)) {
-            return socket.emit('error_message', '牌型不合法 (前墩>中墩 或 中墩>后墩)');
-        }
+        if (!isValidHand(hand.front, hand.middle, hand.back)) return socket.emit('error_message', '牌型不合法 (倒水)');
 
         room.gameState.submittedHands[socket.id] = hand;
         console.log(`Player ${socket.id} in room ${currentRoomId} submitted hand`);
@@ -299,32 +233,40 @@ io.on('connection', (socket) => {
 
         const activePlayerIds = Object.keys(room.gameState.hands);
         if (Object.keys(room.gameState.submittedHands).length === activePlayerIds.length) {
-            console.log(`All players in room ${currentRoomId} have submitted. Calculating results...`);
+            console.log(`All players in room ${currentRoomId} submitted. Calculating...`);
             await calculateResults(currentRoomId, io);
-            broadcastRoomsUpdate(io); // Update room status to 'finished'
+            broadcastRoomsUpdate(io);
         }
     });
 
     socket.on('disconnect', () => {
-        console.log('Player disconnected:', socket.id);
         if (!currentRoomId || !gameRooms[currentRoomId]) return;
-
         const room = gameRooms[currentRoomId];
-        const wasInGame = !!room.gameState.hands[socket.id];
+        const player = room.players[socket.id];
+        if (!player) return;
+
+        console.log(`Player ${player.name} disconnected from room ${currentRoomId}`);
+        const wasHost = player.isHost;
+        const wasInGame = room.gameState.status === 'playing' && room.gameState.hands[socket.id];
+
         delete room.players[socket.id];
-        delete room.gameState.hands[socket.id];
-        delete room.gameState.submittedHands[socket.id];
 
         if (Object.keys(room.players).length === 0) {
-            console.log(`Room ${currentRoomId} is now empty and will be deleted.`);
+            console.log(`Room ${currentRoomId} is empty, deleting.`);
             delete gameRooms[currentRoomId];
-        } else if (wasInGame && room.gameState.status !== 'waiting') {
-            console.log(`A player disconnected mid-game in room ${currentRoomId}. Resetting room.`);
-            resetGame(currentRoomId);
-            io.to(currentRoomId).emit('game_reset');
+        } else {
+            if (wasHost) {
+                const newHost = Object.values(room.players)[0];
+                newHost.isHost = true;
+                console.log(`Host left. New host: ${newHost.name}`);
+            }
+            if (wasInGame) {
+                console.log(`Player left mid-game. Resetting room ${currentRoomId}.`);
+                resetGame(currentRoomId);
+                io.to(currentRoomId).emit('game_reset');
+            }
+            io.to(currentRoomId).emit('players_update', Object.values(room.players));
         }
-
-        io.to(currentRoomId).emit('players_update', Object.values(room.players));
         broadcastRoomsUpdate(io);
     });
 });
