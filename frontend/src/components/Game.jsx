@@ -8,7 +8,7 @@ import AuthModal from './AuthModal'; // Import the modal
 import { sortHand } from '../utils/cardUtils';
 import './Game.css';
 
-const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
+const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:14722');
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
 

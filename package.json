@@ -1,11 +1,17 @@
 {
   "name": "sss",
   "version": "1.0.0",
-  "description": "Root package.json to delegate build to frontend",
+  "description": "A full-stack card game application",
   "scripts": {
-    "postinstall": "npm install --prefix frontend",
-    "build": "npm run build --prefix frontend"
+    "postinstall": "npm install --prefix frontend && npm install --prefix backend",
+    "build": "npm run build --prefix frontend",
+    "start": "concurrently \"npm:start:frontend\" \"npm:start:backend\"",
+    "start:frontend": "npm run dev --prefix frontend",
+    "start:backend": "npm start --prefix backend"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 }
