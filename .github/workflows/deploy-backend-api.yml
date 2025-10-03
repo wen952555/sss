@@ -20,6 +20,17 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SERV00_KEY }}
 
+      - name: List files to be synced
+        run: |
+          echo "Listing contents of ./backend/:"
+          ls -laR ./backend/
+
+      - name: Dry-run rsync to serv00
+        run: |
+          echo "Performing rsync dry-run..."
+          rsync -avz --mkpath --delete --dry-run --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no" ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
+
       - name: Rsync backend to serv00
         run: |
+          echo "Performing actual rsync..."
           rsync -avz --mkpath --delete --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no" ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
