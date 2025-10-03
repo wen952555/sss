@@ -285,6 +285,8 @@ app.get('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 14722;
-server.listen(PORT, () => {
-  console.log(`服务器正在 http://localhost:${PORT} 上运行`);
+const HOST = '0.0.0.0';
+
+server.listen(PORT, HOST, () => {
+  console.log(`服务器正在 http://${HOST}:${PORT} 上运行`);
 });
