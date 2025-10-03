@@ -102,52 +102,75 @@ async function calculateResults(roomId, io) {
     if (!room) return;
 
     const { players, gameState } = room;
-    const playerIds = Object.keys(gameState.submittedHands);
+    const playerIds = Object.keys(gameState.submittedHands); // These are socket.ids
     if (playerIds.length === 0) return;
 
-    const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null } }), {});
-    for (const id of playerIds) {
+    // 1. Evaluate all hands first
+    playerIds.forEach(id => {
         const { front, middle, back } = gameState.submittedHands[id];
         gameState.evaluatedHands[id] = {
             front: evaluate3CardHand(front),
             middle: evaluate5CardHand(middle),
-            back: evaluate5CardHand(back)
+            back: evaluate5CardHand(back),
         };
         const allCards = [...front, ...middle, ...back];
         gameState.specialHands[id] = evaluate13CardHand(allCards);
-    }
+    });
 
-    const specialPlayer = playerIds.find(id => gameState.specialHands[id].value > SPECIAL_HAND_TYPES.NONE.value);
-    if (specialPlayer) {
-        const specialHand = gameState.specialHands[specialPlayer];
+    // 2. Initialize scores and detailed comparison report
+    const finalScores = playerIds.reduce((acc, id) => {
+        acc[id] = { total: 0, special: null, comparisons: {} };
+        return acc;
+    }, {});
+
+    // 3. Handle special hands (these override normal scoring)
+    const specialPlayerId = playerIds.find(id => gameState.specialHands[id].value > SPECIAL_HAND_TYPES.NONE.value);
+    if (specialPlayerId) {
+        const specialHand = gameState.specialHands[specialPlayerId];
         const score = specialHand.score;
-        let totalScoreReceived = 0;
-        for (const id of playerIds) {
-            if (id === specialPlayer) continue;
-            finalScores[id].total = -score;
-            totalScoreReceived += score;
-        }
-        finalScores[specialPlayer].total = totalScoreReceived;
-        finalScores[specialPlayer].special = specialHand.name;
+        finalScores[specialPlayerId].special = specialHand.name;
+
+        playerIds.forEach(id => {
+            if (id === specialPlayerId) {
+                finalScores[id].total = score * (playerIds.length - 1);
+            } else {
+                finalScores[id].total = -score;
+            }
+        });
     } else {
-        const playerScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
+        // 4. Standard scoring if no special hands
         for (let i = 0; i < playerIds.length; i++) {
             for (let j = i + 1; j < playerIds.length; j++) {
                 const p1_id = playerIds[i];
                 const p2_id = playerIds[j];
-                const { p1_score, p2_score } = comparePlayerHands(p1_id, p2_id, gameState.evaluatedHands[p1_id], gameState.evaluatedHands[p2_id]);
-                playerScores[p1_id] += p1_score;
-                playerScores[p2_id] += p2_score;
+
+                const p1_evals = gameState.evaluatedHands[p1_id];
+                const p2_evals = gameState.evaluatedHands[p2_id];
+
+                const { p1_score, p2_score } = comparePlayerHands(p1_id, p2_id, p1_evals, p2_evals);
+
+                finalScores[p1_id].total += p1_score;
+                finalScores[p2_id].total += p2_score;
+
+                // Store detailed comparison for the UI
+                finalScores[p1_id].comparisons[p2_id] = p1_score;
+                finalScores[p2_id].comparisons[p1_id] = p2_score;
             }
         }
-        for (const id of playerIds) { finalScores[id].total = playerScores[id]; }
     }
 
-    gameState.results = { scores: finalScores, hands: gameState.submittedHands, evals: gameState.evaluatedHands };
+    // 5. Finalize results object and emit
+    gameState.results = {
+        scores: finalScores,
+        hands: gameState.submittedHands,
+        evals: gameState.evaluatedHands,
+        playerDetails: players // Send player details for name mapping on client
+    };
     gameState.status = 'finished';
     io.to(roomId).emit('game_over', gameState.results);
     console.log(`Room ${roomId} game over. Results:`, JSON.stringify(gameState.results, null, 2));
 
+    // 6. Persist to Database
     try {
         const [gameResult] = await db.query('INSERT INTO games (room_id) VALUES (?)', [roomId]);
         const gameId = gameResult.insertId;
@@ -157,10 +180,13 @@ async function calculateResults(roomId, io) {
             const score = finalScores[playerId].total;
             const specialHandType = finalScores[playerId].special || null;
             const playerName = players[playerId]?.name || 'Unknown';
+            const dbPlayerId = players[playerId]?.id; // The actual user ID from the database
+
+            if (!dbPlayerId) continue; // Don't save if player doesn't have a DB id
 
             await db.query(
                 'INSERT INTO player_scores (game_id, player_id, player_name, hand_front, hand_middle, hand_back, score, special_hand_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [gameId, playerId, playerName, JSON.stringify(front), JSON.stringify(middle), JSON.stringify(back), score, specialHandType]
+                [gameId, dbPlayerId, playerName, JSON.stringify(front), JSON.stringify(middle), JSON.stringify(back), score, specialHandType]
             );
         }
         console.log(`Game ${gameId} results for room ${roomId} saved to database.`);

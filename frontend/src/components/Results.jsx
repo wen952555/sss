@@ -3,57 +3,64 @@ import React from 'react';
 import Hand from './Hand';
 import './Results.css';
 
-const Results = ({ results, playerInfo }) => {
+const Results = ({ results }) => {
     if (!results) {
         return <div>正在加载结果...</div>;
     }
 
-    const { scores, hands, evals } = results;
-    const playerIds = Object.keys(hands);
+    const { scores, hands, evals, playerDetails } = results;
+    const playerSocketIds = Object.keys(hands);
 
-    // This function seems to have an issue because playerInfo might not be updated correctly
-    // with user IDs. We should get the name from the player object in the room state if possible.
-    // For now, we'll rely on the data we have.
-    const getPlayerName = (id) => {
-        const player = playerInfo.find(p => p.socketId === id || p.id === id);
-        return player?.name || `玩家 (ID: ${id.substring(0, 5)})`;
+    // Helper to get player name from their socket ID
+    const getPlayerName = (socketId) => {
+        return playerDetails[socketId]?.name || `玩家 (ID: ${socketId.substring(0, 5)})`;
     };
 
     return (
         <div className="results-container">
-            <h2 className="results-title">游戏结果</h2>
-            <table className="results-table">
-                <thead>
-                    <tr>
-                        <th>玩家</th>
-                        <th>前墩</th>
-                        <th>中墩</th>
-                        <th>后墩</th>
-                        <th>特殊牌型</th>
-                        <th>总分</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {playerIds.map(id => {
-                        const finalScore = scores[id];
-                        const playerHands = hands[id];
-                        const playerEvals = evals[id];
+            <h2 className="results-title">比牌结果</h2>
+            <div className="results-grid">
+                {playerSocketIds.map(socketId => {
+                    const finalScore = scores[socketId];
+                    const playerHands = hands[socketId];
+                    const playerEvals = evals[socketId];
+                    const comparisons = finalScore.comparisons;
 
-                        return (
-                            <tr key={id}>
-                                <td>{getPlayerName(id)}</td>
-                                <td><Hand cards={playerHands.front} handInfo={playerEvals.front} isCompact={true} /></td>
-                                <td><Hand cards={playerHands.middle} handInfo={playerEvals.middle} isCompact={true} /></td>
-                                <td><Hand cards={playerHands.back} handInfo={playerEvals.back} isCompact={true} /></td>
-                                <td>{finalScore.special || '--'}</td>
-                                <td className={`player-total-score ${finalScore.total > 0 ? 'positive' : finalScore.total < 0 ? 'negative' : ''}`}>
-                                    {finalScore.total > 0 ? `+${finalScore.total}` : finalScore.total}
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
+                    return (
+                        <div key={socketId} className="player-result-card">
+                            <div className="player-header">
+                                <h3 className="player-name">{getPlayerName(socketId)}</h3>
+                                <div className={`player-total-score ${finalScore.total > 0 ? 'positive' : finalScore.total < 0 ? 'negative' : ''}`}>
+                                    总分: {finalScore.total > 0 ? `+${finalScore.total}` : finalScore.total}
+                                </div>
+                            </div>
+
+                            {finalScore.special && (
+                                <div className="special-hand-announcement">
+                                    🎉 特殊牌型: {finalScore.special} 🎉
+                                </div>
+                            )}
+
+                            <div className="player-hands-display">
+                                <Hand name="前墩" cards={playerHands.front} handInfo={playerEvals.front} isCompact={true} />
+                                <Hand name="中墩" cards={playerHands.middle} handInfo={playerEvals.middle} isCompact={true} />
+                                <Hand name="后墩" cards={playerHands.back} handInfo={playerEvals.back} isCompact={true} />
+                            </div>
+
+                            <div className="comparison-details">
+                                <h4>比牌详情:</h4>
+                                <ul>
+                                    {Object.entries(comparisons).map(([opponentSocketId, score]) => (
+                                        <li key={opponentSocketId} className={score > 0 ? 'positive' : score < 0 ? 'negative' : ''}>
+                                            vs {getPlayerName(opponentSocketId)}: {score > 0 ? `+${score}` : score}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 };
