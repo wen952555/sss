@@ -1,28 +1,33 @@
-// This is a Cloudflare Worker script that intercepts requests.
-// It's used here to proxy API requests to the backend.
+// frontend/public/_worker.js
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // If the request is for our API, proxy it to the backend.
-    if (url.pathname.startsWith('/api/')) {
-      // We are assuming the backend is on the same origin.
-      // In a real setup, you might need to change the origin.
-      const backendUrl = new URL(url.pathname, url.origin);
+    // Define the backend origin
+    const backendOrigin = `${url.protocol}//${url.hostname}:14722`;
 
-      // Create a new request to the backend, copying the original request's properties.
-      const backendRequest = new Request(backendUrl, request);
+    // Check if the request is for the API or Socket.IO
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/')) {
 
-      // Fetch the response from the backend.
-      const response = await fetch(backendRequest);
+      // Create a new URL to proxy to the backend
+      const newUrl = new URL(backendOrigin + url.pathname + url.search);
 
-      // Return the backend's response.
-      return response;
+      // Create a new request object with the new URL
+      const newRequest = new Request(newUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+        redirect: request.redirect,
+      });
+
+      // Forward the request to the backend and return the response
+      console.log(`[Worker] Forwarding request from ${url.pathname} to ${newUrl}`);
+      return fetch(newRequest);
     }
 
-    // For all other requests, let the Pages asset server handle it.
-    // This will serve the static files of the React application.
+    // For all other requests, serve the static assets from the Pages build
+    console.log(`[Worker] Serving static asset: ${url.pathname}`);
     return env.ASSETS.fetch(request);
   },
 };
