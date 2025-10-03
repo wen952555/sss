@@ -14,8 +14,9 @@ import {
     compareEvaluatedHands,
     SEGMENT_SCORES,
     SPECIAL_HAND_TYPES
-} from '../utils/gameLogic'; // Using the frontend game logic
+} from '../utils/gameLogic';
 import { getAIArrangedHand } from '../utils/aiPlayer';
+import { findBestArrangement } from '../utils/smartArrange'; // Import the new smart arrange function
 import './Game.css'; // Reusing the same styles
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
@@ -144,6 +145,21 @@ const TrialGame = () => {
         setError('');
     };
 
+    const handleSmartArrange = () => {
+        const allCards = [...myHand, ...arrangedHands.front, ...arrangedHands.middle, ...arrangedHands.back];
+        if (allCards.length !== 13) {
+            return setError("需要全部13张手牌才能进行智能理牌。");
+        }
+        const bestArrangement = findBestArrangement(allCards);
+        if (bestArrangement) {
+            setArrangedHands(bestArrangement);
+            setMyHand([]);
+            setError('');
+        } else {
+            setError("无法找到有效的理牌方案。");
+        }
+    };
+
     return (
         <div className="game-container">
             <header className="game-header">
@@ -163,9 +179,12 @@ const TrialGame = () => {
                         <h2>我的手牌</h2>
                         <PlayerHand cards={myHand} onCardClick={(card) => handleCardClick(card, 'myHand')} selectedCard={selectedCard} />
                     </div>
-                    <button onClick={handleSubmitHand} disabled={myHand.length > 0}>
-                        比牌
-                    </button>
+                    <div className="game-actions">
+                        <button onClick={handleSmartArrange}>智能理牌</button>
+                        <button onClick={handleSubmitHand} disabled={myHand.length > 0}>
+                            比牌
+                        </button>
+                    </div>
                 </>
             )}
 
