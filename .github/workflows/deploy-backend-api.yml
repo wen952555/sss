@@ -28,9 +28,9 @@ jobs:
       - name: Dry-run rsync to serv00
         run: |
           echo "Performing rsync dry-run..."
-          rsync -avz --mkpath --delete --dry-run --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no" ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
+          rsync -avz --mkpath --delete --dry-run --exclude 'node_modules' --exclude '.env' -e "ssh -o StrictHostKeyChecking=no" ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
 
       - name: Rsync backend to serv00
         run: |
           echo "Performing actual rsync..."
-          rsync -avz --mkpath --delete --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no" ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
+          rsync -avz --mkpath --delete --exclude 'node_modules' --exclude '.env' -e "ssh -o StrictHostKeyChecking=no" ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
