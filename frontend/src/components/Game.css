@@ -11,6 +11,36 @@
     width: 100%;
     text-align: center;
     margin-bottom: 20px;
+    position: relative; /* Needed for absolute positioning of the back button */
+    padding: 1rem 0;
+}
+
+.back-to-lobby-button {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
+    color: #61dafb;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #61dafb;
+    border-radius: 5px;
+    transition: all 0.3s;
+}
+
+.back-to-lobby-button:hover {
+    background-color: #61dafb;
+    color: #282c34;
+}
+
+.game-info {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #ccc;
 }
 
 .error-message {
