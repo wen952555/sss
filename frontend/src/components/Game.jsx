@@ -6,8 +6,8 @@ import PlayerHand from './PlayerHand';
 import Hand from './Hand';
 import Results from './Results';
 import { sortHand } from '../utils/cardUtils';
-import { isValidHand } from '../utils/gameLogic';
-import { findBestArrangement } from '../utils/smartArrange'; // Import the new smart arrange function
+import { isValidHand } from '../utils/gameLogic'; // Import for client-side validation
+import { findBestArrangement } from '../utils/smartArrange';
 import './Game.css';
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
@@ -77,7 +77,11 @@ const Game = ({ token }) => {
         }
 
         return () => {
+            // Actively leave the room when the component unmounts
+            console.log(`Actively leaving room: ${roomId}`);
             socket.emit('leave_room', roomId);
+
+            // Clean up all listeners to prevent memory leaks
             socket.off('connect', handleConnect);
             socket.off('disconnect', handleDisconnect);
             socket.off('players_update', handlePlayersUpdate);
@@ -149,6 +153,14 @@ const Game = ({ token }) => {
         }
     };
 
+    const getPlayerStatusIcon = (player) => {
+        if (gameState === 'playing' && player.hasSubmitted) return '✔️';
+        if (gameState === 'waiting') {
+            return player.isHost ? '👑' : (player.isReady ? '✅' : '❌');
+        }
+        return '';
+    };
+
     return (
         <div className="game-container">
             <header className="game-header">
@@ -159,7 +171,7 @@ const Game = ({ token }) => {
                         <span>玩家列表:</span>
                         <ul>
                             {players.map(p => (
-                                <li key={p.id || p.socketId}>{p.name} {p.isHost ? '👑' : (p.isReady ? '✅' : '❌')}</li>
+                                <li key={p.id || p.socketId}>{p.name} {getPlayerStatusIcon(p)}</li>
                             ))}
                         </ul>
                     </div>

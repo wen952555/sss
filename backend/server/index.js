@@ -70,6 +70,7 @@ function broadcastRoomsUpdate(io) {
     const rooms = Object.entries(gameRooms).map(([id, room]) => ({
         id,
         playerCount: Object.keys(room.players).length,
+        players: Object.values(room.players).map(p => p.name), // Add player names
         status: room.gameState.status,
     }));
     io.emit('rooms_update', rooms);
@@ -175,7 +176,7 @@ io.on('connection', (socket) => {
             }
             const room = gameRooms[roomId];
             const isHost = Object.keys(room.players).length === 0;
-            room.players[socket.id] = { id: userId, socketId: socket.id, name: username, isReady: false, isHost };
+            room.players[socket.id] = { id: userId, socketId: socket.id, name: username, isReady: false, isHost, hasSubmitted: false };
 
             io.to(roomId).emit('players_update', Object.values(room.players));
             console.log(`Player ${socket.id} (User: ${username}) joined room ${roomId} ${isHost ? 'as host' : ''}.`);
@@ -228,8 +229,11 @@ io.on('connection', (socket) => {
         if (!isValidHand(hand.front, hand.middle, hand.back)) return socket.emit('error_message', '牌型不合法 (倒水)');
 
         room.gameState.submittedHands[socket.id] = hand;
+        room.players[socket.id].hasSubmitted = true; // Set submitted status
         console.log(`Player ${socket.id} in room ${currentRoomId} submitted hand`);
-        io.to(currentRoomId).emit('player_submitted', { id: room.players[socket.id].id, name: room.players[socket.id].name });
+
+        // Broadcast the updated player list with the new submitted status
+        io.to(currentRoomId).emit('players_update', Object.values(room.players));
 
         const activePlayerIds = Object.keys(room.gameState.hands);
         if (Object.keys(room.gameState.submittedHands).length === activePlayerIds.length) {
@@ -238,6 +242,33 @@ io.on('connection', (socket) => {
             broadcastRoomsUpdate(io);
         }
     });
+
+    const handleLeaveRoom = (roomId) => {
+        const room = gameRooms[roomId];
+        if (!room || !room.players[socket.id]) return;
+
+        const player = room.players[socket.id];
+        console.log(`Player ${player.name} is leaving room ${roomId}`);
+
+        const wasHost = player.isHost;
+        delete room.players[socket.id];
+        currentRoomId = null;
+
+        if (Object.keys(room.players).length === 0) {
+            console.log(`Room ${roomId} is empty, deleting.`);
+            delete gameRooms[roomId];
+        } else {
+            if (wasHost) {
+                const newHost = Object.values(room.players)[0];
+                newHost.isHost = true;
+                console.log(`Host left. New host: ${newHost.name}`);
+            }
+            io.to(roomId).emit('players_update', Object.values(room.players));
+        }
+        broadcastRoomsUpdate(io);
+    };
+
+    socket.on('leave_room', handleLeaveRoom);
 
     socket.on('disconnect', () => {
         if (!currentRoomId || !gameRooms[currentRoomId]) return;
