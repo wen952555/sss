@@ -138,6 +138,17 @@ const Game = ({ token }) => {
         setGameState('submitted');
     };
 
+    const handleClearHands = () => {
+        const allArrangedCards = [
+            ...arrangedHands.front,
+            ...arrangedHands.middle,
+            ...arrangedHands.back,
+        ];
+        setMyHand(sortHand([...myHand, ...allArrangedCards]));
+        setArrangedHands(createEmptyHands());
+        setError('');
+    };
+
     const handleSmartArrange = () => {
         const allCards = [...myHand, ...arrangedHands.front, ...arrangedHands.middle, ...arrangedHands.back];
         if (allCards.length !== 13) {
@@ -207,6 +218,7 @@ const Game = ({ token }) => {
                     </div>
                     <div className="game-actions">
                         <button onClick={handleSmartArrange}>智能理牌</button>
+                        <button onClick={handleClearHands}>清空牌墩</button>
                         <button onClick={handleSubmitHand} disabled={myHand.length > 0}>提交手牌</button>
                     </div>
                 </>
