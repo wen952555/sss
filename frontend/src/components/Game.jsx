@@ -1,36 +1,45 @@
 // frontend/src/components/Game.jsx
 import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import PlayerHand from './PlayerHand';
 import Hand from './Hand';
 import Results from './Results';
-import AuthModal from './AuthModal'; // Import the modal
 import { sortHand } from '../utils/cardUtils';
 import './Game.css';
 
-// Connect to the backend via the _worker.js proxy by connecting to the root path.
-// The worker will intercept requests to /socket.io/ and forward them.
+// This setup remains the same, connecting via the worker proxy
 const socket = io({ path: '/socket.io' });
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
 
-const Game = () => {
+const Game = ({ token }) => {
+    const { roomId } = useParams(); // Get roomId from URL
     const [isConnected, setIsConnected] = useState(socket.connected);
     const [players, setPlayers] = useState([]);
     const [submittedPlayers, setSubmittedPlayers] = useState([]);
     const [myHand, setMyHand] = useState([]);
     const [arrangedHands, setArrangedHands] = useState(createEmptyHands());
     const [selectedCard, setSelectedCard] = useState(null);
-    const [gameState, setGameState] = useState('waiting'); // waiting, playing, submitted, results
+    const [gameState, setGameState] = useState('waiting');
     const [gameResult, setGameResult] = useState(null);
     const [error, setError] = useState('');
 
-    // New state for authentication
-    const [token, setToken] = useState(localStorage.getItem('token'));
-    const [showAuthModal, setShowAuthModal] = useState(false);
-
     useEffect(() => {
-        const onConnect = () => setIsConnected(true);
+        // Automatically join the room when the component mounts or token/roomId changes
+        if (token && roomId) {
+            console.log(`Joining room: ${roomId}`);
+            socket.emit('join_room', roomId, token);
+        }
+
+        const onConnect = () => {
+            setIsConnected(true);
+            // If we reconnect, automatically try to re-join the room
+            if (token && roomId) {
+                socket.emit('join_room', roomId, token);
+            }
+        };
+
         const onDisconnect = () => setIsConnected(false);
         const onPlayersUpdate = (updatedPlayers) => setPlayers(updatedPlayers);
         const onGameStarted = () => {
@@ -42,19 +51,13 @@ const Game = () => {
             setError('');
         };
         const onDealHand = (hand) => setMyHand(sortHand(hand));
-        const onPlayerSubmitted = (player) => {
-            console.log(`Player ${player.name} has submitted.`);
-            setSubmittedPlayers(prev => [...prev, player]);
-        };
+        const onPlayerSubmitted = (player) => setSubmittedPlayers(prev => [...prev, player]);
         const onGameOver = (results) => {
             console.log("Game over, results:", results);
             setGameResult(results);
             setGameState('results');
         };
-        const onErrorMessage = (message) => {
-            setError(message);
-            setTimeout(() => setError(''), 4000);
-        };
+        const onErrorMessage = (message) => setError(message);
         const onGameReset = () => {
             alert("有玩家离线，游戏已重置。");
             setMyHand([]);
@@ -75,6 +78,7 @@ const Game = () => {
         socket.on('game_reset', onGameReset);
 
         return () => {
+            // Clean up listeners when the component unmounts
             socket.off('connect', onConnect);
             socket.off('disconnect', onDisconnect);
             socket.off('players_update', onPlayersUpdate);
@@ -85,30 +89,15 @@ const Game = () => {
             socket.off('error_message', onErrorMessage);
             socket.off('game_reset', onGameReset);
         };
-    }, []);
-
-    const handleSetToken = (newToken) => {
-        localStorage.setItem('token', newToken);
-        setToken(newToken);
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        setToken(null);
-    };
+    }, [token, roomId]); // Rerun effect if token or roomId changes
 
     const handleStartGame = () => {
-        if (!token) {
-            alert("请先登录再开始游戏！");
-            setShowAuthModal(true);
-            return;
-        }
         socket.emit('start_game');
     };
 
     const handleCardClick = (card, source) => {
         if (selectedCard && selectedCard.card.rank === card.rank && selectedCard.card.suit === card.suit) {
-            setSelectedCard(null); // Deselect
+            setSelectedCard(null);
         } else {
             setSelectedCard({ card, source });
         }
@@ -116,7 +105,6 @@ const Game = () => {
 
     const handleHandSlotClick = (targetHandName) => {
         if (!selectedCard) return;
-
         const { card, source } = selectedCard;
         const targetHand = arrangedHands[targetHandName];
         const handLimits = { front: 3, middle: 5, back: 5 };
@@ -128,7 +116,6 @@ const Game = () => {
 
         const sourceIsArranged = source !== 'myHand';
         const sourceHand = sourceIsArranged ? arrangedHands[source] : myHand;
-
         const newSourceHand = sourceHand.filter(c => !(c.rank === card.rank && c.suit === card.suit));
         const newTargetHand = sortHand([...targetHand, card]);
 
@@ -156,16 +143,9 @@ const Game = () => {
 
     return (
         <div className="game-container">
-            <AuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} setToken={handleSetToken} />
             <header className="game-header">
-                <div className="auth-status">
-                    {token ? (
-                        <button onClick={handleLogout} className="auth-button">退出登录</button>
-                    ) : (
-                        <button onClick={() => setShowAuthModal(true)} className="auth-button">注册/登录</button>
-                    )}
-                </div>
-                <h1>十三水</h1>
+                <Link to="/" className="back-to-lobby">返回大厅</Link>
+                <h1>十三水 - 房间: {roomId}</h1>
                 <p>状态: {isConnected ? '已连接' : '已断开'} | 玩家: {players.length}</p>
                 {error && <p className="error-message">{error}</p>}
             </header>
