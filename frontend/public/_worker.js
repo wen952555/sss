@@ -4,8 +4,8 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // Define the backend origin
-    const backendOrigin = `${url.protocol}//${url.hostname}:14722`;
+    // Define the backend origin. It's running on the same machine, so we use localhost.
+    const backendOrigin = "http://localhost:14722";
 
     // Check if the request is for the API or Socket.IO
     if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/')) {
