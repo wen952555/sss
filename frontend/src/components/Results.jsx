@@ -13,7 +13,13 @@ const Results = ({ results }) => {
 
     // Helper to get player name from their socket ID
     const getPlayerName = (socketId) => {
-        return playerDetails[socketId]?.name || `玩家 (ID: ${socketId.substring(0, 5)})`;
+        // playerDetails might not be available in offline mode, so we have a fallback.
+        if (playerDetails && playerDetails[socketId]) {
+            return playerDetails[socketId]?.name;
+        }
+        // Fallback for offline mode or if details are missing
+        const player = results.playerInfo?.find(p => p.id === socketId);
+        return player?.name || `玩家 (ID: ${socketId.substring(0, 5)})`;
     };
 
     return (
@@ -24,7 +30,7 @@ const Results = ({ results }) => {
                     const finalScore = scores[socketId];
                     const playerHands = hands[socketId];
                     const playerEvals = evals[socketId];
-                    const comparisons = finalScore.comparisons;
+                    const comparisons = finalScore.comparisons || {};
 
                     return (
                         <div key={socketId} className="player-result-card">
