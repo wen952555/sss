@@ -97,3 +97,11 @@
     border-radius: 4px;
     font-size: 0.9em;
 }
+
+.comparison-details li.positive {
+    color: #81c784;
+}
+
+.comparison-details li.negative {
+    color: #e57373;
+}

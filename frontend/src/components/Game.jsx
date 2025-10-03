@@ -6,7 +6,8 @@ import PlayerHand from './PlayerHand';
 import Hand from './Hand';
 import Results from './Results';
 import { sortHand } from '../utils/cardUtils';
-import { isValidHand } from '../utils/gameLogic'; // Import for client-side validation
+import { isValidHand } from '../utils/gameLogic';
+import { findBestArrangement } from '../utils/smartArrange'; // Import the new smart arrange function
 import './Game.css';
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
@@ -133,6 +134,21 @@ const Game = ({ token }) => {
         setGameState('submitted');
     };
 
+    const handleSmartArrange = () => {
+        const allCards = [...myHand, ...arrangedHands.front, ...arrangedHands.middle, ...arrangedHands.back];
+        if (allCards.length !== 13) {
+            return setError("需要全部13张手牌才能进行智能理牌。");
+        }
+        const bestArrangement = findBestArrangement(allCards);
+        if (bestArrangement) {
+            setArrangedHands(bestArrangement);
+            setMyHand([]);
+            setError('');
+        } else {
+            setError("无法找到有效的理牌方案。");
+        }
+    };
+
     return (
         <div className="game-container">
             <header className="game-header">
@@ -177,7 +193,10 @@ const Game = ({ token }) => {
                         <h2>我的手牌</h2>
                         <PlayerHand cards={myHand} onCardClick={(card) => handleCardClick(card, 'myHand')} selectedCard={selectedCard} />
                     </div>
-                    <button onClick={handleSubmitHand} disabled={myHand.length > 0}>提交手牌</button>
+                    <div className="game-actions">
+                        <button onClick={handleSmartArrange}>智能理牌</button>
+                        <button onClick={handleSubmitHand} disabled={myHand.length > 0}>提交手牌</button>
+                    </div>
                 </>
             )}
 
