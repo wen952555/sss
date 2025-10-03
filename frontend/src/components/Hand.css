@@ -52,3 +52,29 @@
 .back {
     flex-basis: 40%;
 }
+
+/* Compact styles for the results table */
+.hand-slot.compact {
+    padding: 5px;
+    margin: 0;
+    min-height: auto;
+    border: none;
+    background-color: transparent;
+}
+
+.hand-slot.compact .cards-container {
+    gap: 2px;
+    justify-content: center;
+}
+
+.hand-slot.compact .card {
+    transform: scale(0.7);
+    margin: -10px -5px; /* Adjust margin to compensate for scaling */
+}
+
+.hand-slot.compact .hand-header {
+    justify-content: center;
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}

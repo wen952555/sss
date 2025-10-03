@@ -1,15 +1,12 @@
 // frontend/src/components/Game.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { io } from 'socket.io-client';
+import { socket } from '../socket'; // Use the shared socket instance
 import PlayerHand from './PlayerHand';
 import Hand from './Hand';
 import Results from './Results';
 import { sortHand } from '../utils/cardUtils';
 import './Game.css';
-
-// This setup remains the same, connecting via the worker proxy
-const socket = io({ path: '/socket.io' });
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
 
@@ -77,8 +74,12 @@ const Game = ({ token }) => {
         socket.on('error_message', onErrorMessage);
         socket.on('game_reset', onGameReset);
 
+        // This is the key to leaving the room when the component unmounts
         return () => {
-            // Clean up listeners when the component unmounts
+            console.log(`Leaving room: ${roomId}`);
+            socket.emit('leave_room', roomId);
+
+            // Clean up all listeners
             socket.off('connect', onConnect);
             socket.off('disconnect', onDisconnect);
             socket.off('players_update', onPlayersUpdate);
@@ -93,6 +94,13 @@ const Game = ({ token }) => {
 
     const handleStartGame = () => {
         socket.emit('start_game');
+    };
+
+    const handleReadyClick = () => {
+        const me = players.find(p => p.socketId === socket.id);
+        if (me) {
+            socket.emit('player_ready', !me.isReady);
+        }
     };
 
     const handleCardClick = (card, source) => {
@@ -144,16 +152,31 @@ const Game = ({ token }) => {
     return (
         <div className="game-container">
             <header className="game-header">
-                <Link to="/" className="back-to-lobby">返回大厅</Link>
+                <Link to="/" className="back-to-lobby-button">返回大厅</Link>
                 <h1>十三水 - 房间: {roomId}</h1>
-                <p>状态: {isConnected ? '已连接' : '已断开'} | 玩家: {players.length}</p>
+                <div className="game-info">
+                    <span>状态: {isConnected ? '已连接' : '已断开'}</span>
+                    <div className="player-list">
+                        <span>玩家列表:</span>
+                        <ul>
+                            {players.map(p => (
+                                <li key={p.id}>{p.name} {p.isReady ? '✅' : '❌'}</li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
                 {error && <p className="error-message">{error}</p>}
             </header>
 
             {gameState === 'waiting' && (
-                <button onClick={handleStartGame} disabled={!isConnected || players.length < 2}>
-                    开始游戏 ({players.length} / 4 玩家)
-                </button>
+                <div className="waiting-controls">
+                    <button onClick={handleReadyClick}>
+                        {players.find(p => p.socketId === socket.id)?.isReady ? '取消准备' : '准备'}
+                    </button>
+                    <button onClick={handleStartGame} disabled={!isConnected || players.length < 2}>
+                        开始游戏 ({players.length} / 4 玩家)
+                    </button>
+                </div>
             )}
 
             {gameState === 'playing' && (

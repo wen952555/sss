@@ -61,6 +61,16 @@ function resetGame(roomId) {
     }
 }
 
+// Function to get and broadcast the list of rooms
+function broadcastRoomsUpdate(io) {
+    const rooms = Object.entries(gameRooms).map(([id, room]) => ({
+        id,
+        playerCount: Object.keys(room.players).length,
+        status: room.gameState.status,
+    }));
+    io.emit('rooms_update', rooms);
+}
+
 // --- Scoring Logic ---
 function comparePlayerHands(p1_id, p2_id, p1_evals, p2_evals) {
     let p1_score = 0;
@@ -164,6 +174,16 @@ io.on('connection', (socket) => {
     console.log('Player connected:', socket.id);
     let currentRoomId = null;
 
+    // Send the initial list of rooms to the newly connected client
+    socket.on('get_rooms', () => {
+        const rooms = Object.entries(gameRooms).map(([id, room]) => ({
+            id,
+            playerCount: Object.keys(room.players).length,
+            status: room.gameState.status,
+        }));
+        socket.emit('rooms_update', rooms);
+    });
+
     socket.on('join_room', (roomId, token) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_default_secret');
@@ -179,11 +199,14 @@ io.on('connection', (socket) => {
             }
 
             const room = gameRooms[roomId];
-            // Use the real user data for the player
-            room.players[socket.id] = { id: userId, socketId: socket.id, name: username };
+            // Use the real user data for the player, and add a ready status
+            room.players[socket.id] = { id: userId, socketId: socket.id, name: username, isReady: false };
 
             io.to(roomId).emit('players_update', Object.values(room.players));
             console.log(`Player ${socket.id} (User: ${username}, ID: ${userId}) joined room ${roomId}`);
+
+            // Broadcast the updated room list to everyone
+            broadcastRoomsUpdate(io);
 
         } catch (error) {
             console.error('Authentication error on join_room:', error.message);
@@ -191,28 +214,46 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('player_ready', (isReady) => {
+        if (!currentRoomId || !gameRooms[currentRoomId] || !gameRooms[currentRoomId].players[socket.id]) return;
+
+        const room = gameRooms[currentRoomId];
+        room.players[socket.id].isReady = isReady;
+
+        io.to(currentRoomId).emit('players_update', Object.values(room.players));
+        console.log(`Player ${room.players[socket.id].name} in room ${currentRoomId} is now ${isReady ? 'ready' : 'not ready'}`);
+    });
+
     socket.on('start_game', () => {
         if (!currentRoomId || !gameRooms[currentRoomId]) return;
 
         const room = gameRooms[currentRoomId];
-        if (Object.keys(room.players).length < 2) {
+        const playersInRoom = Object.values(room.players);
+
+        if (playersInRoom.length < 2) {
             return socket.emit('error_message', '需要至少2位玩家才能开始游戏');
         }
 
+        const allReady = playersInRoom.every(p => p.isReady);
+        if (!allReady) {
+            return socket.emit('error_message', '所有玩家都准备好后才能开始游戏');
+        }
+
         console.log(`Player ${socket.id} started game in room ${currentRoomId}`);
-        resetGame(currentRoomId); // Resetting the specific room
         room.gameState.status = 'playing';
 
         const dealtCards = dealCards();
-        const playerIds = Object.keys(room.players).slice(0, 4);
-        let i = 1;
-        for (const playerId of playerIds) {
-            const hand = dealtCards[`player${i++}`];
-            room.gameState.hands[playerId] = hand;
-            io.to(playerId).emit('deal_hand', hand);
+        const playerIds = Object.keys(room.players);
+        let i = 0;
+        for (const socketId of playerIds) {
+            const hand = dealtCards[`player${++i}`];
+            if (!hand) continue;
+            room.gameState.hands[socketId] = hand;
+            io.to(socketId).emit('deal_hand', hand);
         }
 
         io.to(currentRoomId).emit('game_started');
+        broadcastRoomsUpdate(io); // Update room status to 'playing'
     });
 
     socket.on('submit_hand', async (hand) => {
@@ -228,12 +269,13 @@ io.on('connection', (socket) => {
 
         room.gameState.submittedHands[socket.id] = hand;
         console.log(`Player ${socket.id} in room ${currentRoomId} submitted hand`);
-        io.to(currentRoomId).emit('player_submitted', { id: socket.id, name: room.players[socket.id].name });
+        io.to(currentRoomId).emit('player_submitted', { id: room.players[socket.id].id, name: room.players[socket.id].name });
 
         const activePlayerIds = Object.keys(room.gameState.hands);
         if (Object.keys(room.gameState.submittedHands).length === activePlayerIds.length) {
             console.log(`All players in room ${currentRoomId} have submitted. Calculating results...`);
             await calculateResults(currentRoomId, io);
+            broadcastRoomsUpdate(io); // Update room status to 'finished'
         }
     });
 
@@ -247,13 +289,17 @@ io.on('connection', (socket) => {
         delete room.gameState.hands[socket.id];
         delete room.gameState.submittedHands[socket.id];
 
-        if (wasInGame && room.gameState.status !== 'waiting') {
+        if (Object.keys(room.players).length === 0) {
+            console.log(`Room ${currentRoomId} is now empty and will be deleted.`);
+            delete gameRooms[currentRoomId];
+        } else if (wasInGame && room.gameState.status !== 'waiting') {
             console.log(`A player disconnected mid-game in room ${currentRoomId}. Resetting room.`);
             resetGame(currentRoomId);
             io.to(currentRoomId).emit('game_reset');
         }
 
         io.to(currentRoomId).emit('players_update', Object.values(room.players));
+        broadcastRoomsUpdate(io);
     });
 });
 

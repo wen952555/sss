@@ -3,13 +3,28 @@ import React from 'react';
 import Card from './Card';
 import './Hand.css';
 
-const Hand = ({ name, cards, handInfo, onCardClick, onSlotClick, selectedCard }) => {
+const Hand = ({ name, cards, handInfo, onCardClick, onSlotClick, selectedCard, isCompact = false }) => {
     const isSelected = (card) => {
         if (!selectedCard) return false;
         return selectedCard.card.suit === card.suit && selectedCard.card.rank === card.rank;
     };
 
-    const handClass = `hand-slot ${name.toLowerCase().split(' ')[0]}`;
+    const handClass = `hand-slot ${name ? name.toLowerCase().split(' ')[0] : ''} ${isCompact ? 'compact' : ''}`;
+
+    if (isCompact) {
+        return (
+            <div className={handClass}>
+                <div className="hand-header">
+                    {handInfo && <span className="hand-type">{handInfo.type.name}</span>}
+                </div>
+                <div className="cards-container">
+                    {cards.map((card, index) => (
+                        <Card key={index} suit={card.suit} rank={card.rank} />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={handClass} onClick={onSlotClick}>
