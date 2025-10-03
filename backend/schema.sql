@@ -3,6 +3,7 @@
 -- Table to store each game session
 CREATE TABLE games (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    room_id VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

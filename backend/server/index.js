@@ -38,26 +38,27 @@ const io = new Server(server, {
 });
 
 // --- Game State ---
-let players = {};
-let gameState = {
-    hands: {},
-    submittedHands: {},
-    evaluatedHands: {},
-    specialHands: {},
-    results: null,
-    status: 'waiting'
-};
+const gameRooms = {};
 
-function resetGame() {
-    gameState = {
-        hands: {},
-        submittedHands: {},
-        evaluatedHands: {},
-        specialHands: {},
-        results: null,
-        status: 'waiting'
+function createNewGameState() {
+    return {
+        players: {},
+        gameState: {
+            hands: {},
+            submittedHands: {},
+            evaluatedHands: {},
+            specialHands: {},
+            results: null,
+            status: 'waiting'
+        }
     };
-    console.log("游戏已重置");
+}
+
+function resetGame(roomId) {
+    if (gameRooms[roomId]) {
+        gameRooms[roomId] = createNewGameState();
+        console.log(`Room ${roomId} has been reset.`);
+    }
 }
 
 // --- Scoring Logic ---
@@ -86,7 +87,11 @@ function comparePlayerHands(p1_id, p2_id, p1_evals, p2_evals) {
     return { p1_score, p2_score };
 }
 
-async function calculateResults() {
+async function calculateResults(roomId, io) {
+    const room = gameRooms[roomId];
+    if (!room) return;
+
+    const { players, gameState } = room;
     const playerIds = Object.keys(gameState.submittedHands);
     if (playerIds.length === 0) return;
 
@@ -130,11 +135,11 @@ async function calculateResults() {
 
     gameState.results = { scores: finalScores, hands: gameState.submittedHands, evals: gameState.evaluatedHands };
     gameState.status = 'finished';
-    io.emit('game_over', gameState.results);
-    console.log("游戏结束，结果已公布:", JSON.stringify(gameState.results, null, 2));
+    io.to(roomId).emit('game_over', gameState.results);
+    console.log(`Room ${roomId} game over. Results:`, JSON.stringify(gameState.results, null, 2));
 
     try {
-        const [gameResult] = await db.query('INSERT INTO games () VALUES ()');
+        const [gameResult] = await db.query('INSERT INTO games (room_id) VALUES (?)', [roomId]);
         const gameId = gameResult.insertId;
 
         for (const playerId of playerIds) {
@@ -148,59 +153,110 @@ async function calculateResults() {
                 [gameId, playerId, playerName, JSON.stringify(front), JSON.stringify(middle), JSON.stringify(back), score, specialHandType]
             );
         }
-        console.log(`Game ${gameId} results saved to database.`);
+        console.log(`Game ${gameId} results for room ${roomId} saved to database.`);
     } catch (error) {
-        console.error('Failed to save game results to database:', error);
+        console.error(`Failed to save game results for room ${roomId} to database:`, error);
     }
 }
 
 // --- Socket Handlers ---
 io.on('connection', (socket) => {
-  console.log('玩家连接:', socket.id);
-  players[socket.id] = { id: socket.id, name: `Player #${Object.keys(players).length + 1}` };
-  io.emit('players_update', Object.values(players));
-  socket.on('start_game', () => {
-    if (Object.keys(players).length < 2) return socket.emit('error_message', '需要至少2位玩家才能开始游戏');
-    console.log(`玩家 ${socket.id} 请求开始新游戏`);
-    resetGame();
-    const dealtCards = dealCards();
-    const playerIds = Object.keys(players).slice(0, 4);
-    let i = 1;
-    for(const playerId of playerIds) {
-        const hand = dealtCards[`player${i++}`];
-        gameState.hands[playerId] = hand;
-        io.to(playerId).emit('deal_hand', hand);
-    }
-    gameState.status = 'playing';
-    io.emit('game_started');
-  });
-  socket.on('submit_hand', async (hand) => {
-    if (gameState.status !== 'playing') return;
-    const { front, middle, back } = hand;
-    if (!isValidHand(front, middle, back)) return socket.emit('error_message', '牌型不合法 (前墩>中墩 或 中墩>后墩)');
-    gameState.submittedHands[socket.id] = hand;
-    console.log(`玩家 ${socket.id} 已提交牌型`);
-    io.emit('player_submitted', {id: socket.id, name: players[socket.id].name });
-    const activePlayerIds = Object.keys(gameState.hands);
-    if (Object.keys(gameState.submittedHands).length === activePlayerIds.length) {
-        console.log("所有玩家已提交, 开始计算结果...");
-        await calculateResults();
-    }
-  });
-  socket.on('disconnect', () => {
-    console.log('玩家断开:', socket.id);
-    const wasInGame = !!gameState.hands[socket.id];
-    delete players[socket.id];
-    delete gameState.hands[socket.id];
-    delete gameState.submittedHands[socket.id];
-    if (wasInGame && gameState.status !== 'waiting') {
-        console.log("有玩家在游戏中途断开, 重置游戏。");
-        resetGame();
-        io.emit('game_reset');
-    }
-    io.emit('players_update', Object.values(players));
-  });
+    console.log('Player connected:', socket.id);
+    let currentRoomId = null;
+
+    socket.on('join_room', (roomId, token) => {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_default_secret');
+            const username = decoded.username;
+            const userId = decoded.id;
+
+            currentRoomId = roomId;
+            socket.join(roomId);
+
+            if (!gameRooms[roomId]) {
+                gameRooms[roomId] = createNewGameState();
+                console.log(`Room ${roomId} created.`);
+            }
+
+            const room = gameRooms[roomId];
+            // Use the real user data for the player
+            room.players[socket.id] = { id: userId, socketId: socket.id, name: username };
+
+            io.to(roomId).emit('players_update', Object.values(room.players));
+            console.log(`Player ${socket.id} (User: ${username}, ID: ${userId}) joined room ${roomId}`);
+
+        } catch (error) {
+            console.error('Authentication error on join_room:', error.message);
+            socket.emit('error_message', '无效的认证凭证，请重新登录。');
+        }
+    });
+
+    socket.on('start_game', () => {
+        if (!currentRoomId || !gameRooms[currentRoomId]) return;
+
+        const room = gameRooms[currentRoomId];
+        if (Object.keys(room.players).length < 2) {
+            return socket.emit('error_message', '需要至少2位玩家才能开始游戏');
+        }
+
+        console.log(`Player ${socket.id} started game in room ${currentRoomId}`);
+        resetGame(currentRoomId); // Resetting the specific room
+        room.gameState.status = 'playing';
+
+        const dealtCards = dealCards();
+        const playerIds = Object.keys(room.players).slice(0, 4);
+        let i = 1;
+        for (const playerId of playerIds) {
+            const hand = dealtCards[`player${i++}`];
+            room.gameState.hands[playerId] = hand;
+            io.to(playerId).emit('deal_hand', hand);
+        }
+
+        io.to(currentRoomId).emit('game_started');
+    });
+
+    socket.on('submit_hand', async (hand) => {
+        if (!currentRoomId || !gameRooms[currentRoomId]) return;
+
+        const room = gameRooms[currentRoomId];
+        if (room.gameState.status !== 'playing') return;
+
+        const { front, middle, back } = hand;
+        if (!isValidHand(front, middle, back)) {
+            return socket.emit('error_message', '牌型不合法 (前墩>中墩 或 中墩>后墩)');
+        }
+
+        room.gameState.submittedHands[socket.id] = hand;
+        console.log(`Player ${socket.id} in room ${currentRoomId} submitted hand`);
+        io.to(currentRoomId).emit('player_submitted', { id: socket.id, name: room.players[socket.id].name });
+
+        const activePlayerIds = Object.keys(room.gameState.hands);
+        if (Object.keys(room.gameState.submittedHands).length === activePlayerIds.length) {
+            console.log(`All players in room ${currentRoomId} have submitted. Calculating results...`);
+            await calculateResults(currentRoomId, io);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Player disconnected:', socket.id);
+        if (!currentRoomId || !gameRooms[currentRoomId]) return;
+
+        const room = gameRooms[currentRoomId];
+        const wasInGame = !!room.gameState.hands[socket.id];
+        delete room.players[socket.id];
+        delete room.gameState.hands[socket.id];
+        delete room.gameState.submittedHands[socket.id];
+
+        if (wasInGame && room.gameState.status !== 'waiting') {
+            console.log(`A player disconnected mid-game in room ${currentRoomId}. Resetting room.`);
+            resetGame(currentRoomId);
+            io.to(currentRoomId).emit('game_reset');
+        }
+
+        io.to(currentRoomId).emit('players_update', Object.values(room.players));
+    });
 });
+
 
 // --- API Routes ---
 app.get('/api/test-db', async (req, res) => {
