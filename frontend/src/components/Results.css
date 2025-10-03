@@ -4,49 +4,42 @@
     max-width: 1200px;
     margin: 20px auto;
     padding: 20px;
-    background-color: #1e1e1e;
+    background-color: #282c34;
     border-radius: 12px;
+    color: #e0e0e0;
 }
 
 .results-title {
     text-align: center;
-    color: #e0e0e0;
+    color: #61dafb;
     margin-bottom: 25px;
     font-size: 2.5em;
 }
 
-.results-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-    gap: 20px;
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
 }
 
-.player-result-card {
-    background-color: #282c34;
+.results-table th, .results-table td {
     border: 1px solid #444;
-    border-radius: 10px;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    padding: 12px;
+    text-align: center;
+    vertical-align: middle;
 }
 
-.player-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #444;
-    padding-bottom: 10px;
+.results-table th {
+    background-color: #3e4451;
+    font-size: 1.2em;
 }
 
-.player-name {
-    margin: 0;
-    color: #61dafb;
-    font-size: 1.4em;
+.results-table tbody tr:nth-child(even) {
+    background-color: #333842;
 }
 
 .player-total-score {
-    font-size: 1.4em;
+    font-size: 1.5em;
     font-weight: bold;
 }
 
@@ -57,33 +50,3 @@
 .player-total-score.negative {
     color: #f44336; /* Red for negative */
 }
-
-.special-hand-announcement {
-    text-align: center;
-    font-size: 1.2em;
-    color: #ffd700; /* Gold */
-    padding: 10px;
-    background-color: rgba(255, 215, 0, 0.1);
-    border-radius: 5px;
-}
-
-.player-hands-display {
-    display: flex;
-    flex-direction: column; /* Stack hands vertically */
-    gap: 10px;
-}
-
-/* Override Hand.css to fit inside the results card */
-.player-hands-display .hand-slot {
-    margin: 0;
-    min-height: auto; /* Let content define height */
-}
-
-.player-hands-display .cards-container {
-    justify-content: flex-start; /* Align cards to the left */
-}
-
-.player-hands-display .hand-header {
-    font-size: 1em;
-}
-

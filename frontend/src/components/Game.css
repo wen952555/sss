@@ -92,3 +92,21 @@ button:disabled {
 button:hover:not(:disabled) {
     background-color: #2980b9;
 }
+
+.player-list {
+    margin-top: 1rem;
+}
+
+.player-list ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.waiting-controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
