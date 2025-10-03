@@ -6,8 +6,8 @@ import PlayerHand from './PlayerHand';
 import Hand from './Hand';
 import Results from './Results';
 import { sortHand } from '../utils/cardUtils';
-import { isValidHand } from '../utils/gameLogic';
-import { findBestArrangement } from '../utils/smartArrange'; // Import the new smart arrange function
+import { isValidHand } from '../utils/gameLogic'; // Import for client-side validation
+import { findBestArrangement } from '../utils/smartArrange';
 import './Game.css';
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });

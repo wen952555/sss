@@ -9,16 +9,17 @@ const Lobby = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Request the initial list of rooms when component mounts
+    if (!socket.connected) {
+      socket.connect();
+    }
+
     socket.emit('get_rooms');
 
-    // Listen for updates to the room list
     const handleRoomsUpdate = (updatedRooms) => {
       setRooms(updatedRooms);
     };
     socket.on('rooms_update', handleRoomsUpdate);
 
-    // Clean up the listener when the component unmounts
     return () => {
       socket.off('rooms_update', handleRoomsUpdate);
     };
@@ -50,13 +51,21 @@ const Lobby = () => {
         {rooms.length > 0 ? (
           <ul>
             {rooms.map((room) => (
-              <li key={room.id}>
-                <span>房间: {room.id} ({room.playerCount}/4) - {room.status}</span>
-                {room.status === 'waiting' && room.playerCount < 4 ? (
-                  <button onClick={() => handleJoinRoom(room.id)}>加入</button>
-                ) : (
-                  <button disabled>满员或游戏中</button>
-                )}
+              <li key={room.id} className="room-list-item">
+                <div className="room-info">
+                  <span className="room-name">房间: {room.id}</span>
+                  <span className="room-status">状态: {room.status} ({room.playerCount}/4)</span>
+                  <div className="room-players">
+                    玩家: {room.players.join(', ') || '等待中...'}
+                  </div>
+                </div>
+                <div className="room-actions">
+                  {room.status === 'waiting' && room.playerCount < 4 ? (
+                    <button onClick={() => handleJoinRoom(room.id)}>加入</button>
+                  ) : (
+                    <button disabled>满员或游戏中</button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
