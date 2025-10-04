@@ -27,10 +27,8 @@ function getCombinations(cards, k) {
 export function findBestArrangement(hand) {
   if (hand.length !== 13) return null;
 
-  console.log("Starting smart arrangement calculation...");
-
   let bestArrangement = null;
-  let bestScore = -1;
+  let bestEvals = null;
 
   const all5CardCombinations = getCombinations(hand, 5);
 
@@ -48,30 +46,52 @@ export function findBestArrangement(hand) {
         const middleEval = evaluate5CardHand(middleHand);
         const frontEval = evaluate3CardHand(frontHand);
 
-        // A simple scoring heuristic: sum of the hand type values.
-        // A better heuristic might weigh the segments differently.
-        const currentScore = backEval.type.value + middleEval.type.value + frontEval.type.value;
-
-        if (currentScore > bestScore) {
-          bestScore = currentScore;
+        if (!bestArrangement) {
+          // First valid arrangement found, set it as the current best
           bestArrangement = {
             front: sortHand(frontHand),
             middle: sortHand(middleHand),
             back: sortHand(backHand),
           };
+          bestEvals = { back: backEval, middle: middleEval, front: frontEval };
+        } else {
+          // Compare the current valid arrangement with the best one found so far
+          const backComparison = compareEvaluatedHands(backEval, bestEvals.back);
+          if (backComparison > 0) {
+            // This arrangement is better because the back hand is stronger
+            bestArrangement = {
+              front: sortHand(frontHand),
+              middle: sortHand(middleHand),
+              back: sortHand(backHand),
+            };
+            bestEvals = { back: backEval, middle: middleEval, front: frontEval };
+          } else if (backComparison === 0) {
+            // Back hands are equal, compare middle hands
+            const middleComparison = compareEvaluatedHands(middleEval, bestEvals.middle);
+            if (middleComparison > 0) {
+              // Middle hand is stronger
+              bestArrangement = {
+                front: sortHand(frontHand),
+                middle: sortHand(middleHand),
+                back: sortHand(backHand),
+              };
+              bestEvals = { back: backEval, middle: middleEval, front: frontEval };
+            } else if (middleComparison === 0) {
+              // Middle hands are also equal, compare front hands
+              const frontComparison = compareEvaluatedHands(frontEval, bestEvals.front);
+              if (frontComparison > 0) {
+                // Front hand is stronger
+                bestArrangement = {
+                  front: sortHand(frontHand),
+                  middle: sortHand(middleHand),
+                  back: sortHand(backHand),
+                };
+                bestEvals = { back: backEval, middle: middleEval, front: frontEval };
+              }
+            }
+          }
         }
       }
-    }
-  }
-
-  console.log("Found best arrangement with score:", bestScore);
-
-  // Final validation to prevent crashes from bad arrangements
-  if (bestArrangement) {
-    const finalCards = [...bestArrangement.front, ...bestArrangement.middle, ...bestArrangement.back];
-    if (finalCards.length !== 13) {
-      console.error("Critical Error: Best arrangement does not contain 13 cards!", bestArrangement);
-      return null; // Return null if the hand is incomplete
     }
   }
 
