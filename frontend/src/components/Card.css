@@ -1,22 +1,24 @@
 /* frontend/src/components/Card.css */
 .card {
+    width: 60px; /* A smaller, more manageable base size */
+    height: 84px;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    border-radius: 8px;
+    border-radius: 5px; /* Slightly smaller radius for smaller cards */
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    background-color: #fff; /* Add a background for card backs */
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .card img {
     width: 100%;
     height: 100%;
     display: block;
-    object-fit: contain; /* Ensures the image scales within the container without distortion */
 }
 
 .card.selected {

@@ -53,8 +53,9 @@
 
 .arranged-hands {
     display: flex;
-    justify-content: center;
-    gap: 30px;
+    flex-direction: column; /* Stack the hands vertically */
+    align-items: center;   /* Center them horizontally */
+    gap: 15px;             /* Space between the hands */
     margin-bottom: 30px;
     width: 100%;
 }
