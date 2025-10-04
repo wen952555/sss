@@ -12,6 +12,7 @@ import {
     compareEvaluatedHands,
 } from '../utils/gameLogic';
 import { getAIArrangedHand } from '../utils/aiPlayer';
+import { findBestArrangement } from '../utils/smartArrange';
 import './Game.css';
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
@@ -82,6 +83,33 @@ const TrialGame = () => {
         setSelectedCard(null);
     };
 
+    const handleClearHands = () => {
+        // Find the human player's original hand and reset the arrangement
+        const humanPlayer = players.find(p => p.id === 'human');
+        if (humanPlayer) {
+            setArrangedHands({
+                front: humanPlayer.hand.slice(0, 3),
+                middle: humanPlayer.hand.slice(3, 8),
+                back: humanPlayer.hand.slice(8, 13),
+            });
+        }
+        setSelectedCard(null);
+        setError('');
+    };
+
+    const handleSmartArrange = () => {
+        const allCards = [...arrangedHands.front, ...arrangedHands.middle, ...arrangedHands.back];
+        if (allCards.length !== 13) return; // Should not happen
+
+        const bestArrangement = findBestArrangement(allCards);
+        if (bestArrangement) {
+            setArrangedHands(bestArrangement);
+            setError('');
+        } else {
+            setError("无法找到有效的理牌方案。");
+        }
+    };
+
     const handleSubmitHand = () => {
         if (!isValidHand(arrangedHands.front, arrangedHands.middle, arrangedHands.back)) return setError("您摆的牌型不符合规则（倒水），请重新摆牌。");
 
@@ -146,6 +174,8 @@ const TrialGame = () => {
                         <Hand name="后墩 (5)" cards={arrangedHands.back} onCardClick={(card) => handleCardClick(card, 'back')} selectedCard={selectedCard} />
                     </div>
                     <div className="game-actions">
+                        <button onClick={handleSmartArrange}>智能理牌</button>
+                        <button onClick={handleClearHands}>清空牌墩</button>
                         <button onClick={handleSubmitHand}>比牌</button>
                     </div>
                 </>
