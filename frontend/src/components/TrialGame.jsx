@@ -1,6 +1,7 @@
 // frontend/src/components/TrialGame.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import PlayerHand from './PlayerHand';
 import Hand from './Hand';
 import Results from './Results';
 import { sortHand } from '../utils/cardUtils';
@@ -19,6 +20,7 @@ const createEmptyHands = () => ({ front: [], middle: [], back: [] });
 
 const TrialGame = () => {
     const [players, setPlayers] = useState([]);
+    const [myHand, setMyHand] = useState([]);
     const [arrangedHands, setArrangedHands] = useState(createEmptyHands());
     const [selectedCard, setSelectedCard] = useState(null);
     const [gameState, setGameState] = useState('playing');
@@ -27,83 +29,55 @@ const TrialGame = () => {
 
     useEffect(() => {
         const allCards = dealCards();
-        const humanPlayerHand = sortHand(allCards.player1);
-        const humanPlayer = { id: 'human', name: '您', hand: humanPlayerHand };
+        const humanPlayer = { id: 'human', name: '您', hand: allCards.player1 };
         const aiPlayers = [
             { id: 'ai1', name: '电脑玩家 1', hand: allCards.player2 },
             { id: 'ai2', name: '电脑玩家 2', hand: allCards.player3 },
             { id: 'ai3', name: '电脑玩家 3', hand: allCards.player4 },
         ];
-
-        setArrangedHands({
-            front: humanPlayerHand.slice(0, 3),
-            middle: humanPlayerHand.slice(3, 8),
-            back: humanPlayerHand.slice(8, 13),
-        });
+        setMyHand(sortHand(humanPlayer.hand));
         setPlayers([humanPlayer, ...aiPlayers]);
     }, []);
 
-    const handleCardClick = (clickedCard, clickedHandName) => {
-        // If no card is selected, select the clicked card.
-        if (!selectedCard) {
-            setSelectedCard({ card: clickedCard, source: clickedHandName });
-            return;
-        }
-
-        // If the same card is clicked again, deselect it.
-        if (selectedCard.card.rank === clickedCard.rank && selectedCard.card.suit === clickedCard.suit) {
+    const handleCardClick = (card, source) => {
+        if (source !== 'myHand') {
+            const sourceHand = arrangedHands[source];
+            const newSourceHand = sourceHand.filter(c => c.rank !== card.rank || c.suit !== card.suit);
+            const newMyHand = sortHand([...myHand, card]);
+            setArrangedHands(prev => ({ ...prev, [source]: newSourceHand }));
+            setMyHand(newMyHand);
             setSelectedCard(null);
             return;
         }
-
-        // If a different card is clicked, perform a swap.
-        const sourceHandName = selectedCard.source;
-        const targetHandName = clickedHandName;
-
-        const newArrangedHands = { ...arrangedHands };
-
-        // Find and remove the selected card from the source hand.
-        const sourceHand = newArrangedHands[sourceHandName];
-        const cardA_index = sourceHand.findIndex(c => c.rank === selectedCard.card.rank && c.suit === selectedCard.card.suit);
-
-        // Find and remove the clicked card from the target hand.
-        const targetHand = newArrangedHands[targetHandName];
-        const cardB_index = targetHand.findIndex(c => c.rank === clickedCard.rank && c.suit === clickedCard.suit);
-
-        // Swap the cards.
-        sourceHand[cardA_index] = clickedCard;
-        targetHand[cardB_index] = selectedCard.card;
-
-        // Update the state with the new hands and deselect the card.
-        setArrangedHands({
-            front: sortHand(newArrangedHands.front),
-            middle: sortHand(newArrangedHands.middle),
-            back: sortHand(newArrangedHands.back),
-        });
-        setSelectedCard(null);
+        if (selectedCard?.card.suit === card.suit && selectedCard?.card.rank === card.rank) {
+            setSelectedCard(null);
+        } else {
+            setSelectedCard({ card, source });
+        }
     };
 
-    const handleClearHands = () => {
-        // Find the human player's original hand and reset the arrangement
-        const humanPlayer = players.find(p => p.id === 'human');
-        if (humanPlayer) {
-            setArrangedHands({
-                front: humanPlayer.hand.slice(0, 3),
-                middle: humanPlayer.hand.slice(3, 8),
-                back: humanPlayer.hand.slice(8, 13),
-            });
-        }
+    const handleHandSlotClick = (targetHandName) => {
+        if (!selectedCard || selectedCard.source !== 'myHand') return;
+        const { card } = selectedCard;
+        const targetHand = arrangedHands[targetHandName];
+        const handLimits = { front: 3, middle: 5, back: 5 };
+        if (targetHand.length >= handLimits[targetHandName]) return setError(`此墩已满`);
+
+        const newMyHand = myHand.filter(c => c.rank !== card.rank || c.suit !== card.suit);
+        const newTargetHand = sortHand([...targetHand, card]);
+        setMyHand(newMyHand);
+        setArrangedHands(prev => ({ ...prev, [targetHandName]: newTargetHand }));
         setSelectedCard(null);
         setError('');
     };
 
     const handleSmartArrange = () => {
-        const allCards = [...arrangedHands.front, ...arrangedHands.middle, ...arrangedHands.back];
-        if (allCards.length !== 13) return; // Should not happen
-
+        const allCards = [...myHand, ...arrangedHands.front, ...arrangedHands.middle, ...arrangedHands.back];
+        if (allCards.length !== 13) return setError("需要全部13张手牌才能进行智能理牌。");
         const bestArrangement = findBestArrangement(allCards);
         if (bestArrangement) {
             setArrangedHands(bestArrangement);
+            setMyHand([]);
             setError('');
         } else {
             setError("无法找到有效的理牌方案。");
@@ -111,6 +85,7 @@ const TrialGame = () => {
     };
 
     const handleSubmitHand = () => {
+        if (myHand.length > 0) return setError("请摆完所有13张牌。");
         if (!isValidHand(arrangedHands.front, arrangedHands.middle, arrangedHands.back)) return setError("您摆的牌型不符合规则（倒水），请重新摆牌。");
 
         const submittedHands = { human: arrangedHands };
@@ -148,6 +123,7 @@ const TrialGame = () => {
             }
         }
 
+        // **THE FIX**: Create a `playerDetails` object that maps the *same IDs* used in `scores`, `hands`, and `evals`.
         const playerDetails = players.reduce((acc, p) => {
             acc[p.id] = { name: p.name, id: p.id };
             return acc;
@@ -169,14 +145,17 @@ const TrialGame = () => {
             {gameState === 'playing' && (
                 <>
                     <div className="arranged-hands">
-                        <Hand name="前墩 (3)" cards={arrangedHands.front} onCardClick={(card) => handleCardClick(card, 'front')} selectedCard={selectedCard} />
-                        <Hand name="中墩 (5)" cards={arrangedHands.middle} onCardClick={(card) => handleCardClick(card, 'middle')} selectedCard={selectedCard} />
-                        <Hand name="后墩 (5)" cards={arrangedHands.back} onCardClick={(card) => handleCardClick(card, 'back')} selectedCard={selectedCard} />
+                        <Hand name="前墩 (3)" cards={arrangedHands.front} onCardClick={handleCardClick} onSlotClick={() => handleHandSlotClick('front')} selectedCard={selectedCard} />
+                        <Hand name="中墩 (5)" cards={arrangedHands.middle} onCardClick={handleCardClick} onSlotClick={() => handleHandSlotClick('middle')} selectedCard={selectedCard} />
+                        <Hand name="后墩 (5)" cards={arrangedHands.back} onCardClick={handleCardClick} onSlotClick={() => handleHandSlotClick('back')} selectedCard={selectedCard} />
+                    </div>
+                    <div className="player-main-hand">
+                        <h2>我的手牌</h2>
+                        <PlayerHand cards={myHand} onCardClick={(card) => handleCardClick(card, 'myHand')} selectedCard={selectedCard} />
                     </div>
                     <div className="game-actions">
                         <button onClick={handleSmartArrange}>智能理牌</button>
-                        <button onClick={handleClearHands}>清空牌墩</button>
-                        <button onClick={handleSubmitHand}>比牌</button>
+                        <button onClick={handleSubmitHand} disabled={myHand.length > 0}>比牌</button>
                     </div>
                 </>
             )}
