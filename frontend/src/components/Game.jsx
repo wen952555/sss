@@ -103,6 +103,19 @@ const Game = ({ token }) => {
     };
 
     const handleCardClick = (card, source) => {
+        // If a card in an arranged hand is clicked, move it back to the main hand.
+        if (source !== 'myHand') {
+            const sourceHand = arrangedHands[source];
+            const newSourceHand = sourceHand.filter(c => c.rank !== card.rank || c.suit !== card.suit);
+            const newMyHand = sortHand([...myHand, card]);
+
+            setArrangedHands(prev => ({ ...prev, [source]: newSourceHand }));
+            setMyHand(newMyHand);
+            setSelectedCard(null); // Always deselect after this action
+            return;
+        }
+
+        // Original logic for selecting/deselecting a card from the main hand
         if (selectedCard?.card.suit === card.suit && selectedCard?.card.rank === card.rank) {
             setSelectedCard(null);
         } else {
@@ -111,21 +124,22 @@ const Game = ({ token }) => {
     };
 
     const handleHandSlotClick = (targetHandName) => {
-        if (!selectedCard) return;
-        const { card, source } = selectedCard;
+        // This function now only places cards from the main hand into an arranged hand.
+        if (!selectedCard || selectedCard.source !== 'myHand') {
+            // If a card is selected from an arranged hand, this logic path is no longer reachable
+            // because handleCardClick would have already moved it.
+            return;
+        }
+
+        const { card } = selectedCard;
         const targetHand = arrangedHands[targetHandName];
         const handLimits = { front: 3, middle: 5, back: 5 };
         if (targetHand.length >= handLimits[targetHandName]) return setError(`此墩已满`);
 
-        const sourceHand = source === 'myHand' ? myHand : arrangedHands[source];
-        const newSourceHand = sourceHand.filter(c => !(c.rank === card.rank && c.suit === card.suit));
+        const newMyHand = myHand.filter(c => c.rank !== card.rank || c.suit !== card.suit);
         const newTargetHand = sortHand([...targetHand, card]);
 
-        if (source === 'myHand') {
-            setMyHand(newSourceHand);
-        } else {
-            setArrangedHands(prev => ({ ...prev, [source]: newSourceHand }));
-        }
+        setMyHand(newMyHand);
         setArrangedHands(prev => ({ ...prev, [targetHandName]: newTargetHand }));
         setSelectedCard(null);
         setError('');
@@ -136,6 +150,17 @@ const Game = ({ token }) => {
         if (!isValidHand(arrangedHands.front, arrangedHands.middle, arrangedHands.back)) return setError("牌型不合法 (倒水)，请重新摆牌。");
         socket.emit('submit_hand', arrangedHands);
         setGameState('submitted');
+    };
+
+    const handleClearHands = () => {
+        const allArrangedCards = [
+            ...arrangedHands.front,
+            ...arrangedHands.middle,
+            ...arrangedHands.back,
+        ];
+        setMyHand(sortHand([...myHand, ...allArrangedCards]));
+        setArrangedHands(createEmptyHands());
+        setError('');
     };
 
     const handleSmartArrange = () => {
@@ -207,6 +232,7 @@ const Game = ({ token }) => {
                     </div>
                     <div className="game-actions">
                         <button onClick={handleSmartArrange}>智能理牌</button>
+                        <button onClick={handleClearHands}>清空牌墩</button>
                         <button onClick={handleSubmitHand} disabled={myHand.length > 0}>提交手牌</button>
                     </div>
                 </>

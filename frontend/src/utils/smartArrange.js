@@ -65,5 +65,15 @@ export function findBestArrangement(hand) {
   }
 
   console.log("Found best arrangement with score:", bestScore);
+
+  // Final validation to prevent crashes from bad arrangements
+  if (bestArrangement) {
+    const finalCards = [...bestArrangement.front, ...bestArrangement.middle, ...bestArrangement.back];
+    if (finalCards.length !== 13) {
+      console.error("Critical Error: Best arrangement does not contain 13 cards!", bestArrangement);
+      return null; // Return null if the hand is incomplete
+    }
+  }
+
   return bestArrangement;
 }
