@@ -4,7 +4,7 @@
     border-radius: 8px;
     padding: 10px;
     margin: 10px;
-    min-height: 120px; /* Adjust based on Card size */
+    min-height: 140px; /* Adjust based on Card size */
     display: flex;
     flex-direction: column;
     background-color: #2a2a2a;
@@ -47,7 +47,7 @@
 }
 
 .cards-container > .card:not(:first-child) {
-    margin-left: -35px; /* Overlap cards by 35px */
+    margin-left: -46px; /* Overlap cards by 46px */
 }
 
 /* Add a hover effect to lift the card above others */
@@ -58,7 +58,7 @@
 
 /* When hovering the container, slightly separate the cards for better selection */
 .cards-container:hover > .card:not(:first-child) {
-    margin-left: -25px;
+    margin-left: -33px;
 }
 
 /* Specific adjustments for different hands */

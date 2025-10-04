@@ -32,7 +32,7 @@ app.use(express.static(frontendDistPath));
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: ["https://xxx.9525.ip-ddns.com", "http://localhost:5173"],
+        origin: ["https://xxx.9525.ip-ddns.com", "http://localhost:5173", "http://localhost:5174"],
         methods: ["GET", "POST"]
     }
 });

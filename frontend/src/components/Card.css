@@ -1,7 +1,7 @@
 /* frontend/src/components/Card.css */
 .card {
-    width: 60px; /* A smaller, more manageable base size */
-    height: 84px;
+    width: 80px; /* A smaller, more manageable base size */
+    height: 112px;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     border-radius: 5px; /* Slightly smaller radius for smaller cards */
