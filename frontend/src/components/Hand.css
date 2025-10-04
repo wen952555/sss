@@ -36,10 +36,29 @@
 
 .cards-container {
     display: flex;
-    flex-wrap: wrap; /* Allow cards to wrap if needed */
     justify-content: center;
     align-items: center;
-    gap: 5px; /* Spacing between cards */
+    padding-top: 10px; /* Give some space from the header */
+}
+
+/* This creates the stacking effect */
+.cards-container > .card {
+    transition: transform 0.2s; /* Smooth transition for hover */
+}
+
+.cards-container > .card:not(:first-child) {
+    margin-left: -35px; /* Overlap cards by 35px */
+}
+
+/* Add a hover effect to lift the card above others */
+.cards-container:hover > .card:hover {
+    transform: translateY(-10px);
+    z-index: 10;
+}
+
+/* When hovering the container, slightly separate the cards for better selection */
+.cards-container:hover > .card:not(:first-child) {
+    margin-left: -25px;
 }
 
 /* Specific adjustments for different hands */
