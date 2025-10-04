@@ -273,4 +273,4 @@ export function isValidHand(front, middle, back) {
 }
 
 // Make constants available for export
-export { SEGMENT_SCORES, SPECIAL_HAND_TYPES };
+export { HAND_TYPES, SEGMENT_SCORES, SPECIAL_HAND_TYPES };

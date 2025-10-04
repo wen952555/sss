@@ -19,10 +19,7 @@ const Hand = ({ name, cards, handInfo, onCardClick, onSlotClick, selectedCard, i
                 </div>
                 <div className="cards-container">
                     {cards.map((card, index) => (
-                        // Safety check: Only render the Card if the card object is valid.
-                        card ? (
-                            <Card key={index} suit={card.suit} rank={card.rank} />
-                        ) : null
+                        card ? <Card key={index} card={card} /> : null
                     ))}
                 </div>
             </div>
@@ -37,12 +34,10 @@ const Hand = ({ name, cards, handInfo, onCardClick, onSlotClick, selectedCard, i
             </div>
             <div className="cards-container">
                 {cards.map((card, index) => (
-                    // Safety check: Only render the Card if the card object is valid.
                     card ? (
                         <Card
                             key={index}
-                            suit={card.suit}
-                            rank={card.rank}
+                            card={card}
                             onClick={() => onCardClick(card)}
                             isSelected={isSelected(card)}
                         />

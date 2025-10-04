@@ -16,8 +16,7 @@ const {
     evaluate3CardHand,
     compareEvaluatedHands,
     SEGMENT_SCORES,
-    SPECIAL_HAND_TYPES,
-    HAND_TYPES
+    SPECIAL_HAND_TYPES
 } = require('./gameLogic');
 
 const app = express();
@@ -78,48 +77,6 @@ function broadcastRoomsUpdate(io) {
 }
 
 // --- Scoring Logic ---
-function comparePlayerHands(p1_id, p2_id, p1_eval, p2_eval) {
-    let p1_score = 0;
-    let p2_score = 0;
-    const segments = ['front', 'middle', 'back'];
-    let p1_wins = 0;
-    let p2_wins = 0;
-
-    for (const segment of segments) {
-        const p1_segment_eval = p1_eval[segment];
-        const p2_segment_eval = p2_eval[segment];
-        const comparison = compareEvaluatedHands(p1_segment_eval, p2_segment_eval);
-
-        let points = 1; // Default points for a segment win
-
-        if (comparison > 0) { // Player 1 wins
-            p1_wins++;
-            const p1_hand_type_key = Object.keys(HAND_TYPES).find(key => HAND_TYPES[key].value === p1_segment_eval.type.value);
-            if (p1_hand_type_key && SEGMENT_SCORES[segment] && SEGMENT_SCORES[segment][p1_hand_type_key]) {
-                points = SEGMENT_SCORES[segment][p1_hand_type_key];
-            }
-            p1_score += points;
-            p2_score -= points;
-        } else if (comparison < 0) { // Player 2 wins
-            p2_wins++;
-            const p2_hand_type_key = Object.keys(HAND_TYPES).find(key => HAND_TYPES[key].value === p2_segment_eval.type.value);
-            if (p2_hand_type_key && SEGMENT_SCORES[segment] && SEGMENT_SCORES[segment][p2_hand_type_key]) {
-                points = SEGMENT_SCORES[segment][p2_hand_type_key];
-            }
-            p1_score -= points;
-            p2_score += points;
-        }
-    }
-
-    // "Scoop" (打枪) - win all three segments, score is doubled
-    if (p1_wins === 3 || p2_wins === 3) {
-        p1_score *= 2;
-        p2_score *= 2;
-    }
-
-    return { p1_score, p2_score };
-}
-
 async function calculateResults(roomId, io) {
     const room = gameRooms[roomId];
     if (!room) return;
