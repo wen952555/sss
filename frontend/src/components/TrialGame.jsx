@@ -104,10 +104,15 @@ const TrialGame = () => {
         const evals = {};
         playerIds.forEach(id => {
             const { front, middle, back } = submittedHands[id];
-            evals[id] = { front: evaluate3CardHand(front), middle: evaluate5CardHand(middle), back: evaluate5CardHand(back) };
+            evals[id] = {
+                front: evaluate3CardHand(front),
+                middle: evaluate5CardHand(middle),
+                back: evaluate5CardHand(back),
+            };
         });
 
         const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null, comparisons: {} } }), {});
+
         for (let i = 0; i < playerIds.length; i++) {
             for (let j = i + 1; j < playerIds.length; j++) {
                 const p1_id = playerIds[i];
@@ -125,12 +130,13 @@ const TrialGame = () => {
             }
         }
 
-        const playerInfoForResults = players.reduce((acc, p) => {
+        // **THE FIX**: Create a `playerDetails` object that maps the *same IDs* used in `scores`, `hands`, and `evals`.
+        const playerDetails = players.reduce((acc, p) => {
             acc[p.id] = { name: p.name, id: p.id };
             return acc;
         }, {});
 
-        setGameResult({ scores: finalScores, hands: submittedHands, evals, playerDetails: playerInfoForResults });
+        setGameResult({ scores: finalScores, hands: submittedHands, evals, playerDetails });
         setGameState('results');
         setError('');
     };
