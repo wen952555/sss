@@ -24,16 +24,33 @@ export const sortHand = (hand) => {
 };
 
 /**
- * Generates the image URL for a given card.
+ * Generates the image URL for a given card based on the asset naming convention.
+ * e.g., { suit: 'spades', rank: 'A' } -> '/cards/ace_of_spades.svg'
  * @param {Object} card - A card object with suit and rank.
- * @returns {string} - The path to the card image.
+ * @returns {string} - The path to the card image asset.
  */
 export const getCardImageUrl = (card) => {
-    if (!card) {
-        // Return a path to a card back or a placeholder
-        return '/cards/back.png'; 
+    if (!card || (!card.rank && !card.suit)) {
+        return '/cards/back.svg'; // Default to card back
     }
-    // Note: In Vite, files in the `public` directory are served at the root.
-    // So the path is relative to the public root, e.g., /cards/spades_A.png
-    return `/cards/${card.suit}_${card.rank}.png`;
+
+    // Handle special cards like Jokers
+    if (card.rank === 'red_joker' || card.rank === 'black_joker') {
+        return `/cards/${card.rank}.svg`;
+    }
+
+    const rankMap = {
+        'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack',
+        '10': '10', '9': '9', '8': '8', '7': '7', '6': '6',
+        '5': '5', '4': '4', '3': '3', '2': '2',
+    };
+
+    const rankName = rankMap[card.rank];
+    const suitName = card.suit?.toLowerCase();
+
+    if (!rankName || !suitName) {
+        return '/cards/back.svg'; // Fallback for any unexpected card data
+    }
+
+    return `/cards/${rankName}_of_${suitName}.svg`;
 };

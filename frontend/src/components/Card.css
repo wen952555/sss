@@ -13,9 +13,10 @@
 }
 
 .card img {
-    width: 70px; /* Adjust size as needed */
-    height: auto;
+    width: 100%;
+    height: 100%;
     display: block;
+    object-fit: contain; /* Ensures the image scales within the container without distortion */
 }
 
 .card.selected {
