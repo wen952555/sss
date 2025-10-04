@@ -40,6 +40,15 @@ const TrialGame = () => {
     }, []);
 
     const handleCardClick = (card, source) => {
+        if (source !== 'myHand') {
+            const sourceHand = arrangedHands[source];
+            const newSourceHand = sourceHand.filter(c => c.rank !== card.rank || c.suit !== card.suit);
+            const newMyHand = sortHand([...myHand, card]);
+            setArrangedHands(prev => ({ ...prev, [source]: newSourceHand }));
+            setMyHand(newMyHand);
+            setSelectedCard(null);
+            return;
+        }
         if (selectedCard?.card.suit === card.suit && selectedCard?.card.rank === card.rank) {
             setSelectedCard(null);
         } else {
@@ -48,20 +57,24 @@ const TrialGame = () => {
     };
 
     const handleHandSlotClick = (targetHandName) => {
-        if (!selectedCard) return;
-        const { card, source } = selectedCard;
+        if (!selectedCard || selectedCard.source !== 'myHand') return;
+        const { card } = selectedCard;
         const targetHand = arrangedHands[targetHandName];
         const handLimits = { front: 3, middle: 5, back: 5 };
         if (targetHand.length >= handLimits[targetHandName]) return setError(`此墩已满`);
 
-        const sourceHand = source === 'myHand' ? myHand : arrangedHands[source];
-        const newSourceHand = sourceHand.filter(c => !(c.rank === card.rank && c.suit === card.suit));
+        const newMyHand = myHand.filter(c => c.rank !== card.rank || c.suit !== card.suit);
         const newTargetHand = sortHand([...targetHand, card]);
-
-        if (source === 'myHand') setMyHand(newSourceHand);
-        else setArrangedHands(prev => ({ ...prev, [source]: newSourceHand }));
+        setMyHand(newMyHand);
         setArrangedHands(prev => ({ ...prev, [targetHandName]: newTargetHand }));
         setSelectedCard(null);
+        setError('');
+    };
+
+    const handleClearHands = () => {
+        const allArrangedCards = [...arrangedHands.front, ...arrangedHands.middle, ...arrangedHands.back];
+        setMyHand(sortHand([...myHand, ...allArrangedCards]));
+        setArrangedHands(createEmptyHands());
         setError('');
     };
 
@@ -91,15 +104,10 @@ const TrialGame = () => {
         const evals = {};
         playerIds.forEach(id => {
             const { front, middle, back } = submittedHands[id];
-            evals[id] = {
-                front: evaluate3CardHand(front),
-                middle: evaluate5CardHand(middle),
-                back: evaluate5CardHand(back),
-            };
+            evals[id] = { front: evaluate3CardHand(front), middle: evaluate5CardHand(middle), back: evaluate5CardHand(back) };
         });
 
         const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null, comparisons: {} } }), {});
-
         for (let i = 0; i < playerIds.length; i++) {
             for (let j = i + 1; j < playerIds.length; j++) {
                 const p1_id = playerIds[i];
@@ -110,7 +118,6 @@ const TrialGame = () => {
                     if (comparison > 0) p1_total_score_vs_p2++;
                     else if (comparison < 0) p1_total_score_vs_p2--;
                 });
-
                 finalScores[p1_id].total += p1_total_score_vs_p2;
                 finalScores[p2_id].total -= p1_total_score_vs_p2;
                 finalScores[p1_id].comparisons[p2_id] = p1_total_score_vs_p2;
@@ -118,7 +125,6 @@ const TrialGame = () => {
             }
         }
 
-        // Ensure the playerInfo is passed in a structure that Results.jsx understands
         const playerInfoForResults = players.reduce((acc, p) => {
             acc[p.id] = { name: p.name, id: p.id };
             return acc;
@@ -150,6 +156,7 @@ const TrialGame = () => {
                     </div>
                     <div className="game-actions">
                         <button onClick={handleSmartArrange}>智能理牌</button>
+                        <button onClick={handleClearHands}>清空牌墩</button>
                         <button onClick={handleSubmitHand} disabled={myHand.length > 0}>比牌</button>
                     </div>
                 </>
