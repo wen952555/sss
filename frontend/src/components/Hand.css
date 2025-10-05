@@ -89,10 +89,15 @@
 }
 
 .hand-slot.compact .card {
-    /* Drastically shrink cards for the results screen to prevent overflow */
-    transform: scale(0.25);
-    /* Adjust margin to tighten the scaled-down cards */
-    margin: -25px -18px;
+    /* Increase card size on results screen for better visibility */
+    transform: scale(0.6);
+    /* Adjust vertical margin to compensate for scaling */
+    margin: -60px 0;
+}
+
+/* Override the general overlap for the compact results view */
+.hand-slot.compact .cards-container > .card:not(:first-child) {
+    margin-left: -85px;
 }
 
 .hand-slot.compact .hand-header {
