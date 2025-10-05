@@ -29,6 +29,12 @@
     display: flex;
     flex-direction: column;
     gap: 15px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Add smooth transition */
+}
+
+.player-result-card:hover {
+    transform: translateY(-5px); /* Add lift effect on hover */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); /* Enhance shadow on hover */
 }
 
 .player-header {
