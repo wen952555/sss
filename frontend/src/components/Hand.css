@@ -49,7 +49,7 @@
 }
 
 .cards-container > .card:not(:first-child) {
-    margin-left: -46px; /* Overlap cards by 46px */
+    margin-left: -138px; /* Overlap cards by 138px */
 }
 
 /* Add a hover effect to lift the card above others */
@@ -60,7 +60,7 @@
 
 /* When hovering the container, slightly separate the cards for better selection */
 .cards-container:hover > .card:not(:first-child) {
-    margin-left: -33px;
+    margin-left: -99px;
 }
 
 /* Specific adjustments for different hands */
