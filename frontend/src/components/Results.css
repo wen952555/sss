@@ -69,7 +69,9 @@
 
 .player-hands-display {
     display: flex;
-    justify-content: space-around;
+    /* Stack hands vertically to prevent horizontal overflow */
+    flex-direction: column;
+    align-items: center;
     gap: 10px;
     padding: 10px 0;
     border-bottom: 1px solid #444;
