@@ -89,8 +89,10 @@
 }
 
 .hand-slot.compact .card {
-    transform: scale(0.7);
-    margin: -10px -5px; /* Adjust margin to compensate for scaling */
+    /* Drastically shrink cards for the results screen to prevent overflow */
+    transform: scale(0.25);
+    /* Adjust margin to tighten the scaled-down cards */
+    margin: -25px -18px;
 }
 
 .hand-slot.compact .hand-header {
