@@ -2,14 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket'; // Use the shared socket instance
+import Gifting from './Gifting'; // Import the new Gifting component
 
-const Lobby = () => {
+const Lobby = ({ token }) => { // Accept token as a prop
   const [roomId, setRoomId] = useState('');
   const [rooms, setRooms] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Pass token for authentication when connecting
     if (!socket.connected) {
+      socket.auth = { token };
       socket.connect();
     }
 
@@ -23,7 +26,7 @@ const Lobby = () => {
     return () => {
       socket.off('rooms_update', handleRoomsUpdate);
     };
-  }, []);
+  }, [token]);
 
   const handleJoinRoom = (id) => {
     const roomToJoin = id || roomId.trim();
@@ -45,6 +48,8 @@ const Lobby = () => {
         />
         <button onClick={() => handleJoinRoom()}>创建或加入房间</button>
       </div>
+
+      <Gifting token={token} />
 
       <div className="room-list">
         <h3>可用房间列表</h3>

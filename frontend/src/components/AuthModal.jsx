@@ -4,7 +4,7 @@ import './AuthModal.css';
 
 const AuthModal = ({ show, onClose, setToken }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState(''); // Changed from username to phone
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -23,7 +23,7 @@ const AuthModal = ({ show, onClose, setToken }) => {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ phone, password }), // Changed from username to phone
       });
       const data = await response.json();
 
@@ -54,12 +54,13 @@ const AuthModal = ({ show, onClose, setToken }) => {
         <h2>{isLogin ? '登录' : '注册'}</h2>
         <form onSubmit={handleAuth}>
           <div className="form-group">
-            <label htmlFor="auth-username">用户名</label>
+            <label htmlFor="auth-phone">手机号</label>
             <input
-              id="auth-username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="auth-phone"
+              type="tel" // Use 'tel' for phone numbers
+              placeholder="请输入11位手机号"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               required
             />
           </div>

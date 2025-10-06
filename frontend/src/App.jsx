@@ -46,7 +46,7 @@ function App() {
           <Routes>
             <Route path="/trial" element={<TrialGame />} />
             <Route path="/game/:roomId" element={token ? <Game token={token} /> : <Navigate to="/" />} />
-            <Route path="/" element={token ? <Lobby /> : <div className="login-prompt"><h2>请先登录</h2><p>登录后即可进入游戏大厅，或选择离线试玩。</p></div>} />
+            <Route path="/" element={token ? <Lobby token={token} /> : <div className="login-prompt"><h2>请先登录</h2><p>登录后即可进入游戏大厅，或选择离线试玩。</p></div>} />
           </Routes>
         </main>
       </div>
