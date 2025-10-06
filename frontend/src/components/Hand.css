@@ -110,3 +110,27 @@
     font-weight: bold;
     margin-bottom: 0.5rem;
 }
+
+@media (max-width: 768px) {
+    .hand-slot {
+        padding: 0.5rem;
+        margin: 5px;
+        width: 100%;
+    }
+
+    .cards-container {
+        min-height: 90px;
+    }
+
+    .cards-container > .card:not(:first-child) {
+        margin-left: -45px; /* Overlap for smaller cards */
+    }
+
+    .cards-container:hover > .card:not(:first-child) {
+        margin-left: -40px; /* Separate a bit on hover */
+    }
+
+    .hand-slot.compact .cards-container > .card:not(:first-child) {
+        margin-left: -50px; /* Tighter overlap for compact mobile view */
+    }
+}

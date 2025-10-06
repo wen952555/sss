@@ -116,3 +116,27 @@
 .comparison-details li.negative {
     color: var(--color-danger);
 }
+
+@media (max-width: 768px) {
+    .results-grid {
+        /* Switch to a single column layout on mobile */
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .player-result-card {
+        padding: 1rem;
+    }
+
+    .player-name {
+        font-size: 1.2em;
+    }
+
+    .player-total-score {
+        font-size: 1.2em;
+    }
+
+    .comparison-details ul {
+        grid-template-columns: 1fr; /* Stack comparison details on mobile */
+    }
+}
