@@ -165,7 +165,7 @@ io.on('connection', (socket) => {
     socket.on('join_room', (roomId, token) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_default_secret');
-            const username = decoded.username;
+            const displayId = decoded.display_id; // Use display_id from token
             const userId = decoded.id;
             currentRoomId = roomId;
             socket.join(roomId);
@@ -176,10 +176,11 @@ io.on('connection', (socket) => {
             }
             const room = gameRooms[roomId];
             const isHost = Object.keys(room.players).length === 0;
-            room.players[socket.id] = { id: userId, socketId: socket.id, name: username, isReady: false, isHost, hasSubmitted: false };
+            // Use display_id as the player's name in the game state
+            room.players[socket.id] = { id: userId, socketId: socket.id, name: displayId, isReady: false, isHost, hasSubmitted: false };
 
             io.to(roomId).emit('players_update', Object.values(room.players));
-            console.log(`Player ${socket.id} (User: ${username}) joined room ${roomId} ${isHost ? 'as host' : ''}.`);
+            console.log(`Player ${socket.id} (User ID: ${displayId}) joined room ${roomId} ${isHost ? 'as host' : ''}.`);
             broadcastRoomsUpdate(io);
         } catch (error) {
             socket.emit('error_message', '无效的认证凭证，请重新登录。');
@@ -328,37 +329,75 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
+// --- Auth Helper Functions ---
+async function generateUniqueDisplayId(db) {
+    let displayId;
+    let isUnique = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 100; // Prevent an infinite loop
+
+    while (!isUnique && attempts < MAX_ATTEMPTS) {
+        const randomNum = Math.floor(Math.random() * 1000);
+        displayId = String(randomNum).padStart(3, '0');
+
+        const [existingUsers] = await db.query('SELECT id FROM users WHERE display_id = ?', [displayId]);
+        if (existingUsers.length === 0) {
+            isUnique = true;
+        }
+        attempts++;
+    }
+
+    if (!isUnique) {
+        throw new Error('Could not generate a unique display ID.');
+    }
+
+    return displayId;
+}
+
 // --- Auth Routes ---
 app.post('/api/auth/register', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-        return res.status(400).json({ success: false, message: 'Username and password are required.' });
+    const { phone, password } = req.body;
+    if (!phone || !password) {
+        return res.status(400).json({ success: false, message: 'Phone number and password are required.' });
+    }
+
+    // Basic validation for phone number format (can be improved)
+    if (!/^\d{11}$/.test(phone)) {
+        return res.status(400).json({ success: false, message: 'Please enter a valid 11-digit phone number.' });
     }
 
     try {
-        const [existingUser] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+        const [existingUser] = await db.query('SELECT id FROM users WHERE phone = ?', [phone]);
         if (existingUser.length > 0) {
-            return res.status(409).json({ success: false, message: 'Username already exists.' });
+            return res.status(409).json({ success: false, message: 'This phone number is already registered.' });
         }
 
+        const displayId = await generateUniqueDisplayId(db);
         const hashedPassword = await bcrypt.hash(password, 10);
-        await db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword]);
+
+        await db.query(
+            'INSERT INTO users (phone, password, display_id) VALUES (?, ?, ?)',
+            [phone, hashedPassword, displayId]
+        );
 
         res.status(201).json({ success: true, message: 'User registered successfully.' });
     } catch (error) {
         console.error('Registration failed:', error);
-        res.status(500).json({ success: false, message: 'Registration failed.' });
+        if (error.message.includes('unique display ID')) {
+            return res.status(500).json({ success: false, message: 'Could not assign a unique ID. Please try again.' });
+        }
+        res.status(500).json({ success: false, message: 'An internal server error occurred during registration.' });
     }
 });
 
 app.post('/api/auth/login', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-        return res.status(400).json({ success: false, message: 'Username and password are required.' });
+    const { phone, password } = req.body;
+    if (!phone || !password) {
+        return res.status(400).json({ success: false, message: 'Phone number and password are required.' });
     }
 
     try {
-        const [users] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+        const [users] = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
         if (users.length === 0) {
             return res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
@@ -369,14 +408,117 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
 
-        const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET || 'your_default_secret', {
-            expiresIn: '1h'
-        });
+        // Include the display_id in the token payload
+        const token = jwt.sign(
+            { id: user.id, display_id: user.display_id },
+            process.env.JWT_SECRET || 'your_default_secret',
+            { expiresIn: '1h' }
+        );
 
         res.json({ success: true, message: 'Logged in successfully.', token });
     } catch (error) {
         console.error('Login failed:', error);
         res.status(500).json({ success: false, message: 'Login failed.' });
+    }
+});
+
+// A middleware to verify JWT and attach user to request
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (token == null) return res.sendStatus(401);
+
+    jwt.verify(token, process.env.JWT_SECRET || 'your_default_secret', (err, user) => {
+        if (err) {
+            console.error('JWT verification error:', err);
+            return res.sendStatus(403);
+        }
+        req.user = user;
+        next();
+    });
+};
+
+// --- User & Gifting Routes ---
+
+// Find a user by their phone number
+app.post('/api/user/find', authenticateToken, async (req, res) => {
+    const { phone } = req.body;
+    if (!phone) {
+        return res.status(400).json({ success: false, message: 'Phone number is required.' });
+    }
+
+    try {
+        const [users] = await db.query('SELECT id, display_id FROM users WHERE phone = ?', [phone]);
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+        const user = users[0];
+        // Ensure we don't return the user's own info if they search their number
+        if (user.id === req.user.id) {
+            return res.status(400).json({ success: false, message: 'You cannot search for yourself.' });
+        }
+        res.json({ success: true, user: { id: user.id, display_id: user.display_id } });
+    } catch (error) {
+        console.error('User find failed:', error);
+        res.status(500).json({ success: false, message: 'Internal server error.' });
+    }
+});
+
+// Send points from one user to another
+app.post('/api/points/send', authenticateToken, async (req, res) => {
+    const { recipientId, amount } = req.body;
+    const senderId = req.user.id;
+
+    if (!recipientId || !amount) {
+        return res.status(400).json({ success: false, message: 'Recipient ID and amount are required.' });
+    }
+
+    const pointsAmount = parseInt(amount, 10);
+    if (isNaN(pointsAmount) || pointsAmount <= 0) {
+        return res.status(400).json({ success: false, message: 'Invalid points amount.' });
+    }
+
+    if (senderId === recipientId) {
+        return res.status(400).json({ success: false, message: 'You cannot send points to yourself.' });
+    }
+
+    let connection;
+    try {
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        const [senders] = await connection.query('SELECT points FROM users WHERE id = ? FOR UPDATE', [senderId]);
+        if (senders.length === 0) {
+            // This should not happen if the token is valid, but as a safeguard:
+            throw new Error('Sender not found.');
+        }
+        const sender = senders[0];
+
+        if (sender.points < pointsAmount) {
+            await connection.rollback();
+            return res.status(400).json({ success: false, message: 'Insufficient points.' });
+        }
+
+        const [recipients] = await connection.query('SELECT id FROM users WHERE id = ? FOR UPDATE', [recipientId]);
+        if (recipients.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: 'Recipient not found.' });
+        }
+
+        await connection.query('UPDATE users SET points = points - ? WHERE id = ?', [pointsAmount, senderId]);
+        await connection.query('UPDATE users SET points = points + ? WHERE id = ?', [pointsAmount, recipientId]);
+
+        await connection.commit();
+
+        res.json({ success: true, message: `Successfully sent ${pointsAmount} points.` });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        console.error('Points transfer failed:', error);
+        res.status(500).json({ success: false, message: 'An internal server error occurred during the transfer.' });
+    } finally {
+        if (connection) connection.release();
     }
 });
 

@@ -24,7 +24,9 @@ CREATE TABLE player_scores (
 -- Table to store user information for authentication
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(20) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    display_id VARCHAR(3) NOT NULL UNIQUE,
+    points INT NOT NULL DEFAULT 1000,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
