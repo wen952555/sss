@@ -1,67 +1,97 @@
 /* frontend/src/components/Gifting.css */
 
 .gifting-container {
-    margin-top: 30px;
-    padding: 20px;
-    background-color: #2c3e50; /* A dark blue-grey background */
-    border-radius: 8px;
-    border: 1px solid #34495e;
+    width: 100%;
+    max-width: 800px;
+    margin-top: 2rem;
+    padding: 2rem;
+    background-color: var(--color-surface);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-border);
 }
 
 .gifting-container h3 {
-    margin-top: 0;
     text-align: center;
-    color: #ecf0f1; /* Light grey text */
+    color: var(--text-primary);
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
 }
 
-.search-form, .send-form {
+.search-form {
     display: flex;
-    flex-direction: column;
-    gap: 15px;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
 .gifting-container input[type="tel"],
 .gifting-container input[type="number"] {
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #7f8c8d;
-    background-color: #34495e;
-    color: #ecf0f1;
-    font-size: 1em;
+    flex-grow: 1;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-background);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: var(--transition-base);
+}
+
+.gifting-container input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(94, 114, 228, 0.5);
 }
 
 .gifting-container input::placeholder {
-    color: #95a5a6;
+    color: var(--text-secondary);
 }
 
 .gifting-container button {
-    padding: 12px;
-    border-radius: 5px;
+    padding: 0.8rem 1.5rem;
     border: none;
-    background-color: #3498db; /* Blue button */
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-info); /* Use info color for search/send */
     color: white;
-    font-size: 1em;
+    font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: var(--transition-base);
+    box-shadow: var(--shadow-sm);
 }
 
 .gifting-container button:hover:not(:disabled) {
-    background-color: #2980b9;
+    background-color: #34e4fa; /* Lighter info color */
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .gifting-container button:disabled {
-    background-color: #566573;
+    background-color: var(--text-secondary);
+    opacity: 0.6;
     cursor: not-allowed;
+}
+
+.send-form {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
 }
 
 .send-form p {
     text-align: center;
-    color: #1abc9c; /* Teal color for success text */
-    font-size: 1.1em;
-    margin-bottom: 5px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0;
 }
 
 .send-form strong {
-    font-size: 1.5em;
-    color: #f1c40f; /* Yellow for the ID */
+    font-size: 1.8rem;
+    color: var(--color-warning); /* Use warning color for the ID to stand out */
+    margin: 0 0.5rem;
 }

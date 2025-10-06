@@ -1,110 +1,112 @@
 /* frontend/src/components/Hand.css */
+
 .hand-slot {
-    border: 2px dashed #444;
-    border-radius: 8px;
-    padding: 10px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
     margin: 10px;
-    min-height: 420px; /* Adjust based on Card size */
-    width: 90%;
+    width: 95%;
+    max-width: 900px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    background-color: #2a2a2a;
-    transition: background-color 0.3s, border-color 0.3s, transform 0.3s, box-shadow 0.3s; /* Add transition for new effects */
+    background-color: rgba(0, 0, 0, 0.2); /* Semi-transparent background */
+    transition: var(--transition-base);
+    position: relative; /* For pseudo-elements */
 }
 
 .hand-slot:hover {
-    background-color: #333;
-    border-color: #666;
-    transform: scale(1.01); /* Subtle grow effect */
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Add shadow on hover */
+    border-color: var(--color-primary);
+    transform: scale(1.01);
+    box-shadow: 0 0 20px rgba(94, 114, 228, 0.3);
 }
 
 .hand-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-    color: #ccc;
-    font-size: 0.9em;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    padding: 0 0.5rem;
 }
 
 .hand-name {
-    font-weight: bold;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 .hand-type {
     font-style: italic;
-    color: #aae2ff;
+    color: var(--color-info);
+    font-weight: 600;
 }
 
 .cards-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding-top: 10px; /* Give some space from the header */
+    flex-grow: 1;
+    min-height: 120px; /* Ensure a minimum height for empty slots */
 }
 
-/* This creates the stacking effect */
+/* --- Card Stacking & Hover Effects --- */
 .cards-container > .card {
-    transition: transform 0.2s; /* Smooth transition for hover */
+    transition: var(--transition-base);
 }
 
 .cards-container > .card:not(:first-child) {
-    margin-left: -138px; /* Overlap cards by 138px */
+    margin-left: -150px; /* Adjust based on new larger card size */
 }
 
-/* Add a hover effect to lift the card above others */
 .cards-container:hover > .card:hover {
-    transform: translateY(-10px);
+    transform: translateY(-15px) scale(1.05); /* More pronounced lift */
     z-index: 10;
 }
 
-/* When hovering the container, slightly separate the cards for better selection */
 .cards-container:hover > .card:not(:first-child) {
-    margin-left: -99px;
+    margin-left: -135px; /* Slightly separate cards on hover for better selection */
 }
 
-/* Specific adjustments for different hands */
-.front {
-    flex-basis: 25%;
-}
-.middle {
-    flex-basis: 40%;
-}
-.back {
-    flex-basis: 40%;
-}
-
-/* Compact styles for the results table */
+/* --- Compact Styles for Results Screen --- */
 .hand-slot.compact {
-    padding: 5px;
+    padding: 0.5rem;
     margin: 0;
     min-height: auto;
     border: none;
     background-color: transparent;
+    width: auto;
+    box-shadow: none;
+    transform: none;
+}
+
+.hand-slot.compact:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: transparent;
 }
 
 .hand-slot.compact .cards-container {
-    gap: 2px;
-    justify-content: center;
+    gap: 0;
+    padding-top: 0;
 }
 
 .hand-slot.compact .card {
-    /* Increase card size on results screen for better visibility */
     transform: scale(0.6);
-    /* Adjust vertical margin to compensate for scaling */
-    margin: -60px 0;
+    margin: -60px 0; /* Adjust vertical margin for stacking */
 }
 
-/* Override the general overlap for the compact results view */
 .hand-slot.compact .cards-container > .card:not(:first-child) {
-    margin-left: -85px;
+    margin-left: -90px; /* Overlap for compact view */
+}
+
+.hand-slot.compact .card:hover {
+    transform: scale(0.65) translateY(-5px); /* Subtle hover for compact cards */
 }
 
 .hand-slot.compact .hand-header {
     justify-content: center;
     font-size: 0.9em;
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 0.5rem;
 }

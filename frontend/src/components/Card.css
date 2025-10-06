@@ -1,18 +1,21 @@
 /* frontend/src/components/Card.css */
+
 .card {
-    width: 240px; /* A smaller, more manageable base size */
+    width: 240px;
     height: 336px;
     cursor: pointer;
-    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smoother transition */
-    border-radius: 10px; /* More pronounced rounded corners */
+    transition: var(--transition-base);
+    border-radius: var(--border-radius-lg); /* Use global theme variable */
     overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25); /* Deeper shadow */
-    background-color: #fff; /* Add a background for card backs */
+    box-shadow: var(--shadow-md);
+    background-color: #fff;
+    border: 2px solid transparent; /* Prepare for selected state */
+    will-change: transform, box-shadow; /* Performance optimization */
 }
 
 .card:hover {
-    transform: translateY(-8px) scale(1.03); /* Lift and grow effect */
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35); /* More prominent shadow on hover */
+    transform: translateY(-10px) scale(1.05); /* Enhanced lift and grow effect */
+    box-shadow: var(--shadow-lg);
 }
 
 .card img {
@@ -22,7 +25,7 @@
 }
 
 .card.selected {
-    transform: translateY(-5px);
-    box-shadow: 0 0 15px 3px #3498db;
-    border: 2px solid #3498db;
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 0 25px 5px rgba(94, 114, 228, 0.7); /* Glowing effect */
+    border: 2px solid var(--color-primary);
 }
