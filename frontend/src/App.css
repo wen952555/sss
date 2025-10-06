@@ -131,6 +131,32 @@ main {
     text-align: center;
 }
 
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px; /* Slightly smaller base font for mobile */
+    }
+
+    .main-nav {
+        padding: 0.8rem 1rem; /* Tighter padding */
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .main-nav a {
+        font-size: 1rem;
+    }
+
+    .auth-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    main {
+        padding: 1rem; /* Less padding on mobile */
+    }
+}
+
 .success-message {
     color: white;
     background-color: var(--color-success);

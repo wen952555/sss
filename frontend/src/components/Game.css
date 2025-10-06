@@ -160,3 +160,33 @@
     transform: none;
     box-shadow: none;
 }
+
+@media (max-width: 768px) {
+    .game-container {
+        padding: 0.5rem;
+    }
+
+    .game-header {
+        margin-bottom: 0.5rem;
+    }
+
+    .back-to-lobby-button {
+        position: static;
+        transform: none;
+        margin-bottom: 1rem;
+        display: block;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .player-main-hand {
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .game-actions button {
+        padding: 0.7rem 1rem;
+        font-size: 0.9rem;
+    }
+}

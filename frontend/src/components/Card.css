@@ -29,3 +29,15 @@
     box-shadow: 0 0 25px 5px rgba(94, 114, 228, 0.7); /* Glowing effect */
     border: 2px solid var(--color-primary);
 }
+
+@media (max-width: 768px) {
+    .card {
+        width: 60px;
+        height: 84px;
+        border-radius: var(--border-radius-sm);
+    }
+
+    .card:hover {
+        transform: translateY(-5px) scale(1.08);
+    }
+}

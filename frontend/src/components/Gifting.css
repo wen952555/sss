@@ -95,3 +95,17 @@
     color: var(--color-warning); /* Use warning color for the ID to stand out */
     margin: 0 0.5rem;
 }
+
+@media (max-width: 768px) {
+    .gifting-container {
+        padding: 1rem;
+    }
+
+    .search-form {
+        flex-direction: column;
+    }
+
+    .send-form {
+        width: 100%;
+    }
+}
