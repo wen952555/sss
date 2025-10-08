@@ -6,10 +6,28 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': {
+      // Proxy API requests to the backend
+      '/auth': {
         target: 'http://localhost:14722',
         changeOrigin: true,
       },
+      '/games': {
+        target: 'http://localhost:14722',
+        changeOrigin: true,
+      },
+       '/user': {
+        target: 'http://localhost:14722',
+        changeOrigin: true,
+      },
+       '/points': {
+        target: 'http://localhost:14722',
+        changeOrigin: true,
+      },
+      '/test-db': {
+        target: 'http://localhost:14722',
+        changeOrigin: true,
+      },
+      // Proxy WebSocket requests
       '/socket.io': {
         target: 'ws://localhost:14722',
         ws: true,

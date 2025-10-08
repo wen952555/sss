@@ -369,7 +369,7 @@ io.on('connection', (socket) => {
 
 
 // --- API Routes ---
-app.get('/api/test-db', async (req, res) => {
+app.get('/test-db', async (req, res) => {
   try {
     const [rows] = await db.query('SELECT 1 + 1 AS solution');
     res.json({ success: true, message: 'Database connection successful!', data: rows[0] });
@@ -379,7 +379,7 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-app.get('/api/games', async (req, res) => {
+app.get('/games', async (req, res) => {
   try {
     const [games] = await db.query('SELECT * FROM games ORDER BY created_at DESC LIMIT 10');
     for (let game of games) {
@@ -394,7 +394,7 @@ app.get('/api/games', async (req, res) => {
 });
 
 // --- Auth Routes (Refactored with Transactions) ---
-app.post('/api/auth/register', async (req, res) => {
+app.post('/auth/register', async (req, res) => {
     const { phone, password } = req.body;
 
     if (!phone || !password) {
@@ -482,7 +482,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/auth/login', async (req, res) => {
     const { phone, password } = req.body;
     if (!phone || !password) {
         return res.status(400).json({ success: false, message: 'Phone number and password are required.' });
@@ -534,7 +534,7 @@ const authenticateToken = (req, res, next) => {
 // --- User & Gifting Routes ---
 
 // Find a user by their phone number
-app.post('/api/user/find', authenticateToken, async (req, res) => {
+app.post('/user/find', authenticateToken, async (req, res) => {
     const { phone } = req.body;
     if (!phone) {
         return res.status(400).json({ success: false, message: 'Phone number is required.' });
@@ -558,7 +558,7 @@ app.post('/api/user/find', authenticateToken, async (req, res) => {
 });
 
 // Send points from one user to another
-app.post('/api/points/send', authenticateToken, async (req, res) => {
+app.post('/points/send', authenticateToken, async (req, res) => {
     const { recipientId, amount } = req.body;
     const senderId = req.user.id;
 
