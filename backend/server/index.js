@@ -419,32 +419,6 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
-// --- Auth Helper Functions (Transaction-aware) ---
-async function generateUniqueDisplayId(connection) {
-    let displayId;
-    let isUnique = false;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 100;
-
-    while (!isUnique && attempts < MAX_ATTEMPTS) {
-        const randomNum = Math.floor(Math.random() * 1000);
-        displayId = String(randomNum).padStart(3, '0');
-
-        // Use the provided connection and lock the row for reading
-        const [existingUsers] = await connection.query('SELECT id FROM users WHERE display_id = ? FOR UPDATE', [displayId]);
-        if (existingUsers.length === 0) {
-            isUnique = true;
-        }
-        attempts++;
-    }
-
-    if (!isUnique) {
-        throw new Error('Could not generate a unique display ID.');
-    }
-
-    return displayId;
-}
-
 // --- Auth Routes (Refactored with Transactions) ---
 app.post('/api/auth/register', async (req, res) => {
     const { phone, password } = req.body;
@@ -460,49 +434,64 @@ app.post('/api/auth/register', async (req, res) => {
     try {
         // 1. Get a connection from the pool
         connection = await db.getConnection();
-        
-        // 2. Start a transaction
         await connection.beginTransaction();
-        console.log("Transaction started for registration.");
 
-        // 3. Check for existing user (with a lock to prevent race conditions)
+        // 2. Check for existing user (with a lock to prevent race conditions on phone number)
         const [existingUser] = await connection.query('SELECT id FROM users WHERE phone = ? FOR UPDATE', [phone]);
         if (existingUser.length > 0) {
             await connection.rollback();
             return res.status(409).json({ success: false, message: 'This phone number is already registered.' });
         }
 
-        // 4. Generate a unique ID within the transaction
-        const displayId = await generateUniqueDisplayId(connection);
+        // 3. Hash password once before the loop
+        const hashedPassword = bcrypt.hashSync(password, 10);
         
-        // 5. Hash password and insert user
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await connection.query(
-            'INSERT INTO users (phone, password, display_id) VALUES (?, ?, ?)',
-            [phone, hashedPassword, displayId]
-        );
-        
+        // 4. Attempt to insert the new user, retrying on display_id collision
+        let attempts = 0;
+        const maxAttempts = 100; // A safe limit to prevent infinite loops
+        let userCreated = false;
+
+        while (attempts < maxAttempts && !userCreated) {
+            const displayId = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+            try {
+                await connection.query(
+                    'INSERT INTO users (phone, password, display_id) VALUES (?, ?, ?)',
+                    [phone, hashedPassword, displayId]
+                );
+                userCreated = true; // If insert is successful, exit loop
+            } catch (error) {
+                // Check if the error is a duplicate entry for the 'display_id' unique key
+                if (error.code === 'ER_DUP_ENTRY' && error.message.includes('display_id')) {
+                    console.log(`Display ID ${displayId} collision, retrying...`);
+                    attempts++;
+                    // The loop will continue for another attempt
+                } else {
+                    // For any other error, re-throw it to be caught by the outer catch block
+                    throw error;
+                }
+            }
+        }
+
+        // 5. If the loop finished without creating a user, something went wrong.
+        if (!userCreated) {
+            throw new Error('Could not create user with a unique display ID after multiple attempts.');
+        }
+
         // 6. Commit the transaction
         await connection.commit();
-        console.log("Transaction committed successfully.");
-
         res.status(201).json({ success: true, message: 'User registered successfully.' });
 
     } catch (error) {
-        console.error('Registration failed:', error);
         // 7. Rollback the transaction if any error occurs
         if (connection) await connection.rollback();
         
-        if (error.message.includes('unique display ID')) {
-            return res.status(500).json({ success: false, message: 'Could not assign a unique ID. Please try again.' });
-        }
+        console.error('Registration failed:', error);
         res.status(500).json({ success: false, message: 'An internal server error occurred during registration.' });
 
     } finally {
         // 8. Always release the connection back to the pool
         if (connection) {
             connection.release();
-            console.log("Connection released.");
         }
     }
 });
