@@ -14,7 +14,7 @@ const AuthModal = ({ show, onClose }) => {
         setMessage('');
 
         const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-        const url = `${import.meta.env.VITE_BACKEND_URL || ''}${endpoint}`;
+        const url = endpoint;
 
         try {
             const response = await fetch(url, {

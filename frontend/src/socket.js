@@ -3,9 +3,9 @@ import { io } from 'socket.io-client';
 
 // This file centralizes the socket connection logic so it can be shared across components.
 
-// This will connect to the backend via the _worker.js proxy by default.
-// If VITE_BACKEND_URL is set in a .env file for local development, it will use that instead.
-const URL = import.meta.env.VITE_BACKEND_URL || '';
+// Use a relative path for the socket connection. This will ensure it works
+// correctly in any environment, whether local development or production.
+const URL = '';
 
 export const socket = io(URL, {
   path: '/socket.io/',
