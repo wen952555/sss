@@ -16,7 +16,18 @@ const Lobby = ({ token }) => { // Accept token as a prop
       socket.connect();
     }
 
-    socket.emit('get_rooms');
+    // --- FIX START: Wait for connection before emitting ---
+    function onConnect() {
+      console.log('Socket connected, fetching rooms...');
+      socket.emit('get_rooms');
+    }
+
+    if (socket.connected) {
+      onConnect();
+    } else {
+      socket.on('connect', onConnect);
+    }
+    // --- FIX END ---
 
     const handleRoomsUpdate = (updatedRooms) => {
       setRooms(updatedRooms);
@@ -24,6 +35,7 @@ const Lobby = ({ token }) => { // Accept token as a prop
     socket.on('rooms_update', handleRoomsUpdate);
 
     return () => {
+      socket.off('connect', onConnect);
       socket.off('rooms_update', handleRoomsUpdate);
     };
   }, [token]);
