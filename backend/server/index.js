@@ -440,11 +440,12 @@ app.post('/api/auth/register', async (req, res) => {
         const [existingUser] = await connection.query('SELECT id FROM users WHERE phone = ? FOR UPDATE', [phone]);
         if (existingUser.length > 0) {
             await connection.rollback();
+            connection.release();
             return res.status(409).json({ success: false, message: 'This phone number is already registered.' });
         }
 
         // 3. Hash password once before the loop
-        const hashedPassword = bcrypt.hashSync(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
         
         // 4. Attempt to insert the new user, retrying on display_id collision
         let attempts = 0;
@@ -461,7 +462,7 @@ app.post('/api/auth/register', async (req, res) => {
                 userCreated = true; // If insert is successful, exit loop
             } catch (error) {
                 // Check if the error is a duplicate entry for the 'display_id' unique key
-                if (error.code === 'ER_DUP_ENTRY' && error.message.includes('display_id')) {
+                if (error.code === 'ER_DUP_ENTRY' && error.message.includes('users.display_id')) {
                     console.log(`Display ID ${displayId} collision, retrying...`);
                     attempts++;
                     // The loop will continue for another attempt
@@ -474,7 +475,9 @@ app.post('/api/auth/register', async (req, res) => {
 
         // 5. If the loop finished without creating a user, something went wrong.
         if (!userCreated) {
-            throw new Error('Could not create user with a unique display ID after multiple attempts.');
+            await connection.rollback();
+            connection.release();
+            return res.status(500).json({ success: false, message: 'Could not create user with a unique display ID after multiple attempts.' });
         }
 
         // 6. Commit the transaction
@@ -483,8 +486,10 @@ app.post('/api/auth/register', async (req, res) => {
 
     } catch (error) {
         // 7. Rollback the transaction if any error occurs
-        if (connection) await connection.rollback();
-        
+        if (connection) {
+            await connection.rollback();
+        }
+
         console.error('Registration failed:', error);
         res.status(500).json({ success: false, message: 'An internal server error occurred during registration.' });
 
