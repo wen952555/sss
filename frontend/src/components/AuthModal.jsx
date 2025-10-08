@@ -13,7 +13,7 @@ const AuthModal = ({ show, onClose }) => {
         setError('');
         setMessage('');
 
-        const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+        const endpoint = isLogin ? '/auth/login' : '/auth/register';
         const url = endpoint;
 
         try {
