@@ -40,17 +40,17 @@ const SPECIAL_HAND_TYPES = {
 // Scores for specific hand types in specific segments
 const SEGMENT_SCORES = {
     front: {
-        THREE_OF_A_KIND: 3 // 冲三
+        '三条': 3 // 冲三
     },
     middle: {
-        FULL_HOUSE: 2, // 中墩葫芦
-        FOUR_OF_A_KIND: 8, // 中墩铁支
-        STRAIGHT_FLUSH: 10 // 中墩同花顺
+        '葫芦': 2, // 中墩葫芦
+        '铁支': 8, // 中墩铁支
+        '同花顺': 10 // 中墩同花顺
     },
     back: {
-        FOUR_OF_A_KIND: 4, // 后墩铁支
-        STRAIGHT_FLUSH: 5, // 后墩同花顺
-        ROYAL_FLUSH: 10 // 后墩同花大顺
+        '铁支': 4, // 后墩铁支
+        '同花顺': 5, // 后墩同花顺
+        '同花大顺': 10 // 后墩同花大顺
     }
 };
 
@@ -272,8 +272,59 @@ function isValidHand(front, middle, back) {
     return true;
 }
 
+// --- Player vs. Player Comparison ---
+
+function comparePlayerHands(p1_eval, p2_eval) {
+    const results = {
+        front: compareEvaluatedHands(p1_eval.front, p2_eval.front),
+        middle: compareEvaluatedHands(p1_eval.middle, p2_eval.middle),
+        back: compareEvaluatedHands(p1_eval.back, p2_eval.back),
+    };
+
+    let p1_score = 0;
+    let p2_score = 0;
+    let p1_wins = 0;
+    let p2_wins = 0;
+
+    // Calculate score for each segment
+    Object.entries(results).forEach(([segment, result]) => {
+        let segment_score = 1; // Default score for winning a segment
+
+        // Check for special segment bonuses
+        if (result > 0) { // Player 1 wins segment
+            const p1_hand_type = p1_eval[segment].type.name;
+            const bonus = SEGMENT_SCORES[segment]?.[p1_hand_type] || 1;
+            segment_score = bonus;
+            p1_score += segment_score;
+            p1_wins++;
+        } else if (result < 0) { // Player 2 wins segment
+            const p2_hand_type = p2_eval[segment].type.name;
+            const bonus = SEGMENT_SCORES[segment]?.[p2_hand_type] || 1;
+            segment_score = bonus;
+            p2_score += segment_score;
+            p2_wins++;
+        }
+    });
+
+    // Apply "scoop" (打枪) bonus if one player wins all three segments
+    if (p1_wins === 3) {
+        p1_score *= 2;
+    } else if (p2_wins === 3) {
+        p2_score *= 2;
+    }
+
+    // The final score is the difference
+    const final_p1_score = p1_score - p2_score;
+    const final_p2_score = p2_score - p1_score;
+
+
+    return { p1_score: final_p1_score, p2_score: final_p2_score };
+}
+
+
 module.exports = {
     dealCards,
+    comparePlayerHands,
     evaluate13CardHand,
     evaluate5CardHand,
     evaluate3CardHand,

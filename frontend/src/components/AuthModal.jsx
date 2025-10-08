@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './AuthModal.css';
 
-const AuthModal = ({ isOpen, onClose }) => {
+const AuthModal = ({ show, onClose }) => {
     const [isLogin, setIsLogin] = useState(true);
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
@@ -14,7 +14,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         setMessage('');
 
         const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-        const url = `https://xxx.9525.ip-ddns.com${endpoint}`;
+        const url = `${import.meta.env.VITE_BACKEND_URL || ''}${endpoint}`;
 
         try {
             const response = await fetch(url, {
@@ -46,7 +46,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         }
     };
 
-    if (!isOpen) return null;
+    if (!show) return null;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
