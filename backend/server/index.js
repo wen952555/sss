@@ -5,12 +5,12 @@ const http = require('http');
 const { Server } = require("socket.io");
 const cors = require('cors');
 const path = require('path');
-const db = require('../db');
+const dbPromise = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const fs = require('fs/promises');
-const mysql = require('mysql2/promise');
 
+let db; // Will be initialized after the promise resolves
 
 const {
     dealCards,
@@ -23,89 +23,63 @@ const {
     SPECIAL_HAND_TYPES
 } = require('./gameLogic');
 
-// --- Database Setup ---
+// --- Database Setup (SQLite compatible) ---
 async function setupDatabase() {
-  console.log('Starting database setup check...');
+    console.log('Starting SQLite database setup check...');
+    const rawDb = db.getRawDb(); // Get the raw sqlite3 db object
 
-  const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-  };
+    try {
+        // Check if the 'users' table already exists
+        const tableExists = await rawDb.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
+        if (tableExists) {
+            console.log('✅ Database tables already exist. Skipping setup.');
+            return;
+        }
 
-  if (!dbConfig.host || !dbConfig.user || !dbConfig.database) {
-    console.error('🔴 Error: Database configuration is missing in your .env file.');
-    console.error('Please ensure DB_HOST, DB_USER, and DB_NAME are set.');
-    process.exit(1);
-  }
+        console.log('Tables not found. Proceeding with database setup...');
 
-  let connection;
-  try {
-    connection = await mysql.createConnection(dbConfig);
-    console.log('✅ Successfully connected to the database for setup check.');
+        // SQLite-compatible schema
+        const schemaSQL = `
+          CREATE TABLE games (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              room_id TEXT NOT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
 
-    // Check if tables already exist to prevent resetting data
-    const [tables] = await connection.query("SHOW TABLES LIKE 'users'");
-    if (tables.length > 0) {
-        console.log('✅ Database tables already exist. Skipping setup.');
-        return;
+          CREATE TABLE player_scores (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              game_id INTEGER NOT NULL,
+              player_id TEXT NOT NULL,
+              player_name TEXT NOT NULL,
+              hand_front TEXT, -- Storing JSON as TEXT
+              hand_middle TEXT,
+              hand_back TEXT,
+              score INTEGER NOT NULL,
+              special_hand_type TEXT,
+              FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+          );
+
+          CREATE TABLE users (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              phone TEXT NOT NULL UNIQUE,
+              password TEXT NOT NULL,
+              display_id TEXT NOT NULL UNIQUE,
+              points INTEGER NOT NULL DEFAULT 1000,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `;
+
+        // Execute the entire schema as a single script
+        await rawDb.exec(schemaSQL);
+
+        console.log('✅ All tables created successfully for SQLite!');
+        console.log('Database setup is complete.');
+
+    } catch (error) {
+        console.error('🔴 An error occurred during SQLite database setup:', error.message);
+        console.error('Stack Trace:', error.stack);
+        process.exit(1); // Exit if setup fails
     }
-
-    console.log('Tables not found. Proceeding with database setup...');
-
-    const schemaSQL = `
-      CREATE TABLE games (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          room_id VARCHAR(255) NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE player_scores (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          game_id INT NOT NULL,
-          player_id VARCHAR(255) NOT NULL,
-          player_name VARCHAR(255) NOT NULL,
-          hand_front JSON,
-          hand_middle JSON,
-          hand_back JSON,
-          score INT NOT NULL,
-          special_hand_type VARCHAR(255),
-          FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
-      );
-
-      CREATE TABLE users (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          phone VARCHAR(20) NOT NULL UNIQUE,
-          password VARCHAR(255) NOT NULL,
-          display_id VARCHAR(3) NOT NULL UNIQUE,
-          points INT NOT NULL DEFAULT 1000,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `;
-
-    const statements = schemaSQL.split(';').filter(statement => statement.trim() !== '');
-    for (const statement of statements) {
-      await connection.query(statement);
-    }
-
-    console.log('✅ All tables created successfully!');
-    console.log('Database setup is complete.');
-
-  } catch (error) {
-    console.error('🔴 An error occurred during database setup:', error.message);
-    if (error.code === 'ER_ACCESS_DENIED_ERROR') {
-        console.error('Hint: This is likely an issue with your database username or password in the .env file.');
-    } else if (error.code === 'ER_BAD_DB_ERROR') {
-        console.error(`Hint: The database "'${dbConfig.database}'" does not seem to exist. Please create it first.`);
-    }
-    process.exit(1); // Exit if setup fails
-  } finally {
-    if (connection) {
-      await connection.end();
-      console.log('Setup connection closed.');
-    }
-  }
 }
 
 
@@ -203,7 +177,7 @@ async function calculateResults(roomId, io) {
             for (let j = i + 1; j < playerIds.length; j++) {
                 const p1_id = playerIds[i];
                 const p2_id = playerIds[j];
-                const { p1_score, p2_score } = comparePlayerHands(p1_id, p2_id, gameState.evaluatedHands[p1_id], gameState.evaluatedHands[p2_id]);
+                const { p1_score, p2_score } = comparePlayerHands(gameState.evaluatedHands[p1_id], gameState.evaluatedHands[p2_id]);
                 finalScores[p1_id].total += p1_score;
                 finalScores[p2_id].total += p2_score;
                 finalScores[p1_id].comparisons[p2_id] = p1_score;
@@ -436,8 +410,8 @@ app.post('/api/auth/register', async (req, res) => {
         connection = await db.getConnection();
         await connection.beginTransaction();
 
-        // 2. Check for existing user (with a lock to prevent race conditions on phone number)
-        const [existingUser] = await connection.query('SELECT id FROM users WHERE phone = ? FOR UPDATE', [phone]);
+        // 2. Check for existing user. NOTE: 'FOR UPDATE' is removed for SQLite compatibility.
+        const [existingUser] = await connection.query('SELECT id FROM users WHERE phone = ?', [phone]);
         if (existingUser.length > 0) {
             await connection.rollback();
             return res.status(409).json({ success: false, message: 'This phone number is already registered.' });
@@ -460,11 +434,11 @@ app.post('/api/auth/register', async (req, res) => {
                 );
                 userCreated = true; // If insert is successful, exit loop
             } catch (error) {
-                // Check if the error is a duplicate entry for the 'display_id' unique key
-                if (error.code === 'ER_DUP_ENTRY' && error.message.includes('users.display_id')) {
+                // Check for SQLite's unique constraint violation for 'display_id'
+                const isDisplayIdCollision = error.code && error.code.includes('SQLITE_CONSTRAINT') && error.message.includes('users.display_id');
+                if (isDisplayIdCollision) {
                     console.log(`Display ID ${displayId} collision, retrying...`);
                     attempts++;
-                    // The loop will continue for another attempt
                 } else {
                     // For any other error, re-throw it to be caught by the outer catch block
                     throw error;
@@ -606,7 +580,7 @@ app.post('/api/points/send', authenticateToken, async (req, res) => {
         connection = await db.getConnection();
         await connection.beginTransaction();
 
-        const [senders] = await connection.query('SELECT points FROM users WHERE id = ? FOR UPDATE', [senderId]);
+        const [senders] = await connection.query('SELECT points FROM users WHERE id = ?', [senderId]);
         if (senders.length === 0) {
             // This should not happen if the token is valid, but as a safeguard:
             throw new Error('Sender not found.');
@@ -618,7 +592,7 @@ app.post('/api/points/send', authenticateToken, async (req, res) => {
             return res.status(400).json({ success: false, message: 'Insufficient points.' });
         }
 
-        const [recipients] = await connection.query('SELECT id FROM users WHERE id = ? FOR UPDATE', [recipientId]);
+        const [recipients] = await connection.query('SELECT id FROM users WHERE id = ?', [recipientId]);
         if (recipients.length === 0) {
             await connection.rollback();
             return res.status(404).json({ success: false, message: 'Recipient not found.' });
@@ -650,10 +624,16 @@ const HOST = '0.0.0.0';
 
 // --- Server Startup ---
 async function startServer() {
-    await setupDatabase();
-    server.listen(PORT, HOST, () => {
-        console.log(`✅ Server is running at http://'${HOST}':'${PORT}'`);
-    });
+    try {
+        db = await dbPromise; // Wait for the DB connection to be established
+        await setupDatabase();
+        server.listen(PORT, HOST, () => {
+            console.log(`✅ Server is running at http://'${HOST}':'${PORT}'`);
+        });
+    } catch (err) {
+        console.error("🔴 Failed to start server:", err);
+        process.exit(1);
+    }
 }
 
 startServer();
