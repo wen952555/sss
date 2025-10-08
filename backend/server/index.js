@@ -1,3 +1,4 @@
+require('dotenv').config();
 // server/index.js
 const express = require('express');
 const http = require('http');
@@ -9,7 +10,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const fs = require('fs/promises');
 const mysql = require('mysql2/promise');
-require('dotenv').config();
 
 
 const {
