@@ -440,7 +440,6 @@ app.post('/api/auth/register', async (req, res) => {
         const [existingUser] = await connection.query('SELECT id FROM users WHERE phone = ? FOR UPDATE', [phone]);
         if (existingUser.length > 0) {
             await connection.rollback();
-            connection.release();
             return res.status(409).json({ success: false, message: 'This phone number is already registered.' });
         }
 
@@ -476,7 +475,6 @@ app.post('/api/auth/register', async (req, res) => {
         // 5. If the loop finished without creating a user, something went wrong.
         if (!userCreated) {
             await connection.rollback();
-            connection.release();
             return res.status(500).json({ success: false, message: 'Could not create user with a unique display ID after multiple attempts.' });
         }
 
