@@ -18,7 +18,7 @@ const {
     evaluate13CardHand,
     evaluate5CardHand,
     evaluate3CardHand,
-    compareEvaluatedHands,
+    comparePlayerHands,
     SEGMENT_SCORES,
     SPECIAL_HAND_TYPES
 } = require('./gameLogic');
@@ -97,7 +97,7 @@ async function setupDatabase() {
     if (error.code === 'ER_ACCESS_DENIED_ERROR') {
         console.error('Hint: This is likely an issue with your database username or password in the .env file.');
     } else if (error.code === 'ER_BAD_DB_ERROR') {
-        console.error(`Hint: The database "${dbConfig.database}" does not seem to exist. Please create it first.`);
+        console.error(`Hint: The database "'${dbConfig.database}'" does not seem to exist. Please create it first.`);
     }
     process.exit(1); // Exit if setup fails
   } finally {
@@ -302,7 +302,7 @@ io.on('connection', (socket) => {
         const dealtCards = dealCards();
         const playerIds = Object.keys(room.players);
         playerIds.forEach((socketId, i) => {
-            const hand = dealtCards[`player${i + 1}`];
+            const hand = dealtCards[`player'${i + 1}'`];
             if (hand) {
                 room.gameState.hands[socketId] = hand;
                 io.to(socketId).emit('deal_hand', hand);
@@ -419,18 +419,19 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
-// --- Auth Helper Functions ---
-async function generateUniqueDisplayId(db) {
+// --- Auth Helper Functions (Transaction-aware) ---
+async function generateUniqueDisplayId(connection) {
     let displayId;
     let isUnique = false;
     let attempts = 0;
-    const MAX_ATTEMPTS = 100; // Prevent an infinite loop
+    const MAX_ATTEMPTS = 100;
 
     while (!isUnique && attempts < MAX_ATTEMPTS) {
         const randomNum = Math.floor(Math.random() * 1000);
         displayId = String(randomNum).padStart(3, '0');
 
-        const [existingUsers] = await db.query('SELECT id FROM users WHERE display_id = ?', [displayId]);
+        // Use the provided connection and lock the row for reading
+        const [existingUsers] = await connection.query('SELECT id FROM users WHERE display_id = ? FOR UPDATE', [displayId]);
         if (existingUsers.length === 0) {
             isUnique = true;
         }
@@ -444,41 +445,68 @@ async function generateUniqueDisplayId(db) {
     return displayId;
 }
 
-// --- Auth Routes ---
+// --- Auth Routes (Refactored with Transactions) ---
 app.post('/api/auth/register', async (req, res) => {
     const { phone, password } = req.body;
+
     if (!phone || !password) {
         return res.status(400).json({ success: false, message: 'Phone number and password are required.' });
     }
-
-    // Basic validation for phone number format (can be improved)
     if (!/^\d{11}$/.test(phone)) {
         return res.status(400).json({ success: false, message: 'Please enter a valid 11-digit phone number.' });
     }
 
+    let connection;
     try {
-        const [existingUser] = await db.query('SELECT id FROM users WHERE phone = ?', [phone]);
+        // 1. Get a connection from the pool
+        connection = await db.getConnection();
+        
+        // 2. Start a transaction
+        await connection.beginTransaction();
+        console.log("Transaction started for registration.");
+
+        // 3. Check for existing user (with a lock to prevent race conditions)
+        const [existingUser] = await connection.query('SELECT id FROM users WHERE phone = ? FOR UPDATE', [phone]);
         if (existingUser.length > 0) {
+            await connection.rollback();
             return res.status(409).json({ success: false, message: 'This phone number is already registered.' });
         }
 
-        const displayId = await generateUniqueDisplayId(db);
+        // 4. Generate a unique ID within the transaction
+        const displayId = await generateUniqueDisplayId(connection);
+        
+        // 5. Hash password and insert user
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        await db.query(
+        await connection.query(
             'INSERT INTO users (phone, password, display_id) VALUES (?, ?, ?)',
             [phone, hashedPassword, displayId]
         );
+        
+        // 6. Commit the transaction
+        await connection.commit();
+        console.log("Transaction committed successfully.");
 
         res.status(201).json({ success: true, message: 'User registered successfully.' });
+
     } catch (error) {
         console.error('Registration failed:', error);
+        // 7. Rollback the transaction if any error occurs
+        if (connection) await connection.rollback();
+        
         if (error.message.includes('unique display ID')) {
             return res.status(500).json({ success: false, message: 'Could not assign a unique ID. Please try again.' });
         }
         res.status(500).json({ success: false, message: 'An internal server error occurred during registration.' });
+
+    } finally {
+        // 8. Always release the connection back to the pool
+        if (connection) {
+            connection.release();
+            console.log("Connection released.");
+        }
     }
 });
+
 
 app.post('/api/auth/login', async (req, res) => {
     const { phone, password } = req.body;
@@ -601,7 +629,7 @@ app.post('/api/points/send', authenticateToken, async (req, res) => {
 
         await connection.commit();
 
-        res.json({ success: true, message: `Successfully sent ${pointsAmount} points.` });
+        res.json({ success: true, message: `Successfully sent '${pointsAmount}' points.` });
 
     } catch (error) {
         if (connection) await connection.rollback();
@@ -624,7 +652,7 @@ const HOST = '0.0.0.0';
 async function startServer() {
     await setupDatabase();
     server.listen(PORT, HOST, () => {
-        console.log(`✅ Server is running at http://${HOST}:${PORT}`);
+        console.log(`✅ Server is running at http://'${HOST}':'${PORT}'`);
     });
 }
 
