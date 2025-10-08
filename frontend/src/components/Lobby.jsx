@@ -35,6 +35,19 @@ const Lobby = ({ token }) => { // Accept token as a prop
     }
   };
 
+  const getStatusInChinese = (status) => {
+    switch (status) {
+      case 'waiting':
+        return '等待中';
+      case 'playing':
+        return '游戏中';
+      case 'finished':
+        return '已结束';
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="lobby-container">
       <h2>游戏大厅</h2>
@@ -59,7 +72,7 @@ const Lobby = ({ token }) => { // Accept token as a prop
               <li key={room.id} className="room-list-item">
                 <div className="room-info">
                   <span className="room-name">房间: {room.id}</span>
-                  <span className="room-status">状态: {room.status} ({room.playerCount}/4)</span>
+                  <span className="room-status">状态: {getStatusInChinese(room.status)} ({room.playerCount}/4)</span>
                   <div className="room-players">
                     玩家: {room.players.join(', ') || '等待中...'}
                   </div>
@@ -68,7 +81,7 @@ const Lobby = ({ token }) => { // Accept token as a prop
                   {room.status === 'waiting' && room.playerCount < 4 ? (
                     <button onClick={() => handleJoinRoom(room.id)}>加入</button>
                   ) : (
-                    <button disabled>满员或游戏中</button>
+                    <button disabled>房间已满或正在游戏</button>
                   )}
                 </div>
               </li>

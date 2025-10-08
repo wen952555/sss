@@ -20,7 +20,7 @@ const Game = ({ token }) => {
     const [myHand, setMyHand] = useState([]);
     const [arrangedHands, setArrangedHands] = useState(createEmptyHands());
     const [selectedCard, setSelectedCard] = useState(null);
-    const [gameState, setGameState] = useState('waiting');
+    const [gameState, setGameState] = useState('等待中');
     const [gameResult, setGameResult] = useState(null);
     const [error, setError] = useState('');
 
@@ -40,7 +40,7 @@ const Game = ({ token }) => {
         const handlePlayersUpdate = (updatedPlayers) => setPlayers(updatedPlayers);
 
         const handleGameStarted = () => {
-            setGameState('playing');
+            setGameState('游戏中');
             setArrangedHands(createEmptyHands());
             setGameResult(null);
             setError('');
@@ -49,7 +49,7 @@ const Game = ({ token }) => {
         const handleDealHand = (hand) => setMyHand(sortHand(hand));
         const handleGameOver = (results) => {
             setGameResult(results);
-            setGameState('results');
+            setGameState('比牌结果');
         };
         const handleErrorMessage = (message) => setError(message);
 
@@ -57,7 +57,7 @@ const Game = ({ token }) => {
             alert("有玩家离线或房主重置了游戏。");
             setMyHand([]);
             setArrangedHands(createEmptyHands());
-            setGameState('waiting');
+            setGameState('等待中');
             setGameResult(null);
         };
 
@@ -149,7 +149,7 @@ const Game = ({ token }) => {
         if (myHand.length > 0) return setError("请摆完所有13张牌。");
         if (!isValidHand(arrangedHands.front, arrangedHands.middle, arrangedHands.back)) return setError("牌型不合法 (倒水)，请重新摆牌。");
         socket.emit('submit_hand', arrangedHands);
-        setGameState('submitted');
+        setGameState('已提交');
     };
 
     const handleClearHands = () => {
@@ -178,10 +178,10 @@ const Game = ({ token }) => {
         }
     };
 
-    const getPlayerStatusIcon = (player) => {
-        if (gameState === 'playing' && player.hasSubmitted) return '✔️';
-        if (gameState === 'waiting') {
-            return player.isHost ? '👑' : (player.isReady ? '✅' : '❌');
+    const getPlayerStatusText = (player) => {
+        if (gameState === '游戏中' && player.hasSubmitted) return ' (已提交)';
+        if (gameState === '等待中') {
+            return player.isHost ? ' (房主)' : (player.isReady ? ' (已准备)' : ' (未准备)');
         }
         return '';
     };
@@ -196,7 +196,7 @@ const Game = ({ token }) => {
                         <span>玩家列表:</span>
                         <ul>
                             {players.map(p => (
-                                <li key={p.id || p.socketId}>{p.name} {getPlayerStatusIcon(p)}</li>
+                                <li key={p.id || p.socketId}>{p.name}{getPlayerStatusText(p)}</li>
                             ))}
                         </ul>
                     </div>
@@ -204,7 +204,7 @@ const Game = ({ token }) => {
                 {error && <p className="error-message">{error}</p>}
             </header>
 
-            {gameState === 'waiting' && (
+            {gameState === '等待中' && (
                 <div className="waiting-controls">
                     {!me?.isHost && (
                         <button onClick={handleReadyClick} className="ready-button">
@@ -219,7 +219,7 @@ const Game = ({ token }) => {
                 </div>
             )}
 
-            {gameState === 'playing' && (
+            {gameState === '游戏中' && (
                  <>
                     <div className="arranged-hands">
                         <Hand name="前墩 (3)" cards={arrangedHands.front} onCardClick={(card) => handleCardClick(card, 'front')} onSlotClick={() => handleHandSlotClick('front')} selectedCard={selectedCard} />
@@ -238,11 +238,11 @@ const Game = ({ token }) => {
                 </>
             )}
 
-            {gameState === 'submitted' && (
+            {gameState === '已提交' && (
                 <div className="waiting-submission"><h2>手牌已提交！等待其他玩家...</h2></div>
             )}
 
-            {gameState === 'results' && gameResult && (
+            {gameState === '比牌结果' && gameResult && (
                 <Results results={gameResult} />
             )}
         </div>

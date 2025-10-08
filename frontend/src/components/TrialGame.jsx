@@ -21,7 +21,7 @@ const TrialGame = () => {
     const [players, setPlayers] = useState([]);
     const [arrangedHands, setArrangedHands] = useState(createEmptyHands());
     const [selectedCard, setSelectedCard] = useState(null);
-    const [gameState, setGameState] = useState('playing');
+    const [gameState, setGameState] = useState('进行中');
     const [gameResult, setGameResult] = useState(null);
     const [error, setError] = useState('');
 
@@ -134,7 +134,7 @@ const TrialGame = () => {
         }, {});
 
         setGameResult({ scores: finalScores, hands: submittedHands, evals, playerDetails });
-        setGameState('results');
+        setGameState('比牌结果');
         setError('');
     };
 
@@ -146,7 +146,7 @@ const TrialGame = () => {
                 {error && <p className="error-message">{error}</p>}
             </header>
 
-            {gameState === 'playing' && (
+            {gameState === '进行中' && (
                 <>
                     <div className="arranged-hands">
                         <Hand name="前墩 (3)" cards={arrangedHands.front} onCardClick={(card) => handleCardClick(card, 'front')} selectedCard={selectedCard} />
@@ -160,7 +160,7 @@ const TrialGame = () => {
                 </>
             )}
 
-            {gameState === 'results' && gameResult && (
+            {gameState === '比牌结果' && gameResult && (
                 <>
                     <Results results={gameResult} />
                     <button onClick={() => window.location.reload()}>再玩一局</button>
