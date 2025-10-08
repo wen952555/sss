@@ -1,4 +1,5 @@
 // server/index.js
+try {
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
@@ -531,5 +532,13 @@ const PORT = process.env.PORT || 14722;
 const HOST = '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
-  console.log(`服务器正在 http://${HOST}:${PORT} 上运行`);
+  console.log(`✅ Server is running at http://${HOST}:${PORT}`);
 });
+
+} catch (err) {
+    console.error('🔴 FATAL: An unexpected error occurred during server startup.');
+    console.error(err.stack);
+    console.error('This is often caused by a coding error or a problem with the database schema.');
+    console.error('ACTION: Please check the logs above for specific errors. If the error mentions a database column (like `display_id`), you likely need to rebuild your database by running `npm run db:setup`.');
+    process.exit(1);
+}
