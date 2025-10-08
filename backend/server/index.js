@@ -254,7 +254,7 @@ io.on('connection', (socket) => {
 
     socket.on('join_room', (roomId, token) => {
         try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_default_secret');
             const displayId = decoded.display_id; // Use display_id from token
             const userId = decoded.id;
             currentRoomId = roomId;
@@ -529,7 +529,7 @@ app.post('/api/auth/login', async (req, res) => {
         // Include the display_id in the token payload
         const token = jwt.sign(
             { id: user.id, display_id: user.display_id },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'your_default_secret',
             { expiresIn: '1h' }
         );
 
@@ -547,7 +547,7 @@ const authenticateToken = (req, res, next) => {
 
     if (token == null) return res.sendStatus(401);
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET || 'your_default_secret', (err, user) => {
         if (err) {
             console.error('JWT verification error:', err);
             return res.sendStatus(403);
