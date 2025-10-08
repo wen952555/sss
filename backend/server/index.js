@@ -1,5 +1,4 @@
 // server/index.js
-try {
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
@@ -8,6 +7,10 @@ const path = require('path');
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs/promises');
+const mysql = require('mysql2/promise');
+require('dotenv').config();
+
 
 const {
     dealCards,
@@ -19,6 +22,92 @@ const {
     SEGMENT_SCORES,
     SPECIAL_HAND_TYPES
 } = require('./gameLogic');
+
+// --- Database Setup ---
+async function setupDatabase() {
+  console.log('Starting database setup check...');
+
+  const dbConfig = {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  };
+
+  if (!dbConfig.host || !dbConfig.user || !dbConfig.database) {
+    console.error('🔴 Error: Database configuration is missing in your .env file.');
+    console.error('Please ensure DB_HOST, DB_USER, and DB_NAME are set.');
+    process.exit(1);
+  }
+
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+    console.log('✅ Successfully connected to the database for setup check.');
+
+    // Check if tables already exist to prevent resetting data
+    const [tables] = await connection.query("SHOW TABLES LIKE 'users'");
+    if (tables.length > 0) {
+        console.log('✅ Database tables already exist. Skipping setup.');
+        return;
+    }
+
+    console.log('Tables not found. Proceeding with database setup...');
+
+    const schemaSQL = `
+      CREATE TABLE games (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          room_id VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE player_scores (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          game_id INT NOT NULL,
+          player_id VARCHAR(255) NOT NULL,
+          player_name VARCHAR(255) NOT NULL,
+          hand_front JSON,
+          hand_middle JSON,
+          hand_back JSON,
+          score INT NOT NULL,
+          special_hand_type VARCHAR(255),
+          FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          phone VARCHAR(20) NOT NULL UNIQUE,
+          password VARCHAR(255) NOT NULL,
+          display_id VARCHAR(3) NOT NULL UNIQUE,
+          points INT NOT NULL DEFAULT 1000,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    const statements = schemaSQL.split(';').filter(statement => statement.trim() !== '');
+    for (const statement of statements) {
+      await connection.query(statement);
+    }
+
+    console.log('✅ All tables created successfully!');
+    console.log('Database setup is complete.');
+
+  } catch (error) {
+    console.error('🔴 An error occurred during database setup:', error.message);
+    if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+        console.error('Hint: This is likely an issue with your database username or password in the .env file.');
+    } else if (error.code === 'ER_BAD_DB_ERROR') {
+        console.error(`Hint: The database "${dbConfig.database}" does not seem to exist. Please create it first.`);
+    }
+    process.exit(1); // Exit if setup fails
+  } finally {
+    if (connection) {
+      await connection.end();
+      console.log('Setup connection closed.');
+    }
+  }
+}
+
 
 const app = express();
 
@@ -531,14 +620,12 @@ app.get('*', (req, res) => {
 const PORT = process.env.PORT || 14722;
 const HOST = '0.0.0.0';
 
-server.listen(PORT, HOST, () => {
-  console.log(`✅ Server is running at http://${HOST}:${PORT}`);
-});
-
-} catch (err) {
-    console.error('🔴 FATAL: An unexpected error occurred during server startup.');
-    console.error(err.stack);
-    console.error('This is often caused by a coding error or a problem with the database schema.');
-    console.error('ACTION: Please check the logs above for specific errors. If the error mentions a database column (like `display_id`), you likely need to rebuild your database by running `npm run db:setup`.');
-    process.exit(1);
+// --- Server Startup ---
+async function startServer() {
+    await setupDatabase();
+    server.listen(PORT, HOST, () => {
+        console.log(`✅ Server is running at http://${HOST}:${PORT}`);
+    });
 }
+
+startServer();
