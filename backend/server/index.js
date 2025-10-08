@@ -488,7 +488,15 @@ app.post('/api/auth/register', async (req, res) => {
             await connection.rollback();
         }
 
-        console.error('Registration failed:', error);
+        // --- ENHANCED ERROR LOGGING ---
+        console.error('--- REGISTRATION ERROR ---');
+        console.error('Timestamp:', new Date().toISOString());
+        console.error('Request Body (Phone):', phone); // Log phone, not password
+        console.error('Error Code:', error.code);
+        console.error('Error Message:', error.message);
+        console.error('Stack Trace:', error.stack);
+        console.error('--- END REGISTRATION ERROR ---');
+        
         res.status(500).json({ success: false, message: 'An internal server error occurred during registration.' });
 
     } finally {
