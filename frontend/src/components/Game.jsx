@@ -12,7 +12,7 @@ import './Game.css';
 
 const createEmptyHands = () => ({ front: [], middle: [], back: [] });
 
-const Game = () => {
+const Game = ({ token }) => {
     const { roomId } = useParams();
     const navigate = useNavigate();
     const [isConnected, setIsConnected] = useState(socket.connected);
@@ -25,10 +25,15 @@ const Game = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        if (!token) {
+            navigate('/'); // Redirect to lobby if no token
+            return;
+        }
+
         const handleConnect = () => {
             setIsConnected(true);
             console.log(`Joining room: ${roomId}`);
-            socket.emit('join_room', roomId);
+            socket.emit('join_room', roomId, token);
         };
 
         const handleDisconnect = () => setIsConnected(false);
@@ -72,9 +77,11 @@ const Game = () => {
         }
 
         return () => {
+            // Actively leave the room when the component unmounts
             console.log(`Actively leaving room: ${roomId}`);
             socket.emit('leave_room', roomId);
 
+            // Clean up all listeners to prevent memory leaks
             socket.off('connect', handleConnect);
             socket.off('disconnect', handleDisconnect);
             socket.off('players_update', handlePlayersUpdate);
@@ -84,7 +91,7 @@ const Game = () => {
             socket.off('error_message', handleErrorMessage);
             socket.off('game_reset', handleGameReset);
         };
-    }, [roomId, navigate]);
+    }, [token, roomId, navigate]);
 
     const me = players.find(p => p.socketId === socket.id);
     const otherPlayers = players.filter(p => p.socketId !== socket.id);
@@ -96,6 +103,7 @@ const Game = () => {
     };
 
     const handleCardClick = (card, source) => {
+        // If a card in an arranged hand is clicked, move it back to the main hand.
         if (source !== 'myHand') {
             const sourceHand = arrangedHands[source];
             const newSourceHand = sourceHand.filter(c => c.rank !== card.rank || c.suit !== card.suit);
@@ -103,10 +111,11 @@ const Game = () => {
 
             setArrangedHands(prev => ({ ...prev, [source]: newSourceHand }));
             setMyHand(newMyHand);
-            setSelectedCard(null);
+            setSelectedCard(null); // Always deselect after this action
             return;
         }
 
+        // Original logic for selecting/deselecting a card from the main hand
         if (selectedCard?.card.suit === card.suit && selectedCard?.card.rank === card.rank) {
             setSelectedCard(null);
         } else {
@@ -115,7 +124,10 @@ const Game = () => {
     };
 
     const handleHandSlotClick = (targetHandName) => {
+        // This function now only places cards from the main hand into an arranged hand.
         if (!selectedCard || selectedCard.source !== 'myHand') {
+            // If a card is selected from an arranged hand, this logic path is no longer reachable
+            // because handleCardClick would have already moved it.
             return;
         }
 
