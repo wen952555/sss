@@ -6,20 +6,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Proxy API requests to the backend
-      '/auth': {
-        target: 'http://localhost:14722',
+      // --- NEW: Proxy PHP API requests ---
+      '/api': {
+        target: 'http://localhost:8000', // Target the PHP built-in server
         changeOrigin: true,
+        // Rewrite the path to remove the /api prefix before forwarding
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      // --- Keep existing Node.js proxies ---
       '/games': {
-        target: 'http://localhost:14722',
-        changeOrigin: true,
-      },
-       '/user': {
-        target: 'http://localhost:14722',
-        changeOrigin: true,
-      },
-       '/points': {
         target: 'http://localhost:14722',
         changeOrigin: true,
       },
