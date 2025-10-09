@@ -38,9 +38,8 @@ try {
 
     if ($matchAction === 'create') {
         // Always create a new room
-        $roomCode = generate_room_code();
-        $stmt = $conn->prepare("INSERT INTO game_rooms (game_type, status, player_count, room_code) VALUES (?, 'waiting', ?, ?)");
-        $stmt->bind_param("sis", $gameType, $playerCount, $roomCode);
+        $stmt = $conn->prepare("INSERT INTO game_rooms (game_type, status, player_count) VALUES (?, 'waiting', ?)");
+        $stmt->bind_param("si", $gameType, $playerCount);
         $stmt->execute();
         $roomId = $stmt->insert_id;
         $stmt->close();

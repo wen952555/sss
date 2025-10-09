@@ -3,10 +3,13 @@ require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 require_once __DIR__ . '/../../utils/pre_dealer.php';
 
-// If $_POST is empty, try to parse the raw input stream
-$post_data = $_POST;
-if (empty($post_data)) {
-    parse_str(file_get_contents("php://input"), $post_data);
+// Use json_decode for all incoming requests.
+$post_data = json_decode(file_get_contents("php://input"), true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Invalid JSON input.']);
+    exit;
 }
 
 $userId = $post_data['userId'] ?? null;
@@ -99,10 +102,8 @@ try {
                 $stmt->execute();
                 $stmt->close();
 
-                // Replenish hands in the background
-                $php_path = '/usr/bin/php';
-                $replenish_script_path = __DIR__ . '/../../utils/pre_dealer.php';
-                exec("$php_path $replenish_script_path > /dev/null 2>&1 &");
+                // Securely replenish hands
+                replenish_pre_dealt_hands();
 
                 $response['cardsDealt'] = true;
                 $response['hand'] = $userHand;
@@ -118,9 +119,9 @@ try {
             break;
 
         case 'submit_hand':
-            $hand = isset($post_data['hand']) ? json_decode($post_data['hand'], true) : null;
+            $hand = $post_data['hand'] ?? null;
             if (!$hand) {
-                throw new Exception("Hand data is missing.");
+                throw new Exception("Hand data is missing or invalid.");
             }
             submitPlayerHand($conn, $userId, $roomId, $hand);
             $response = ['success' => true, 'message' => 'Hand submitted successfully.'];
