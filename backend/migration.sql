@@ -1,1 +1,0 @@
-ALTER TABLE `game_rooms` ADD `room_code` VARCHAR(255) NULL AFTER `player_count`;
