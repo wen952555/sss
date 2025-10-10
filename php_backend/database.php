@@ -1,30 +1,23 @@
 <?php
 // php_backend/database.php
 
-// This function establishes a connection to the SQLite database
-// and returns the PDO object.
 function getDbConnection() {
     $db_file = __DIR__ . '/users.db';
     try {
-        // Use PDO for database interactions to prevent SQL injection
         $pdo = new PDO('sqlite:' . $db_file);
-        // Set error mode to exceptions for better error handling
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         return $pdo;
     } catch (PDOException $e) {
-        // In a real application, log this error instead of echoing
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]);
         exit();
     }
 }
 
-// This function creates the 'users' table if it doesn't already exist.
 function setupDatabase() {
     $pdo = getDbConnection();
     try {
-        // Use TEXT for phone numbers to preserve leading zeros if they ever exist
-        // Use TEXT for display_id as it's a string
+        // Initial table creation
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,6 +28,21 @@ function setupDatabase() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ");
+
+        // --- Add new columns for password reset ---
+        // Check if reset_token column exists
+        $stmt = $pdo->query("PRAGMA table_info(users)");
+        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+
+        if (!in_array('reset_token', $columns)) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN reset_token TEXT");
+            echo "Added 'reset_token' column to users table.\n";
+        }
+        if (!in_array('reset_expires', $columns)) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN reset_expires INTEGER");
+            echo "Added 'reset_expires' column to users table.\n";
+        }
+
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Database setup failed: ' . $e->getMessage()]);
@@ -42,10 +50,7 @@ function setupDatabase() {
     }
 }
 
-// --- Main Execution ---
-// When this file is included, we ensure the database is set up.
-// We can also add a command-line interface to set it up manually.
 if (php_sapi_name() === 'cli' && realpath($argv[0]) === realpath(__FILE__)) {
     setupDatabase();
-    echo "Database setup complete.\n";
+    echo "Database setup check complete.\n";
 }

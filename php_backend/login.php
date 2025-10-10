@@ -1,6 +1,6 @@
 <?php
 // php_backend/login.php
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/php_deps/autoload.php';
 require_once __DIR__ . '/database.php';
 
 use Firebase\JWT\JWT;
