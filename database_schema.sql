@@ -13,7 +13,6 @@ CREATE TABLE `game_rooms` (
   `game_type` varchar(50) NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'waiting',
   `player_count` int(11) NOT NULL,
-  `room_code` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
