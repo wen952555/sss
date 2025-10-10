@@ -1,6 +1,6 @@
 <?php
 // php_backend/register.php
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/php_deps/autoload.php';
 require_once __DIR__ . '/database.php';
 
 // Set content type to JSON
@@ -37,6 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!preg_match('/^\d{11}$/', $data['phone'])) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Please enter a valid 11-digit phone number.']);
+        exit();
+    }
+    // --- NEW: Enforce password policy ---
+    if (strlen($data['password']) < 8) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Password must be at least 8 characters long.']);
         exit();
     }
 
