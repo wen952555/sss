@@ -48,8 +48,9 @@ app.use(cors());
 app.use(express.json());
 
 // --- Auth API Routes ---
+const apiRouter = express.Router();
 
-app.post('/php_backend/register.php', async (req, res) => {
+apiRouter.post('/register', async (req, res) => {
     const { phone, password } = req.body;
     if (!phone || !password) {
         return res.status(400).json({ success: false, message: 'Phone number and password are required.' });
@@ -87,7 +88,7 @@ app.post('/php_backend/register.php', async (req, res) => {
     }
 });
 
-app.post('/php_backend/login.php', async (req, res) => {
+apiRouter.post('/login', async (req, res) => {
     const { phone, password } = req.body;
     if (!phone || !password) {
         return res.status(400).json({ success: false, message: 'Phone and password are required.' });
@@ -118,7 +119,7 @@ app.post('/php_backend/login.php', async (req, res) => {
     }
 });
 
-app.post('/php_backend/forgot-password.php', async (req, res) => {
+apiRouter.post('/forgot-password', async (req, res) => {
     const { phone } = req.body;
     if (!phone) {
         return res.status(400).json({ success: false, message: 'Phone number is required.' });
@@ -141,7 +142,7 @@ app.post('/php_backend/forgot-password.php', async (req, res) => {
     }
 });
 
-app.post('/php_backend/reset-password.php', async (req, res) => {
+apiRouter.post('/reset-password', async (req, res) => {
     const { phone, token, newPassword } = req.body;
     if (!phone || !token || !newPassword) {
         return res.status(400).json({ success: false, message: 'Phone, token, and new password are required.' });
@@ -165,6 +166,8 @@ app.post('/php_backend/reset-password.php', async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error during password reset.' });
     }
 });
+
+app.use('/api', apiRouter);
 
 
 // --- Game API Routes ---
