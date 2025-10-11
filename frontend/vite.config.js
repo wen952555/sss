@@ -10,8 +10,6 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:14722', // Target the Node.js server
         changeOrigin: true,
-        // Rewrite the path to the format expected by the Node.js backend
-        rewrite: (path) => path.replace(/^\/api/, '/php_backend'),
       },
       // --- Keep existing Node.js proxies ---
       '/games': {
