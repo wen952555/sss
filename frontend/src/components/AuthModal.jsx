@@ -28,7 +28,7 @@ const AuthModal = ({ show, onClose, setToken }) => {
         setError('');
         setMessage('');
 
-        const endpoint = view === 'login' ? '/php_backend/login.php' : '/php_backend/register.php';
+        const endpoint = view === 'login' ? '/api/login.php' : '/api/register.php';
 
         try {
             const response = await fetch(endpoint, {
@@ -57,7 +57,7 @@ const AuthModal = ({ show, onClose, setToken }) => {
         setError('');
         setMessage('');
         try {
-            const response = await fetch('/php_backend/forgot-password.php', {
+            const response = await fetch('/api/forgot-password.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone }),
@@ -83,7 +83,7 @@ const AuthModal = ({ show, onClose, setToken }) => {
         setError('');
         setMessage('');
         try {
-            const response = await fetch('/php_backend/reset-password.php', {
+            const response = await fetch('/api/reset-password.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone, token: resetToken, newPassword }),

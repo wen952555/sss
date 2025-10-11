@@ -6,11 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // --- NEW: Proxy PHP API requests ---
+      // --- Proxy all API requests to the Node.js server ---
       '/api': {
-        target: 'http://localhost:8000', // Target the PHP built-in server
+        target: 'http://localhost:14722', // Target the Node.js server
         changeOrigin: true,
-        // Rewrite the path to remove the /api prefix and add the correct path
+        // Rewrite the path to the format expected by the Node.js backend
         rewrite: (path) => path.replace(/^\/api/, '/php_backend'),
       },
       // --- Keep existing Node.js proxies ---
