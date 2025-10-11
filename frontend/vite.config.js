@@ -10,8 +10,8 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000', // Target the PHP built-in server
         changeOrigin: true,
-        // Rewrite the path to remove the /api prefix before forwarding
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        // Rewrite the path to remove the /api prefix and add the correct path
+        rewrite: (path) => path.replace(/^\/api/, '/php_backend'),
       },
       // --- Keep existing Node.js proxies ---
       '/games': {
