@@ -4,7 +4,7 @@ const sqlite3 = require('sqlite3').verbose();
 const { open } = require('sqlite');
 
 const DB_TYPE = process.env.DB_TYPE || 'sqlite';
-const USER_DB_FILE = './users.db'; // Hardcode to users.db for auth
+const USER_DB_FILE = process.env.USER_DB_FILE || './users.db';
 const GAME_DB_FILE = process.env.SQLITE_DB_FILE || './sss_game.db';
 
 let userDb;
