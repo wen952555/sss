@@ -1,4 +1,23 @@
 require('dotenv').config();
+
+// Environment variable validation
+const requiredEnvVars = ['JWT_SECRET'];
+if (process.env.DB_TYPE === 'sqlite') {
+  requiredEnvVars.push('USER_DB_FILE', 'SQLITE_DB_FILE');
+} else {
+  requiredEnvVars.push('DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME');
+}
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('🔴 FATAL ERROR: Missing required environment variables:');
+  console.error(`- ${missingEnvVars.join('\n- ')}`);
+  console.error('\nPlease create a .env file in the backend directory and add these variables.');
+  console.error('Refer to .env.example for a template.');
+  process.exit(1);
+}
+
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
