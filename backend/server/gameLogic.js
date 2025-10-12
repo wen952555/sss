@@ -102,20 +102,17 @@ function isFlush(hand) {
 }
 
 function isStraight(hand) {
-    if (!hand || hand.length < 3) return { isStraight: false };
     const sortedRanks = [...new Set(hand.map(c => c.value))].sort((a, b) => a - b);
-    if (sortedRanks.length !== hand.length) return { isStraight: false };
+    if (sortedRanks.length !== hand.length) return { isStraight: false }; // Not unique ranks
 
-    const isAceLow = (hand.length === 5 && JSON.stringify(sortedRanks) === JSON.stringify([2, 3, 4, 5, 14])) ||
-                     (hand.length === 3 && JSON.stringify(sortedRanks) === JSON.stringify([2, 3, 14]));
-
+    // Ace-low straight (A, 2, 3, 4, 5)
+    const isAceLow = JSON.stringify(sortedRanks) === JSON.stringify([2, 3, 4, 5, 14]);
     if (isAceLow) {
-        const ranks = hand.length === 5 ? [5, 4, 3, 2, 1] : [3, 2, 1];
-        return { isStraight: true, highCard: ranks[0], ranks };
+        return { isStraight: true, highCard: 5, ranks: [5, 4, 3, 2, 1] };
     }
 
     for (let i = 0; i < sortedRanks.length - 1; i++) {
-        if (sortedRanks[i + 1] - sortedRanks[i] !== 1) {
+        if (sortedRanks[i+1] - sortedRanks[i] !== 1) {
             return { isStraight: false };
         }
     }
@@ -128,7 +125,7 @@ function evaluate13CardHand(hand) {
 
     const ranks = hand.map(c => c.value).sort((a, b) => a - b);
     const uniqueRanks = [...new Set(ranks)];
-    const { rankCounts } = getCounts(hand);
+    const { rankCounts, suitCounts } = getCounts(hand);
 
     // 一条龙: A to K straight
     if (uniqueRanks.length === 13) {
@@ -141,29 +138,13 @@ function evaluate13CardHand(hand) {
         return SPECIAL_HAND_TYPES.SIX_PAIRS;
     }
     
-    return SPECIAL_HAND_TYPES.NONE;
-}
-
-function evaluateArrangedSpecialHand(front, middle, back) {
-    const isFrontFlush = isFlush(front);
-    const isMiddleFlush = isFlush(middle);
-    const isBackFlush = isFlush(back);
-
-    if (isFrontFlush && isMiddleFlush && isBackFlush) {
-        return SPECIAL_HAND_TYPES.THREE_FLUSHES;
-    }
-
-    const isFrontStraight = isStraight(front).isStraight;
-    const isMiddleStraight = isStraight(middle).isStraight;
-    const isBackStraight = isStraight(back).isStraight;
-
-    if (isFrontStraight && isMiddleStraight && isBackStraight) {
-        return SPECIAL_HAND_TYPES.THREE_STRAIGHTS;
-    }
+    // 三顺子 / 三同花: Needs to check arranged hands, so this is tricky here.
+    // We will check this after the user has arranged their hand.
+    // This is a placeholder for a more complex check on the arranged hand.
+    // For now, we will only check for Dragon and Six Pairs.
 
     return SPECIAL_HAND_TYPES.NONE;
 }
-
 
 // --- 3-Card Hand Evaluation ---
 function evaluate3CardHand(hand) {
@@ -345,7 +326,6 @@ module.exports = {
     dealCards,
     comparePlayerHands,
     evaluate13CardHand,
-    evaluateArrangedSpecialHand,
     evaluate5CardHand,
     evaluate3CardHand,
     isValidHand,

@@ -15,7 +15,6 @@ const {
     dealCards,
     isValidHand,
     evaluate13CardHand,
-    evaluateArrangedSpecialHand,
     evaluate5CardHand,
     evaluate3CardHand,
     comparePlayerHands,
@@ -128,24 +127,12 @@ async function calculateResults(roomId, io) {
             back: evaluate5CardHand(back),
         };
         const allCards = [...front, ...middle, ...back];
-        const specialHandFrom13 = evaluate13CardHand(allCards);
-        const specialHandFromArrangement = evaluateArrangedSpecialHand(front, middle, back);
-
-        gameState.specialHands[id] = specialHandFrom13.value > specialHandFromArrangement.value ? specialHandFrom13 : specialHandFromArrangement;
+        gameState.specialHands[id] = evaluate13CardHand(allCards);
     });
 
     const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null, comparisons: {} } }), {});
 
-    let specialPlayerId = null;
-    let highestSpecialHand = SPECIAL_HAND_TYPES.NONE;
-
-    for (const id of playerIds) {
-        if (gameState.specialHands[id].value > highestSpecialHand.value) {
-            highestSpecialHand = gameState.specialHands[id];
-            specialPlayerId = id;
-        }
-    }
-
+    const specialPlayerId = playerIds.find(id => gameState.specialHands[id].value > SPECIAL_HAND_TYPES.NONE.value);
     if (specialPlayerId) {
         const specialHand = gameState.specialHands[specialPlayerId];
         const score = specialHand.score;

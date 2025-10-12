@@ -5,8 +5,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 const passwordValidator = (password) => {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    return regex.test(password);
+    return password && password.length >= 6;
 };
 
 async function generateUniqueDisplayId(userDb) {
@@ -32,7 +31,7 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ success: false, message: '请输入有效的11位手机号。' });
     }
     if (!passwordValidator(password)) {
-        return res.status(400).json({ success: false, message: '密码必须至少包含8个字符，一个大写字母，一个小写字母，一个数字和一个特殊字符。' });
+        return res.status(400).json({ success: false, message: '密码必须至少包含6个字符。' });
     }
 
     try {
@@ -126,7 +125,7 @@ router.post('/reset-password', async (req, res) => {
         return res.status(400).json({ success: false, message: '手机号、令牌和新密码是必填项。' });
     }
     if (!passwordValidator(newPassword)) {
-        return res.status(400).json({ success: false, message: '密码必须至少包含8个字符，一个大写字母，一个小写字母，一个数字和一个特殊字符。' });
+        return res.status(400).json({ success: false, message: '密码必须至少包含6个字符。' });
     }
 
     try {

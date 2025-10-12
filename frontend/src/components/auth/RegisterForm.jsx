@@ -9,11 +9,7 @@ const RegisterForm = ({ setToken, setView, handleClose }) => {
 
     const passwordValidator = (password) => {
         const errors = [];
-        if (password.length < 8) errors.push('至少8个字符');
-        if (!/[a-z]/.test(password)) errors.push('至少1个小写字母');
-        if (!/[A-Z]/.test(password)) errors.push('至少1个大写字母');
-        if (!/\d/.test(password)) errors.push('至少1个数字');
-        if (!/[@$!%*?&]/.test(password)) errors.push('至少1个特殊字符 (@$!%*?&)');
+        if (password.length < 6) errors.push('至少6个字符');
         return errors;
     };
 
@@ -70,11 +66,7 @@ const RegisterForm = ({ setToken, setView, handleClose }) => {
                 <label htmlFor="auth-password">密码</label>
                 <input id="auth-password" type="password" placeholder="设置您的密码" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 <ul className="password-requirements">
-                    <li>- 至少8个字符</li>
-                    <li>- 至少1个大写字母</li>
-                    <li>- 至少1个小写字母</li>
-                    <li>- 至少1个数字</li>
-                    <li>- 至少1个特殊字符 (@$!%*?&)</li>
+                    <li>- 至少6个字符</li>
                 </ul>
             </div>
             <div className="form-group">
