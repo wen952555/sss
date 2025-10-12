@@ -300,8 +300,8 @@ async function startServer() {
         const dbs = await dbPromise;
         userDb = dbs.userDb;
         gameDb = dbs.gameDb;
-        app.set('userDb', userDb); // Pass db to router
-        await setupUserDatabase();
+        app.set('userDb', userDb);
+        await setupUserDatabase(userDb);
         await setupGameDatabase();
         server.listen(PORT, HOST, () => {
             console.log(`✅ Node.js game server is running at http://${HOST}:${PORT}`);

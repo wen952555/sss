@@ -1,7 +1,4 @@
-const dbPromise = require('./db');
-
-async function setupDatabase() {
-    const { userDb } = await dbPromise;
+async function setupDatabase(userDb) {
     const db = userDb.getRawDb();
 
     try {
