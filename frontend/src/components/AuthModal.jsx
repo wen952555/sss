@@ -20,7 +20,7 @@ const AuthModal = ({ show, onClose, setToken }) => {
     const renderForm = () => {
         switch (view) {
             case 'register':
-                return <RegisterForm setView={setView} />;
+                return <RegisterForm setToken={setToken} setView={setView} handleClose={handleClose} />;
             case 'forgot':
                 return <ForgotPasswordForm setView={setView} setPhone={setPhone} phone={phone} />;
             case 'reset':

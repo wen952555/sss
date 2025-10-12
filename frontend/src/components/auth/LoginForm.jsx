@@ -8,6 +8,11 @@ const LoginForm = ({ setToken, setView, handleClose }) => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        
+        if (!/^\d{11}$/.test(phone)) {
+            setError('请输入有效的11位手机号。');
+            return;
+        }
         setError('');
         setLoading(true);
 
@@ -19,7 +24,7 @@ const LoginForm = ({ setToken, setView, handleClose }) => {
             });
             const data = await response.json();
             if (!response.ok || !data.success) {
-                throw new Error(data.message || 'An error occurred.');
+                throw new Error(data.message || '发生错误。');
             }
             setToken(data.token);
             setTimeout(handleClose, 1000);

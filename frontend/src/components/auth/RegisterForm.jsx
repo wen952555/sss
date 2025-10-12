@@ -1,21 +1,42 @@
 import React, { useState } from 'react';
 
-const RegisterForm = ({ setView }) => {
+const RegisterForm = ({ setToken, setView, handleClose }) => {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
-    const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const passwordValidator = (password) => {
+        const errors = [];
+        if (password.length < 8) errors.push('至少8个字符');
+        if (!/[a-z]/.test(password)) errors.push('至少1个小写字母');
+        if (!/[A-Z]/.test(password)) errors.push('至少1个大写字母');
+        if (!/\d/.test(password)) errors.push('至少1个数字');
+        if (!/[@$!%*?&]/.test(password)) errors.push('至少1个特殊字符 (@$!%*?&)');
+        return errors;
+    };
 
     const handleRegister = async (e) => {
         e.preventDefault();
-        if (password !== confirmPassword) {
-            setError('Passwords do not match.');
+
+        if (!/^\d{11}$/.test(phone)) {
+            setError('请输入有效的11位手机号。');
             return;
         }
+
+        const passwordErrors = passwordValidator(password);
+        if (passwordErrors.length > 0) {
+            setError(`密码要求：${passwordErrors.join('，')}。`);
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError('密码不匹配。');
+            return;
+        }
+
         setError('');
-        setMessage('');
         setLoading(true);
 
         try {
@@ -28,8 +49,8 @@ const RegisterForm = ({ setView }) => {
             if (!response.ok || !data.success) {
                 throw new Error(data.message || 'An error occurred.');
             }
-            setMessage('注册成功！请登录。');
-            setTimeout(() => setView('login'), 2000);
+            setToken(data.token);
+            setTimeout(handleClose, 1000);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -41,14 +62,20 @@ const RegisterForm = ({ setView }) => {
         <form onSubmit={handleRegister}>
             <h2>注册</h2>
             {error && <p className="error-message">{error}</p>}
-            {message && <p className="success-message">{message}</p>}
             <div className="form-group">
                 <label htmlFor="auth-phone">手机号</label>
                 <input id="auth-phone" type="tel" placeholder="请输入11位手机号" value={phone} onChange={(e) => setPhone(e.target.value)} required />
             </div>
             <div className="form-group">
                 <label htmlFor="auth-password">密码</label>
-                <input id="auth-password" type="password" placeholder="至少8个字符" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <input id="auth-password" type="password" placeholder="设置您的密码" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <ul className="password-requirements">
+                    <li>- 至少8个字符</li>
+                    <li>- 至少1个大写字母</li>
+                    <li>- 至少1个小写字母</li>
+                    <li>- 至少1个数字</li>
+                    <li>- 至少1个特殊字符 (@$!%*?&)</li>
+                </ul>
             </div>
             <div className="form-group">
                 <label htmlFor="auth-confirm-password">确认密码</label>

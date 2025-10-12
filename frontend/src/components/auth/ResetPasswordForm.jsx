@@ -7,8 +7,25 @@ const ResetPasswordForm = ({ setView, phone }) => {
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const passwordValidator = (password) => {
+        const errors = [];
+        if (password.length < 8) errors.push('至少8个字符');
+        if (!/[a-z]/.test(password)) errors.push('至少1个小写字母');
+        if (!/[A-Z]/.test(password)) errors.push('至少1个大写字母');
+        if (!/\d/.test(password)) errors.push('至少1个数字');
+        if (!/[@$!%*?&]/.test(password)) errors.push('至少1个特殊字符 (@$!%*?&)');
+        return errors;
+    };
+
     const handleResetPassword = async (e) => {
         e.preventDefault();
+        
+        const passwordErrors = passwordValidator(newPassword);
+        if (passwordErrors.length > 0) {
+            setError(`密码要求：${passwordErrors.join('，')}。`);
+            return;
+        }
+
         setError('');
         setMessage('');
         setLoading(true);
@@ -21,7 +38,7 @@ const ResetPasswordForm = ({ setView, phone }) => {
             });
             const data = await response.json();
             if (!response.ok || !data.success) {
-                throw new Error(data.message || 'An error occurred.');
+                throw new Error(data.message || '发生错误。');
             }
             setMessage('密码重置成功！请重新登录。');
             setTimeout(() => setView('login'), 2000);
@@ -44,6 +61,13 @@ const ResetPasswordForm = ({ setView, phone }) => {
             <div className="form-group">
                 <label htmlFor="new-password">新密码</label>
                 <input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+                <ul className="password-requirements">
+                    <li>- 至少8个字符</li>
+                    <li>- 至少1个大写字母</li>
+                    <li>- 至少1个小写字母</li>
+                    <li>- 至少1个数字</li>
+                    <li>- 至少1个特殊字符 (@$!%*?&)</li>
+                </ul>
             </div>
             <button type="submit" disabled={loading}>{loading ? '重置中...' : '重置密码'}</button>
             <div className="toggle-auth">

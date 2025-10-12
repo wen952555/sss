@@ -7,6 +7,7 @@ const path = require('path');
 const dbPromise = require('../db');
 const jwt = require('jsonwebtoken');
 const authRoutes = require('./routes/auth');
+const setupUserDatabase = require('../setupDatabase');
 
 let userDb, gameDb;
 
@@ -193,7 +194,7 @@ io.on('connection', (socket) => {
 
     socket.on('join_room', (roomId, token) => {
         try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'a_secure_secret_for_development');
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
             const userData = decoded.data;
             const displayId = userData.display_id;
             const userId = userData.id;
@@ -300,6 +301,7 @@ async function startServer() {
         userDb = dbs.userDb;
         gameDb = dbs.gameDb;
         app.set('userDb', userDb); // Pass db to router
+        await setupUserDatabase();
         await setupGameDatabase();
         server.listen(PORT, HOST, () => {
             console.log(`✅ Node.js game server is running at http://${HOST}:${PORT}`);
