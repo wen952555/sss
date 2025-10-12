@@ -6,12 +6,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // --- Proxy all API requests to the Node.js server ---
+      // --- Proxy all API requests to the PHP server ---
       '/api': {
-        target: 'http://localhost:14722', // Target the Node.js server
+        target: 'http://localhost:8000', // Target the PHP server
         changeOrigin: true,
       },
-      // --- Keep existing Node.js proxies ---
+      // --- Keep existing Node.js proxies ---\
       '/games': {
         target: 'http://localhost:14722',
         changeOrigin: true,
