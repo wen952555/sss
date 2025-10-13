@@ -88,7 +88,7 @@ function App() {
     setGameState({ gameType, roomId: null, error: null, gameUser: currentUser, playerCount });
 
     try {
-      const url = `/api/index.php?action=match&gameType=${gameType}&userId=${userId}&playerCount=${playerCount}&matchAction=${matchAction}`;
+      const url = `/api/?action=match&gameType=${gameType}&userId=${userId}&playerCount=${playerCount}&matchAction=${matchAction}`;
       console.log('Fetching URL:', url);
       const response = await fetch(url);
       const data = await response.json();
