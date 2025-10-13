@@ -1,14 +1,12 @@
 // frontend/src/utils/pokerEvaluator.js
 
-// 定义卡牌的点数，用于计算和比较大小
-// 特殊处理 A, 2, 3, 4, 5 最小的顺子
-export const RANK_ORDER = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
-const RANK_VALUES = {
+// Defines the order and value of card ranks in one structure.
+export const RANKS = {
   '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 
   'jack': 11, 'queen': 12, 'king': 13, 'ace': 14
 };
 
-// 定义牌型和它们的强弱等级，等级越高牌型越大
+// Defines hand types and their strength hierarchy.
 export const HAND_TYPES = {
   HIGH_CARD: { rank: 0, name: '高牌' },
   PAIR: { rank: 1, name: '对子' },
@@ -24,35 +22,33 @@ export const HAND_TYPES = {
 /**
  * Parses a card string (e.g., 'ace_of_spades') into an object.
  * @param {string} cardStr The card string.
- * @returns {{rank: string, suit: string}}
+ * @returns {{rank: string, suit: string, value: number}}
  */
 export const parseCard = (cardStr) => {
     if (!cardStr) return null;
     const parts = cardStr.split('_');
-    return { rank: parts[0], suit: parts[2] };
+    if (parts.length < 3) return null;
+    return { rank: parts[0], suit: parts[2], value: RANKS[parts[0]] };
 };
 
-// --- ↓↓↓ 这是新添加并导出的函数 ↓↓↓ ---
 /**
- * 对一组卡牌进行排序
- * @param {Array} cards - 卡牌对象的数组
- * @returns {Array} 排序后的新数组
+ * Sorts an array of card objects based on their rank and suit.
+ * @param {Array} cards - An array of card objects.
+ * @returns {Array} A new, sorted array of card objects.
  */
 export const sortCards = (cards) => {
   if (!cards) return [];
+  // Sort by rank first, then by suit as a tie-breaker.
   return [...cards].sort((a, b) => {
-    const rankComparison = RANK_ORDER.indexOf(a.rank) - RANK_ORDER.indexOf(b.rank);
-    if (rankComparison !== 0) {
-      return rankComparison;
-    }
+    const rankComparison = a.value - b.value;
+    if (rankComparison !== 0) return rankComparison;
     const suitOrder = ['diamonds', 'clubs', 'hearts', 'spades'];
     return suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit);
   });
 };
-// --- ↑↑↑ 添加结束 ↑↑↑ ---
 
 /**
- * Gets all combinations of a certain size from an array.
+ * Generates all combinations of a certain size from an array.
  * @param {Array} array The source array.
  * @param {number} size The size of the combinations.
  * @returns {Array<Array>} An array of all combinations.
@@ -67,33 +63,32 @@ export const combinations = (array, size) => {
   return [...combsWithFirst, ...combsWithoutFirst];
 };
 
-
 /**
- * 评估一手牌（3张或5张）的牌型和大小
- * @param {Array} cards - 卡牌对象的数组
- * @returns {Object} 一个包含牌型等级、名称和用于比较大小的值的对象
+ * Evaluates a hand of 3 or 5 cards to determine its rank and value.
+ * @param {Array} cards - An array of card objects.
+ * @returns {Object} An object containing the hand's type, rank, and values for comparison.
  */
 export function evaluateHand(cards) {
   if (!cards || cards.length === 0) {
     return { ...HAND_TYPES.HIGH_CARD, values: [0] };
   }
 
-  const ranks = cards.map(c => RANK_VALUES[c.rank]).sort((a, b) => b - a);
+  const ranks = cards.map(c => c.value).sort((a, b) => b - a);
   const suits = cards.map(c => c.suit);
   
   const isFlush = new Set(suits).size === 1;
-  
-  // 检查是否为顺子
   const rankSet = new Set(ranks);
+
+  // A-2-3-4-5 is the lowest straight (wheel).
+  const isAceLowStraight = rankSet.size === 5 && ranks[0] === 14 && ranks[1] === 5 && ranks[2] === 4 && ranks[3] === 3 && ranks[4] === 2;
+  // Any other sequence of 5 unique ranks is a straight.
   const isStraight = rankSet.size === cards.length && (ranks[0] - ranks[ranks.length - 1] === cards.length - 1);
-  // 特殊处理 A-2-3-4-5 的情况
-  const isAceLowStraight = JSON.stringify(ranks) === JSON.stringify([14, 5, 4, 3, 2]);
 
   if (isStraight && isFlush) {
     return { ...HAND_TYPES.STRAIGHT_FLUSH, values: ranks };
   }
   if (isAceLowStraight && isFlush) {
-    // A-5同花顺，A作为5来比较
+    // Ace is treated as low card for comparison.
     return { ...HAND_TYPES.STRAIGHT_FLUSH, values: [5, 4, 3, 2, 1] };
   }
 
@@ -102,13 +97,12 @@ export function evaluateHand(cards) {
     return acc;
   }, {});
 
-  const counts = Object.values(rankCounts).sort((a, b) => b - a);
+  // Sort ranks by their frequency, then by their value.
   const primaryRanks = Object.keys(rankCounts).map(Number).sort((a, b) => {
-      if (rankCounts[a] !== rankCounts[b]) {
-          return rankCounts[b] - rankCounts[a];
-      }
-      return b - a;
+      return (rankCounts[b] - rankCounts[a]) || (b - a);
   });
+
+  const counts = Object.values(rankCounts).sort((a, b) => b - a);
 
   if (counts[0] === 4) {
     return { ...HAND_TYPES.FOUR_OF_A_KIND, values: primaryRanks };
@@ -145,34 +139,18 @@ export function evaluateHand(cards) {
 }
 
 /**
- * 比较两手牌的大小
- * @param {Object} handA - evaluateHand返回的结果
- * @param {Object} handB - evaluateHand返回的结果
- * @returns {number} > 0 如果 A > B, < 0 如果 A < B, 0 如果相等
+ * Compares two evaluated hands to determine the winner.
+ * @param {Object} handA - The result from evaluateHand.
+ * @param {Object} handB - The result from evaluateHand.
+ * @returns {number} > 0 if A > B, < 0 if A < B, 0 if they are equal.
  */
 export function compareHands(handA, handB) {
-  // 如果牌型相同且为顺子，应用特殊规则
-  if (handA.rank === HAND_TYPES.STRAIGHT.rank && handB.rank === HAND_TYPES.STRAIGHT.rank) {
-    const isA_A2345 = JSON.stringify(handA.values) === JSON.stringify([5, 4, 3, 2, 1]);
-    const isB_A2345 = JSON.stringify(handB.values) === JSON.stringify([5, 4, 3, 2, 1]);
-
-    // 根据规则，A2345是第二大顺子
-    const rankA = isA_A2345 ? 13.5 : handA.values[0];
-    const rankB = isB_A2345 ? 13.5 : handB.values[0];
-
-    if (rankA !== rankB) {
-      return rankA - rankB;
-    }
-    return 0; // 两个都是A2345或者10JQKA
-  }
-
-  // 首先比较牌型等级
   const rankDifference = handA.rank - handB.rank;
   if (rankDifference !== 0) {
     return rankDifference;
   }
   
-  // 如果牌型相同，则依次比较关键牌的大小
+  // If ranks are the same, compare the significant card values.
   for (let i = 0; i < handA.values.length; i++) {
     const valueDifference = handA.values[i] - handB.values[i];
     if (valueDifference !== 0) {
@@ -180,5 +158,5 @@ export function compareHands(handA, handB) {
     }
   }
 
-  return 0; // 两手牌完全相同
+  return 0; // Hands are identical.
 }
