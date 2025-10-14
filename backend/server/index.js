@@ -149,7 +149,7 @@ async function calculateResults(roomId, io) {
         gameState.specialHands[id] = evaluate13CardHand(allCards);
     });
 
-    const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null, comparisons: {} } }), {});
+    const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null, segmentScores: {}, comparisons: {} } }), {});
 
     const specialPlayerId = playerIds.find(id => gameState.specialHands[id].value > SPECIAL_HAND_TYPES.NONE.value);
     if (specialPlayerId) {
@@ -164,9 +164,11 @@ async function calculateResults(roomId, io) {
             for (let j = i + 1; j < playerIds.length; j++) {
                 const p1_id = playerIds[i];
                 const p2_id = playerIds[j];
-                const { p1_score, p2_score } = comparePlayerHands(gameState.evaluatedHands[p1_id], gameState.evaluatedHands[p2_id]);
+                const { p1_score, p2_score, p1_segment_scores, p2_segment_scores } = comparePlayerHands(gameState.evaluatedHands[p1_id], gameState.evaluatedHands[p2_id]);
                 finalScores[p1_id].total += p1_score;
                 finalScores[p2_id].total += p2_score;
+                finalScores[p1_id].segmentScores[p2_id] = p1_segment_scores;
+                finalScores[p2_id].segmentScores[p1_id] = p2_segment_scores;
             }
         }
     }

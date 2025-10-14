@@ -275,6 +275,9 @@ function isValidHand(front, middle, back) {
 // --- Player vs. Player Comparison ---
 
 function comparePlayerHands(p1_eval, p2_eval) {
+    const p1_segment_scores = { front: 0, middle: 0, back: 0 };
+    const p2_segment_scores = { front: 0, middle: 0, back: 0 };
+
     const results = {
         front: compareEvaluatedHands(p1_eval.front, p2_eval.front),
         middle: compareEvaluatedHands(p1_eval.middle, p2_eval.middle),
@@ -295,12 +298,16 @@ function comparePlayerHands(p1_eval, p2_eval) {
             const p1_hand_type = p1_eval[segment].type.name;
             const bonus = SEGMENT_SCORES[segment]?.[p1_hand_type] || 1;
             segment_score = bonus;
+            p1_segment_scores[segment] = segment_score;
+            p2_segment_scores[segment] = -segment_score;
             p1_score += segment_score;
             p1_wins++;
         } else if (result < 0) { // Player 2 wins segment
             const p2_hand_type = p2_eval[segment].type.name;
             const bonus = SEGMENT_SCORES[segment]?.[p2_hand_type] || 1;
             segment_score = bonus;
+            p2_segment_scores[segment] = segment_score;
+            p1_segment_scores[segment] = -segment_score;
             p2_score += segment_score;
             p2_wins++;
         }
@@ -318,7 +325,7 @@ function comparePlayerHands(p1_eval, p2_eval) {
     const final_p2_score = p2_score - p1_score;
 
 
-    return { p1_score: final_p1_score, p2_score: final_p2_score };
+    return { p1_score: final_p1_score, p2_score: final_p2_score, p1_segment_scores, p2_segment_scores };
 }
 
 
