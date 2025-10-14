@@ -49,7 +49,6 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
           )}
           <button className="header-btn rules-btn" onClick={onShowRules}>游戏规则</button>
         </div>
-        <h1 className="lobby-title">游戏大厅</h1>
         <div style={{ marginTop: 8, fontSize: '1rem', color: '#00796b', fontWeight: 500 }}>
           当前在线人数：{onlineCount !== null ? onlineCount : '...'}
         </div>
@@ -84,6 +83,20 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
               <p className="game-description">高手进阶对局</p>
             </div>
             {matchingStatus['thirteen-5'] && <div className="matching-indicator">匹配中...</div>}
+          </div>
+        </div>
+
+        {/* 10分场 */}
+        <div
+          className={`game-card thirteen-bg ${matchingStatus['thirteen-10'] ? 'disabled' : ''}`}
+          onClick={() => !matchingStatus['thirteen-10'] && onSelectGameType('thirteen-10')}
+        >
+          <div className="game-card-overlay">
+            <div className="game-content">
+              <h2 className="game-title">10分场</h2>
+              <p className="game-description">富豪场</p>
+            </div>
+            {matchingStatus['thirteen-10'] && <div className="matching-indicator">匹配中...</div>}
           </div>
         </div>
       </main>

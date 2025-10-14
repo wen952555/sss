@@ -1,30 +1,32 @@
 <?php
+// backend/api/actions/get_room_counts.php
+
 require_once __DIR__ . '/../db_connect.php';
 
-$conn = db_connect();
-
-$sql = "
-    SELECT r.game_mode, COUNT(rp.user_id) as player_count, r.player_count as max_players
-    FROM game_rooms r
-    JOIN room_players rp ON r.id = rp.room_id
-    WHERE r.status = 'waiting'
-    GROUP BY r.id, r.game_mode, r.player_count
-";
-
-$result = $conn->query($sql);
-
-$roomCounts = [];
-while ($row = $result->fetch_assoc()) {
-    $gameMode = $row['game_mode'];
-    if (!isset($roomCounts[$gameMode])) {
-        $roomCounts[$gameMode] = ['players' => 0, 'max_players' => 0, 'rooms' => 0];
+function get_room_counts() {
+    $conn = db_connect();
+    if (!$conn) {
+        return ['success' => false, 'message' => 'Database connection failed'];
     }
-    $roomCounts[$gameMode]['players'] += (int)$row['player_count'];
-    $roomCounts[$gameMode]['max_players'] += (int)$row['max_players'];
-    $roomCounts[$gameMode]['rooms']++;
+
+    $counts = [];
+    $player_counts = [4, 5, 6, 7, 8];
+
+    foreach ($player_counts as $count) {
+        $stmt = $conn->prepare("SELECT COUNT(*) as room_count FROM game_rooms WHERE player_count = ? AND status = 'waiting'");
+        $stmt->bind_param("i", $count);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        $counts[$count] = $result['room_count'] ?? 0;
+        $stmt->close();
+    }
+
+    $conn->close();
+    return ['success' => true, 'counts' => $counts];
 }
 
-echo json_encode(['success' => true, 'roomCounts' => $roomCounts]);
-
-$conn->close();
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    header('Content-Type: application/json');
+    echo json_encode(get_room_counts());
+}
 ?>

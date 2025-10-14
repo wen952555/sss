@@ -166,7 +166,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
             }
           }
 
-          const pointMultiplier = gameType === 'thirteen' ? 2 : (gameType === 'thirteen-5' ? 5 : 1);
+          const pointMultiplier = gameType === 'thirteen' ? 2 : (gameType === 'thirteen-5' ? 5 : (gameType === 'thirteen-10' ? 10 : 1));
           resultPlayers.forEach(p => {
             p.score = scores[p.id] * pointMultiplier;
           });
