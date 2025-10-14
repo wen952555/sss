@@ -2,7 +2,7 @@
 // backend/config.php
 
 // --- 数据库配置 ---
-$DB_HOST = 'localhost';
+$DB_HOST = '127.0.0.1';
 $DB_USER = 'wcn_user';
 $DB_PASS = 'wcn_password';
 $DB_NAME = 'wcn_game';

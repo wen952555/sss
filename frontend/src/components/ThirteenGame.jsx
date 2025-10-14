@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
 import { getSmartSortedHand } from '../utils/autoSorter.js';
 import GameTable from './GameTable';
-import { isSssFoul, calculateSinglePairScore, getSpecialType, compareSssArea } from '../utils/scorer.js';
+import { isSssFoul, calculateSinglePairScore, compareSssArea } from '../utils/scorer.js';
 import { parseCard } from '../utils/pokerEvaluator.js';
 import { sanitizeHand } from '../utils/cardUtils.js';
 
+// eslint-disable-next-line react/prop-types
 const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) => {
   const {
     topLane,
@@ -64,16 +65,16 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     }
 
     setIsLoading(true);
-    const formData = new URLSearchParams();
-    formData.append('userId', user.id);
-    formData.append('roomId', roomId);
-    formData.append('action', 'submit_hand');
-    formData.append('hand', JSON.stringify(handToSend));
-
     fetch('/api/?action=player_action', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        // eslint-disable-next-line react/prop-types
+        userId: user.id,
+        roomId: roomId,
+        action: 'submit_hand',
+        hand: handToSend,
+      }),
     })
     .then(res => res.json())
     .then(data => {
@@ -124,6 +125,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   const fetchGameStatus = useCallback(async () => {
     if (!roomId || !user) return;
     try {
+      // eslint-disable-next-line react/prop-types
       const url = `/api/?action=game_status&roomId=${roomId}&userId=${user.id}`;
       console.log('Fetching game status:', url);
       const response = await fetch(url);
@@ -169,10 +171,12 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
             p.score = scores[p.id] * pointMultiplier;
           });
 
+          // eslint-disable-next-line react/prop-types
           const humanPlayer = resultPlayers.find(p => p.id === user.id);
           if (humanPlayer) {
             const humanPlayerHand = humanPlayer.hand;
             resultPlayers.forEach(player => {
+              // eslint-disable-next-line react/prop-types
               if (player.id === user.id) {
                 player.laneResults = ['draw', 'draw', 'draw'];
               } else {
@@ -198,7 +202,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       }
       console.error("Failed to fetch game status:", error);
     }
-  }, [roomId, user, setInitialLanes, isOnline, gameType]);
+  }, [roomId, user, isOnline, gameType, handleHandData]);
 
   useEffect(() => {
     fetchGameStatus();
@@ -209,6 +213,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   useEffect(() => {
     if (gameResult && gameResult.players) {
       const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
+      // eslint-disable-next-line react/prop-types
       if (user.id === playerIds[0]) {
         const scores = gameResult.players.reduce((acc, p) => ({ ...acc, [p.id]: p.score }), {});
         fetch('/api/?action=save_scores', {
@@ -218,7 +223,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
         });
       }
     }
-  }, [gameResult, roomId, user.id]);
+  }, [gameResult, roomId, user]);
 
   const handleLeaveRoom = useCallback(() => {
     if (!user || !roomId) {
@@ -228,6 +233,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     fetch('/api/?action=leave_room', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      // eslint-disable-next-line react/prop-types
       body: JSON.stringify({ userId: user.id, roomId }),
     })
     .then(() => {
@@ -237,36 +243,36 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
 
   const handleReady = useCallback(async () => {
     if (!user || !roomId) return;
+    // eslint-disable-next-line react/prop-types
     const me = players.find(p => p.id === user.id);
     const currentIsReady = me ? me.is_ready : false;
     const action = currentIsReady ? 'unready' : 'ready';
 
     setIsLoading(true);
     try {
-      const formData = new URLSearchParams();
-      formData.append('userId', user.id);
-      formData.append('roomId', roomId);
-      formData.append('action', action);
-
       const response = await fetch('/api/?action=player_action', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData.toString(),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          // eslint-disable-next-line react/prop-types
+          userId: user.id,
+          roomId: roomId,
+          action: action,
+        }),
       });
       const data = await response.json();
       if (!data.success) {
         throw new Error(data.message || `Failed to ${action}.`);
       }
-      if (data.cardsDealt && data.hand) {
-        handleHandData(data.hand);
-      }
-      fetchGameStatus();
+      // The game status is now fetched via polling, so we don't need to manually process hand data here.
+      // The fetchGameStatus call below will handle UI updates.
+      await fetchGameStatus(); // Manually trigger a fetch to get immediate feedback
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
       setIsLoading(false);
     }
-  }, [user, roomId, players, fetchGameStatus, setInitialLanes]);
+  }, [user, roomId, players, fetchGameStatus]);
 
   const handleAutoSort = useCallback(() => {
     const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
@@ -289,6 +295,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     });
   }, [topLane, middleLane, bottomLane, sortStrategy, setInitialLanes]);
 
+  // eslint-disable-next-line react/prop-types
   const me = players.find(p => p.id === user.id);
   const isReady = me ? me.is_ready : false;
   const isGameInProgress = playerState === 'arranging' || playerState === 'submitted';
