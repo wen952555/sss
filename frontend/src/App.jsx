@@ -5,6 +5,7 @@ import UserProfile from './components/UserProfile';
 import TransferPoints from './components/TransferPoints';
 import ThirteenGame from './components/ThirteenGame';
 import GameRules from './components/GameRules';
+import ModeSelection from './components/ModeSelection';
 import './App.css';
 import { Browser } from '@capacitor/browser';
 
@@ -28,10 +29,29 @@ function App() {
   const [user, setUser] = useState(null);
   const [gameState, setGameState] = useState({ gameType: null, gameMode: null, roomId: null, error: null, gameUser: null });
   const [currentView, setCurrentView] = useState('lobby');
-  const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, 'thirteen-5': false });
+  const [matchingStatus, setMatchingStatus] = useState({ thirteen: false, 'thirteen-5': false, 'thirteen-10': false });
   const [updateInfo, setUpdateInfo] = useState({ show: false, version: '', notes: [], url: '' });
   const [showTransfer, setShowTransfer] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [roomCounts, setRoomCounts] = useState({});
+
+  useEffect(() => {
+    const fetchRoomCounts = async () => {
+      try {
+        const response = await fetch('/api/?action=get_room_counts');
+        const data = await response.json();
+        if (data.success) {
+          setRoomCounts(data.counts);
+        }
+      } catch (error) {
+        console.error("Failed to fetch room counts:", error);
+      }
+    };
+
+    fetchRoomCounts();
+    const intervalId = setInterval(fetchRoomCounts, 5000); // Poll every 5 seconds
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -57,6 +77,10 @@ function App() {
     localStorage.setItem('user', JSON.stringify(fullUserData));
     setUser(fullUserData);
     setShowAuthModal(false);
+    setCurrentView('lobby');
+    if (gameState.gameType) {
+      handleSelectMode(8, 'create', gameState.gameType);
+    }
   };
 
   const handleLogout = () => {
@@ -68,11 +92,11 @@ function App() {
   };
 
   const handleEnterGame = (gameType) => {
-    console.log('handleEnterGame called with gameType:', gameType);
-    handleSelectMode(8, 'join', gameType);
+    setGameState(prev => ({ ...prev, gameType }));
+    setCurrentView('modeSelection');
   };
 
-  const handleSelectMode = async (playerCount, matchAction, gameType, isRetry = false) => {
+  const handleSelectMode = async (playerCount, matchAction, gameType = gameState.gameType, isRetry = false) => {
     console.log('handleSelectMode called with:', { playerCount, matchAction, gameType, isRetry });
     if (!user) {
       setShowAuthModal(true);
@@ -169,7 +193,7 @@ function App() {
         onGameEnd: (updatedUser) => updateUserData(updatedUser),
         playerCount: gameState.playerCount,
       };
-      if (['thirteen', 'thirteen-5'].includes(gameState.gameType)) {
+      if (['thirteen', 'thirteen-5', 'thirteen-10'].includes(gameState.gameType)) {
         return <ThirteenGame {...gameProps} gameType={gameState.gameType} />;
       }
     }
@@ -181,6 +205,8 @@ function App() {
         return <GameRules onBack={() => setCurrentView('lobby')} />;
       case 'profile':
         return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
+      case 'modeSelection':
+        return <ModeSelection gameType={gameState.gameType} onSelectMode={handleSelectMode} onBack={() => setCurrentView('lobby')} roomCounts={roomCounts} />;
       case 'lobby':
       default:
         return (

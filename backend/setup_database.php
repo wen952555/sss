@@ -98,7 +98,15 @@ $users = [
     ['user5', 'password'],
 ];
 
-$stmt = $conn->prepare("INSERT INTO users (phone, password, points) VALUES (?, ?, 1000) ON DUPLICATE KEY UPDATE password = VALUES(password)");
+$stmt_delete = $conn->prepare("DELETE FROM users WHERE phone = ?");
+foreach ($users as $user) {
+    $phone = $user[0];
+    $stmt_delete->bind_param("s", $phone);
+    $stmt_delete->execute();
+}
+$stmt_delete->close();
+
+$stmt = $conn->prepare("INSERT INTO users (phone, password, points) VALUES (?, ?, 1000)");
 foreach ($users as $user) {
     $phone = $user[0];
     $passwordHash = password_hash($user[1], PASSWORD_DEFAULT);

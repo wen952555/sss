@@ -22,10 +22,11 @@ function get_deck_for_players($playerCount) {
 
     if ($playerCount === 8) {
         // For 8 players, use two standard decks.
-        foreach ($standard_suits as $suit) {
-            foreach ($ranks as $rank) {
-                $deck[] = ['rank' => $rank, 'suit' => $suit];
-                $deck[] = ['rank' => $rank, 'suit' => $suit];
+        for ($i = 0; $i < 2; $i++) {
+            foreach ($standard_suits as $suit) {
+                foreach ($ranks as $rank) {
+                    $deck[] = ['rank' => $rank, 'suit' => $suit];
+                }
             }
         }
     } else {

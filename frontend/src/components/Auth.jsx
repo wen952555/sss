@@ -32,8 +32,22 @@ const Auth = ({ onLoginSuccess, onClose }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // 登录或注册成功，调用父组件的回调函数
-        onLoginSuccess(data.userId, data.userData);
+        if (action === 'register') {
+          // After registration, automatically log in
+          const loginResponse = await fetch('/api/?action=login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, password }),
+          });
+          const loginData = await loginResponse.json();
+          if (loginResponse.ok && loginData.success) {
+            onLoginSuccess(loginData.userId, loginData.userData);
+          } else {
+            setError(loginData.message || '自动登录失败');
+          }
+        } else {
+          onLoginSuccess(data.userId, data.userData);
+        }
       } else {
         setError(data.message || (isLoginView ? '登录失败' : '注册失败'));
       }
