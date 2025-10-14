@@ -5,7 +5,23 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 const passwordValidator = (password) => {
-    return password && password.length >= 6;
+    const errors = [];
+    if (!password || password.length < 8) {
+        errors.push('密码必须至少包含8个字符');
+    }
+    if (!/[a-z]/.test(password)) {
+        errors.push('密码必须包含至少一个小写字母');
+    }
+    if (!/[A-Z]/.test(password)) {
+        errors.push('密码必须包含至少一个大写字母');
+    }
+    if (!/\d/.test(password)) {
+        errors.push('密码必须包含至少一个数字');
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+        errors.push('密码必须包含至少一个特殊字符 (!@#$%^&*)');
+    }
+    return errors;
 };
 
 async function generateUniqueDisplayId(userDb) {
@@ -30,8 +46,9 @@ router.post('/register', async (req, res) => {
     if (!/^\d{11}$/.test(phone)) {
         return res.status(400).json({ success: false, message: '请输入有效的11位手机号。' });
     }
-    if (!passwordValidator(password)) {
-        return res.status(400).json({ success: false, message: '密码必须至少包含6个字符。' });
+    const passwordErrors = passwordValidator(password);
+    if (passwordErrors.length > 0) {
+        return res.status(400).json({ success: false, message: passwordErrors.join('，') });
     }
 
     try {
@@ -72,12 +89,12 @@ router.post('/login', async (req, res) => {
     try {
         const user = await userDb.get('SELECT * FROM users WHERE phone = ?', [phone]);
         if (!user) {
-            return res.status(401).json({ success: false, message: '无效的凭证。' });
+            return res.status(401).json({ success: false, message: '用户不存在。' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(401).json({ success: false, message: '无效的凭证。' });
+            return res.status(401).json({ success: false, message: '密码不正确。' });
         }
 
         const tokenPayload = {
@@ -107,7 +124,8 @@ router.post('/forgot-password', async (req, res) => {
             const token = crypto.randomBytes(20).toString('hex');
             const expires = Date.now() + 3600000; // 1 hour
             await userDb.run('UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?', [token, expires, user.id]);
-            // In a real app, you'd email this token. Here we return it for testing.
+            // SECURITY NOTE: In a production application, you should send this token to the user via email or another secure method.
+            // Returning the token directly in the response is insecure and done here for demonstration purposes only.
             return res.json({ success: true, message: '密码重置令牌已生成。', reset_token: token });
         }
         // Always return a success-like message to prevent user enumeration
@@ -124,8 +142,9 @@ router.post('/reset-password', async (req, res) => {
     if (!phone || !token || !newPassword) {
         return res.status(400).json({ success: false, message: '手机号、令牌和新密码是必填项。' });
     }
-    if (!passwordValidator(newPassword)) {
-        return res.status(400).json({ success: false, message: '密码必须至少包含6个字符。' });
+    const passwordErrors = passwordValidator(newPassword);
+    if (passwordErrors.length > 0) {
+        return res.status(400).json({ success: false, message: passwordErrors.join('，') });
     }
 
     try {
