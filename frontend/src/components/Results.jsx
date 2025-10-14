@@ -1,4 +1,3 @@
-// frontend/src/components/Results.jsx
 import React from 'react';
 import Hand from './Hand';
 import './Results.css';
@@ -11,13 +10,10 @@ const Results = ({ results }) => {
     const { scores, hands, evals, playerDetails } = results;
     const playerSocketIds = Object.keys(hands);
 
-    // Helper to get player name from their socket ID
     const getPlayerName = (socketId) => {
-        // playerDetails might not be available in offline mode, so we have a fallback.
         if (playerDetails && playerDetails[socketId]) {
             return playerDetails[socketId]?.name;
         }
-        // Fallback for offline mode or if details are missing
         const player = results.playerInfo?.find(p => p.id === socketId);
         return player?.name || `玩家 (ID: ${socketId.substring(0, 5)})`;
     };
@@ -30,7 +26,6 @@ const Results = ({ results }) => {
                     const finalScore = scores[socketId];
                     const playerHands = hands[socketId];
                     const playerEvals = evals[socketId];
-                    const comparisons = finalScore.comparisons || {};
 
                     return (
                         <div key={socketId} className="player-result-card">
@@ -48,20 +43,18 @@ const Results = ({ results }) => {
                             )}
 
                             <div className="player-hands-display">
-                                <Hand name="前墩" cards={playerHands.front} handInfo={playerEvals.front} isCompact={true} />
-                                <Hand name="中墩" cards={playerHands.middle} handInfo={playerEvals.middle} isCompact={true} />
-                                <Hand name="后墩" cards={playerHands.back} handInfo={playerEvals.back} isCompact={true} />
-                            </div>
-
-                            <div className="comparison-details">
-                                <h4>比牌详情:</h4>
-                                <ul>
-                                    {Object.entries(comparisons).map(([opponentSocketId, score]) => (
-                                        <li key={opponentSocketId} className={score > 0 ? 'positive' : score < 0 ? 'negative' : ''}>
-                                            vs {getPlayerName(opponentSocketId)}: {score > 0 ? `+${score}` : score}
-                                        </li>
-                                    ))}
-                                </ul>
+                                {['front', 'middle', 'back'].map(segment => {
+                                    const segmentScore = Object.values(finalScore.segmentScores).reduce((acc, scores) => acc + (scores[segment] || 0), 0);
+                                    const isWinner = Object.values(finalScore.segmentScores).every(scores => scores[segment] >= 0);
+                                    return (
+                                        <div key={segment} className={`segment-container ${isWinner ? 'winner' : ''}`}>
+                                            <Hand name={segment.charAt(0).toUpperCase() + segment.slice(1)} cards={playerHands[segment]} handInfo={playerEvals[segment]} isCompact={true} />
+                                            <div className="segment-score">
+                                                {segmentScore > 0 ? `+${segmentScore}` : segmentScore}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     );

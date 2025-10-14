@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       // --- Proxy all API requests to the PHP server ---
       '/api': {
-        target: 'http://localhost:8000', // Target the PHP server
+        target: 'http://localhost:14722',
         changeOrigin: true,
       },
       // --- Keep existing Node.js proxies ---\

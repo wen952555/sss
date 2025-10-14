@@ -28,7 +28,7 @@ async function generateUniqueDisplayId(userDb) {
     let displayId;
     let isUnique = false;
     while (!isUnique) {
-        displayId = Math.random().toString(36).substring(2, 8);
+        displayId = Math.random().toString(36).substring(2, 10);
         const existingUser = await userDb.get('SELECT id FROM users WHERE display_id = ?', [displayId]);
         if (!existingUser) {
             isUnique = true;
