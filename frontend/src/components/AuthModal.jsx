@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import './AuthModal.css';
-import LoginForm from './auth/LoginForm';
-import RegisterForm from './auth/RegisterForm';
+import AuthForm from './auth/AuthForm';
 import ForgotPasswordForm from './auth/ForgotPasswordForm';
 import ResetPasswordForm from './auth/ResetPasswordForm';
 
@@ -20,13 +19,13 @@ const AuthModal = ({ show, onClose, setToken }) => {
     const renderForm = () => {
         switch (view) {
             case 'register':
-                return <RegisterForm setToken={setToken} setView={setView} handleClose={handleClose} />;
+                return <AuthForm setToken={setToken} setView={setView} handleClose={handleClose} isRegister />;
             case 'forgot':
                 return <ForgotPasswordForm setView={setView} setPhone={setPhone} phone={phone} />;
             case 'reset':
                 return <ResetPasswordForm setView={setView} phone={phone} />;
             default:
-                return <LoginForm setToken={setToken} setView={setView} handleClose={handleClose} />;
+                return <AuthForm setToken={setToken} setView={setView} handleClose={handleClose} />;
         }
     };
 
