@@ -78,7 +78,7 @@ function App() {
     setShowAuthModal(false);
     setCurrentView('lobby');
     if (gameState.gameType) {
-      handleSelectMode(8, 'create', gameState.gameType);
+      handleSelectMode(4, 'create', gameState.gameType);
     }
   };
 
@@ -91,7 +91,7 @@ function App() {
   };
 
   const handleEnterGame = (gameType) => {
-    handleSelectMode(8, 'join', gameType);
+    handleSelectMode(4, 'join', gameType);
   };
 
   const handleSelectMode = async (playerCount, matchAction, gameType = gameState.gameType, isRetry = false) => {
