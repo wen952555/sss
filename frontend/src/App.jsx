@@ -92,8 +92,7 @@ function App() {
   };
 
   const handleEnterGame = (gameType) => {
-    setGameState(prev => ({ ...prev, gameType }));
-    setCurrentView('modeSelection');
+    handleSelectMode(8, 'join', gameType);
   };
 
   const handleSelectMode = async (playerCount, matchAction, gameType = gameState.gameType, isRetry = false) => {
