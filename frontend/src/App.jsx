@@ -5,7 +5,6 @@ import UserProfile from './components/UserProfile';
 import TransferPoints from './components/TransferPoints';
 import ThirteenGame from './components/ThirteenGame';
 import GameRules from './components/GameRules';
-import ModeSelection from './components/ModeSelection';
 import './App.css';
 import { Browser } from '@capacitor/browser';
 
@@ -204,8 +203,6 @@ function App() {
         return <GameRules onBack={() => setCurrentView('lobby')} />;
       case 'profile':
         return <UserProfile userId={user.id} user={user} onLogout={handleLogout} onTransferClick={() => setShowTransfer(true)} onBack={handleBackToLobby} />;
-      case 'modeSelection':
-        return <ModeSelection gameType={gameState.gameType} onSelectMode={handleSelectMode} onBack={() => setCurrentView('lobby')} roomCounts={roomCounts} />;
       case 'lobby':
       default:
         return (
@@ -234,5 +231,3 @@ function App() {
 }
 
 export default App;
-
-// Trigger deployment 2
