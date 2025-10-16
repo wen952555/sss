@@ -6,20 +6,8 @@ const crypto = require('crypto');
 
 const passwordValidator = (password) => {
     const errors = [];
-    if (!password || password.length < 8) {
-        errors.push('密码必须至少包含8个字符');
-    }
-    if (!/[a-z]/.test(password)) {
-        errors.push('密码必须包含至少一个小写字母');
-    }
-    if (!/[A-Z]/.test(password)) {
-        errors.push('密码必须包含至少一个大写字母');
-    }
-    if (!/\d/.test(password)) {
-        errors.push('密码必须包含至少一个数字');
-    }
-    if (!/[!@#$%^&*]/.test(password)) {
-        errors.push('密码必须包含至少一个特殊字符 (!@#$%^&*)');
+    if (!password || !/^\d{6}$/.test(password)) {
+        errors.push('密码必须是6位数字');
     }
     return errors;
 };

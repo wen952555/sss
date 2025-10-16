@@ -21,15 +21,7 @@ const AuthForm = ({ setToken, setView, handleClose, isRegister = false }) => {
             </div>
             <div className="form-group">
                 <label htmlFor="auth-password">密码</label>
-                <input id="auth-password" type="password" name="password" placeholder="请输入密码" value={formData.password} onChange={handleChange} required />
-                {isRegister && (
-                    <ul className="password-requirements">
-                        <li>- 至少8个字符</li>
-                        <li>- 包含大小写字母</li>
-                        <li>- 包含数字</li>
-                        <li>- 包含特殊字符 (!@#$%^&*)</li>
-                    </ul>
-                )}
+                <input id="auth-password" type="password" name="password" placeholder="请输入6位数字密码" value={formData.password} onChange={handleChange} required />
             </div>
             {isRegister && (
                 <div className="form-group">
