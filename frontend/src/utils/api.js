@@ -31,12 +31,14 @@ async function request(endpoint, options = {}) {
 }
 
 // --- Auth --- //
-export const login = (phone, password) => {
+export const login = (data) => {
+    const { phone, password } = data;
     return request('/login', { body: { phone, password } });
 };
 
-export const register = (phone, password, displayId) => {
-    return request('/register', { body: { phone, password, display_id: displayId } });
+export const register = (data) => {
+    const { phone, password } = data;
+    return request('/register', { body: { phone, password } });
 };
 
 // --- Rooms --- //
