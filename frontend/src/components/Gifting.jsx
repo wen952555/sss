@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { findUserByPhone, sendPoints } from '../utils/api'; // Assuming api.js is in a utils folder
 import './Gifting.css';
 
 const Gifting = ({ token }) => {
@@ -17,23 +18,10 @@ const Gifting = ({ token }) => {
         setFoundUser(null);
 
         try {
-            const response = await fetch('/api/user/find', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({ phone: searchPhone }),
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                setFoundUser(data.user);
-            } else {
-                setError(data.message || '搜索失败');
-            }
+            const data = await findUserByPhone(searchPhone, token);
+            setFoundUser(data.user);
         } catch (err) {
-            setError('网络错误，请稍后再试。');
+            setError(err.message || '搜索失败');
         } finally {
             setIsLoading(false);
         }
@@ -41,31 +29,19 @@ const Gifting = ({ token }) => {
 
     const handleSend = async (e) => {
         e.preventDefault();
+        if (!foundUser) return;
         setIsLoading(true);
         setError('');
         setMessage('');
 
         try {
-            const response = await fetch('/api/points/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({ recipientId: foundUser.id, amount }),
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                setMessage(data.message);
-                setFoundUser(null); // Reset form after successful send
-                setSearchPhone('');
-                setAmount('');
-            } else {
-                setError(data.message || '赠送失败');
-            }
+            const data = await sendPoints(foundUser.id, amount, token);
+            setMessage(data.message);
+            setFoundUser(null); // Reset form after successful send
+            setSearchPhone('');
+            setAmount('');
         } catch (err) {
-            setError('网络错误，请稍后再试。');
+            setError(err.message || '赠送失败');
         } finally {
             setIsLoading(false);
         }
@@ -90,7 +66,7 @@ const Gifting = ({ token }) => {
 
             {foundUser && (
                 <form onSubmit={handleSend} className="send-form">
-                    <p>找到用户，ID: <strong>{foundUser.display_id}</strong></p>
+                    <p>找到用户: <strong>{foundUser.display_id}</strong></p>
                     <input
                         type="number"
                         placeholder="输入赠送积分数量"

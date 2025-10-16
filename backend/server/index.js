@@ -1,34 +1,12 @@
-require('dotenv').config();
 
-// Environment variable validation
-const requiredEnvVars = ['JWT_SECRET'];
-if (process.env.DB_TYPE === 'sqlite') {
-  requiredEnvVars.push('USER_DB_FILE', 'SQLITE_DB_FILE');
-} else {
-  requiredEnvVars.push('DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME');
-}
-
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-if (missingEnvVars.length > 0) {
-  console.error('🔴 FATAL ERROR: Missing required environment variables:');
-  console.error(`- ${missingEnvVars.join('\n- ')}`);
-  console.error('\nPlease create a .env file in the backend directory and add these variables.');
-  console.error('Refer to .env.example for a template.');
-  process.exit(1);
-}
-
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const express = require('express');
-const http = require('http');
-const { Server } = require("socket.io");
 const cors = require('cors');
 const path = require('path');
-const dbPromise = require('../db');
 const jwt = require('jsonwebtoken');
+const dbPromise = require('../db');
 const authRoutes = require('./routes/auth');
 const setupUserDatabase = require('../setupDatabase');
-
-let userDb, gameDb;
 
 const {
     dealCards,
@@ -40,98 +18,61 @@ const {
     SPECIAL_HAND_TYPES
 } = require('./gameLogic');
 
-async function setupGameDatabase() {
-    console.log('Starting SQLite game database setup check...');
-    const rawDb = gameDb.getRawDb();
-    try {
-        const tableExists = await rawDb.get("SELECT name FROM sqlite_master WHERE type='table' AND name='games'");
-        if (tableExists) {
-            console.log('✅ Game database tables already exist. Skipping setup.');
-            return;
-        }
-        console.log('Game tables not found. Proceeding with database setup...');
-        const schemaSQL = `
-          CREATE TABLE games (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-          CREATE TABLE player_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, game_id INTEGER NOT NULL, player_id TEXT NOT NULL, player_name TEXT NOT NULL, hand_front TEXT, hand_middle TEXT, hand_back TEXT, score INTEGER NOT NULL, special_hand_type TEXT, FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE);
-        `;
-        await rawDb.exec(schemaSQL);
-        console.log('✅ Game-related tables created successfully for SQLite!');
-    } catch (error) {
-        console.error('🔴 An error occurred during SQLite game database setup:', error.message);
-        process.exit(1);
-    }
+// --- Environment Validation ---
+const requiredEnvVars = ['JWT_SECRET', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingEnvVars.length > 0) {
+    console.error(`🔴 FATAL ERROR: Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    process.exit(1);
 }
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- API Routes ---
-app.use('/api', authRoutes);
+let userDb, gameDb;
+const gameRooms = {}; // In-memory store for game rooms
 
-// --- Game API Routes ---
-app.get('/games', async (req, res) => {
-  try {
-    const [games] = await gameDb.query('SELECT * FROM games ORDER BY created_at DESC LIMIT 10');
-    for (let game of games) {
-      const [scores] = await gameDb.query('SELECT * FROM player_scores WHERE game_id = ?', [game.id]);
-      game.players = scores;
-    }
-    res.json({ success: true, data: games });
-  } catch (error) {
-    console.error('Failed to retrieve game history:', error);
-    res.status(500).json({ success: false, message: 'Failed to retrieve game history.' });
-  }
-});
+// --- JWT Authentication Middleware ---
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token == null) return res.sendStatus(401);
 
-const frontendDistPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
-app.use(express.static(frontendDistPath));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendDistPath, 'index.html'));
-});
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user.data;
+        next();
+    });
+};
 
-const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:8000"],
-        methods: ["GET", "POST"]
-    }
-});
-
-const gameRooms = {};
-
+// --- Helper Functions ---
 function createNewGameState() {
     return {
         players: {},
         gameState: {
-            hands: {}, submittedHands: {}, evaluatedHands: {},
-            specialHands: {}, results: null, status: 'waiting'
+            status: 'waiting', // waiting, playing, finished
+            hands: {},
+            submittedHands: {},
+            evaluatedHands: {},
+            specialHands: {},
+            results: null,
         }
     };
 }
 
-function resetGame(roomId) {
+function getRoomDTO(roomId) {
     const room = gameRooms[roomId];
-    if (room) {
-        const players = room.players;
-        gameRooms[roomId] = createNewGameState();
-        gameRooms[roomId].players = players;
-        Object.values(gameRooms[roomId].players).forEach(p => p.isReady = false);
-        console.log(`Room ${roomId} has been reset.`);
-    }
-}
-
-function broadcastRoomsUpdate(io) {
-    const rooms = Object.entries(gameRooms).map(([id, room]) => ({
-        id,
+    if (!room) return null;
+    return {
+        id: roomId,
         playerCount: Object.keys(room.players).length,
-        players: Object.values(room.players).map(p => p.name),
+        players: Object.values(room.players),
         status: room.gameState.status,
-    }));
-    io.emit('rooms_update', rooms);
+    };
 }
 
-async function calculateResults(roomId, io) {
+async function calculateResults(roomId) {
     const room = gameRooms[roomId];
     if (!room) return;
     const { players, gameState } = room;
@@ -149,9 +90,9 @@ async function calculateResults(roomId, io) {
         gameState.specialHands[id] = evaluate13CardHand(allCards);
     });
 
-    const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null, segmentScores: {}, comparisons: {} } }), {});
-
+    const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null } }), {});
     const specialPlayerId = playerIds.find(id => gameState.specialHands[id].value > SPECIAL_HAND_TYPES.NONE.value);
+
     if (specialPlayerId) {
         const specialHand = gameState.specialHands[specialPlayerId];
         const score = specialHand.score;
@@ -164,155 +105,245 @@ async function calculateResults(roomId, io) {
             for (let j = i + 1; j < playerIds.length; j++) {
                 const p1_id = playerIds[i];
                 const p2_id = playerIds[j];
-                const { p1_score, p2_score, p1_segment_scores, p2_segment_scores } = comparePlayerHands(gameState.evaluatedHands[p1_id], gameState.evaluatedHands[p2_id]);
+                const { p1_score, p2_score } = comparePlayerHands(gameState.evaluatedHands[p1_id], gameState.evaluatedHands[p2_id]);
                 finalScores[p1_id].total += p1_score;
                 finalScores[p2_id].total += p2_score;
-                finalScores[p1_id].segmentScores[p2_id] = p1_segment_scores;
-                finalScores[p2_id].segmentScores[p1_id] = p2_segment_scores;
             }
         }
     }
 
     gameState.results = { scores: finalScores, hands: gameState.submittedHands, evals: gameState.evaluatedHands, playerDetails: players };
     gameState.status = 'finished';
-    io.to(roomId).emit('game_over', gameState.results);
-
+    
+    // Save to DB
     try {
         const [gameResult] = await gameDb.query('INSERT INTO games (room_id) VALUES (?)', [roomId]);
         const gameId = gameResult.insertId;
         for (const playerId of playerIds) {
+            const player = Object.values(players).find(p => p.id === playerId);
+            if(!player) continue;
+            
             const { front, middle, back } = gameState.submittedHands[playerId];
             const score = finalScores[playerId].total;
             const specialHandType = finalScores[playerId].special || null;
-            const playerName = players[playerId]?.name || 'Unknown';
-            const dbPlayerId = players[playerId]?.id; // This is the user ID from the JWT
-            if (!dbPlayerId) continue;
+            
             await gameDb.query(
                 'INSERT INTO player_scores (game_id, player_id, player_name, hand_front, hand_middle, hand_back, score, special_hand_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [gameId, dbPlayerId, playerName, JSON.stringify(front), JSON.stringify(middle), JSON.stringify(back), score, specialHandType]
+                [gameId, player.db_id, player.name, JSON.stringify(front), JSON.stringify(middle), JSON.stringify(back), score, specialHandType]
             );
         }
-        console.log(`Game ${gameId} results for room ${roomId} saved.`);
+        console.log(`Game ${gameId} results saved.`);
     } catch (error) {
         console.error(`Failed to save game results for room ${roomId}:`, error);
     }
 }
 
 
-// --- Socket Handlers ---
-io.on('connection', (socket) => {
-    console.log('Player connected:', socket.id);
-    let currentRoomId = null;
+// --- API Routes ---
+app.use('/api', authRoutes);
 
-    socket.on('get_rooms', () => {
-        const rooms = Object.entries(gameRooms).map(([id, room]) => ({
-            id,
-            playerCount: Object.keys(room.players).length,
-            status: room.gameState.status,
-        }));
-        socket.emit('rooms_update', rooms);
-    });
+// Get list of all rooms
+app.get('/api/rooms', (req, res) => {
+    const roomList = Object.keys(gameRooms).map(roomId => getRoomDTO(roomId)).filter(r => r !== null);
+    res.json(roomList);
+});
 
-    socket.on('join_room', (roomId, token) => {
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const userData = decoded.data;
-            const displayId = userData.display_id;
-            const userId = userData.id;
+// Create a new room
+app.post('/api/rooms', (req, res) => {
+    const roomId = `room_${Date.now()}`;
+    gameRooms[roomId] = createNewGameState();
+    console.log(`Room ${roomId} created.`);
+    res.json({ roomId });
+});
 
-            currentRoomId = roomId;
-            socket.join(roomId);
-
-            if (!gameRooms[roomId]) {
-                gameRooms[roomId] = createNewGameState();
-            }
-            const room = gameRooms[roomId];
-            const isHost = Object.keys(room.players).length === 0;
-            room.players[socket.id] = { id: userId, socketId: socket.id, name: displayId, isReady: false, isHost, hasSubmitted: false };
-
-            io.to(roomId).emit('players_update', Object.values(room.players));
-            console.log(`Player ${socket.id} (User ID: ${displayId}) joined room ${roomId}.`);
-            broadcastRoomsUpdate(io);
-        } catch (error) {
-            console.error("JWT verification failed:", error.message);
-            socket.emit('error_message', '无效的认证凭证，请重新登录。');
-        }
-    });
-
-    socket.on('player_ready', (isReady) => {
-        if (currentRoomId && gameRooms[currentRoomId]?.players[socket.id]) {
-            gameRooms[currentRoomId].players[socket.id].isReady = isReady;
-            io.to(currentRoomId).emit('players_update', Object.values(gameRooms[currentRoomId].players));
-        }
-    });
-
-    socket.on('start_game', () => {
-        if (!currentRoomId || !gameRooms[currentRoomId]) return;
-        const room = gameRooms[currentRoomId];
-        const player = room.players[socket.id];
-        if (!player?.isHost) return socket.emit('error_message', '只有房主才能开始游戏');
-        const playersInRoom = Object.values(room.players);
-        if (playersInRoom.length < 2) return socket.emit('error_message', '需要至少2位玩家才能开始游戏');
-        if (!playersInRoom.every(p => p.isHost || p.isReady)) return socket.emit('error_message', '所有玩家都准备好后才能开始游戏');
-
-        room.gameState.status = 'playing';
-        const dealtCards = dealCards();
-        Object.keys(room.players).forEach((socketId, i) => {
-            room.gameState.hands[socketId] = dealtCards[`player${i + 1}`];
-            io.to(socketId).emit('deal_hand', dealtCards[`player${i + 1}`]);
-        });
-
-        io.to(currentRoomId).emit('game_started');
-        broadcastRoomsUpdate(io);
-    });
-
-    socket.on('submit_hand', async (hand) => {
-        if (!currentRoomId || !gameRooms[currentRoomId] || gameRooms[currentRoomId].gameState.status !== 'playing') return;
-        if (!isValidHand(hand.front, hand.middle, hand.back)) return socket.emit('error_message', '牌型不合法 (倒水)');
-
-        const room = gameRooms[currentRoomId];
-        room.gameState.submittedHands[socket.id] = hand;
-        room.players[socket.id].hasSubmitted = true;
-        io.to(currentRoomId).emit('players_update', Object.values(room.players));
-
-        if (Object.keys(room.gameState.submittedHands).length === Object.keys(room.gameState.hands).length) {
-            await calculateResults(currentRoomId, io);
-            broadcastRoomsUpdate(io);
-        }
-    });
-
-    const handleLeaveOrDisconnect = () => {
-        if (!currentRoomId || !gameRooms[currentRoomId]) return;
-        const room = gameRooms[currentRoomId];
-        const player = room.players[socket.id];
-        if (!player) return;
-
-        console.log(`Player ${player.name} left/disconnected from room ${currentRoomId}`);
-        const wasHost = player.isHost;
-        const wasInGame = room.gameState.status === 'playing' && room.gameState.hands[socket.id];
-        delete room.players[socket.id];
-
-        if (Object.keys(room.players).length === 0) {
-            delete gameRooms[currentRoomId];
-        } else {
-            if (wasHost) {
-                Object.values(room.players)[0].isHost = true;
-            }
-            if (wasInGame) {
-                resetGame(currentRoomId);
-                io.to(currentRoomId).emit('game_reset');
-            }
-            io.to(currentRoomId).emit('players_update', Object.values(room.players));
-        }
-        broadcastRoomsUpdate(io);
-        currentRoomId = null;
-    };
-
-    socket.on('leave_room', handleLeaveOrDisconnect);
-    socket.on('disconnect', handleLeaveOrDisconnect);
+// Get the state of a specific room (the polling endpoint)
+app.get('/api/rooms/:roomId', (req, res) => {
+    const { roomId } = req.params;
+    const room = gameRooms[roomId];
+    if (!room) {
+        return res.status(404).json({ message: "Room not found" });
+    }
+    // For the player making the request, we add their specific hand
+    const playerState = { ...room };
+    // This part requires knowing the player's ID, which we get from the JWT
+    // This is a placeholder as we need to map JWT user to player in room
+    // For now, returning the full state
+    res.json(playerState);
 });
 
 
+// Join a room
+app.post('/api/rooms/:roomId/join', authenticateToken, (req, res) => {
+    const { roomId } = req.params;
+    const room = gameRooms[roomId];
+    if (!room) return res.status(404).json({ message: "Room not found" });
+    if (room.gameState.status !== 'waiting') return res.status(400).json({ message: "Game has already started" });
+    
+    const playerId = req.user.display_id; // Using display_id from JWT
+    if (room.players[playerId]) return res.status(400).json({ message: "Player already in room" });
+
+    const isHost = Object.keys(room.players).length === 0;
+    room.players[playerId] = {
+        id: playerId,
+        db_id: req.user.id, // The actual user ID from the database
+        name: req.user.display_id,
+        isReady: false,
+        isHost: isHost,
+        hasSubmitted: false,
+    };
+    
+    res.json(room);
+});
+
+// Player is ready
+app.post('/api/rooms/:roomId/ready', authenticateToken, (req, res) => {
+    const { roomId } = req.params;
+    const { isReady } = req.body;
+    const playerId = req.user.display_id;
+    const room = gameRooms[roomId];
+
+    if (room && room.players[playerId]) {
+        room.players[playerId].isReady = isReady;
+        res.json(room);
+    } else {
+        res.status(404).json({ message: "Room or player not found" });
+    }
+});
+
+// Start game
+app.post('/api/rooms/:roomId/start', authenticateToken, async (req, res) => {
+    const { roomId } = req.params;
+    const playerId = req.user.display_id;
+    const room = gameRooms[roomId];
+
+    if (!room) return res.status(404).json({ message: "Room not found" });
+    if (!room.players[playerId] || !room.players[playerId].isHost) {
+        return res.status(403).json({ message: "Only the host can start the game" });
+    }
+
+    const playersInRoom = Object.values(room.players);
+    if (playersInRoom.length < 2) return res.status(400).json({ message: "Need at least 2 players" });
+    if (!playersInRoom.every(p => p.isHost || p.isReady)) return res.status(400).json({ message: "All players must be ready" });
+    
+    room.gameState.status = 'playing';
+    const dealtCards = dealCards(playersInRoom.length);
+    playersInRoom.forEach((player, i) => {
+        room.gameState.hands[player.id] = dealtCards[`player${i + 1}`];
+    });
+
+    res.json(room);
+});
+
+// Submit hand
+app.post('/api/rooms/:roomId/submit', authenticateToken, async (req, res) => {
+    const { roomId } = req.params;
+    const { hand } = req.body; // { front: [], middle: [], back: [] }
+    const playerId = req.user.display_id;
+    const room = gameRooms[roomId];
+
+    if (!room || room.gameState.status !== 'playing') return res.status(400).json({ message: "Not a valid game or not in playing state" });
+    if (!isValidHand(hand.front, hand.middle, hand.back)) return res.status(400).json({ message: "Invalid hand (倒水)" });
+
+    room.gameState.submittedHands[playerId] = hand;
+    room.players[playerId].hasSubmitted = true;
+    
+    // If all players have submitted, calculate results
+    if (Object.keys(room.gameState.submittedHands).length === Object.keys(room.players).length) {
+        await calculateResults(roomId);
+    }
+
+    res.json(room);
+});
+
+// --- Gifting API ---
+
+app.post('/api/user/find', authenticateToken, async (req, res) => {
+    const { phone } = req.body;
+    if (!phone) {
+        return res.status(400).json({ message: 'Phone number is required.' });
+    }
+    try {
+        const db = app.get('userDb');
+        const [users] = await db.query('SELECT id, display_id FROM users WHERE phone = ?', [phone]);
+        if (users.length > 0) {
+            res.json({ user: users[0] });
+        } else {
+            res.status(404).json({ message: 'User not found.' });
+        }
+    } catch (error) {
+        console.error('Error finding user by phone:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+app.post('/api/points/send', authenticateToken, async (req, res) => {
+    const { recipientId, amount } = req.body;
+    const senderId = req.user.id;
+    const parsedAmount = parseInt(amount, 10);
+
+    if (!recipientId || !parsedAmount || parsedAmount <= 0) {
+        return res.status(400).json({ message: 'Recipient ID and a positive amount are required.' });
+    }
+    if (senderId === recipientId) {
+        return res.status(400).json({ message: 'You cannot send points to yourself.' });
+    }
+
+    let connection;
+    try {
+        const db = app.get('userDb');
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        // 1. Check sender's balance and lock the row
+        const [senders] = await connection.query('SELECT points FROM users WHERE id = ? FOR UPDATE', [senderId]);
+        if (senders.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: 'Sender not found.' });
+        }
+        const sender = senders[0];
+        if (sender.points < parsedAmount) {
+            await connection.rollback();
+            return res.status(400).json({ message: 'Insufficient points.' });
+        }
+
+        // 2. Lock the recipient's row
+        const [recipients] = await connection.query('SELECT id FROM users WHERE id = ? FOR UPDATE', [recipientId]);
+        if (recipients.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: 'Recipient not found.' });
+        }
+
+        // 3. Perform the transfer
+        await connection.query('UPDATE users SET points = points - ? WHERE id = ?', [parsedAmount, senderId]);
+        await connection.query('UPDATE users SET points = points + ? WHERE id = ?', [parsedAmount, recipientId]);
+
+        // 4. Log the transaction
+        await connection.query(
+            'INSERT INTO point_transactions (sender_id, recipient_id, amount) VALUES (?, ?, ?)',
+            [senderId, recipientId, parsedAmount]
+        );
+
+        await connection.commit();
+        res.json({ message: 'Points sent successfully!' });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        console.error('Error sending points:', error);
+        res.status(500).json({ message: 'Internal server error during transaction.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+
+// --- Serve Frontend ---
+const frontendDistPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
+app.use(express.static(frontendDistPath));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
+});
+
+// --- Server Start ---
 const PORT = process.env.PORT || 14722;
 const HOST = '0.0.0.0';
 
@@ -322,13 +353,13 @@ async function startServer() {
         userDb = dbs.userDb;
         gameDb = dbs.gameDb;
         app.set('userDb', userDb);
-        await setupUserDatabase(userDb);
-        await setupGameDatabase();
-        server.listen(PORT, HOST, () => {
-            console.log(`✅ Node.js game server is running at http://${HOST}:${PORT}`);
+        // No need for setupGameDatabase here if schema is managed separately
+        // await setupUserDatabase(userDb); 
+        app.listen(PORT, HOST, () => {
+            console.log(`✅ HTTP Polling game server is running at http://${HOST}:${PORT}`);
         });
     } catch (err) {
-        console.error("🔴 Failed to start Node.js server:", err);
+        console.error("🔴 Failed to start HTTP server:", err);
         process.exit(1);
     }
 }

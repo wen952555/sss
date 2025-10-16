@@ -1,98 +1,92 @@
-// frontend/src/components/Lobby.jsx
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { socket } from '../socket'; // Use the shared socket instance
-import Gifting from './Gifting'; // Import the new Gifting component
+import * as api from '../utils/api';
+// Gifting component can be added back if its functionality is adapted for HTTP
+import Gifting from './Gifting'; 
 
-const Lobby = ({ token }) => { // Accept token as a prop
-  const [roomId, setRoomId] = useState('');
-  const [rooms, setRooms] = useState([]);
-  const navigate = useNavigate();
+const Lobby = ({ token }) => {
+    const [rooms, setRooms] = useState([]);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
-  useEffect(() => {
-    // Pass token for authentication when connecting
-    if (!socket.connected) {
-      socket.auth = { token };
-      socket.connect();
-    }
+    const fetchRooms = useCallback(async () => {
+        if (!token) return;
+        try {
+            const updatedRooms = await api.getRooms(token);
+            setRooms(updatedRooms);
+        } catch (err) {
+            setError(`Failed to fetch rooms: ${err.message}`);
+        }
+    }, [token]);
 
-    socket.emit('get_rooms');
+    useEffect(() => {
+        fetchRooms(); // Initial fetch
+        const intervalId = setInterval(fetchRooms, 5000); // Poll every 5 seconds
 
-    const handleRoomsUpdate = (updatedRooms) => {
-      setRooms(updatedRooms);
+        return () => clearInterval(intervalId);
+    }, [fetchRooms]);
+
+    const handleCreateRoom = async () => {
+        try {
+            const newRoom = await api.createRoom(token);
+            navigate(`/game/${newRoom.roomId}`);
+        } catch (err) {
+            setError(`Failed to create room: ${err.message}`);
+        }
     };
-    socket.on('rooms_update', handleRoomsUpdate);
 
-    return () => {
-      socket.off('rooms_update', handleRoomsUpdate);
+    const handleJoinRoom = (roomId) => {
+        if (roomId) {
+            navigate(`/game/${roomId}`);
+        }
     };
-  }, [token]);
 
-  const handleJoinRoom = (id) => {
-    const roomToJoin = id || roomId.trim();
-    if (roomToJoin) {
-      navigate(`/game/${roomToJoin}`);
-    }
-  };
+    const getStatusText = (status) => {
+        const map = { 'waiting': 'Waiting', 'playing': 'In Game', 'finished': 'Finished' };
+        return map[status] || status;
+    };
 
-  const getStatusInChinese = (status) => {
-    switch (status) {
-      case 'waiting':
-        return '等待中';
-      case 'playing':
-        return '游戏中';
-      case 'finished':
-        return '已结束';
-      default:
-        return status;
-    }
-  };
+    return (
+        <div className="lobby-container">
+            <h2>Game Lobby</h2>
+            {error && <p className="error-message">{error}</p>}
 
-  return (
-    <div className="lobby-container">
-      <h2>游戏大厅</h2>
+            <div className="create-room-form">
+                <button onClick={handleCreateRoom}>Create New Room</button>
+            </div>
 
-      <div className="join-room-form">
-        <input
-          type="text"
-          placeholder="输入新房间号以创建"
-          value={roomId}
-          onChange={(e) => setRoomId(e.target.value)}
-        />
-        <button onClick={() => handleJoinRoom()}>创建或加入房间</button>
-      </div>
+            <Gifting token={token} />
 
-      <Gifting token={token} />
-
-      <div className="room-list">
-        <h3>可用房间列表</h3>
-        {rooms.length > 0 ? (
-          <ul>
-            {rooms.map((room) => (
-              <li key={room.id} className="room-list-item">
-                <div className="room-info">
-                  <span className="room-name">房间: {room.id}</span>
-                  <span className="room-status">状态: {getStatusInChinese(room.status)} ({room.playerCount}/4)</span>
-                  <div className="room-players">
-                    玩家: {room.players.join(', ') || '等待中...'}
-                  </div>
-                </div>
-                <div className="room-actions">
-                  {room.status === 'waiting' && room.playerCount < 4 ? (
-                    <button onClick={() => handleJoinRoom(room.id)}>加入</button>
-                  ) : (
-                    <button disabled>房间已满或正在游戏</button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>当前没有可用的房间，快创建一个吧！</p>
-        )}
-      </div>
-    </div>
-  );
+            <div className="room-list">
+                <h3>Available Rooms</h3>
+                {rooms.length > 0 ? (
+                    <ul>
+                        {rooms.map((room) => (
+                            <li key={room.id} className="room-list-item">
+                                <div className="room-info">
+                                    <span className="room-name">Room: {room.id}</span>
+                                    <span className="room-status">Status: {getStatusText(room.status)} ({room.playerCount}/4)</span>
+                                    <div className="room-players">
+                                        Players: {room.players.map(p => p.name).join(', ') || 'Waiting for players...'}
+                                    </div>
+                                </div>
+                                <div className="room-actions">
+                                    {room.status === 'waiting' && room.playerCount < 4 ? (
+                                        <button onClick={() => handleJoinRoom(room.id)}>Join</button>
+                                    ) : (
+                                        <button disabled>Full or In Game</button>
+                                    )}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>No rooms available. Why not create one?</p>
+                )}
+            </div>
+        </div>
+    );
 };
 
 export default Lobby;

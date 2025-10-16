@@ -1,3 +1,4 @@
+
 {
   "name": "sss",
   "version": "1.0.0",
@@ -5,14 +6,19 @@
   "scripts": {
     "postinstall": "npm install --prefix frontend && npm install --prefix backend",
     "build": "npm run build --prefix frontend",
-    "start": "concurrently \"npm:start:frontend\" \"npm:start:backend\"",
+    "start": "node backend/server/index.js",
+    "dev": "concurrently \"npm:start:frontend\" \"npm:dev:backend\"",
     "start:frontend": "npm run dev --prefix frontend",
-    "start:backend": "npm start --prefix backend",
+    "dev:backend": "nodemon backend/server/index.js",
     "migrate": "node backend/migrate.js"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.0"
+  },
+  "dependencies": {
+    "jwt-decode": "^4.0.0"
   }
 }
