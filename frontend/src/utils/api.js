@@ -25,7 +25,7 @@ async function request(endpoint, options = {}) {
         }
         return await response.json();
     } catch (error) {
-        console.error('API call failed:', error);
+        console.error('API 调用失败:', error);
         throw error; // Re-throw the error to be handled by the calling component
     }
 }

@@ -12,7 +12,7 @@ export const useAuth = (authFn, setToken, handleClose) => {
         try {
             const data = await authFn(formData);
             if (!data.success) {
-                throw new Error(data.message || 'An error occurred.');
+                throw new Error(data.message || '发生错误。');
             }
             setToken(data.token);
             setTimeout(handleClose, 1000);

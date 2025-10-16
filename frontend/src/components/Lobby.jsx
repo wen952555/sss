@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as api from '../utils/api';
-// Gifting component can be added back if its functionality is adapted for HTTP
 import Gifting from './Gifting'; 
 
 const Lobby = ({ token }) => {
@@ -16,7 +15,7 @@ const Lobby = ({ token }) => {
             const updatedRooms = await api.getRooms(token);
             setRooms(updatedRooms);
         } catch (err) {
-            setError(`Failed to fetch rooms: ${err.message}`);
+            setError(`获取房间列表失败: ${err.message}`);
         }
     }, [token]);
 
@@ -32,7 +31,7 @@ const Lobby = ({ token }) => {
             const newRoom = await api.createRoom(token);
             navigate(`/game/${newRoom.roomId}`);
         } catch (err) {
-            setError(`Failed to create room: ${err.message}`);
+            setError(`创建房间失败: ${err.message}`);
         }
     };
 
@@ -43,46 +42,46 @@ const Lobby = ({ token }) => {
     };
 
     const getStatusText = (status) => {
-        const map = { 'waiting': 'Waiting', 'playing': 'In Game', 'finished': 'Finished' };
+        const map = { 'waiting': '等待中', 'playing': '游戏中', 'finished': '已结束' };
         return map[status] || status;
     };
 
     return (
         <div className="lobby-container">
-            <h2>Game Lobby</h2>
+            <h2>游戏大厅</h2>
             {error && <p className="error-message">{error}</p>}
 
             <div className="create-room-form">
-                <button onClick={handleCreateRoom}>Create New Room</button>
+                <button onClick={handleCreateRoom}>创建新房间</button>
             </div>
 
             <Gifting token={token} />
 
             <div className="room-list">
-                <h3>Available Rooms</h3>
+                <h3>可用房间</h3>
                 {rooms.length > 0 ? (
                     <ul>
                         {rooms.map((room) => (
                             <li key={room.id} className="room-list-item">
                                 <div className="room-info">
-                                    <span className="room-name">Room: {room.id}</span>
-                                    <span className="room-status">Status: {getStatusText(room.status)} ({room.playerCount}/4)</span>
+                                    <span className="room-name">房间: {room.id}</span>
+                                    <span className="room-status">状态: {getStatusText(room.status)} ({room.playerCount}/4)</span>
                                     <div className="room-players">
-                                        Players: {room.players.map(p => p.name).join(', ') || 'Waiting for players...'}
+                                        玩家: {room.players.map(p => p.name).join(', ') || '等待玩家加入...'}
                                     </div>
                                 </div>
                                 <div className="room-actions">
                                     {room.status === 'waiting' && room.playerCount < 4 ? (
-                                        <button onClick={() => handleJoinRoom(room.id)}>Join</button>
+                                        <button onClick={() => handleJoinRoom(room.id)}>加入</button>
                                     ) : (
-                                        <button disabled>Full or In Game</button>
+                                        <button disabled>满员或游戏中</button>
                                     )}
                                 </div>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p>No rooms available. Why not create one?</p>
+                    <p>没有可用的房间，创建一个吧！</p>
                 )}
             </div>
         </div>

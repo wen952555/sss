@@ -46,7 +46,7 @@ const Game = ({ token, user }) => {
             }
 
         } catch (err) {
-            setError(`Error fetching game state: ${err.message}`);
+            setError(`获取游戏状态失败: ${err.message}`);
             // If room not found, maybe redirect to lobby
             if (err.message.includes('404')) {
                 navigate('/');
@@ -61,7 +61,7 @@ const Game = ({ token, user }) => {
         }
 
         // Initial join
-        api.joinRoom(roomId, token).catch(err => setError(`Failed to join room: ${err.message}`));
+        api.joinRoom(roomId, token).catch(err => setError(`加入房间失败: ${err.message}`));
 
         // Set up the polling interval
         const intervalId = setInterval(fetchGameState, 2000); // Poll every 2 seconds
@@ -86,7 +86,7 @@ const Game = ({ token, user }) => {
     const handleReadyClick = async () => {
         if (me) {
             try {
-                await api.playerReady(roomId, token, !me.isReady);
+                await api.setReady(roomId, !me.isReady, token);
                 fetchGameState(); // Fetch state immediately after action
             } catch (err) {
                 setError(err.message);
@@ -95,8 +95,8 @@ const Game = ({ token, user }) => {
     };
 
     const handleSubmitHand = async () => {
-        if (myHand.length > 0) return setError("Please place all 13 cards.");
-        if (!isValidHand(arrangedHands.front, arrangedHands.middle, arrangedHands.back)) return setError("Invalid hand arrangement (倒水).");
+        if (myHand.length > 0) return setError("请摆放所有13张牌。");
+        if (!isValidHand(arrangedHands.front, arrangedHands.middle, arrangedHands.back)) return setError("牌型无效 (倒水)。");
         try {
             await api.submitHand(roomId, token, arrangedHands);
             setHasSubmitted(true);
@@ -125,7 +125,7 @@ const Game = ({ token, user }) => {
         if (!selectedCard || selectedCard.source !== 'myHand') return;
         const { card } = selectedCard;
         const handLimits = { front: 3, middle: 5, back: 5 };
-        if (arrangedHands[targetHandName].length >= handLimits[targetHandName]) return setError(`This section is full.`);
+        if (arrangedHands[targetHandName].length >= handLimits[targetHandName]) return setError(`此墩已满。`);
 
         setMyHand(myHand.filter(c => c.rank !== card.rank || c.suit !== card.suit));
         setArrangedHands(prev => ({ ...prev, [targetHandName]: sortHand([...prev[targetHandName], card]) }));
@@ -142,24 +142,24 @@ const Game = ({ token, user }) => {
 
     const handleSmartArrange = () => {
         const allCards = [...myHand, ...Object.values(arrangedHands).flat()];
-        if (allCards.length !== 13) return setError("Smart arrange requires all 13 cards.");
+        if (allCards.length !== 13) return setError("智能理牌需要全部13张牌。");
         const bestArrangement = findBestArrangement(allCards);
         if (bestArrangement) {
             setArrangedHands(bestArrangement);
             setMyHand([]);
             setError('');
         } else {
-            setError("Could not find a valid arrangement.");
+            setError("找不到有效的牌型组合。");
         }
     };
 
     const getPlayerStatusText = (player) => {
         if (gameStatus === 'playing') {
-            if (player.hasSubmitted) return ' (Submitted)';
+            if (player.hasSubmitted) return ' (已提交)';
             return ''; // In game, no ready status needed
         }
         if (gameStatus === 'waiting') {
-            return player.isHost ? ' (Host)' : (player.isReady ? ' (Ready)' : ' (Not Ready)');
+            return player.isHost ? ' (房主)' : (player.isReady ? ' (准备)' : ' (未准备)');
         }
         return '';
     };
@@ -168,15 +168,15 @@ const Game = ({ token, user }) => {
     const allOthersReady = otherPlayers.length > 0 && otherPlayers.every(p => p.isReady);
 
     // --- RENDER LOGIC ---
-    if (!me) return <div className="loading">Joining room...</div>; // Initial loading state
+    if (!me) return <div className="loading">加入房间中...</div>; // Initial loading state
 
     return (
         <div className="game-container">
             <header className="game-header">
-                <Link to="/" className="back-to-lobby-button">Back to Lobby</Link>
-                <h1>13-Card Poker - Room: {roomId}</h1>
+                <Link to="/" className="back-to-lobby-button">返回大厅</Link>
+                <h1>十三张 - 房间: {roomId}</h1>
                 <div className="player-list">
-                    <span>Players:</span>
+                    <span>玩家:</span>
                     <ul>
                         {players.map(p => <li key={p.id}>{p.name}{getPlayerStatusText(p)}</li>)}
                     </ul>
@@ -186,32 +186,32 @@ const Game = ({ token, user }) => {
 
             {gameStatus === 'waiting' && (
                 <div className="waiting-controls">
-                    {!me.isHost && <button onClick={handleReadyClick} className="ready-button">{me.isReady ? 'Cancel Ready' : 'Ready'}</button>}
-                    {me.isHost && <button onClick={handleStartGame} disabled={players.length < 2 || !allOthersReady}>Start Game ({players.length}/4)</button>}
+                    {!me.isHost && <button onClick={handleReadyClick} className="ready-button">{me.isReady ? '取消准备' : '准备'}</button>}
+                    {me.isHost && <button onClick={handleStartGame} disabled={players.length < 2 || !allOthersReady}>开始游戏 ({players.length}/4)</button>}
                 </div>
             )}
 
             {gameStatus === 'playing' && !hasSubmitted && (
                  <>
                     <div className="arranged-hands">
-                         <Hand name="Front (3)" cards={arrangedHands.front} onCardClick={(card) => handleCardClick(card, 'front')} onSlotClick={() => handleHandSlotClick('front')} />
-                        <Hand name="Middle (5)" cards={arrangedHands.middle} onCardClick={(card) => handleCardClick(card, 'middle')} onSlotClick={() => handleHandSlotClick('middle')} />
-                        <Hand name="Back (5)" cards={arrangedHands.back} onCardClick={(card) => handleCardClick(card, 'back')} onSlotClick={() => handleHandSlotClick('back')} />
+                         <Hand name="前墩 (3)" cards={arrangedHands.front} onCardClick={(card) => handleCardClick(card, 'front')} onSlotClick={() => handleHandSlotClick('front')} />
+                        <Hand name="中墩 (5)" cards={arrangedHands.middle} onCardClick={(card) => handleCardClick(card, 'middle')} onSlotClick={() => handleHandSlotClick('middle')} />
+                        <Hand name="后墩 (5)" cards={arrangedHands.back} onCardClick={(card) => handleCardClick(card, 'back')} onSlotClick={() => handleHandSlotClick('back')} />
                     </div>
                     <div className="player-main-hand">
-                        <h2>My Hand</h2>
+                        <h2>我的手牌</h2>
                         <PlayerHand cards={myHand} onCardClick={(card) => handleCardClick(card, 'myHand')} selectedCard={selectedCard} />
                     </div>
                     <div className="game-actions">
-                        <button onClick={handleSmartArrange}>Smart Arrange</button>
-                        <button onClick={handleClearHands}>Clear</button>
-                        <button onClick={handleSubmitHand} disabled={myHand.length > 0}>Submit Hand</button>
+                        <button onClick={handleSmartArrange}>智能理牌</button>
+                        <button onClick={handleClearHands}>清空</button>
+                        <button onClick={handleSubmitHand} disabled={myHand.length > 0}>提交牌型</button>
                     </div>
                 </>
             )}
 
             {gameStatus === 'playing' && hasSubmitted && (
-                <div className="waiting-submission"><h2>Hand submitted! Waiting for other players...</h2></div>
+                <div className="waiting-submission"><h2>牌型已提交！等待其他玩家...</h2></div>
             )}
 
             {gameStatus === 'finished' && gameResult && (

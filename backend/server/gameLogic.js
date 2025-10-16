@@ -11,46 +11,46 @@ const RANK_VALUES = {
 // --- Hand Type Definitions ---
 const HAND_TYPES = {
     // 5-Card Hands
-    ROYAL_FLUSH: { value: 10, name: '同花大顺' },
-    STRAIGHT_FLUSH: { value: 9, name: '同花顺' },
-    FOUR_OF_A_KIND: { value: 8, name: '铁支' },
-    FULL_HOUSE: { value: 7, name: '葫芦' },
-    FLUSH: { value: 6, name: '同花' },
-    STRAIGHT: { value: 5, name: '顺子' },
+    ROYAL_FLUSH: { value: 10, name: 'Royal Flush' },
+    STRAIGHT_FLUSH: { value: 9, name: 'Straight Flush' },
+    FOUR_OF_A_KIND: { value: 8, name: 'Four of a Kind' },
+    FULL_HOUSE: { value: 7, name: 'Full House' },
+    FLUSH: { value: 6, name: 'Flush' },
+    STRAIGHT: { value: 5, name: 'Straight' },
     // 3-Card Hands
-    THREE_OF_A_KIND: { value: 4, name: '三条' },
+    THREE_OF_A_KIND: { value: 4, name: 'Three of a Kind' },
     // Universal Hand Types
-    TWO_PAIR: { value: 3, name: '两对' },
-    ONE_PAIR: { value: 2, name: '对子' },
-    HIGH_CARD: { value: 1, name: '高牌' }
+    TWO_PAIR: { value: 3, name: 'Two Pair' },
+    ONE_PAIR: { value: 2, name: 'One Pair' },
+    HIGH_CARD: { value: 1, name: 'High Card' }
 };
 
 // Special 13-Card hands, ordered by rank
 const SPECIAL_HAND_TYPES = {
-    DRAGON: { value: 13, name: '一条龙', score: 13 },
-    THIRTEEN_ORPHANS: { value: 12, name: '十三幺', score: 13}, // Example, not standard
-    ALL_SUITS: { value: 11, name: '全花色', score: 10}, // J,Q,K,A in various suits
-    THREE_FLUSHES: { value: 5, name: '三同花', score: 5 },
-    THREE_STRAIGHTS: { value: 4, name: '三顺子', score: 4 },
-    SIX_PAIRS: { value: 3, name: '六对半', score: 3 },
+    DRAGON: { value: 13, name: 'Dragon', score: 13 },
+    THIRTEEN_ORPHANS: { value: 12, name: 'Thirteen Orphans', score: 13}, // Example, not standard
+    ALL_SUITS: { value: 11, name: 'All Suits', score: 10}, // J,Q,K,A in various suits
+    THREE_FLUSHES: { value: 5, name: 'Three Flushes', score: 5 },
+    THREE_STRAIGHTS: { value: 4, name: 'Three Straights', score: 4 },
+    SIX_PAIRS: { value: 3, name: 'Six Pairs', score: 3 },
     // No special hand
-    NONE: { value: 0, name: '无特殊牌', score: 0 }
+    NONE: { value: 0, name: 'None', score: 0 }
 };
 
 // Scores for specific hand types in specific segments
 const SEGMENT_SCORES = {
     front: {
-        '三条': 3 // 冲三
+        'Three of a Kind': 3 //冲三
     },
     middle: {
-        '葫芦': 2, // 中墩葫芦
-        '铁支': 8, // 中墩铁支
-        '同花顺': 10 // 中墩同花顺
+        'Full House': 2, // 中墩葫芦
+        'Four of a Kind': 8, // 中墩铁支
+        'Straight Flush': 10 // 中墩同花顺
     },
     back: {
-        '铁支': 4, // 后墩铁支
-        '同花顺': 5, // 后墩同花顺
-        '同花大顺': 10 // 后墩同花大顺
+        'Four of a Kind': 4, // 后墩铁支
+        'Straight Flush': 5, // 后墩同花顺
+        'Royal Flush': 10 // 后墩同花大顺
     }
 };
 

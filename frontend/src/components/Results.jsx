@@ -18,6 +18,15 @@ const Results = ({ results }) => {
         return player?.name || `玩家 (ID: ${socketId.substring(0, 5)})`;
     };
 
+    const getSegmentName = (segment) => {
+        const names = {
+            front: '前墩',
+            middle: '中墩',
+            back: '后墩'
+        };
+        return names[segment] || segment;
+    }
+
     return (
         <div className="results-container">
             <h2 className="results-title">比牌结果</h2>
@@ -48,7 +57,7 @@ const Results = ({ results }) => {
                                     const isWinner = Object.values(finalScore.segmentScores).every(scores => scores[segment] >= 0);
                                     return (
                                         <div key={segment} className={`segment-container ${isWinner ? 'winner' : ''}`}>
-                                            <Hand name={segment.charAt(0).toUpperCase() + segment.slice(1)} cards={playerHands[segment]} handInfo={playerEvals[segment]} isCompact={true} />
+                                            <Hand name={getSegmentName(segment)} cards={playerHands[segment]} handInfo={playerEvals[segment]} isCompact={true} />
                                             <div className="segment-score">
                                                 {segmentScore > 0 ? `+${segmentScore}` : segmentScore}
                                             </div>

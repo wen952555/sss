@@ -5,7 +5,7 @@ import './PlayerHand.css';
 
 const PlayerHand = ({ cards, onCardClick, selectedCard }) => {
   if (!cards || cards.length === 0) {
-    return <div className="player-hand-empty">Waiting for cards...</div>;
+    return <div className="player-hand-empty">等待发牌...</div>;
   }
 
   return (
