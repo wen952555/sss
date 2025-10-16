@@ -8,22 +8,22 @@ const Card = ({ card, onClick, isSelected }) => {
   const cardClasses = `card ${isSelected ? 'selected' : ''}`;
 
   const getAltText = () => {
-    if (!card) return 'Card back';
+    if (!card) return '卡牌背面';
 
-    if (card.rank === 'red_joker') return 'Red Joker';
-    if (card.rank === 'black_joker') return 'Black Joker';
+    if (card.rank === 'red_joker') return '大王';
+    if (card.rank === 'black_joker') return '小王';
 
     const suits = {
-      spades: 'Spades',
-      hearts: 'Hearts',
-      diamonds: 'Diamonds',
-      clubs: 'Clubs',
+      spades: '黑桃',
+      hearts: '红桃',
+      diamonds: '方片',
+      clubs: '梅花',
     };
     
     const suit = suits[card.suit] || card.suit;
     const rank = card.rank;
 
-    return `${rank} of ${suit}`;
+    return `${suit} ${rank}`;
   }
 
   return (
