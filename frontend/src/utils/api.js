@@ -1,1 +1,104 @@
-\nconst API_BASE_URL = \'/api\';\n\nasync function request(endpoint, options = {}) {\n    const url = `${API_BASE_URL}${endpoint}`;\n    const { body, headers = {}, ...customConfig } = options;\n\n    const config = {\n        method: body ? \'POST\' : \'GET\',\n        headers: {\n            \'Content-Type\': \'application/json\',\n            ...headers,\n        },\n        ...customConfig,\n    };\n\n    if (body) {\n        config.body = JSON.stringify(body);\n    }\n\n    try {\n        const response = await fetch(url, config);\n        if (!response.ok) {\n            const errorData = await response.json().catch(() => ({ message: response.statusText }));\n            throw new Error(errorData.message);\n        }\n        return await response.json();\n    } catch (error) {\n        console.error(\'API call failed:\', error);\n        throw error; // Re-throw the error to be handled by the calling component\n    }\n}\n\n// --- Auth --- //\nexport const login = (phone, password) => {\n    return request(\'/login\', { body: { phone, password } });\n};\n\nexport const register = (phone, password, displayId) => {\n    return request(\'/register\', { body: { phone, password, display_id: displayId } });\n};\n\n// --- Rooms --- //\nexport const getRooms = (token) => {\n    return request(\'/rooms\', { headers: { \'Authorization\': `Bearer ${token}` } });\n};\n\nexport const createRoom = (token) => {\n    return request(\'/rooms\', { \n        method: \'POST\', \n        headers: { \'Authorization\': `Bearer ${token}` }\n    });\n};\n\nexport const getRoomState = (roomId, token) => {\n    return request(`/rooms/${roomId}`, { headers: { \'Authorization\': `Bearer ${token}` } });\n};\n\n// --- Game Actions --- //\nexport const joinRoom = (roomId, token) => {\n    return request(`/rooms/${roomId}/join\`, { \n        method: \'POST\', \n        headers: { \'Authorization\': `Bearer ${token}` } \n    });\n};\n\nexport const setReady = (roomId, isReady, token) => {\n    return request(`/rooms/${roomId}/ready\`, { \n        method: \'POST\', \n        headers: { \'Authorization\': `Bearer ${token}` },\n        body: { isReady }\n    });\n};\n\nexport const startGame = (roomId, token) => {\n    return request(`/rooms/${roomId}/start\`, { \n        method: \'POST\', \n        headers: { \'Authorization\': `Bearer ${token}` } \n    });\n};\n\nexport const submitHand = (roomId, hand, token) => {\n    return request(`/rooms/${roomId}/submit\`, { \n        method: \'POST\', \n        headers: { \'Authorization\': `Bearer ${token}` },\n        body: { hand }\n    });\n};\n\n// --- Gifting --- //\nexport const findUserByPhone = (phone, token) => {\n    return request(\'/user/find\', {\n        method: \'POST\',\n        headers: { \'Authorization\': `Bearer ${token}` },\n        body: { phone },\n    });\n};\n\nexport const sendPoints = (recipientId, amount, token) => {\n    return request(\'/points/send\', {\n        method: \'POST\',\n        headers: { \'Authorization\': `Bearer ${token}` },\n        body: { recipientId, amount },\n    });\n};\n
+const API_BASE_URL = '/api';
+
+async function request(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const { body, headers = {}, ...customConfig } = options;
+
+    const config = {
+        method: body ? 'POST' : 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            ...headers,
+        },
+        ...customConfig,
+    };
+
+    if (body) {
+        config.body = JSON.stringify(body);
+    }
+
+    try {
+        const response = await fetch(url, config);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: response.statusText }));
+            throw new Error(errorData.message);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('API call failed:', error);
+        throw error; // Re-throw the error to be handled by the calling component
+    }
+}
+
+// --- Auth --- //
+export const login = (phone, password) => {
+    return request('/login', { body: { phone, password } });
+};
+
+export const register = (phone, password, displayId) => {
+    return request('/register', { body: { phone, password, display_id: displayId } });
+};
+
+// --- Rooms --- //
+export const getRooms = (token) => {
+    return request('/rooms', { headers: { 'Authorization': `Bearer ${token}` } });
+};
+
+export const createRoom = (token) => {
+    return request('/rooms', { 
+        method: 'POST', 
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+};
+
+export const getRoomState = (roomId, token) => {
+    return request(`/rooms/${roomId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+};
+
+// --- Game Actions --- //
+export const joinRoom = (roomId, token) => {
+    return request(`/rooms/${roomId}/join`, { 
+        method: 'POST', 
+        headers: { 'Authorization': `Bearer ${token}` } 
+    });
+};
+
+export const setReady = (roomId, isReady, token) => {
+    return request(`/rooms/${roomId}/ready`, { 
+        method: 'POST', 
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { isReady }
+    });
+};
+
+export const startGame = (roomId, token) => {
+    return request(`/rooms/${roomId}/start`, { 
+        method: 'POST', 
+        headers: { 'Authorization': `Bearer ${token}` } 
+    });
+};
+
+export const submitHand = (roomId, hand, token) => {
+    return request(`/rooms/${roomId}/submit`, { 
+        method: 'POST', 
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { hand }
+    });
+};
+
+// --- Gifting --- //
+export const findUserByPhone = (phone, token) => {
+    return request('/user/find', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { phone },
+    });
+};
+
+export const sendPoints = (recipientId, amount, token) => {
+    return request('/points/send', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { recipientId, amount },
+    });
+};
