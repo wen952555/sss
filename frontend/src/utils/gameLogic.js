@@ -40,17 +40,17 @@ const SPECIAL_HAND_TYPES = {
 // Scores for specific hand types in specific segments
 const SEGMENT_SCORES = {
     front: {
-        THREE_OF_A_KIND: 3 // 冲三
+        '三条': 3 // 冲三
     },
     middle: {
-        FULL_HOUSE: 2, // 中墩葫芦
-        FOUR_OF_A_KIND: 8, // 中墩铁支
-        STRAIGHT_FLUSH: 10 // 中墩同花顺
+        '葫芦': 2, // 中墩葫芦
+        '铁支': 8, // 中墩铁支
+        '同花顺': 10 // 中墩同花顺
     },
     back: {
-        FOUR_OF_A_KIND: 4, // 后墩铁支
-        STRAIGHT_FLUSH: 5, // 后墩同花顺
-        ROYAL_FLUSH: 10 // 后墩同花大顺
+        '铁支': 4, // 后墩铁支
+        '同花顺': 5, // 后墩同花顺
+        '同花大顺': 10 // 后墩同花大顺
     }
 };
 

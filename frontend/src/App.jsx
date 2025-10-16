@@ -57,15 +57,15 @@ function App() {
       <div className="app">
         <nav className="main-nav">
           <div>
-            <Link to="/">Game Lobby</Link>
-            <Link to="/trial">Offline Practice</Link>
+            <Link to="/">游戏大厅</Link>
+            <Link to="/trial">离线练习</Link>
           </div>
-           <div className="user-info">{user ? `Welcome, ${user.display_id}` : ''}</div>
+           <div className="user-info">{user ? `欢迎, ${user.display_id}` : ''}</div>
           <div className="auth-status">
             {!token ? (
-              <button onClick={() => setShowAuthModal(true)} className="auth-button">Register/Login</button>
+              <button onClick={() => setShowAuthModal(true)} className="auth-button">注册/登录</button>
             ) : (
-              <button onClick={handleLogout} className="auth-button">Logout</button>
+              <button onClick={handleLogout} className="auth-button">登出</button>
             )}
           </div>
         </nav>
@@ -76,7 +76,7 @@ function App() {
           <Routes>
             <Route path="/trial" element={<TrialGame />} />
             <Route path="/game/:roomId" element={token && user ? <Game token={token} user={user} /> : <Navigate to="/" />} />
-            <Route path="/" element={token ? <Lobby token={token} /> : <div className="login-prompt"><h2>Please log in</h2><p>Log in to access the game lobby or try the offline practice mode.</p></div>} />
+            <Route path="/" element={token ? <Lobby token={token} /> : <div className="login-prompt"><h2>请登录</h2><p>登录以访问游戏大厅或尝试离线练习模式。</p></div>} />
           </Routes>
         </main>
       </div>
