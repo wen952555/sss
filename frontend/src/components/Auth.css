@@ -118,12 +118,8 @@
 }
 
 .auth-error {
-  color: var(--text-color);
-  background: var(--container-bg);
-  border: 1px solid var(--text-color);
-  border-radius: 8px;
-  padding: 10px;
+  color: var(--error-color, #ff4d4f);
   text-align: center;
-  margin-top: -10px;
   margin-bottom: 10px;
+  min-height: 1.2em;
 }
