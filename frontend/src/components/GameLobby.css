@@ -120,8 +120,30 @@
   padding: 25px;
   box-sizing: border-box;
 }
+
+.room-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 0.8em;
+}
 .game-title { font-size: 1.8rem; font-weight: 600; margin: 0; color: var(--text-color); }
 .game-description { font-size: 1rem; font-weight: 400; color: var(--text-color); margin: 5px 0 0 0; }
+
+.room-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 0.8em;
+}
 
 .matching-indicator {
   align-self: flex-end;
