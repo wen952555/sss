@@ -89,7 +89,7 @@ const Auth = ({ onLoginSuccess, onClose }) => {
             <input
               type="password"
               id="password"
-              placeholder={isLoginView ? "请输入密码" : "请设置至少6位密码"}
+              placeholder="请设置至少6位密码"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
