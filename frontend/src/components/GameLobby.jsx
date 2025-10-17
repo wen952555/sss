@@ -1,23 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import './GameLobby.css';
 
-const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick, onShowRules }) => {
-  const [onlineCount, setOnlineCount] = useState(null);
-
-  useEffect(() => {
-    const fetchOnlineCount = async () => {
-      try {
-        const resp = await fetch('/api/index.php?action=get_online_count');
-        const data = await resp.json();
-        if (data.success) setOnlineCount(data.onlineCount);
-      } catch (err) { setOnlineCount(null); }
-    };
-
-    fetchOnlineCount();
-    const intervalId = setInterval(fetchOnlineCount, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
-
+const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick, onShowRules, roomCounts }) => {
   useEffect(() => {
     if (user) {
       const updateActivity = async () => {
@@ -49,9 +33,6 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
           )}
           <button className="header-btn rules-btn" onClick={onShowRules}>游戏规则</button>
         </div>
-        <div style={{ marginTop: 8, fontSize: '1rem', color: '#00796b', fontWeight: 500 }}>
-          当前在线人数：{onlineCount !== null ? onlineCount : '...'}
-        </div>
       </header>
 
       <main className="game-card-grid">
@@ -64,6 +45,9 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
             <div className="game-content">
               <h2 className="game-title">2分场</h2>
               <p className="game-description">经典模式对局</p>
+            </div>
+            <div className="room-count">
+              {roomCounts && roomCounts.thirteen !== undefined ? `${roomCounts.thirteen}人` : '...'}
             </div>
             {matchingStatus.thirteen && <div className="matching-indicator">匹配中...</div>}
           </div>
@@ -79,6 +63,9 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
               <h2 className="game-title">5分场</h2>
               <p className="game-description">高手进阶对局</p>
             </div>
+            <div className="room-count">
+              {roomCounts && roomCounts['thirteen-5'] !== undefined ? `${roomCounts['thirteen-5']}人` : '...'}
+            </div>
             {matchingStatus['thirteen-5'] && <div className="matching-indicator">匹配中...</div>}
           </div>
         </div>
@@ -92,6 +79,9 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
             <div className="game-content">
               <h2 className="game-title">10分场</h2>
               <p className="game-description">富豪场</p>
+            </div>
+            <div className="room-count">
+              {roomCounts && roomCounts['thirteen-10'] !== undefined ? `${roomCounts['thirteen-10']}人` : '...'}
             </div>
             {matchingStatus['thirteen-10'] && <div className="matching-indicator">匹配中...</div>}
           </div>
