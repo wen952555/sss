@@ -9,7 +9,7 @@
     "start": "node backend/server/index.js",
     "dev": "concurrently \"npm:start:frontend\" \"npm:dev:backend\"",
     "start:frontend": "npm run dev --prefix frontend",
-    "dev:backend": "nodemon backend/server/index.js",
+    "dev:backend": "nodemon --config backend/nodemon.json backend/server/index.js",
     "migrate": "node backend/migrate.js"
   },
   "author": "",

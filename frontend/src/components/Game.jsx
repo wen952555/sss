@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import * as api from '../utils/api';
+import io from 'socket.io-client';
 import PlayerHand from './PlayerHand';
 import Hand from './Hand';
 import Results from './Results';
@@ -15,44 +15,18 @@ const createEmptyHands = () => ({ front: [], middle: [], back: [] });
 const Game = ({ token, user }) => {
     const { roomId } = useParams();
     const navigate = useNavigate();
-    
+    const socketRef = useRef(null);
+
     const [players, setPlayers] = useState([]);
     const [myHand, setMyHand] = useState([]);
     const [arrangedHands, setArrangedHands] = useState(createEmptyHands());
     const [selectedCard, setSelectedCard] = useState(null);
-    const [gameStatus, setGameStatus] = useState('waiting'); // waiting, playing, finished
+    const [gameStatus, setGameStatus] = useState('waiting');
     const [gameResult, setGameResult] = useState(null);
     const [error, setError] = useState('');
     const [hasSubmitted, setHasSubmitted] = useState(false);
 
     const me = players.find(p => p.id === user?.display_id);
-
-    // The core polling function
-    const fetchGameState = useCallback(async () => {
-        if (!token) return;
-        try {
-            const roomState = await api.getRoomState(roomId, token);
-            setPlayers(Object.values(roomState.players));
-            setGameStatus(roomState.gameState.status);
-
-            if (roomState.gameState.status === 'playing' && me && roomState.gameState.hands[me.id]) {
-                // Only set the hand if it hasn't been dealt yet to avoid re-rendering
-                if (myHand.length === 0) {
-                     setMyHand(sortHand(roomState.gameState.hands[me.id]));
-                }
-            }
-            if (roomState.gameState.status === 'finished') {
-                setGameResult(roomState.gameState.results);
-            }
-
-        } catch (err) {
-            setError(`获取游戏状态失败: ${err.message}`);
-            // If room not found, maybe redirect to lobby
-            if (err.message.includes('404')) {
-                navigate('/');
-            }
-        }
-    }, [roomId, token, me, myHand.length, navigate]);
 
     useEffect(() => {
         if (!token) {
@@ -60,50 +34,79 @@ const Game = ({ token, user }) => {
             return;
         }
 
-        // Initial join
-        api.joinRoom(roomId, token).catch(err => setError(`加入房间失败: ${err.message}`));
+        // Connect to the socket server
+        const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:14722', {
+            auth: { token }
+        });
+        socketRef.current = socket;
 
-        // Set up the polling interval
-        const intervalId = setInterval(fetchGameState, 2000); // Poll every 2 seconds
+        // --- Socket Event Listeners ---
+        socket.on('connect', () => {
+            console.log('Connected to server, joining room...');
+            socket.emit('joinRoom', { roomId });
+        });
 
-        // Cleanup on unmount
-        return () => {
-            clearInterval(intervalId);
-            // No explicit 'leave room' needed in polling architecture
-        };
-    }, [token, roomId, navigate, fetchGameState]);
-
-
-    const handleStartGame = async () => {
-        try {
-            await api.startGame(roomId, token);
-            fetchGameState(); // Fetch state immediately after starting
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    const handleReadyClick = async () => {
-        if (me) {
-            try {
-                await api.setReady(roomId, !me.isReady, token);
-                fetchGameState(); // Fetch state immediately after action
-            } catch (err) {
-                setError(err.message);
+        socket.on('roomStateUpdate', (state) => {
+            console.log('Received room state update:', state);
+            setPlayers(Object.values(state.players));
+            setGameStatus(state.gameState.status);
+            if (state.gameState.status === 'finished') {
+                setGameResult(state.gameState.results);
             }
+            // Reset submission status when a new game starts
+            if (state.gameState.status === 'waiting') {
+                setHasSubmitted(false);
+                setMyHand([]);
+                setArrangedHands(createEmptyHands());
+            }
+        });
+
+        socket.on('playerHandUpdate', (hand) => {
+            console.log('Received my hand:', hand);
+            setMyHand(sortHand(hand));
+        });
+
+        socket.on('error', (error) => {
+            console.error('Socket error:', error.message);
+            setError(error.message);
+            if (error.message.includes('not found')) {
+                navigate('/');
+            }
+        });
+
+        socket.on('disconnect', () => {
+             console.log('Disconnected from server.');
+             setError('与服务器断开连接。');
+        });
+
+        // --- Cleanup on unmount ---
+        return () => {
+            if (socket) {
+                console.log('Disconnecting socket...');
+                socket.disconnect();
+            }
+        };
+    }, [token, roomId, navigate]);
+
+
+    // --- UI Actions ---
+    const handleStartGame = () => {
+        socketRef.current.emit('startGame');
+    };
+
+    const handleReadyClick = () => {
+        if (me) {
+            socketRef.current.emit('setReady', { isReady: !me.isReady });
         }
     };
 
-    const handleSubmitHand = async () => {
+    const handleSubmitHand = () => {
         if (myHand.length > 0) return setError("请摆放所有13张牌。");
         if (!isValidHand(arrangedHands.front, arrangedHands.middle, arrangedHands.back)) return setError("牌型无效 (倒水)。");
-        try {
-            await api.submitHand(roomId, token, arrangedHands);
-            setHasSubmitted(true);
-            fetchGameState(); // Fetch state immediately
-        } catch (err) {
-            setError(err.message);
-        }
+
+        socketRef.current.emit('submitHand', { hand: arrangedHands });
+        setHasSubmitted(true);
+        setError('');
     };
 
     // --- UI LOGIC (Card moving, clearing, etc. - mostly unchanged) ---
