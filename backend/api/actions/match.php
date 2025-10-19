@@ -15,12 +15,10 @@ if (!$gameType || !$userId) {
     exit;
 }
 
-$conn = db_connect();
-
-// Use a transaction to ensure atomicity
-$conn->begin_transaction();
-
 try {
+    $conn = db_connect();
+    $conn->begin_transaction();
+
     // 1. Check if the user is already in ANY active room, regardless of game type.
     $stmt = $conn->prepare("SELECT r.id FROM game_rooms r JOIN room_players rp ON r.id = rp.room_id WHERE rp.user_id = ? AND r.status IN ('waiting', 'arranging', 'playing', 'submitted')");
     $stmt->bind_param("i", $userId);
@@ -81,10 +79,14 @@ try {
     echo json_encode(['success' => true, 'roomId' => $roomId]);
 
 } catch (Exception $e) {
-    $conn->rollback();
+    if (isset($conn) && $conn->ping()) {
+        $conn->rollback();
+    }
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => '数据库操作失败: ' . $e->getMessage()]);
+} finally {
+    if (isset($conn) && $conn->ping()) {
+        $conn->close();
+    }
 }
-
-$conn->close();
 ?>
