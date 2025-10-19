@@ -52,7 +52,7 @@ try {
             $response = ['success' => true, 'message' => 'Player is ready.'];
 
             if ($result['ready_players'] >= 4 && $result['ready_players'] == $result['total_players']) {
-                $playerCount = $result['total_players'];
+                $playerCount = (int)$result['total_players'];
 
                 // Fetch a pre-dealt hand
                 $stmt = $conn->prepare("SELECT id, hands FROM pre_dealt_hands WHERE player_count = ? AND is_used = 0 ORDER BY RAND() LIMIT 1");

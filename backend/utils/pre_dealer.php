@@ -14,6 +14,9 @@ define('REPLENISH_THRESHOLD', 3);
  * @return array The deck of cards.
  */
 function get_deck_for_players($playerCount) {
+    if ($playerCount < 4 || $playerCount > 8) {
+        throw new InvalidArgumentException("Player count must be between 4 and 8.");
+    }
     $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
     $standard_suits = ['spades', 'hearts', 'clubs', 'diamonds'];
     $extra_suits = ['stars', 'moons', 'suns'];
