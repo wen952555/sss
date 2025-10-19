@@ -34,3 +34,15 @@ jobs:
         run: |
           echo "Performing actual rsync..."
           rsync -avz --mkpath --delete --exclude 'node_modules' --exclude '.env' -e "ssh -o StrictHostKeyChecking=no" ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
+
+      - name: Install dependencies and restart app
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERV00_HOST }}
+          username: ${{ secrets.SERV00_USER }}
+          key: ${{ secrets.SERV00_KEY }}
+          script: |
+            cd ${{ secrets.SERV00_PATH }}
+            npm install
+            npm run post-deploy
+            touch tmp/restart.txt
