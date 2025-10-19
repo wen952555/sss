@@ -109,5 +109,17 @@ function submitPlayerHand($conn, $userId, $roomId, $hand) {
     }
 }
 
+function generate_unique_room_code($conn) {
+    do {
+        $room_code = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 1, 6);
+        $stmt = $conn->prepare("SELECT id FROM game_rooms WHERE room_code = ?");
+        $stmt->bind_param("s", $room_code);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+    } while ($result->num_rows > 0);
+    return $room_code;
+}
+
 require_once __DIR__ . '/scorer.php';
 ?>
