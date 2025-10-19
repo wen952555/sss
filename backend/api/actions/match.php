@@ -21,9 +21,9 @@ $conn = db_connect();
 $conn->begin_transaction();
 
 try {
-    // 1. Check if the user is already in an active room for this game type
-    $stmt = $conn->prepare("SELECT r.id FROM game_rooms r JOIN room_players rp ON r.id = rp.room_id WHERE rp.user_id = ? AND r.game_type = ? AND r.status IN ('waiting', 'arranging', 'playing', 'submitted')");
-    $stmt->bind_param("is", $userId, $gameType);
+    // 1. Check if the user is already in ANY active room, regardless of game type.
+    $stmt = $conn->prepare("SELECT r.id FROM game_rooms r JOIN room_players rp ON r.id = rp.room_id WHERE rp.user_id = ? AND r.status IN ('waiting', 'arranging', 'playing', 'submitted')");
+    $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result();
     if ($existingRoom = $result->fetch_assoc()) {
