@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { login, register } from '../../utils/api';
 
-const AuthForm = ({ setToken, setView, handleClose, isRegister = false }) => {
+const AuthForm = ({ setToken, setView, handleClose, isRegister = false, navigate }) => {
     const [formData, setFormData] = useState({ phone: '', password: '', confirmPassword: '' });
     const authFn = isRegister ? register : login;
-    const { loading, error, handleSubmit } = useAuth(authFn, setToken, handleClose);
+    const { loading, error, handleSubmit } = useAuth(authFn, setToken, handleClose, navigate);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -21,7 +21,7 @@ const AuthForm = ({ setToken, setView, handleClose, isRegister = false }) => {
             </div>
             <div className="form-group">
                 <label htmlFor="auth-password">密码</label>
-                <input id="auth-password" type="password" name="password" placeholder="请输入6位数字密码" value={formData.password} onChange={handleChange} required />
+                <input id="auth-password" type="password" name="password" placeholder="请输入至少8位密码" value={formData.password} onChange={handleChange} required />
             </div>
             {isRegister && (
                 <div className="form-group">

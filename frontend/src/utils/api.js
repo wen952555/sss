@@ -53,40 +53,12 @@ export const createRoom = (token) => {
     });
 };
 
-export const getRoomState = (roomId, token) => {
-    return request(`/rooms/${roomId}`, { headers: { 'Authorization': `Bearer ${token}` } });
-};
-
-// --- Game Actions --- //
-export const joinRoom = (roomId, token) => {
-    return request(`/rooms/${roomId}/join`, { 
-        method: 'POST', 
-        headers: { 'Authorization': `Bearer ${token}` } 
-    });
-};
-
-export const setReady = (roomId, isReady, token) => {
-    return request(`/rooms/${roomId}/ready`, { 
-        method: 'POST', 
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: { isReady }
-    });
-};
-
-export const startGame = (roomId, token) => {
-    return request(`/rooms/${roomId}/start`, { 
-        method: 'POST', 
-        headers: { 'Authorization': `Bearer ${token}` } 
-    });
-};
-
-export const submitHand = (roomId, hand, token) => {
-    return request(`/rooms/${roomId}/submit`, { 
-        method: 'POST', 
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: { hand }
-    });
-};
+// --- Game Actions (now handled by WebSocket) --- //
+// export const joinRoom = ...
+// export const setReady = ...
+// export const startGame = ...
+// export const submitHand = ...
+// export const getRoomState = ...
 
 // --- Gifting --- //
 export const findUserByPhone = (phone, token) => {

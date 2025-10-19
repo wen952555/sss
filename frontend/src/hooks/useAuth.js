@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export const useAuth = (authFn, setToken, handleClose) => {
+export const useAuth = (authFn, setToken, handleClose, navigate) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -15,7 +15,11 @@ export const useAuth = (authFn, setToken, handleClose) => {
                 throw new Error(data.message || '发生错误。');
             }
             setToken(data.token);
-            setTimeout(handleClose, 1000);
+            if (navigate) {
+                navigate(); // Navigate immediately
+            } else {
+                handleClose();
+            }
         } catch (err) {
             setError(err.message);
         } finally {

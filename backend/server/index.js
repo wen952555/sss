@@ -1,12 +1,13 @@
 
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const express = require('express');
+const http = require('http');
+const { Server } = require("socket.io");
 const cors = require('cors');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const dbPromise = require('../db');
 const authRoutes = require('./routes/auth');
-const setupUserDatabase = require('../setupDatabase');
 
 const {
     dealCards,
@@ -15,8 +16,9 @@ const {
     evaluate5CardHand,
     evaluate3CardHand,
     comparePlayerHands,
-    SPECIAL_HAND_TYPES
+    calculateResults
 } = require('./gameLogic');
+const { SPECIAL_HAND_TYPES } = require('./constants');
 
 // --- Environment Validation ---
 const requiredEnvVars = ['JWT_SECRET', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
@@ -27,13 +29,21 @@ if (missingEnvVars.length > 0) {
 }
 
 const app = express();
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*", // Adjust for production
+        methods: ["GET", "POST"]
+    }
+});
+
 app.use(cors());
 app.use(express.json());
 
 let userDb, gameDb;
 const gameRooms = {}; // In-memory store for game rooms
 
-// --- JWT Authentication Middleware ---
+// --- JWT Authentication Middleware (for HTTP routes) ---
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -72,71 +82,6 @@ function getRoomDTO(roomId) {
     };
 }
 
-async function calculateResults(roomId) {
-    const room = gameRooms[roomId];
-    if (!room) return;
-    const { players, gameState } = room;
-    const playerIds = Object.keys(gameState.submittedHands);
-    if (playerIds.length === 0) return;
-
-    playerIds.forEach(id => {
-        const { front, middle, back } = gameState.submittedHands[id];
-        gameState.evaluatedHands[id] = {
-            front: evaluate3CardHand(front),
-            middle: evaluate5CardHand(middle),
-            back: evaluate5CardHand(back),
-        };
-        const allCards = [...front, ...middle, ...back];
-        gameState.specialHands[id] = evaluate13CardHand(allCards);
-    });
-
-    const finalScores = playerIds.reduce((acc, id) => ({ ...acc, [id]: { total: 0, special: null } }), {});
-    const specialPlayerId = playerIds.find(id => gameState.specialHands[id].value > SPECIAL_HAND_TYPES.NONE.value);
-
-    if (specialPlayerId) {
-        const specialHand = gameState.specialHands[specialPlayerId];
-        const score = specialHand.score;
-        finalScores[specialPlayerId].special = specialHand.name;
-        playerIds.forEach(id => {
-            finalScores[id].total = (id === specialPlayerId) ? score * (playerIds.length - 1) : -score;
-        });
-    } else {
-        for (let i = 0; i < playerIds.length; i++) {
-            for (let j = i + 1; j < playerIds.length; j++) {
-                const p1_id = playerIds[i];
-                const p2_id = playerIds[j];
-                const { p1_score, p2_score } = comparePlayerHands(gameState.evaluatedHands[p1_id], gameState.evaluatedHands[p2_id]);
-                finalScores[p1_id].total += p1_score;
-                finalScores[p2_id].total += p2_score;
-            }
-        }
-    }
-
-    gameState.results = { scores: finalScores, hands: gameState.submittedHands, evals: gameState.evaluatedHands, playerDetails: players };
-    gameState.status = 'finished';
-    
-    // Save to DB
-    try {
-        const [gameResult] = await gameDb.query('INSERT INTO games (room_id) VALUES (?)', [roomId]);
-        const gameId = gameResult.insertId;
-        for (const playerId of playerIds) {
-            const player = Object.values(players).find(p => p.id === playerId);
-            if(!player) continue;
-            
-            const { front, middle, back } = gameState.submittedHands[playerId];
-            const score = finalScores[playerId].total;
-            const specialHandType = finalScores[playerId].special || null;
-            
-            await gameDb.query(
-                'INSERT INTO player_scores (game_id, player_id, player_name, hand_front, hand_middle, hand_back, score, special_hand_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [gameId, player.db_id, player.name, JSON.stringify(front), JSON.stringify(middle), JSON.stringify(back), score, specialHandType]
-            );
-        }
-        console.log(`Game ${gameId} results saved.`);
-    } catch (error) {
-        console.error(`Failed to save game results for room ${roomId}:`, error);
-    }
-}
 
 
 // --- API Routes ---
@@ -156,104 +101,7 @@ app.post('/api/rooms', (req, res) => {
     res.json({ roomId });
 });
 
-// Get the state of a specific room (the polling endpoint)
-app.get('/api/rooms/:roomId', (req, res) => {
-    const { roomId } = req.params;
-    const room = gameRooms[roomId];
-    if (!room) {
-        return res.status(404).json({ message: "Room not found" });
-    }
-    // For the player making the request, we add their specific hand
-    const playerState = { ...room };
-    // This part requires knowing the player's ID, which we get from the JWT
-    // This is a placeholder as we need to map JWT user to player in room
-    // For now, returning the full state
-    res.json(playerState);
-});
-
-
-// Join a room
-app.post('/api/rooms/:roomId/join', authenticateToken, (req, res) => {
-    const { roomId } = req.params;
-    const room = gameRooms[roomId];
-    if (!room) return res.status(404).json({ message: "Room not found" });
-    if (room.gameState.status !== 'waiting') return res.status(400).json({ message: "Game has already started" });
-    
-    const playerId = req.user.display_id; // Using display_id from JWT
-    if (room.players[playerId]) return res.status(400).json({ message: "Player already in room" });
-
-    const isHost = Object.keys(room.players).length === 0;
-    room.players[playerId] = {
-        id: playerId,
-        db_id: req.user.id, // The actual user ID from the database
-        name: req.user.display_id,
-        isReady: false,
-        isHost: isHost,
-        hasSubmitted: false,
-    };
-    
-    res.json(room);
-});
-
-// Player is ready
-app.post('/api/rooms/:roomId/ready', authenticateToken, (req, res) => {
-    const { roomId } = req.params;
-    const { isReady } = req.body;
-    const playerId = req.user.display_id;
-    const room = gameRooms[roomId];
-
-    if (room && room.players[playerId]) {
-        room.players[playerId].isReady = isReady;
-        res.json(room);
-    } else {
-        res.status(404).json({ message: "Room or player not found" });
-    }
-});
-
-// Start game
-app.post('/api/rooms/:roomId/start', authenticateToken, async (req, res) => {
-    const { roomId } = req.params;
-    const playerId = req.user.display_id;
-    const room = gameRooms[roomId];
-
-    if (!room) return res.status(404).json({ message: "Room not found" });
-    if (!room.players[playerId] || !room.players[playerId].isHost) {
-        return res.status(403).json({ message: "Only the host can start the game" });
-    }
-
-    const playersInRoom = Object.values(room.players);
-    if (playersInRoom.length < 2) return res.status(400).json({ message: "Need at least 2 players" });
-    if (!playersInRoom.every(p => p.isHost || p.isReady)) return res.status(400).json({ message: "All players must be ready" });
-    
-    room.gameState.status = 'playing';
-    const dealtCards = dealCards(playersInRoom.length);
-    playersInRoom.forEach((player, i) => {
-        room.gameState.hands[player.id] = dealtCards[`player${i + 1}`];
-    });
-
-    res.json(room);
-});
-
-// Submit hand
-app.post('/api/rooms/:roomId/submit', authenticateToken, async (req, res) => {
-    const { roomId } = req.params;
-    const { hand } = req.body; // { front: [], middle: [], back: [] }
-    const playerId = req.user.display_id;
-    const room = gameRooms[roomId];
-
-    if (!room || room.gameState.status !== 'playing') return res.status(400).json({ message: "Not a valid game or not in playing state" });
-    if (!isValidHand(hand.front, hand.middle, hand.back)) return res.status(400).json({ message: "Invalid hand (倒水)" });
-
-    room.gameState.submittedHands[playerId] = hand;
-    room.players[playerId].hasSubmitted = true;
-    
-    // If all players have submitted, calculate results
-    if (Object.keys(room.gameState.submittedHands).length === Object.keys(room.players).length) {
-        await calculateResults(roomId);
-    }
-
-    res.json(room);
-});
+// The old polling endpoint has been removed.
 
 // --- Gifting API ---
 
@@ -336,6 +184,160 @@ app.post('/api/points/send', authenticateToken, async (req, res) => {
 });
 
 
+// --- Socket.IO Game Logic ---
+
+const broadcastRoomUpdate = (roomId) => {
+    const room = gameRooms[roomId];
+    if (room) {
+        // Create a version of the state that doesn't include other players' hands
+        const stateForBroadcast = {
+            players: room.players,
+            gameState: {
+                status: room.gameState.status,
+                // hands are sent individually, not broadcast
+                submittedHands: room.gameState.submittedHands,
+                evaluatedHands: room.gameState.evaluatedHands,
+                specialHands: room.gameState.specialHands,
+                results: room.gameState.results,
+            }
+        };
+        io.to(roomId).emit('roomStateUpdate', stateForBroadcast);
+
+        // Send each player their specific hand
+        if (room.gameState.status === 'playing') {
+            Object.keys(room.players).forEach(playerId => {
+                const playerSocketId = room.players[playerId].socketId;
+                if (playerSocketId && room.gameState.hands[playerId]) {
+                     io.to(playerSocketId).emit('playerHandUpdate', room.gameState.hands[playerId]);
+                }
+            });
+        }
+    }
+};
+
+
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    if (!token) {
+        return next(new Error('Authentication error: Token not provided'));
+    }
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return next(new Error('Authentication error: Invalid token'));
+        }
+        socket.user = decoded.data;
+        next();
+    });
+});
+
+io.on('connection', (socket) => {
+    console.log(`⚡ User connected: ${socket.user.display_id} (${socket.id})`);
+
+    socket.on('joinRoom', ({ roomId }) => {
+        const room = gameRooms[roomId];
+        if (!room) {
+            socket.emit('error', { message: "Room not found" });
+            return;
+        }
+        if (room.gameState.status !== 'waiting') {
+            socket.emit('error', { message: "Game has already started" });
+            return;
+        }
+
+        const playerId = socket.user.display_id;
+        if (room.players[playerId]) {
+            // Player is rejoining, just update their socket ID
+            room.players[playerId].socketId = socket.id;
+        } else {
+            const isHost = Object.keys(room.players).length === 0;
+            room.players[playerId] = {
+                id: playerId,
+                db_id: socket.user.id,
+                name: socket.user.display_id,
+                isReady: false,
+                isHost: isHost,
+                hasSubmitted: false,
+                socketId: socket.id,
+            };
+        }
+
+        socket.join(roomId);
+        socket.data.roomId = roomId; // Store roomId in socket data
+        console.log(`Player ${playerId} joined room ${roomId}`);
+        broadcastRoomUpdate(roomId);
+    });
+
+    socket.on('setReady', ({ isReady }) => {
+        const { roomId } = socket.data;
+        const playerId = socket.user.display_id;
+        const room = gameRooms[roomId];
+        if (room && room.players[playerId]) {
+            room.players[playerId].isReady = isReady;
+            broadcastRoomUpdate(roomId);
+        }
+    });
+
+    socket.on('startGame', async () => {
+        const { roomId } = socket.data;
+        const playerId = socket.user.display_id;
+        const room = gameRooms[roomId];
+
+        if (!room) return socket.emit('error', { message: "Room not found" });
+        if (!room.players[playerId] || !room.players[playerId].isHost) {
+            return socket.emit('error', { message: "Only the host can start the game" });
+        }
+
+        const playersInRoom = Object.values(room.players);
+        if (playersInRoom.length < 2) return socket.emit('error', { message: "Need at least 2 players" });
+        if (!playersInRoom.every(p => p.isHost || p.isReady)) return socket.emit('error', { message: "All players must be ready" });
+
+        room.gameState.status = 'playing';
+        const dealtCards = dealCards(playersInRoom.length);
+        playersInRoom.forEach((player, i) => {
+            room.gameState.hands[player.id] = dealtCards[`player${i + 1}`];
+        });
+
+        broadcastRoomUpdate(roomId);
+    });
+
+    socket.on('submitHand', async ({ hand }) => {
+        const { roomId } = socket.data;
+        const playerId = socket.user.display_id;
+        const room = gameRooms[roomId];
+
+        if (!room || room.gameState.status !== 'playing') return socket.emit('error', { message: "Not a valid game or not in playing state" });
+        if (!isValidHand(hand.front, hand.middle, hand.back)) return socket.emit('error', { message: "Invalid hand (倒水)" });
+
+        room.gameState.submittedHands[playerId] = hand;
+        room.players[playerId].hasSubmitted = true;
+
+        // If all players have submitted, calculate results
+        if (Object.keys(room.gameState.submittedHands).length === Object.keys(room.players).length) {
+            await calculateResults(roomId, gameRooms, gameDb);
+        }
+
+        broadcastRoomUpdate(roomId);
+    });
+
+
+    socket.on('disconnect', () => {
+        console.log(`🔌 User disconnected: ${socket.user.display_id} (${socket.id})`);
+        const { roomId } = socket.data;
+        if (roomId && gameRooms[roomId]) {
+            const playerId = socket.user.display_id;
+            // In a real-world scenario, you might want more complex logic here,
+            // like marking the player as disconnected, handling game state if they
+            // are in the middle of a game, or removing them if the game hasn't started.
+            // For now, we'll just log it. If the game is waiting, we can remove them.
+             if (gameRooms[roomId].gameState.status === 'waiting') {
+                delete gameRooms[roomId].players[playerId];
+             }
+            broadcastRoomUpdate(roomId);
+        }
+    });
+});
+
+
 // --- Serve Frontend ---
 const frontendDistPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
 app.use(express.static(frontendDistPath));
@@ -353,13 +355,16 @@ async function startServer() {
         userDb = dbs.userDb;
         gameDb = dbs.gameDb;
         app.set('userDb', userDb);
-        // No need for setupGameDatabase here if schema is managed separately
-        // await setupUserDatabase(userDb); 
-        app.listen(PORT, HOST, () => {
-            console.log(`✅ HTTP Polling game server is running at http://${HOST}:${PORT}`);
+
+        // Setup the database schema
+        const setupUserDatabase = require('../setupDatabase');
+        await setupUserDatabase(userDb);
+
+        httpServer.listen(PORT, HOST, () => {
+            console.log(`✅ Socket.IO game server is running at http://${HOST}:${PORT}`);
         });
     } catch (err) {
-        console.error("🔴 Failed to start HTTP server:", err);
+        console.error("🔴 Failed to start server:", err);
         process.exit(1);
     }
 }

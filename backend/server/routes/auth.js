@@ -6,9 +6,13 @@ const crypto = require('crypto');
 
 const passwordValidator = (password) => {
     const errors = [];
-    if (!password || !/^\d{6}$/.test(password)) {
-        errors.push('密码必须是6位数字');
+    if (!password || password.length < 8) {
+        errors.push('密码必须至少为8个字符。');
     }
+    // Example: Add more rules like requiring numbers, uppercase, etc.
+    // if (!/\d/.test(password)) errors.push('Password must contain a number.');
+    // if (!/[a-z]/.test(password)) errors.push('Password must contain a lowercase letter.');
+    // if (!/[A-Z]/.test(password)) errors.push('Password must contain an uppercase letter.');
     return errors;
 };
 
