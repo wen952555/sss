@@ -10,7 +10,8 @@
     "dev": "concurrently \"npm:start:frontend\" \"npm:dev:backend\"",
     "start:frontend": "npm run dev --prefix frontend",
     "dev:backend": "nodemon --config backend/nodemon.json backend/server/index.js",
-    "migrate": "node backend/migrate.js"
+    "migrate": "node backend/migrate.js",
+    "post-deploy": "npm install --prefix backend"
   },
   "author": "",
   "license": "ISC",

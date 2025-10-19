@@ -21,12 +21,12 @@ const AuthForm = ({ setToken, setView, handleClose, isRegister = false, navigate
             </div>
             <div className="form-group">
                 <label htmlFor="auth-password">密码</label>
-                <input id="auth-password" type="password" name="password" placeholder="请输入至少8位密码" value={formData.password} onChange={handleChange} required />
+                <input id="auth-password" type="password" name="password" placeholder="请输入至少8位密码" value={formData.password} onChange={handleChange} required autocomplete={isRegister ? "new-password" : "current-password"} />
             </div>
             {isRegister && (
                 <div className="form-group">
                     <label htmlFor="auth-confirm-password">确认密码</label>
-                    <input id="auth-confirm-password" type="password" name="confirmPassword" placeholder="请再次输入密码" value={formData.confirmPassword} onChange={handleChange} required />
+                    <input id="auth-confirm-password" type="password" name="confirmPassword" placeholder="请再次输入密码" value={formData.confirmPassword} onChange={handleChange} required autocomplete="new-password" />
                 </div>
             )}
             <button type="submit" disabled={loading}>{loading ? (isRegister ? '注册中...' : '登录中...') : (isRegister ? '注册' : '登录')}</button>
