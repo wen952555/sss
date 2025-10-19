@@ -147,3 +147,9 @@ ALTER TABLE `pre_dealt_hands`
 --
 ALTER TABLE `game_hand_comparisons`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Add indexes for performance
+--
+CREATE INDEX idx_room_code ON game_rooms(room_code);
+CREATE INDEX idx_pre_dealt_hands ON pre_dealt_hands(player_count, is_used);

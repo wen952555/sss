@@ -116,6 +116,10 @@ foreach ($users as $user) {
 $stmt->close();
 echo "Test users inserted or updated successfully.\n";
 
+// --- Add Indexes for Performance ---
+$conn->query("CREATE INDEX IF NOT EXISTS idx_room_code ON game_rooms(room_code);");
+$conn->query("CREATE INDEX IF NOT EXISTS idx_pre_dealt_hands ON pre_dealt_hands(player_count, is_used);");
+echo "Indexes created or already exist.\n";
 
 $conn->close();
 ?>
