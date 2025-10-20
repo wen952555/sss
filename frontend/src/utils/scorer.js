@@ -5,8 +5,8 @@ export const VALUE_ORDER = {
 
 export const SSS_SCORES = {
   'HEAD': { '三条': 3 },
-  'MIDDLE': { '铁支': 8, '同花顺': 10, '葫芦': 2, '五同': 10 },
-  'TAIL': { '铁支': 4, '同花顺': 5, '五同': 5 },
+  'MIDDLE': { '铁支': 8, '同花顺': 10, '葫芦': 2 },
+  'TAIL': { '铁支': 4, '同花顺': 5 },
   'SPECIAL': { '一条龙': 13, '三同花': 3, '三顺子': 3, '六对半': 3, '大六对': 7, '高级三同花/三顺子': 8 },
 };
 
@@ -68,7 +68,6 @@ export function getSssAreaType(cards, area) {
     if (grouped[2]) return "对子";
     return "高牌";
   }
-  if (grouped[5]) return "五同";
   if (isF && isS) return "同花顺";
   if (grouped[4]) return "铁支";
   if (grouped[3] && grouped[2]) return "葫芦";
@@ -81,7 +80,7 @@ export function getSssAreaType(cards, area) {
 }
 
 export function sssAreaTypeRank(type, area) {
-  const ranks = { "高牌": 1, "对子": 2, "两对": 3, "三条": 4, "顺子": 5, "同花": 6, "葫芦": 7, "铁支": 8, "同花顺": 9, "五同": 10 };
+  const ranks = { "高牌": 1, "对子": 2, "两对": 3, "三条": 4, "顺子": 5, "同花": 6, "葫芦": 7, "铁支": 8, "同花顺": 9 };
   if (area === 'head' && type === '三条') return 4;
   return ranks[type] || 1;
 }
