@@ -6,12 +6,19 @@ require_once __DIR__ . '/../../utils/utils.php';
 
 $gameType = $_GET['gameType'] ?? null;
 $userId = $_GET['userId'] ?? null;
-$playerCount = 4; // All game modes are 4-player
+$playerCount = (int)($_GET['playerCount'] ?? 4);
 $matchAction = $_GET['matchAction'] ?? 'join'; // 'join' or 'create'
 
 if (!$gameType || !$userId) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => '错误：缺少必要的参数。']);
+    exit;
+}
+
+// Validate playerCount
+if ($playerCount < 2 || $playerCount > 8) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => '错误：无效的玩家人数。']);
     exit;
 }
 
@@ -48,9 +55,9 @@ try {
         $stmt->execute();
         $stmt->close();
     } else { // 'join' or default 'match' action
-        // Find an available room
-        $stmt = $conn->prepare("SELECT r.id, r.player_count FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.game_type = ? AND r.status IN ('waiting', 'finished') GROUP BY r.id, r.player_count HAVING COUNT(rp.user_id) < r.player_count ORDER BY r.created_at ASC LIMIT 1");
-        $stmt->bind_param("s", $gameType);
+        // Find an available room and lock it
+        $stmt = $conn->prepare("SELECT r.id, r.player_count FROM game_rooms r LEFT JOIN room_players rp ON r.id = rp.room_id WHERE r.game_type = ? AND r.player_count = ? AND r.status IN ('waiting', 'finished') GROUP BY r.id, r.player_count HAVING COUNT(rp.user_id) < r.player_count ORDER BY r.created_at ASC LIMIT 1 FOR UPDATE");
+        $stmt->bind_param("si", $gameType, $playerCount);
         $stmt->execute();
         $result = $stmt->get_result();
         $room = $result->fetch_assoc();

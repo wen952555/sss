@@ -22,18 +22,13 @@ if (!$userId || !$roomId || !$action) {
     exit;
 }
 
-$conn = db_connect();
-if (!$conn) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
-    exit;
-}
-
-$response = ['success' => false, 'message' => 'Invalid action.'];
-
-$conn->begin_transaction();
-
+$conn = null;
 try {
+    $conn = db_connect();
+    $conn->begin_transaction();
+
+    $response = ['success' => false, 'message' => 'Invalid action.'];
+
     switch ($action) {
         case 'prepare':
         case 'ready':
@@ -51,9 +46,16 @@ try {
 
             $response = ['success' => true, 'message' => 'Player is ready.'];
 
-            if ($result['ready_players'] >= 4 && $result['ready_players'] == $result['total_players']) {
-                $playerCount = (int)$result['total_players'];
+            // Get player count from the room
+            $stmt = $conn->prepare("SELECT player_count FROM game_rooms WHERE id = ?");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $roomResult = $stmt->get_result()->fetch_assoc();
+            $playerCount = $roomResult['player_count'];
+            $stmt->close();
 
+            if ($result['ready_players'] == $playerCount) {
+                // All players are ready, let's deal
                 // Fetch a pre-dealt hand
                 $stmt = $conn->prepare("SELECT id, hands FROM pre_dealt_hands WHERE player_count = ? AND is_used = 0 ORDER BY RAND() LIMIT 1");
                 $stmt->bind_param("i", $playerCount);
@@ -134,12 +136,16 @@ try {
     }
     $conn->commit();
 } catch (Exception $e) {
-    $conn->rollback();
+    if ($conn) {
+        $conn->rollback();
+    }
     http_response_code(400);
     $response = ['success' => false, 'message' => $e->getMessage()];
+} finally {
+    if ($conn) {
+        $conn->close();
+    }
 }
-
-$conn->close();
 
 echo json_encode($response);
 ?>
