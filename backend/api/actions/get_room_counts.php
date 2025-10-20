@@ -7,14 +7,14 @@ function get_room_counts() {
     try {
         $conn = db_connect();
         $counts = [];
-    $player_counts = [4];
+        $game_types = ['thirteen', 'thirteen-5', 'thirteen-10'];
 
-        foreach ($player_counts as $count) {
-            $stmt = $conn->prepare("SELECT COUNT(*) as room_count FROM game_rooms WHERE player_count = ? AND status = 'waiting'");
-            $stmt->bind_param("i", $count);
+        foreach ($game_types as $game_type) {
+            $stmt = $conn->prepare("SELECT COUNT(rp.id) as player_count FROM room_players rp JOIN game_rooms gr ON rp.room_id = gr.id WHERE gr.game_type = ? AND gr.status = 'waiting'");
+            $stmt->bind_param("s", $game_type);
             $stmt->execute();
             $result = $stmt->get_result()->fetch_assoc();
-            $counts[$count] = $result['room_count'] ?? 0;
+            $counts[$game_type] = $result['player_count'] ?? 0;
             $stmt->close();
         }
 
