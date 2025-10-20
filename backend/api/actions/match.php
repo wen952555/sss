@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../utils/utils.php';
 
 $gameType = $_GET['gameType'] ?? null;
 $userId = $_GET['userId'] ?? null;
-$playerCount = (int)($_GET['playerCount'] ?? 4);
+$playerCount = 4; // All game modes are 4-player
 $matchAction = $_GET['matchAction'] ?? 'join'; // 'join' or 'create'
 
 if (!$gameType || !$userId) {
