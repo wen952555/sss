@@ -117,8 +117,20 @@ $stmt->close();
 echo "Test users inserted or updated successfully.\n";
 
 // --- Add Indexes for Performance ---
-$conn->query("CREATE INDEX IF NOT EXISTS idx_room_code ON game_rooms(room_code);");
-$conn->query("CREATE INDEX IF NOT EXISTS idx_pre_dealt_hands ON pre_dealt_hands(player_count, is_used);");
+$room_code_exists = $conn->query("SHOW COLUMNS FROM `game_rooms` LIKE 'room_code'")->num_rows > 0;
+if (!$room_code_exists) {
+    $conn->query("ALTER TABLE `game_rooms` ADD `room_code` VARCHAR(6) NULL, ADD UNIQUE (`room_code`);");
+}
+
+$index1_exists = $conn->query("SHOW INDEX FROM game_rooms WHERE Key_name = 'idx_room_code'")->num_rows > 0;
+if (!$index1_exists) {
+    $conn->query("CREATE INDEX idx_room_code ON game_rooms(room_code);");
+}
+
+$index2_exists = $conn->query("SHOW INDEX FROM pre_dealt_hands WHERE Key_name = 'idx_pre_dealt_hands'")->num_rows > 0;
+if (!$index2_exists) {
+    $conn->query("CREATE INDEX idx_pre_dealt_hands ON pre_dealt_hands(player_count, is_used);");
+}
 echo "Indexes created or already exist.\n";
 
 $conn->close();

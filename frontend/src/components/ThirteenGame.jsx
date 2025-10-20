@@ -28,7 +28,11 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   const [timeLeft, setTimeLeft] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
 
+  const [hasPlayerInteracted, setHasPlayerInteracted] = useState(false);
+
   const handleHandData = useCallback((handData) => {
+    if (hasPlayerInteracted) return; // Ignore server updates after user interaction
+
     if (Array.isArray(handData)) {
       // This path is for when the server deals a fresh hand as a flat array.
       const cardObjects = handData.map(c => (typeof c === 'string' ? parseCard(c) : c)).filter(Boolean);
@@ -41,7 +45,14 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       // We sanitize it to ensure it's safe to use.
       setInitialLanes(sanitizeHand(handData));
     }
-  }, [setInitialLanes]);
+  }, [setInitialLanes, hasPlayerInteracted]);
+
+  // Track user interaction
+  useEffect(() => {
+    if (topLane.length > 0 || middleLane.length > 0 || bottomLane.length > 0) {
+      setHasPlayerInteracted(true);
+    }
+  }, [topLane, middleLane, bottomLane]);
 
   const handleConfirm = useCallback((hand = null) => {
     let handToSend;
@@ -59,7 +70,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       };
     }
 
-    if (isSssFoul(handToSend.top, handToSend.middle, handToSend.bottom)) {
+    if (isSssFoul(handToSend)) {
       setErrorMessage('你的牌组不符合规则（倒水）');
       return;
     }
