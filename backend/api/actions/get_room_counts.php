@@ -7,7 +7,7 @@ function get_room_counts() {
     try {
         $conn = db_connect();
         $counts = [];
-        $player_counts = [4, 5, 6, 7, 8];
+    $player_counts = [4];
 
         foreach ($player_counts as $count) {
             $stmt = $conn->prepare("SELECT COUNT(*) as room_count FROM game_rooms WHERE player_count = ? AND status = 'waiting'");

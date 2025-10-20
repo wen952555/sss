@@ -14,36 +14,17 @@ define('REPLENISH_THRESHOLD', 3);
  * @return array The deck of cards.
  */
 function get_deck_for_players($playerCount) {
-    if ($playerCount < 4 || $playerCount > 8) {
-        error_log("Invalid player count requested: " . $playerCount);
+    if ($playerCount !== 4) {
+        error_log("Invalid player count requested: " . $playerCount . ". Only 4-player games are supported.");
         return [];
     }
     $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
     $standard_suits = ['spades', 'hearts', 'clubs', 'diamonds'];
-    $extra_suits = ['stars', 'moons', 'suns'];
 
     $deck = [];
-
-    if ($playerCount === 8) {
-        // For 8 players, use two standard decks.
-        for ($i = 0; $i < 2; $i++) {
-            foreach ($standard_suits as $suit) {
-                foreach ($ranks as $rank) {
-                    $deck[] = ['rank' => $rank, 'suit' => $suit];
-                }
-            }
-        }
-    } else {
-        // For 4-7 players, use a single deck with extra suits as needed.
-        $suits_to_use = $standard_suits;
-        if ($playerCount >= 5 && $playerCount <= 7) {
-            $suits_to_use = array_merge($suits_to_use, array_slice($extra_suits, 0, $playerCount - 4));
-        }
-
-        foreach ($suits_to_use as $suit) {
-            foreach ($ranks as $rank) {
-                $deck[] = ['rank' => $rank, 'suit' => $suit];
-            }
+    foreach ($standard_suits as $suit) {
+        foreach ($ranks as $rank) {
+            $deck[] = ['rank' => $rank, 'suit' => $suit];
         }
     }
 
@@ -79,24 +60,23 @@ function replenish_pre_dealt_hands() {
         return;
     }
 
-    for ($playerCount = 4; $playerCount <= 8; $playerCount++) {
-        $stmt = $conn->prepare("SELECT COUNT(*) as count FROM pre_dealt_hands WHERE player_count = ? AND is_used = 0");
-        $stmt->bind_param("i", $playerCount);
-        $stmt->execute();
-        $result = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
+    $playerCount = 4;
+    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM pre_dealt_hands WHERE player_count = ? AND is_used = 0");
+    $stmt->bind_param("i", $playerCount);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
 
-        if ($result['count'] <= REPLENISH_THRESHOLD) {
-            $needed = TARGET_STOCK - $result['count'];
-            for ($i = 0; $i < $needed; $i++) {
-                $hands = deal_new_game($playerCount);
-                $handsJson = json_encode($hands);
+    if ($result['count'] <= REPLENISH_THRESHOLD) {
+        $needed = TARGET_STOCK - $result['count'];
+        for ($i = 0; $i < $needed; $i++) {
+            $hands = deal_new_game($playerCount);
+            $handsJson = json_encode($hands);
 
-                $insertStmt = $conn->prepare("INSERT INTO pre_dealt_hands (player_count, hands) VALUES (?, ?)");
-                $insertStmt->bind_param("is", $playerCount, $handsJson);
-                $insertStmt->execute();
-                $insertStmt->close();
-            }
+            $insertStmt = $conn->prepare("INSERT INTO pre_dealt_hands (player_count, hands) VALUES (?, ?)");
+            $insertStmt->bind_param("is", $playerCount, $handsJson);
+            $insertStmt->execute();
+            $insertStmt->close();
         }
     }
 
