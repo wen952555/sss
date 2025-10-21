@@ -6,6 +6,7 @@ import Game from './components/Game';
 import Lobby from './components/Lobby';
 import TrialGame from './components/TrialGame';
 import AuthModal from './components/AuthModal';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 import './components/Lobby.css';
 
@@ -53,34 +54,36 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="app">
-        <nav className="main-nav">
-          <div>
-            <Link to="/">游戏大厅</Link>
-            <Link to="/trial">离线练习</Link>
-          </div>
-           <div className="user-info">{user ? `欢迎, ${user.display_id}` : ''}</div>
-          <div className="auth-status">
-            {!token ? (
-              <button onClick={() => setShowAuthModal(true)} className="auth-button">注册/登录</button>
-            ) : (
-              <button onClick={handleLogout} className="auth-button">登出</button>
-            )}
-          </div>
-        </nav>
+    <ErrorBoundary>
+      <Router>
+        <div className="app">
+          <nav className="main-nav">
+            <div>
+              <Link to="/">游戏大厅</Link>
+              <Link to="/trial">离线练习</Link>
+            </div>
+             <div className="user-info">{user ? `欢迎, ${user.display_id}` : ''}</div>
+            <div className="auth-status">
+              {!token ? (
+                <button onClick={() => setShowAuthModal(true)} className="auth-button">注册/登录</button>
+              ) : (
+                <button onClick={handleLogout} className="auth-button">登出</button>
+              )}
+            </div>
+          </nav>
 
-        <AuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} setToken={handleSetToken} />
+          <AuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} setToken={handleSetToken} />
 
-        <main>
-          <Routes>
-            <Route path="/trial" element={<TrialGame />} />
-            <Route path="/game/:roomId" element={token && user ? <Game token={token} user={user} /> : <Navigate to="/" />} />
-            <Route path="/" element={token ? <Lobby token={token} /> : <div className="login-prompt"><h2>请登录</h2><p>登录以访问游戏大厅或尝试离线练习模式。</p></div>} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+          <main>
+            <Routes>
+              <Route path="/trial" element={<TrialGame />} />
+              <Route path="/game/:roomId" element={token && user ? <Game token={token} user={user} /> : <Navigate to="/" />} />
+              <Route path="/" element={token ? <Lobby token={token} /> : <div className="login-prompt"><h2>请登录</h2><p>登录以访问游戏大厅或尝试离线练习模式。</p></div>} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
