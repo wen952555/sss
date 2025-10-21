@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 require_once __DIR__ . '/../../utils/pre_dealer.php';
+require_once __DIR__ . '/../../utils/auto_sorter.php';
 
 // Use json_decode for all incoming requests.
 $post_data = json_decode(file_get_contents("php://input"), true);
@@ -108,7 +109,7 @@ try {
                 replenish_pre_dealt_hands();
 
                 $response['cardsDealt'] = true;
-                $response['hand'] = $userHand;
+                $response['hand'] = auto_sort_hand($userHand);
             }
             break;
 
