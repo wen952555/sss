@@ -55,7 +55,7 @@ try {
             $playerCount = $roomResult['player_count'];
             $stmt->close();
 
-            if ($result['ready_players'] == $playerCount) {
+            if (isset($result['ready_players']) && $result['ready_players'] == $playerCount) {
                 // All players are ready, let's deal
                 // Fetch a pre-dealt hand
                 $stmt = $conn->prepare("SELECT id, hands FROM pre_dealt_hands WHERE player_count = ? AND is_used = 0 ORDER BY RAND() LIMIT 1");
