@@ -19,7 +19,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   } = useCardArrangement();
 
   const [playerState, setPlayerState] = useState('waiting');
-  const [sortStrategy, setSortStrategy] = useState('bottom');
   const [players, setPlayers] = useState([]);
   const [gameResult, setGameResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -127,7 +126,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     try {
       // eslint-disable-next-line react/prop-types
       const url = `/api/?action=game_status&roomId=${roomId}&userId=${user.id}`;
-      console.log('Fetching game status:', url);
       const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
@@ -198,7 +196,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     } catch (error) {
       if (isOnline) {
         setIsOnline(false);
-        // setErrorMessage("网络连接已断开，正在尝试重新连接..."); // Removed to make reconnection silent
       }
       console.error("Failed to fetch game status:", error);
     }
@@ -264,9 +261,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       if (!data.success) {
         throw new Error(data.message || `Failed to ${action}.`);
       }
-      // The game status is now fetched via polling, so we don't need to manually process hand data here.
-      // The fetchGameStatus call below will handle UI updates.
-      await fetchGameStatus(); // Manually trigger a fetch to get immediate feedback
+      await fetchGameStatus();
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
@@ -274,6 +269,29 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     }
   }, [user, roomId, players, fetchGameStatus]);
 
+  const handleAutoSort = useCallback(async () => {
+    const allCards = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
+    if (allCards.length !== 13) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/?action=auto_sort_hand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hand: allCards }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setInitialLanes(sanitizeHand(data.hand));
+      } else {
+        throw new Error(data.message || 'Failed to auto-sort hand.');
+      }
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [topLane, middleLane, bottomLane, setInitialLanes]);
 
   // eslint-disable-next-line react/prop-types
   const me = players.find(p => p.id === user.id);
@@ -281,7 +299,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   const isGameInProgress = playerState === 'arranging' || playerState === 'submitted';
 
   return (
-    <div data-testid="game-table">
     <GameTable
       gameType={gameType}
       title={`玩家: ${players.length} / ${playerCount || 4}`}
@@ -304,12 +321,12 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       onBackToLobby={handleLeaveRoom}
       onReady={handleReady}
       onConfirm={() => handleConfirm()}
+      onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
       onLaneClick={handleLaneClick}
       onCloseResult={() => setGameResult(null)}
       onPlayAgain={handleLeaveRoom}
     />
-    </div>
   );
 };
 
