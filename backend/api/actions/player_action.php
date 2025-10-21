@@ -64,17 +64,31 @@ try {
                 $preDealtHand = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
 
+                $hand_id = null;
                 if (!$preDealtHand) {
-                    // No pre-dealt hands available, create one on the fly
+                    // No pre-dealt hands available, create one on the fly and save it
                     $hands = deal_new_game($playerCount);
+                    $handsJson = json_encode($hands);
+                    $insertStmt = $conn->prepare("INSERT INTO pre_dealt_hands (player_count, hands, is_used) VALUES (?, ?, 1)");
+                    $insertStmt->bind_param("is", $playerCount, $handsJson);
+                    $insertStmt->execute();
+                    $hand_id = $insertStmt->insert_id;
+                    $insertStmt->close();
                 } else {
+                    $hand_id = $preDealtHand['id'];
                     $hands = json_decode($preDealtHand['hands'], true);
                     // Mark the hand as used
                     $stmt = $conn->prepare("UPDATE pre_dealt_hands SET is_used = 1 WHERE id = ?");
-                    $stmt->bind_param("i", $preDealtHand['id']);
+                    $stmt->bind_param("i", $hand_id);
                     $stmt->execute();
                     $stmt->close();
                 }
+
+                // Store the hand_id in the game_rooms table
+                $stmt = $conn->prepare("UPDATE game_rooms SET current_hand_id = ? WHERE id = ?");
+                $stmt->bind_param("ii", $hand_id, $roomId);
+                $stmt->execute();
+                $stmt->close();
 
                 // Distribute hands to players
                 $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id = ? ORDER BY id ASC");

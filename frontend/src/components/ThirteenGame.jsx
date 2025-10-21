@@ -25,6 +25,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
+  const [sortedHandIndex, setSortedHandIndex] = useState(0);
 
   const [hasPlayerInteracted, setHasPlayerInteracted] = useState(false);
 
@@ -270,28 +271,34 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   }, [user, roomId, players, fetchGameStatus]);
 
   const handleAutoSort = useCallback(async () => {
-    const allCards = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
-    if (allCards.length !== 13) return;
-
     setIsLoading(true);
     try {
       const response = await fetch('/api/?action=auto_sort_hand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hand: allCards }),
+        body: JSON.stringify({
+          userId: user.id,
+          roomId: roomId,
+          index: sortedHandIndex,
+        }),
       });
       const data = await response.json();
       if (data.success) {
+        // By setting hasPlayerInteracted to false before updating the lanes,
+        // we ensure the new hand from the server is always rendered.
+        setHasPlayerInteracted(false);
         setInitialLanes(sanitizeHand(data.hand));
+        // Cycle to the next index for the next click
+        setSortedHandIndex((prevIndex) => (prevIndex + 1) % 5);
       } else {
-        throw new Error(data.message || 'Failed to auto-sort hand.');
+        throw new Error(data.message || 'Failed to fetch pre-sorted hand.');
       }
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
       setIsLoading(false);
     }
-  }, [topLane, middleLane, bottomLane, setInitialLanes]);
+  }, [roomId, user, sortedHandIndex, setInitialLanes]);
 
   // eslint-disable-next-line react/prop-types
   const me = players.find(p => p.id === user.id);
