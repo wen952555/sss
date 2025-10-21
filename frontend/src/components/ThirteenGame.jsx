@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
-import { getSmartSortedHand } from '../utils/autoSorter.js';
 import GameTable from './GameTable';
 import { isSssFoul, calculateSinglePairScore, compareSssArea } from '../utils/scorer.js';
 import { parseCard } from '../utils/pokerEvaluator.js';
@@ -33,18 +32,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   const handleHandData = useCallback((handData) => {
     if (hasPlayerInteracted) return; // Ignore server updates after user interaction
 
-    if (Array.isArray(handData)) {
-      // This path is for when the server deals a fresh hand as a flat array.
-      const cardObjects = handData.map(c => (typeof c === 'string' ? parseCard(c) : c)).filter(Boolean);
-      const sortedHand = getSmartSortedHand(cardObjects, 'bottom');
-      if (sortedHand) {
-        setInitialLanes(sortedHand);
-      }
-    } else {
-      // This path is for when the server sends a pre-arranged hand object.
-      // We sanitize it to ensure it's safe to use.
-      setInitialLanes(sanitizeHand(handData));
-    }
+    // The server now always sends a pre-arranged hand object.
+    // We sanitize it to ensure it's safe to use.
+    setInitialLanes(sanitizeHand(handData));
   }, [setInitialLanes, hasPlayerInteracted]);
 
   // Track user interaction
@@ -103,13 +93,12 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   }, [roomId, user, topLane, middleLane, bottomLane]);
 
   const handleAutoConfirm = useCallback(() => {
-    const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
-    if (allCardKeys.length !== 13) return;
-
-    const sortedHand = getSmartSortedHand(allCardKeys, 'bottom');
-    if (sortedHand) {
-      handleConfirm(sortedHand);
-    }
+    const hand = {
+      top: topLane.map(c => (typeof c === 'string' ? parseCard(c) : c)),
+      middle: middleLane.map(c => (typeof c === 'string' ? parseCard(c) : c)),
+      bottom: bottomLane.map(c => (typeof c === 'string' ? parseCard(c) : c)),
+    };
+    handleConfirm(hand);
   }, [topLane, middleLane, bottomLane, handleConfirm]);
 
   useEffect(() => {
@@ -285,26 +274,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     }
   }, [user, roomId, players, fetchGameStatus]);
 
-  const handleAutoSort = useCallback(() => {
-    const allCardKeys = [...topLane, ...middleLane, ...bottomLane].map(c => c.key);
-    if (allCardKeys.length !== 13) return;
-
-    const sortedHand = getSmartSortedHand(allCardKeys, sortStrategy);
-    if (sortedHand) {
-      const handForState = {
-          top: sortedHand.top.map(c => `${c.rank}_of_${c.suit}`),
-          middle: sortedHand.middle.map(c => `${c.rank}_of_${c.suit}`),
-          bottom: sortedHand.bottom.map(c => `${c.rank}_of_${c.suit}`),
-      }
-      setInitialLanes(handForState);
-    }
-
-    setSortStrategy(prev => {
-      if (prev === 'bottom') return 'middle';
-      if (prev === 'middle') return 'top';
-      return 'bottom';
-    });
-  }, [topLane, middleLane, bottomLane, sortStrategy, setInitialLanes]);
 
   // eslint-disable-next-line react/prop-types
   const me = players.find(p => p.id === user.id);
@@ -312,6 +281,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   const isGameInProgress = playerState === 'arranging' || playerState === 'submitted';
 
   return (
+    <div data-testid="game-table">
     <GameTable
       gameType={gameType}
       title={`玩家: ${players.length} / ${playerCount || 4}`}
@@ -334,12 +304,12 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       onBackToLobby={handleLeaveRoom}
       onReady={handleReady}
       onConfirm={() => handleConfirm()}
-      onAutoSort={handleAutoSort}
       onCardClick={handleCardClick}
       onLaneClick={handleLaneClick}
       onCloseResult={() => setGameResult(null)}
       onPlayAgain={handleLeaveRoom}
     />
+    </div>
   );
 };
 
