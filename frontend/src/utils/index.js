@@ -1,4 +1,3 @@
-export * from './autoSorter.js';
 export * from './cardUtils.js';
 export * from './pokerEvaluator.js';
 export * from './sssScorer.js';
