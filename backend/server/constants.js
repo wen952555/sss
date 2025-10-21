@@ -27,9 +27,15 @@ const HAND_TYPES = {
 };
 
 const SPECIAL_HAND_TYPES = {
+    SUPREME_DRAGON: { value: 20, name: '至尊青龙', score: 108 },
+    TWELVE_ROYALS: { value: 19, name: '十二皇族', score: 24 },
+    THREE_STRAIGHT_FLUSHES: { value: 18, name: '三同花顺', score: 20 },
+    FOUR_TRIPLES: { value: 17, name: '四套三条', score: 16 },
+    ALL_BIG: { value: 16, name: '全大', score: 12 },
+    ALL_SMALL: { value: 15, name: '全小', score: 12 },
+    ALL_SAME_COLOR: { value: 14, name: '全一色', score: 10 },
     DRAGON: { value: 13, name: '一条龙', score: 13 },
-    THIRTEEN_ORPHANS: { value: 12, name: '十三幺', score: 13}, // Example, not standard
-    ALL_SUITS: { value: 11, name: '全花色', score: 10}, // J,Q,K,A in various suits
+    FIVE_PAIRS_AND_TRIPLE: { value: 6, name: '五对三条', score: 6 },
     THREE_FLUSHES: { value: 5, name: '三同花', score: 5 },
     THREE_STRAIGHTS: { value: 4, name: '三顺子', score: 4 },
     SIX_PAIRS: { value: 3, name: '六对半', score: 3 },
