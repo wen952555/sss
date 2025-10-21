@@ -139,30 +139,59 @@ function evaluate13CardHand(front, middle, back) {
     const ranks = allCards.map(c => c.value).sort((a, b) => a - b);
     const uniqueRanks = [...new Set(ranks)];
 
-    // 一条龙 (Dragon): A-K straight
-    if (uniqueRanks.length === 13 && (ranks[12] - ranks[0] === 12)) {
-        return SPECIAL_HAND_TYPES.DRAGON;
+    const isDragon = uniqueRanks.length === 13;
+    if (isDragon) {
+        const isSupremeDragon = isFlush(allCards);
+        return isSupremeDragon ? SPECIAL_HAND_TYPES.SUPREME_DRAGON : SPECIAL_HAND_TYPES.DRAGON;
     }
 
-    // 六对半 (Six Pairs)
-    if (findGroups(rankCounts, 2).length === 6) {
-        return SPECIAL_HAND_TYPES.SIX_PAIRS;
+    const royalRanks = [RANK_VALUES.J, RANK_VALUES.Q, RANK_VALUES.K, RANK_VALUES.A];
+    const twelveRoyalsCount = allCards.filter(c => royalRanks.includes(c.value)).length;
+    if (twelveRoyalsCount >= 12) {
+        return SPECIAL_HAND_TYPES.TWELVE_ROYALS;
     }
 
-    // 三同花 (Three Flushes)
-    const isFrontFlush = isFlush(front);
-    const isMiddleFlush = isFlush(middle);
-    const isBackFlush = isFlush(back);
-    if (isFrontFlush && isMiddleFlush && isBackFlush) {
+    const frontEval = evaluate3CardHand(front);
+    const middleEval = evaluate5CardHand(middle);
+    const backEval = evaluate5CardHand(back);
+
+    const isFrontSF = frontEval.type === HAND_TYPES.STRAIGHT_FLUSH;
+    const isMiddleSF = middleEval.type === HAND_TYPES.STRAIGHT_FLUSH;
+    const isBackSF = backEval.type === HAND_TYPES.STRAIGHT_FLUSH;
+    if (isFrontSF && isMiddleSF && isBackSF) {
+        return SPECIAL_HAND_TYPES.THREE_STRAIGHT_FLUSHES;
+    }
+
+    const triples = findGroups(rankCounts, 3);
+    if (triples.length === 4) {
+        return SPECIAL_HAND_TYPES.FOUR_TRIPLES;
+    }
+
+    const isAllBig = allCards.every(c => c.value >= RANK_VALUES['8']);
+    if (isAllBig) return SPECIAL_HAND_TYPES.ALL_BIG;
+
+    const isAllSmall = allCards.every(c => c.value < RANK_VALUES['8']);
+    if (isAllSmall) return SPECIAL_HAND_TYPES.ALL_SMALL;
+
+    const isAllSameColor = Object.keys(suitCounts).length === 2 && (suitCounts.spades && suitCounts.clubs || suitCounts.hearts && suitCounts.diamonds);
+    if (isAllSameColor) {
+        return SPECIAL_HAND_TYPES.ALL_SAME_COLOR;
+    }
+
+    if (findGroups(rankCounts, 2).length === 5 && findGroups(rankCounts, 3).length === 1) {
+        return SPECIAL_HAND_TYPES.FIVE_PAIRS_AND_TRIPLE;
+    }
+
+    if (isFlush(front) && isFlush(middle) && isFlush(back)) {
         return SPECIAL_HAND_TYPES.THREE_FLUSHES;
     }
 
-    // 三顺子 (Three Straights)
-    const isFrontStraight = isStraight(front).isStraight;
-    const isMiddleStraight = isStraight(middle).isStraight;
-    const isBackStraight = isStraight(back).isStraight;
-    if (isFrontStraight && isMiddleStraight && isBackStraight) {
+    if (isStraight(front).isStraight && isStraight(middle).isStraight && isStraight(back).isStraight) {
         return SPECIAL_HAND_TYPES.THREE_STRAIGHTS;
+    }
+
+    if (findGroups(rankCounts, 2).length === 6) {
+        return SPECIAL_HAND_TYPES.SIX_PAIRS;
     }
 
     return SPECIAL_HAND_TYPES.NONE;
