@@ -2,7 +2,15 @@ import React from 'react';
 
 const Card = ({ card, onClick, isSelected }) => {
   if (!card || card.suit === 'joker') return null;
-  const imageName = `${card.rank}_of_${card.suit}.svg`;
+
+  const rankMap = {
+    'A': 'ace',
+    'K': 'king',
+    'Q': 'queen',
+    'J': 'jack',
+  };
+  const rankName = rankMap[card.rank] || card.rank;
+  const imageName = `${rankName}_of_${card.suit}.svg`;
   const imagePath = `/cards/${imageName}`;
   const cardClassName = `card ${isSelected ? 'selected' : ''} ${onClick ? 'clickable' : ''}`;
 
