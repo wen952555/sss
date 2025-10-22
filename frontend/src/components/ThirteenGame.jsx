@@ -78,7 +78,12 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
         .map((p, i) => {
           const hand = deck.slice(i * 13, (i + 1) * 13);
           const bestArrangement = findBestArrangement(hand.map(c => c.key));
-          return { ...p, hand: sanitizeHand(bestArrangement) };
+          const mappedArrangement = {
+            top: bestArrangement.front,
+            middle: bestArrangement.middle,
+            bottom: bestArrangement.back,
+          };
+          return { ...p, hand: sanitizeHand(mappedArrangement) };
         });
 
       const resultPlayers = [
@@ -161,8 +166,13 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
       const deck = suits.flatMap(suit => ranks.map(rank => `${rank}_of_${suit}`));
       deck.sort(() => Math.random() - 0.5);
-      const playerHand = deck.slice(0, 13).map(key => ({ key, ...parseCard(key) }));
-      setInitialLanes({ top: playerHand.slice(0, 3), middle: playerHand.slice(3, 8), bottom: playerHand.slice(8, 13) });
+      const playerHand = deck.slice(0, 13);
+      const initialArrangement = {
+        top: playerHand.slice(0, 3),
+        middle: playerHand.slice(3, 8),
+        bottom: playerHand.slice(8, 13),
+      };
+      setInitialLanes(sanitizeHand(initialArrangement));
     }
   }, [isTrial, user, setInitialLanes]);
 
@@ -337,7 +347,12 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
     if (isTrial) {
       const allCards = [...topLane, ...middleLane, ...bottomLane];
       const bestArrangement = findBestArrangement(allCards.map(c => c.key));
-      setInitialLanes(sanitizeHand(bestArrangement));
+      const mappedArrangement = {
+        top: bestArrangement.front,
+        middle: bestArrangement.middle,
+        bottom: bestArrangement.back,
+      };
+      setInitialLanes(sanitizeHand(mappedArrangement));
       return;
     }
     setIsLoading(true);
