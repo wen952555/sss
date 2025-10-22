@@ -6,9 +6,5 @@
 	{
 		"pkg": "@capacitor/browser",
 		"classpath": "com.capacitorjs.plugins.browser.BrowserPlugin"
-	},
-	{
-		"pkg": "@capacitor/http",
-		"classpath": "com.getcapacitor.plugin.http.Http"
 	}
 ]

@@ -1,7 +1,9 @@
 {
   "name": "wcn-monorepo",
   "private": true,
-  "workspaces": ["frontend"],
+  "workspaces": [
+    "frontend"
+  ],
   "dependencies": {
     "@capacitor/android": "^7.0.2",
     "@capacitor/app": "^7.0.2",
@@ -9,7 +11,9 @@
     "@capacitor/core": "^7.0.2"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.0.2"
+    "@capacitor/cli": "^7.4.3"
   },
-  "scripts": { "test": "echo \"ok\"" }
+  "scripts": {
+    "test": "echo \"ok\""
+  }
 }
