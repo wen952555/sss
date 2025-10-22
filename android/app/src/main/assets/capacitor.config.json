@@ -4,9 +4,9 @@
 	"webDir": "frontend/dist",
 	"bundledWebRuntime": false,
 	"server": {
-		"url": "https://9522.ip-ddns.com",
+		"url": "https://xxx.9525.ip-ddns.com",
 		"allowNavigation": [
-			"9522.ip-ddns.com"
+			"xxx.9525.ip-ddns.com"
 		]
 	},
 	"android": {
