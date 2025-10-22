@@ -47,7 +47,8 @@ function tableExists($conn, $tableName) {
 }
 
 function isSuperAdmin($chatId) {
-    return $chatId == 1878794912;
+    global $TELEGRAM_SUPER_ADMIN_ID;
+    return isset($TELEGRAM_SUPER_ADMIN_ID) && $chatId == $TELEGRAM_SUPER_ADMIN_ID;
 }
 
 function isAdmin($conn, $chatId) {
