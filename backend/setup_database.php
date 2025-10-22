@@ -129,9 +129,10 @@ $stmt->close();
 echo "Test users inserted or updated successfully.\n";
 
 // 6. Insert Super Admin for Telegram Bot
-$superAdminId = 1878794912; // This is hardcoded in tg_webhook.php
-$stmt_admin = $conn->prepare("INSERT INTO tg_admins (chat_id) VALUES (?) ON DUPLICATE KEY UPDATE chat_id = ?");
-$stmt_admin->bind_param("ii", $superAdminId, $superAdminId);
+if (isset($TELEGRAM_SUPER_ADMIN_ID) && !empty($TELEGRAM_SUPER_ADMIN_ID)) {
+    $superAdminId = $TELEGRAM_SUPER_ADMIN_ID;
+    $stmt_admin = $conn->prepare("INSERT INTO tg_admins (chat_id) VALUES (?) ON DUPLICATE KEY UPDATE chat_id = ?");
+    $stmt_admin->bind_param("ii", $superAdminId, $superAdminId);
 $stmt_admin->execute();
 $stmt_admin->close();
 echo "Super admin for Telegram bot inserted successfully.\n";
