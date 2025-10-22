@@ -2,6 +2,8 @@
 
 import { parseCard, evaluateHand as evaluate5Cards, compareHands } from './pokerEvaluator';
 
+const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
+
 export const getCombinations = (array, k) => {
   if (k === 0) return [[]];
   if (!array || array.length < k) return [];
