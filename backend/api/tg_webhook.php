@@ -9,8 +9,10 @@ error_reporting(E_ALL);
 require_once 'db_connect.php';
 
 // 读取配置
-if (!isset($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN') {
-    error_log("FATAL: Telegram Bot Token is not configured in config.php");
+if (!isset($TELEGRAM_BOT_TOKEN) || $TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN' || strpos($TELEGRAM_BOT_TOKEN, 'REPLACE') !== false) {
+    error_log("FATAL: Telegram Bot Token is not configured or is a placeholder in config.php or config-local.php");
+    // To avoid broadcasting errors, we send a silent 200 OK response to the Telegram server.
+    http_response_code(200);
     exit();
 }
 $API_URL = 'https://api.telegram.org/bot' . $TELEGRAM_BOT_TOKEN . '/';
