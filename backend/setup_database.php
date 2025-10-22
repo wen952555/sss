@@ -102,6 +102,13 @@ if ($conn->multi_query($sql)) {
     echo "Error creating tables: " . $conn->error . "\n";
 }
 
+// Add is_ai column to users table if it doesn't exist
+$is_ai_exists = $conn->query("SHOW COLUMNS FROM `users` LIKE 'is_ai'")->num_rows > 0;
+if (!$is_ai_exists) {
+    $conn->query("ALTER TABLE `users` ADD `is_ai` TINYINT(1) NOT NULL DEFAULT 0;");
+    echo "Column 'is_ai' added to 'users' table.\n";
+}
+
 // 5. Insert test users with hashed passwords
 $users = [
     ['user1', 'password', 0],
