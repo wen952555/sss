@@ -166,13 +166,12 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
       const deck = suits.flatMap(suit => ranks.map(rank => `${rank}_of_${suit}`));
       deck.sort(() => Math.random() - 0.5);
-      const playerHand = deck.slice(0, 13);
-      const initialArrangement = {
+      const playerHand = deck.slice(0, 13).map(key => ({ key, ...parseCard(key) }));
+      setInitialLanes({
         top: playerHand.slice(0, 3),
         middle: playerHand.slice(3, 8),
         bottom: playerHand.slice(8, 13),
-      };
-      setInitialLanes(sanitizeHand(initialArrangement));
+      });
     }
   }, [isTrial, user, setInitialLanes]);
 
