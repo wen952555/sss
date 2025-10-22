@@ -31,3 +31,7 @@ jobs:
             --exclude='api/config.php' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
+
+      - name: Verify deployed files on serv00
+        run: |
+          ssh -o StrictHostKeyChecking=no "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}" "ls -lR ${{ secrets.SERV00_PATH }}"
