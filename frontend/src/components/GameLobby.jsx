@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './GameLobby.css';
 
-const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick, onShowRules, roomCounts }) => {
+const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout, onLoginClick, onShowRules, onTrial, roomCounts }) => {
   useEffect(() => {
     if (user) {
       const updateActivity = async () => {
@@ -32,6 +32,7 @@ const GameLobby = ({ onSelectGameType, matchingStatus, user, onProfile, onLogout
             <button className="header-btn login-btn" onClick={onLoginClick}>注册/登录</button>
           )}
           <button className="header-btn rules-btn" onClick={onShowRules}>游戏规则</button>
+          <button className="header-btn trial-btn" onClick={onTrial}>试玩</button>
         </div>
       </header>
 
