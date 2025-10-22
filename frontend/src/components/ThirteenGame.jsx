@@ -4,9 +4,10 @@ import GameTable from './GameTable';
 import { isSssFoul, calculateSinglePairScore, compareSssArea } from '../utils/scorer.js';
 import { parseCard } from '../utils/pokerEvaluator.js';
 import { sanitizeHand } from '../utils/cardUtils.js';
+import { findBestArrangement } from '../utils/trialModeUtils.js';
 
 // eslint-disable-next-line react/prop-types
-const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) => {
+const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTrial = false }) => {
   const {
     topLane,
     middleLane,
@@ -65,6 +66,47 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       return;
     }
 
+    if (isTrial) {
+      const allCards = [...topLane, ...middleLane, ...bottomLane];
+      const deck = ['hearts', 'diamonds', 'clubs', 'spades']
+        .flatMap(suit => ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'].map(rank => ({ key: `${rank}_of_${suit}`, rank, suit })))
+        .filter(card => !allCards.some(c => c.key === card.key));
+      deck.sort(() => Math.random() - 0.5);
+
+      const aiHands = players
+        .filter(p => p.is_auto_managed)
+        .map((p, i) => {
+          const hand = deck.slice(i * 13, (i + 1) * 13);
+          const bestArrangement = findBestArrangement(hand.map(c => c.key));
+          return { ...p, hand: sanitizeHand(bestArrangement) };
+        });
+
+      const resultPlayers = [
+        { id: user.id, phone: user.phone, hand: sanitizeHand(handToSend), is_auto_managed: false },
+        ...aiHands,
+      ];
+
+      const playerHands = resultPlayers.reduce((acc, p) => ({ ...acc, [p.id]: p.hand }), {});
+      const playerIds = resultPlayers.map(p => p.id);
+      const scores = playerIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
+
+      for (let i = 0; i < playerIds.length; i++) {
+        for (let j = i + 1; j < playerIds.length; j++) {
+          const p1_id = playerIds[i];
+          const p2_id = playerIds[j];
+          const pair_score = calculateSinglePairScore(playerHands[p1_id], playerHands[p2_id]);
+          scores[p1_id] += pair_score;
+          scores[p2_id] -= pair_score;
+        }
+      }
+
+      resultPlayers.forEach(p => { p.score = scores[p.id]; });
+      setGameResult({ players: resultPlayers });
+      setPlayerState('finished');
+      return;
+    }
+
+
     setIsLoading(true);
     fetch('/api/?action=player_action', {
       method: 'POST',
@@ -90,7 +132,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     .finally(() => {
       setIsLoading(false);
     });
-  }, [roomId, user, topLane, middleLane, bottomLane]);
+  }, [roomId, user, topLane, middleLane, bottomLane, isTrial, players]);
 
   const handleAutoConfirm = useCallback(() => {
     const hand = {
@@ -102,12 +144,35 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   }, [topLane, middleLane, bottomLane, handleConfirm]);
 
   useEffect(() => {
-    if (playerState === 'arranging') {
+    if (isTrial) {
+      // Setup local trial game
+      const aiPlayers = [
+        { id: 1, phone: 'AI 1', is_ready: true, is_auto_managed: true },
+        { id: 2, phone: 'AI 2', is_ready: true, is_auto_managed: true },
+        { id: 3, phone: 'AI 3', is_ready: true, is_auto_managed: true },
+      ];
+      setPlayers([
+        { id: user.id, phone: user.phone, is_ready: true, is_auto_managed: false },
+        ...aiPlayers,
+      ]);
+      setPlayerState('arranging');
+      // Locally deal cards
+      const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+      const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      const deck = suits.flatMap(suit => ranks.map(rank => `${rank}_of_${suit}`));
+      deck.sort(() => Math.random() - 0.5);
+      const playerHand = deck.slice(0, 13).map(key => ({ key, ...parseCard(key) }));
+      setInitialLanes({ top: playerHand.slice(0, 3), middle: playerHand.slice(3, 8), bottom: playerHand.slice(8, 13) });
+    }
+  }, [isTrial, user, setInitialLanes]);
+
+  useEffect(() => {
+    if (playerState === 'arranging' && !isTrial) {
       setTimeLeft(100);
     } else {
       setTimeLeft(null);
     }
-  }, [playerState]);
+  }, [playerState, isTrial]);
 
   useEffect(() => {
     if (timeLeft === null) return;
@@ -123,7 +188,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
   }, [timeLeft, handleAutoConfirm]);
 
   const fetchGameStatus = useCallback(async () => {
-    if (!roomId || !user) return;
+    if (isTrial || !roomId || !user) return;
     try {
       // eslint-disable-next-line react/prop-types
       const url = `/api/?action=game_status&roomId=${roomId}&userId=${user.id}`;
@@ -157,9 +222,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
             for (let j = i + 1; j < playerIds.length; j++) {
               const p1_id = playerIds[i];
               const p2_id = playerIds[j];
-              const p1_hand = playerHands[p1_id];
-              const p2_hand = playerHands[p2_id];
-              const pair_score = calculateSinglePairScore(p1_hand, p2_hand);
+              const pair_score = calculateSinglePairScore(playerHands[p1_id], playerHands[p2_id]);
               scores[p1_id] += pair_score;
               scores[p2_id] -= pair_score;
             }
@@ -200,31 +263,31 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
       }
       console.error("Failed to fetch game status:", error);
     }
-  }, [roomId, user, isOnline, gameType, handleHandData]);
+  }, [roomId, user, isOnline, gameType, handleHandData, isTrial]);
 
   useEffect(() => {
+    if (isTrial) return;
     fetchGameStatus();
     const intervalId = setInterval(fetchGameStatus, 1000);
     return () => clearInterval(intervalId);
-  }, [fetchGameStatus]);
+  }, [fetchGameStatus, isTrial]);
 
   useEffect(() => {
-    if (gameResult && gameResult.players) {
-      const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
-      // eslint-disable-next-line react/prop-types
-      if (user.id === playerIds[0]) {
-        const scores = gameResult.players.reduce((acc, p) => ({ ...acc, [p.id]: p.score }), {});
-        fetch('/api/?action=save_scores', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId, scores }),
-        });
-      }
+    if (isTrial || !gameResult || !gameResult.players) return;
+    const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
+    // eslint-disable-next-line react/prop-types
+    if (user.id === playerIds[0]) {
+      const scores = gameResult.players.reduce((acc, p) => ({ ...acc, [p.id]: p.score }), {});
+      fetch('/api/?action=save_scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, scores }),
+      });
     }
-  }, [gameResult, roomId, user]);
+  }, [gameResult, roomId, user, isTrial]);
 
   const handleLeaveRoom = useCallback(() => {
-    if (!user || !roomId) {
+    if (isTrial || !user || !roomId) {
       onBackToLobby();
       return;
     }
@@ -237,10 +300,10 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     .then(() => {
       onBackToLobby();
     });
-  }, [user, roomId, onBackToLobby]);
+  }, [user, roomId, onBackToLobby, isTrial]);
 
   const handleReady = useCallback(async () => {
-    if (!user || !roomId) return;
+    if (isTrial || !user || !roomId) return;
     // eslint-disable-next-line react/prop-types
     const me = players.find(p => p.id === user.id);
     const currentIsReady = me ? me.is_ready : false;
@@ -268,9 +331,15 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     } finally {
       setIsLoading(false);
     }
-  }, [user, roomId, players, fetchGameStatus]);
+  }, [user, roomId, players, fetchGameStatus, isTrial]);
 
   const handleAutoSort = useCallback(async () => {
+    if (isTrial) {
+      const allCards = [...topLane, ...middleLane, ...bottomLane];
+      const bestArrangement = findBestArrangement(allCards.map(c => c.key));
+      setInitialLanes(sanitizeHand(bestArrangement));
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await fetch('/api/?action=auto_sort_hand', {
@@ -298,7 +367,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount }) =>
     } finally {
       setIsLoading(false);
     }
-  }, [roomId, user, sortedHandIndex, setInitialLanes]);
+  }, [roomId, user, sortedHandIndex, setInitialLanes, isTrial, topLane, middleLane, bottomLane]);
 
   // eslint-disable-next-line react/prop-types
   const me = players.find(p => p.id === user.id);

@@ -199,6 +199,8 @@ function App() {
     if (showTransfer && user) return <TransferPoints fromId={user.id} onClose={() => setShowTransfer(false)} onSuccess={handleTransferSuccess} />;
 
     switch (currentView) {
+      case 'trial':
+        return <ThirteenGame isTrial={true} onBackToLobby={handleBackToLobby} user={user || { id: 0, phone: 'Guest' }} />;
       case 'rules':
         return <GameRules onBack={() => setCurrentView('lobby')} />;
       case 'profile':
@@ -214,6 +216,7 @@ function App() {
             onShowRules={() => setCurrentView('rules')}
             onLogout={handleLogout}
             onLoginClick={() => setShowAuthModal(true)}
+            onTrial={() => setCurrentView('trial')}
             roomCounts={roomCounts}
           />
         );
