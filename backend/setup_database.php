@@ -75,6 +75,18 @@ CREATE TABLE IF NOT EXISTS `game_hand_comparisons` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `tg_admins` (
+  `chat_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `tg_admin_states` (
+  `chat_id` bigint(20) NOT NULL,
+  `state` varchar(255) DEFAULT NULL,
+  `state_data` text DEFAULT NULL,
+  PRIMARY KEY (`chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ";
 
 if ($conn->multi_query($sql)) {
@@ -115,6 +127,14 @@ foreach ($users as $user) {
 }
 $stmt->close();
 echo "Test users inserted or updated successfully.\n";
+
+// 6. Insert Super Admin for Telegram Bot
+$superAdminId = 1878794912; // This is hardcoded in tg_webhook.php
+$stmt_admin = $conn->prepare("INSERT INTO tg_admins (chat_id) VALUES (?) ON DUPLICATE KEY UPDATE chat_id = ?");
+$stmt_admin->bind_param("ii", $superAdminId, $superAdminId);
+$stmt_admin->execute();
+$stmt_admin->close();
+echo "Super admin for Telegram bot inserted successfully.\n";
 
 // --- Add Indexes for Performance ---
 $room_code_exists = $conn->query("SHOW COLUMNS FROM `game_rooms` LIKE 'room_code'")->num_rows > 0;
