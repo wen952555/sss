@@ -75,6 +75,54 @@ try {
             $response['hand'] = json_decode($handResult['initial_hand'], true);
         }
     }
+
+    if ($room['status'] === 'arranging') {
+        require_once __DIR__ . '/../../utils/sort_hand.php';
+
+        $stmt = $conn->prepare("SELECT user_id, initial_hand FROM room_players WHERE room_id = ? AND is_auto_managed = 1 AND submitted_hand IS NULL");
+        $stmt->bind_param("i", $roomId);
+        $stmt->execute();
+        $aiPlayersResult = $stmt->get_result();
+
+        $aiPlayersToProcess = [];
+        while($row = $aiPlayersResult->fetch_assoc()) {
+            $aiPlayersToProcess[] = $row;
+        }
+        $stmt->close();
+
+        foreach ($aiPlayersToProcess as $aiPlayer) {
+            $hand = json_decode($aiPlayer['initial_hand'], true);
+            $best_arrangement = find_best_arrangement($hand);
+
+            if ($best_arrangement) {
+                $stmt = $conn->prepare("UPDATE room_players SET submitted_hand = ? WHERE room_id = ? AND user_id = ?");
+                $submittedHandJson = json_encode($best_arrangement);
+                $stmt->bind_param("sii", $submittedHandJson, $roomId, $aiPlayer['user_id']);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+
+        // Check if all players have submitted after AI moves
+        $stmt = $conn->prepare("SELECT COUNT(*) as submitted_count FROM room_players WHERE room_id = ? AND submitted_hand IS NOT NULL");
+        $stmt->bind_param("i", $roomId);
+        $stmt->execute();
+        $submittedCountResult = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        $stmt = $conn->prepare("SELECT player_count FROM game_rooms WHERE id = ?");
+        $stmt->bind_param("i", $roomId);
+        $stmt->execute();
+        $playerCountResult = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if ($submittedCountResult['submitted_count'] == $playerCountResult['player_count']) {
+            $stmt = $conn->prepare("UPDATE game_rooms SET status = 'finished' WHERE id = ?");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
     if ($room['status'] === 'finished') {
         $stmt = $conn->prepare("SELECT u.id, u.phone as name, rp.submitted_hand, rp.score, rp.is_auto_managed FROM room_players rp JOIN users u ON rp.user_id = u.id WHERE rp.room_id = ?");
         $stmt->bind_param("i", $roomId);

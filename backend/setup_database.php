@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password` varchar(255) NOT NULL,
   `points` int(11) NOT NULL DEFAULT 1000,
   `last_active` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_ai` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `phone` (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -103,11 +104,11 @@ if ($conn->multi_query($sql)) {
 
 // 5. Insert test users with hashed passwords
 $users = [
-    ['user1', 'password'],
-    ['user2', 'password'],
-    ['user3', 'password'],
-    ['user4', 'password'],
-    ['user5', 'password'],
+    ['user1', 'password', 0],
+    ['user2', 'password', 1],
+    ['user3', 'password', 1],
+    ['user4', 'password', 1],
+    ['user5', 'password', 1],
 ];
 
 $stmt_delete = $conn->prepare("DELETE FROM users WHERE phone = ?");
@@ -118,11 +119,12 @@ foreach ($users as $user) {
 }
 $stmt_delete->close();
 
-$stmt = $conn->prepare("INSERT INTO users (phone, password, points) VALUES (?, ?, 1000)");
+$stmt = $conn->prepare("INSERT INTO users (phone, password, points, is_ai) VALUES (?, ?, 1000, ?)");
 foreach ($users as $user) {
     $phone = $user[0];
     $passwordHash = password_hash($user[1], PASSWORD_DEFAULT);
-    $stmt->bind_param("ss", $phone, $passwordHash);
+    $is_ai = $user[2];
+    $stmt->bind_param("ssi", $phone, $passwordHash, $is_ai);
     $stmt->execute();
 }
 $stmt->close();
@@ -136,6 +138,7 @@ if (isset($TELEGRAM_SUPER_ADMIN_ID) && !empty($TELEGRAM_SUPER_ADMIN_ID)) {
 $stmt_admin->execute();
 $stmt_admin->close();
 echo "Super admin for Telegram bot inserted successfully.\n";
+}
 
 // --- Add Indexes for Performance ---
 $room_code_exists = $conn->query("SHOW COLUMNS FROM `game_rooms` LIKE 'room_code'")->num_rows > 0;
