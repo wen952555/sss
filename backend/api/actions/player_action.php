@@ -38,16 +38,9 @@ try {
             $stmt->execute();
             $stmt->close();
 
-            // Check if all players are ready
-            $stmt = $conn->prepare("SELECT COUNT(*) as total_players, SUM(is_ready) as ready_players FROM room_players WHERE room_id = ?");
-            $stmt->bind_param("i", $roomId);
-            $stmt->execute();
-            $result = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-
             $response = ['success' => true, 'message' => 'Player is ready.'];
 
-            // Get player count from the room
+            // Get room's required player count
             $stmt = $conn->prepare("SELECT player_count FROM game_rooms WHERE id = ?");
             $stmt->bind_param("i", $roomId);
             $stmt->execute();
@@ -55,7 +48,64 @@ try {
             $playerCount = $roomResult['player_count'];
             $stmt->close();
 
-            if (isset($result['ready_players']) && $result['ready_players'] == $playerCount) {
+            // Get current human player stats
+            $stmt = $conn->prepare("SELECT COUNT(user_id) as total_humans, SUM(is_ready) as ready_humans FROM room_players WHERE room_id = ? AND is_auto_managed = 0");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $humanPlayerStats = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            // If all human players are ready, fill the rest with AI
+            if (($humanPlayerStats['total_humans'] ?? 0) > 0 && $humanPlayerStats['total_humans'] == ($humanPlayerStats['ready_humans'] ?? 0)) {
+                $stmt = $conn->prepare("SELECT COUNT(user_id) as total_players FROM room_players WHERE room_id = ?");
+                $stmt->bind_param("i", $roomId);
+                $stmt->execute();
+                $totalPlayers = $stmt->get_result()->fetch_assoc()['total_players'];
+                $stmt->close();
+
+                $neededAi = $playerCount - $totalPlayers;
+                if ($neededAi > 0) {
+                    $stmt = $conn->prepare("SELECT user_id FROM room_players WHERE room_id = ?");
+                    $stmt->bind_param("i", $roomId);
+                    $stmt->execute();
+                    $existingPlayersResult = $stmt->get_result();
+                    $existingPlayerIds = [];
+                    while ($row = $existingPlayersResult->fetch_assoc()) {
+                        $existingPlayerIds[] = $row['user_id'];
+                    }
+                    $stmt->close();
+
+                    // Find available AI players from the users table
+                    $aiQuery = "SELECT id FROM users WHERE is_ai = 1 AND id NOT IN (" . implode(',', array_map('intval', $existingPlayerIds)) . ") LIMIT ?";
+                    $stmt = $conn->prepare($aiQuery);
+                    $stmt->bind_param("i", $neededAi);
+                    $stmt->execute();
+                    $availableAiResult = $stmt->get_result();
+                    $aiIdsToAdd = [];
+                    while ($row = $availableAiResult->fetch_assoc()) {
+                        $aiIdsToAdd[] = $row['id'];
+                    }
+                    $stmt->close();
+
+                    if (!empty($aiIdsToAdd)) {
+                        $insertStmt = $conn->prepare("INSERT INTO room_players (room_id, user_id, is_ready, is_auto_managed) VALUES (?, ?, 1, 1)");
+                        foreach ($aiIdsToAdd as $aiId) {
+                            $insertStmt->bind_param("ii", $roomId, $aiId);
+                            $insertStmt->execute();
+                        }
+                        $insertStmt->close();
+                    }
+                }
+            }
+
+            // Check if all players are ready now that AI might have been added
+            $stmt = $conn->prepare("SELECT COUNT(*) as total_players, SUM(is_ready) as ready_players FROM room_players WHERE room_id = ?");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $result = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            if (isset($result['total_players']) && $result['total_players'] == $playerCount && $result['ready_players'] == $playerCount) {
                 // All players are ready, let's deal
                 // Fetch a pre-dealt hand
                 $stmt = $conn->prepare("SELECT id, hands FROM pre_dealt_hands WHERE player_count = ? AND is_used = 0 ORDER BY RAND() LIMIT 1");
