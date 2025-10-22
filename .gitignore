@@ -12,3 +12,4 @@ node_modules/
 jules-scratch/
 /frontend/npm_dev.log
 php_server.log
+backend/api/config-local.php

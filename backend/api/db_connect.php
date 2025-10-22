@@ -4,6 +4,10 @@
 
 require_once __DIR__ . '/config.php';
 
+if (file_exists(__DIR__ . '/config-local.php')) {
+    require_once __DIR__ . '/config-local.php';
+}
+
 /**
  * 创建并返回一个 MySQLi 连接对象
  * @return mysqli
