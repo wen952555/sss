@@ -28,6 +28,6 @@ jobs:
       - name: Rsync backend files to serv00
         run: |
           rsync -avz \
-            --exclude='config.php' \
+            --exclude='api/config.php' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./backend/ "${{ secrets.SERV00_USER }}@${{ secrets.SERV00_HOST }}:${{ secrets.SERV00_PATH }}/"
