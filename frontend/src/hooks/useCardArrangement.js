@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { sortCards, areCardsEqual, parseCard } from '../utils';
+import { sortCards } from '../utils/pokerEvaluator';
+import { areCardsEqual } from '../utils/cardUtils';
 
 const LANE_LIMITS_THIRTEEN = { top: 3, middle: 5, bottom: 5 };
 

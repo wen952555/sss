@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
 import GameTable from './GameTable';
 import { isSssFoul, calculateSinglePairScore, compareSssArea } from '../utils/scorer.js';
+import { parseCard } from '../utils/pokerEvaluator.js';
 import { sanitizeHand } from '../utils/cardUtils.js';
 import { findBestArrangement } from '../utils/trialModeUtils.js';
 
