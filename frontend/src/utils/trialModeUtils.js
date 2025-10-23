@@ -50,5 +50,15 @@ export const findBestArrangement = (hand) => {
     }
   }
 
+  if (!bestArrangement) {
+    // Fallback to a simple sorted hand if no valid arrangement is found
+    const sortedHand = hand.sort((a, b) => parseCard(b).value - parseCard(a).value);
+    return {
+      front: sortedHand.slice(0, 3),
+      middle: sortedHand.slice(3, 8),
+      back: sortedHand.slice(8, 13),
+    };
+  }
+
   return bestArrangement;
 };
