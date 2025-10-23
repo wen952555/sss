@@ -165,9 +165,24 @@ export function getSssAreaScore(cards, area) {
 }
 
 export function getSpecialType(hand) {
-    const all_cards = [...hand.top, ...hand.middle, ...hand.bottom];
+    // Defensive check to ensure lanes are arrays
+    const top = Array.isArray(hand.top) ? hand.top : [];
+    const middle = Array.isArray(hand.middle) ? hand.middle : [];
+    const bottom = Array.isArray(hand.bottom) ? hand.bottom : [];
 
-    const ranks = all_cards.map(card => parseCard(card).rank);
+    const all_cards = [...top, ...middle, ...bottom].filter(Boolean);
+
+    // After filtering, if there aren't 13 cards, it can't be a special hand.
+    if (all_cards.length !== 13) {
+        return null;
+    }
+
+    const parsedCards = all_cards.map(parseCard).filter(Boolean);
+    if (parsedCards.length !== 13) {
+        return null; // A card failed to parse
+    }
+
+    const ranks = parsedCards.map(card => card.rank);
     if (new Set(ranks).size === 13) {
         return '一条龙';
     }

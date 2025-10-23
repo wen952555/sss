@@ -54,10 +54,11 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
         bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
       };
     } else {
+      // Correctly map the card objects from the state lanes to string representations.
       handToSend = {
-        top: topLane.map(c => c.key),
-        middle: middleLane.map(c => c.key),
-        bottom: bottomLane.map(c => c.key),
+        top: topLane.map(c => c && c.rank && c.suit ? `${c.rank}_of_${c.suit}` : null).filter(Boolean),
+        middle: middleLane.map(c => c && c.rank && c.suit ? `${c.rank}_of_${c.suit}` : null).filter(Boolean),
+        bottom: bottomLane.map(c => c && c.rank && c.suit ? `${c.rank}_of_${c.suit}` : null).filter(Boolean),
       };
     }
 
