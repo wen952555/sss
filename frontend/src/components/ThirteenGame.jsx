@@ -92,18 +92,22 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       ];
 
       const playerHands = resultPlayers.reduce((acc, p) => ({ ...acc, [p.id]: p.hand }), {});
-      console.log('Player hands for scoring:', playerHands);
       const playerIds = resultPlayers.map(p => p.id);
       const scores = playerIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
 
-      for (let i = 0; i < playerIds.length; i++) {
-        for (let j = i + 1; j < playerIds.length; j++) {
-          const p1_id = playerIds[i];
-          const p2_id = playerIds[j];
-          const pair_score = calculateSinglePairScore(playerHands[p1_id], playerHands[p2_id]);
-          scores[p1_id] += pair_score;
-          scores[p2_id] -= pair_score;
+      try {
+        for (let i = 0; i < playerIds.length; i++) {
+          for (let j = i + 1; j < playerIds.length; j++) {
+            const p1_id = playerIds[i];
+            const p2_id = playerIds[j];
+            const pair_score = calculateSinglePairScore(playerHands[p1_id], playerHands[p2_id]);
+            scores[p1_id] += pair_score;
+            scores[p2_id] -= pair_score;
+          }
         }
+      } catch (error) {
+        setErrorMessage(error.message);
+        return;
       }
 
       resultPlayers.forEach(p => { p.score = scores[p.id]; });
