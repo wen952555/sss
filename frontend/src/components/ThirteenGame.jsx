@@ -83,11 +83,11 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
             middle: bestArrangement.middle,
             bottom: bestArrangement.back,
           };
-          return { ...p, hand: sanitizeHand(mappedArrangement) };
+          return { ...p, hand: mappedArrangement };
         });
 
       const resultPlayers = [
-        { id: user.id, phone: user.phone, hand: sanitizeHand(handToSend), is_auto_managed: false },
+        { id: user.id, phone: user.phone, hand: handToSend, is_auto_managed: false },
         ...aiHands,
       ];
 
