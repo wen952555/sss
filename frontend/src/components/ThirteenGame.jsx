@@ -69,15 +69,15 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
     if (isTrial) {
       const allCards = [...topLane, ...middleLane, ...bottomLane];
       const deck = ['hearts', 'diamonds', 'clubs', 'spades']
-        .flatMap(suit => ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'].map(rank => ({ key: `${rank}_of_${suit}`, rank, suit })))
-        .filter(card => !allCards.some(c => c.key === card.key));
+        .flatMap(suit => ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'].map(rank => `${rank}_of_${suit}`))
+        .filter(cardKey => !allCards.some(c => c.key === cardKey));
       deck.sort(() => Math.random() - 0.5);
 
       const aiHands = players
         .filter(p => p.is_auto_managed)
         .map((p, i) => {
           const hand = deck.slice(i * 13, (i + 1) * 13);
-          const bestArrangement = findBestArrangement(hand.map(c => c.key));
+          const bestArrangement = findBestArrangement(hand);
           const mappedArrangement = {
             top: bestArrangement.front,
             middle: bestArrangement.middle,
