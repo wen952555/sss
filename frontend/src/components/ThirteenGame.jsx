@@ -92,6 +92,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       ];
 
       const playerHands = resultPlayers.reduce((acc, p) => ({ ...acc, [p.id]: p.hand }), {});
+      console.log('Player hands for scoring:', playerHands);
       const playerIds = resultPlayers.map(p => p.id);
       const scores = playerIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
 
