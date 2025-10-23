@@ -13,9 +13,9 @@ export const useCardArrangement = () => {
 
   const setInitialLanes = useCallback((sortedHand) => {
     if (sortedHand) {
-      setTopLane(sortedHand.top.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
-      setMiddleLane(sortedHand.middle.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
-      setBottomLane(sortedHand.bottom.map(c => (typeof c === 'string' ? parseCard(c) : c)) || []);
+      setTopLane(sortedHand.top || []);
+      setMiddleLane(sortedHand.middle || []);
+      setBottomLane(sortedHand.bottom || []);
     }
     setSelectedCards([]);
   }, []);
