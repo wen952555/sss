@@ -10,12 +10,9 @@ export const SSS_SCORES = {
   'SPECIAL': { '一条龙': 13, '三同花': 3, '三顺子': 3, '六对半': 3, '大六对': 7, '高级三同花/三顺子': 8 },
 };
 
-export const SUIT_ORDER = { 'spades': 4, 'hearts': 3, 'clubs': 2, 'diamonds': 1 };
+import { parseCard } from './pokerEvaluator.js';
 
-export function parseCard(cardStr) {
-  const parts = cardStr.split('_');
-  return { rank: parts[0], suit: parts[2] };
-}
+export const SUIT_ORDER = { 'spades': 4, 'hearts': 3, 'clubs': 2, 'diamonds': 1 };
 
 export function getGroupedValues(cards) {
   const counts = {};
