@@ -4,7 +4,8 @@
 export const RANKS = {
   '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
   'J': 11, 'Q': 12, 'K': 13, 'A': 14,
-  'jack': 11, 'queen': 12, 'king': 13, 'ace': 14
+  'jack': 11, 'queen': 12, 'king': 13, 'ace': 14,
+  'j': 11, 'q': 12, 'k': 13, 'a': 14
 };
 
 // Defines hand types and their strength hierarchy.

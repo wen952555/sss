@@ -1,7 +1,4 @@
-export const VALUE_ORDER = {
-  '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
-  '10': 10, 'jack': 11, 'queen': 12, 'king': 13, 'ace': 14
-};
+import { RANKS as VALUE_ORDER } from './pokerEvaluator.js';
 
 export const SSS_SCORES = {
   'HEAD': { '三条': 3 },
@@ -10,22 +7,39 @@ export const SSS_SCORES = {
   'SPECIAL': { '一条龙': 13, '三同花': 3, '三顺子': 3, '六对半': 3, '大六对': 7, '高级三同花/三顺子': 8 },
 };
 
-import { parseCard } from './pokerEvaluator.js';
+// This "safe" parseCard can handle strings, objects, and invalid data without crashing.
+const parseCard = (cardInput) => {
+    if (!cardInput) return null;
+    if (typeof cardInput === 'object' && cardInput.rank) {
+        return { ...cardInput, value: VALUE_ORDER[cardInput.rank] };
+    }
+    if (typeof cardInput === 'string') {
+        const parts = cardInput.split('_');
+        if (parts.length < 3) return null;
+        const rank = parts[0];
+        const suit = parts[2];
+        const value = VALUE_ORDER[rank];
+        if (!value) return null;
+        return { rank, suit, value };
+    }
+    return null;
+};
+
 
 export const SUIT_ORDER = { 'spades': 4, 'hearts': 3, 'clubs': 2, 'diamonds': 1 };
 
 export function getGroupedValues(cards) {
   const counts = {};
-  for (const card of cards) {
-    const val = VALUE_ORDER[parseCard(card).rank];
-    counts[val] = (counts[val] || 0) + 1;
+  for (const cardStr of cards) {
+    const card = parseCard(cardStr);
+    if (card && card.value) {
+      counts[card.value] = (counts[card.value] || 0) + 1;
+    }
   }
   const groups = {};
   for (const val in counts) {
     const count = counts[val];
-    if (!groups[count]) {
-      groups[count] = [];
-    }
+    if (!groups[count]) groups[count] = [];
     groups[count].push(parseInt(val));
   }
   for (const group in groups) {
@@ -36,23 +50,23 @@ export function getGroupedValues(cards) {
 
 export function isStraight(cards) {
   if (!cards || cards.length === 0) return false;
-  const unique_ranks = [...new Set(cards.map(c => VALUE_ORDER[parseCard(c).rank]))];
+  const parsedCards = cards.map(parseCard).filter(Boolean);
+  if (parsedCards.length !== cards.length) return false;
+
+  const unique_ranks = [...new Set(parsedCards.map(c => c.value))];
   if (unique_ranks.length !== cards.length) return false;
   unique_ranks.sort((a, b) => a - b);
   const is_a2345 = JSON.stringify(unique_ranks) === JSON.stringify([2, 3, 4, 5, 14]);
-  const is_normal = (unique_ranks[unique_ranks.length - 1] - unique_ranks[0] === cards.length - 1);
-  return is_normal || is_a2345;
+  return (unique_ranks[unique_ranks.length - 1] - unique_ranks[0] === cards.length - 1) || is_a2345;
 }
 
 export function isFlush(cards) {
   if (!cards || cards.length === 0) return false;
-  const first_suit = parseCard(cards[0]).suit;
-  for (const card of cards) {
-    if (parseCard(card).suit !== first_suit) {
-      return false;
-    }
-  }
-  return true;
+  const parsedCards = cards.map(parseCard).filter(Boolean);
+  if (parsedCards.length !== cards.length) return false;
+
+  const first_suit = parsedCards[0].suit;
+  return parsedCards.every(c => c.suit === first_suit);
 }
 
 export function getSssAreaType(cards, area) {
