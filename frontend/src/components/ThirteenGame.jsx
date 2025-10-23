@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCardArrangement } from '../hooks/useCardArrangement';
 import GameTable from './GameTable';
 import { isSssFoul, calculateSinglePairScore, compareSssArea } from '../utils/scorer.js';
-import { parseCard } from '../utils/pokerEvaluator.js';
 import { sanitizeHand } from '../utils/cardUtils.js';
 import { findBestArrangement } from '../utils/trialModeUtils.js';
 
@@ -146,9 +145,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
 
   const handleAutoConfirm = useCallback(() => {
     const hand = {
-      top: topLane.map(c => (typeof c === 'string' ? parseCard(c) : c)),
-      middle: middleLane.map(c => (typeof c === 'string' ? parseCard(c) : c)),
-      bottom: bottomLane.map(c => (typeof c === 'string' ? parseCard(c) : c)),
+      top: topLane,
+      middle: middleLane,
+      bottom: bottomLane,
     };
     handleConfirm(hand);
   }, [topLane, middleLane, bottomLane, handleConfirm]);
