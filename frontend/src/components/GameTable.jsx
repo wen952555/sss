@@ -94,7 +94,7 @@ const GameTable = ({
           </>
         )}
       </div>
-      {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} isTrial={gameType === 'trial'} />}
+      {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} isTrial={gameType === 'trial'} user={user} />}
     </div>
   );
 };

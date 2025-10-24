@@ -2,10 +2,10 @@ import React from 'react';
 import Card from './Card';
 import './GameResultModal.css';
 
-const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = false }) => {
+const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = false, user }) => {
     if (!result || !result.players || result.players.length === 0) return null;
 
-    const me = result.players.find(p => p.is_me) || result.players.find(p => p.id === result.myId) || result.players[0];
+    const me = result.players.find(p => p.id === user.id) || result.players[0];
     const myTotalScore = me.score || 0;
 
     const getTitle = () => {
@@ -24,15 +24,15 @@ const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = f
                 </div>
 
                 <div className="result-players-container">
-                    {result.players.map((player, index) => {
+                    {result.players.map((player) => {
                         const playerScore = player.score;
-                        const isMe = player.is_me || (result.myId && player.id === result.myId) || (isTrial && index === 0);
+                        const isMe = player.id === user.id;
                         const playerName = isMe ? '你' : player.name;
                         const hand = player.hand;
                         const lanes = hand ? [hand.top, hand.middle, hand.bottom] : [];
 
                         return (
-                            <div key={player.name || index} className={`player-result-row ${isMe ? 'is-me' : ''}`}>
+                            <div key={player.name} className={`player-result-row ${isMe ? 'is-me' : ''}`}>
                                 <div className="result-hand-container">
                                     <div className="player-info">
                                         <span className="player-name">{playerName}</span>
