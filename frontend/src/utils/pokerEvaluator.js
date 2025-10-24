@@ -7,19 +7,11 @@ export const RANKS = {
 };
 
 export const parseCard = (cardStr) => {
-    if (typeof cardStr !== 'string') return null;
-
-    let parts;
-    if (cardStr.includes('_of_')) {
-        parts = cardStr.split('_of_');
-    } else {
-        parts = cardStr.split('_');
-    }
-
-    if (parts.length !== 2) return null;
-
-    const [rank, suit] = parts;
-    const value = RANKS[rank];
+  if (typeof cardStr !== 'string') return null;
+  const parts = cardStr.split('_of_');
+  if (parts.length !== 2) return null;
+  const [rank, suit] = parts;
+  const value = RANKS[rank];
   if (!value || !['spades', 'hearts', 'diamonds', 'clubs'].includes(suit)) return null;
   return { rank, suit, value };
 };
