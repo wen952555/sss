@@ -191,6 +191,27 @@ try {
                 throw new Exception("Hand data is missing or invalid.");
             }
             submitPlayerHand($conn, $userId, $roomId, $hand);
+
+            // After submission, check if all players have submitted their hands.
+            $stmt = $conn->prepare("SELECT COUNT(*) as submitted_count FROM room_players WHERE room_id = ? AND submitted_hand IS NOT NULL");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $submittedCountResult = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            $stmt = $conn->prepare("SELECT player_count FROM game_rooms WHERE id = ?");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $playerCountResult = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            if ($submittedCountResult['submitted_count'] == $playerCountResult['player_count']) {
+                $stmt = $conn->prepare("UPDATE game_rooms SET status = 'finished' WHERE id = ?");
+                $stmt->bind_param("i", $roomId);
+                $stmt->execute();
+                $stmt->close();
+            }
+
             $response = ['success' => true, 'message' => 'Hand submitted successfully.'];
             break;
 
