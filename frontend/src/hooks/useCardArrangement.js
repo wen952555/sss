@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { sortCards } from '../utils/pokerEvaluator';
 import { areCardsEqual } from '../utils/cardUtils';
 
 const LANE_LIMITS_THIRTEEN = { top: 3, middle: 5, bottom: 5 };
@@ -64,6 +63,15 @@ export const useCardArrangement = () => {
 
     // Add selected cards to the target lane
     newLanes[laneName] = [...newLanes[laneName], ...selectedCards];
+
+    const cardRanks = { 'A': 14, 'K': 13, 'Q': 12, 'J': 11, '10': 10, '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2 };
+    const sortCards = (cards) => {
+        return cards.sort((a, b) => {
+            const rankA = cardRanks[a.rank.toUpperCase()];
+            const rankB = cardRanks[b.rank.toUpperCase()];
+            return rankB - rankA;
+        });
+    };
 
     setTopLane(sortCards(newLanes.top));
     setMiddleLane(sortCards(newLanes.middle));
