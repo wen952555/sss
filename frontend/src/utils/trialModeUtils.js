@@ -45,7 +45,7 @@ export const findBestArrangement = (hand) => {
         const totalScore = backEval.rank * 10000 + middleEval.rank * 100 + frontEval.rank;
         if (totalScore > bestScore) {
           bestScore = totalScore;
-          bestArrangement = { front, middle, back };
+          bestArrangement = { top: front, middle, bottom: back };
         }
       }
     }
@@ -55,9 +55,9 @@ export const findBestArrangement = (hand) => {
     const sortedHand = hand.map(parseCard).filter(Boolean).sort((a, b) => b.value - a.value);
     const cardKeys = sortedHand.map(c => `${c.rank}_of_${c.suit}`);
     return {
-      front: cardKeys.slice(0, 3),
+      top: cardKeys.slice(0, 3),
       middle: cardKeys.slice(3, 8),
-      back: cardKeys.slice(8, 13),
+      bottom: cardKeys.slice(8, 13),
     };
   }
 

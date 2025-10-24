@@ -117,9 +117,9 @@ const ThirteenGame = () => {
 
   const handleAutoSort = () => {
     const arrangement = findBestArrangement(unassignedCards.map(c => `${c.rank}_of_${c.suit}`));
-    setTopLane(arrangement.front.map(parseCard).filter(Boolean));
+    setTopLane(arrangement.top.map(parseCard).filter(Boolean));
     setMiddleLane(arrangement.middle.map(parseCard).filter(Boolean));
-    setBottomLane(arrangement.back.map(parseCard).filter(Boolean));
+    setBottomLane(arrangement.bottom.map(parseCard).filter(Boolean));
     setUnassignedCards([]);
   };
   
