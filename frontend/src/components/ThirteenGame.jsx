@@ -375,7 +375,12 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
         // By setting hasPlayerInteracted to false before updating the lanes,
         // we ensure the new hand from the server is always rendered.
         setHasPlayerInteracted(false);
-        setInitialLanes(sanitizeHand(data.hand));
+        const mappedHand = {
+          top: data.hand.front,
+          middle: data.hand.middle,
+          bottom: data.hand.back,
+        };
+        setInitialLanes(sanitizeHand(mappedHand));
         // Cycle to the next index for the next click
         setSortedHandIndex((prevIndex) => (prevIndex + 1) % 5);
       } else {
