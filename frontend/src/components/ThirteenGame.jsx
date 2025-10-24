@@ -134,7 +134,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       if (!data.success) {
         throw new Error(data.message || 'Failed to submit hand.');
       }
-      console.log('Hand submitted successfully.');
+      setPlayerState('submitted');
     })
     .catch(error => {
       setErrorMessage(error.message);
