@@ -1,5 +1,3 @@
-// frontend/src/utils/trialModeUtils.js
-
 import { parseCard, evaluateHand as evaluate5Cards, compareHands } from './pokerEvaluator';
 
 const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
@@ -15,7 +13,9 @@ export const getCombinations = (array, k) => {
 };
 
 const evaluate3Cards = (hand) => {
-  const ranks = hand.map(c => parseCard(c).value).sort((a, b) => b - a);
+  const parsedHand = hand.map(parseCard).filter(Boolean);
+  if (parsedHand.length !== 3) return { rank: -1, values: [] };
+  const ranks = parsedHand.map(c => c.value).sort((a, b) => b - a);
   const rankCounts = ranks.reduce((acc, rank) => ({ ...acc, [rank]: (acc[rank] || 0) + 1 }), {});
   const counts = Object.values(rankCounts).sort((a, b) => b - a);
 
@@ -35,6 +35,7 @@ export const findBestArrangement = (hand) => {
 
     for (const middle of all5CardCombosMiddle) {
       const front = remaining8.filter(c => !middle.includes(c));
+      if (front.length !== 3) continue;
 
       const backEval = evaluate5Cards(back.map(parseCard));
       const middleEval = evaluate5Cards(middle.map(parseCard));
@@ -51,12 +52,12 @@ export const findBestArrangement = (hand) => {
   }
 
   if (!bestArrangement) {
-    // Fallback to a simple sorted hand if no valid arrangement is found
-    const sortedHand = hand.sort((a, b) => parseCard(b).value - parseCard(a).value);
+    const sortedHand = hand.map(parseCard).filter(Boolean).sort((a, b) => b.value - a.value);
+    const cardKeys = sortedHand.map(c => `${c.rank}_of_${c.suit}`);
     return {
-      front: sortedHand.slice(0, 3),
-      middle: sortedHand.slice(3, 8),
-      back: sortedHand.slice(8, 13),
+      front: cardKeys.slice(0, 3),
+      middle: cardKeys.slice(3, 8),
+      back: cardKeys.slice(8, 13),
     };
   }
 
