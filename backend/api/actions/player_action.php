@@ -3,6 +3,8 @@ require_once __DIR__ . '/../db_connect.php';
 require_once __DIR__ . '/../../utils/utils.php';
 require_once __DIR__ . '/../../utils/pre_dealer.php';
 require_once __DIR__ . '/../../utils/auto_sorter.php';
+require_once __DIR__ . '/../../utils/sort_hand.php';
+require_once __DIR__ . '/../../utils/scorer.php';
 
 // Use json_decode for all incoming requests.
 $post_data = json_decode(file_get_contents("php://input"), true);
@@ -192,6 +194,25 @@ try {
             }
             submitPlayerHand($conn, $userId, $roomId, $hand);
 
+            // After a human submits, immediately process all AI hands that haven't been submitted yet.
+            $stmt = $conn->prepare("SELECT user_id, initial_hand FROM room_players WHERE room_id = ? AND is_auto_managed = 1 AND submitted_hand IS NULL");
+            $stmt->bind_param("i", $roomId);
+            $stmt->execute();
+            $aiPlayersResult = $stmt->get_result();
+            $aiPlayersToProcess = [];
+            while($row = $aiPlayersResult->fetch_assoc()) {
+                $aiPlayersToProcess[] = $row;
+            }
+            $stmt->close();
+
+            foreach ($aiPlayersToProcess as $aiPlayer) {
+                $aiHand = json_decode($aiPlayer['initial_hand'], true);
+                $best_arrangement = find_best_arrangement($aiHand);
+                if ($best_arrangement) {
+                    submitPlayerHand($conn, $aiPlayer['user_id'], $roomId, $best_arrangement);
+                }
+            }
+
             // After submission, check if all players have submitted their hands.
             $stmt = $conn->prepare("SELECT COUNT(*) as submitted_count FROM room_players WHERE room_id = ? AND submitted_hand IS NOT NULL");
             $stmt->bind_param("i", $roomId);
@@ -209,6 +230,37 @@ try {
                 $stmt = $conn->prepare("UPDATE game_rooms SET status = 'finished' WHERE id = ?");
                 $stmt->bind_param("i", $roomId);
                 $stmt->execute();
+                $stmt->close();
+
+                // All hands are in, calculate scores
+                $stmt = $conn->prepare("SELECT user_id, submitted_hand FROM room_players WHERE room_id = ?");
+                $stmt->bind_param("i", $roomId);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $playerHands = [];
+                while($row = $result->fetch_assoc()) {
+                    $playerHands[$row['user_id']] = json_decode($row['submitted_hand'], true);
+                }
+                $stmt->close();
+
+                $playerIds = array_keys($playerHands);
+                $scores = array_fill_keys($playerIds, 0);
+
+                for ($i = 0; $i < count($playerIds); $i++) {
+                    for ($j = $i + 1; $j < count($playerIds); $j++) {
+                        $p1_id = $playerIds[$i];
+                        $p2_id = $playerIds[$j];
+                        $score_result = calculateSinglePairScorePhp($playerHands[$p1_id], $playerHands[$p2_id]);
+                        $scores[$p1_id] += $score_result['total_score'];
+                        $scores[$p2_id] -= $score_result['total_score'];
+                    }
+                }
+
+                $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?");
+                foreach ($scores as $pId => $score) {
+                    $stmt->bind_param("iii", $score, $roomId, $pId);
+                    $stmt->execute();
+                }
                 $stmt->close();
             }
 
