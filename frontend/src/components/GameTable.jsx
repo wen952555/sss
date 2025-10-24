@@ -4,29 +4,23 @@ import Lane from './Lane';
 import GameResultModal from './GameResultModal';
 import './GameTable.css';
 
-// This is a presentational component. It receives all state and handlers as props.
 const GameTable = ({
-  // Game Info
   gameType,
   title,
   players,
   user,
-
-  // State
   topLane,
   middleLane,
   bottomLane,
   unassignedCards,
   selectedCards,
   LANE_LIMITS,
-  playerState, // 'waiting', 'arranging', 'submitted'
+  playerState,
   isGameInProgress,
   isLoading,
   gameResult,
   errorMessage,
   isOnline,
-
-  // Handlers
   onBackToLobby,
   onReady,
   isReady,
@@ -37,6 +31,13 @@ const GameTable = ({
   onCloseResult,
   onPlayAgain,
 }) => {
+
+  const isConfirmDisabled = isLoading || 
+                            playerState !== 'arranging' || 
+                            topLane.length !== LANE_LIMITS.top || 
+                            middleLane.length !== LANE_LIMITS.middle || 
+                            bottomLane.length !== LANE_LIMITS.bottom;
+
   const renderPlayerName = (p) => {
     if (String(p.id).startsWith('ai')) return p.phone;
     if (p.id === user.id) return '你';
@@ -86,7 +87,7 @@ const GameTable = ({
             </button>
             <button
               onClick={onConfirm}
-              disabled={isLoading || playerState !== 'arranging'}
+              disabled={isConfirmDisabled}
               className="table-action-btn confirm-btn"
             >
               {playerState === 'submitted' ? '等待开牌' : '确认比牌'}
