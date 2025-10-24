@@ -28,6 +28,10 @@ $card_ranks = ['2'=>2, '3'=>3, '4'=>4, '5'=>5, '6'=>6, '7'=>7, '8'=>8, '9'=>9, '
 if (!function_exists('get_card_rank')) {
     function get_card_rank($card) {
         global $card_ranks;
+        if (strpos($card, '_of_') !== false) {
+            $parts = explode('_of_', $card);
+            return $card_ranks[strtoupper(substr($parts[0], 0, 1))];
+        }
         return $card_ranks[substr($card, 1)];
     }
 }
