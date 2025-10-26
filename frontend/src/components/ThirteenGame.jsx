@@ -17,6 +17,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
     setInitialLanes,
     handleCardClick,
     handleLaneClick,
+    resetLanes,
   } = useCardArrangement();
 
   const [playerState, setPlayerState] = useState('waiting');
@@ -37,6 +38,23 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
     // We sanitize it to ensure it's safe to use.
     setInitialLanes(sanitizeHand(handData));
   }, [setInitialLanes, hasPlayerInteracted]);
+
+  const resetComponentState = useCallback(() => {
+    setPlayerState('waiting');
+    setPlayers([]);
+    setGameResult(null);
+    setErrorMessage('');
+    setIsLoading(false);
+    setTimeLeft(null);
+    setSortedHandIndex(0);
+    setHasPlayerInteracted(false);
+    resetLanes();
+  }, [resetLanes]);
+
+  // This effect will run when the user or room changes, resetting the component state.
+  useEffect(() => {
+    resetComponentState();
+  }, [user, roomId, resetComponentState]);
 
   // Track user interaction
   useEffect(() => {

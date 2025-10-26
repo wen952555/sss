@@ -89,5 +89,11 @@ export const useCardArrangement = () => {
     setInitialLanes,
     handleCardClick,
     handleLaneClick,
+    resetLanes: useCallback(() => {
+      setTopLane([]);
+      setMiddleLane([]);
+      setBottomLane([]);
+      setSelectedCards([]);
+    }, []),
   };
 };
