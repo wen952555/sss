@@ -1,6 +1,5 @@
 import React from 'react';
 import Card from './Card';
-import { parseCard } from '../utils/pokerEvaluator';
 import './GameResultModal.css';
 
 const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = false, user }) => {
@@ -65,14 +64,11 @@ const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = f
                                     </div>
                                     {lanes.map((laneCards, idx) => (
                                         <div key={idx} className="result-cards-row">
-                                            {laneCards && laneCards.map((cardString, cardIdx) => {
-                                                const card = parseCard(cardString);
-                                                return (
-                                                    <div key={cardIdx} className="result-card-wrapper">
-                                                        {card ? <Card rank={card.rank} suit={card.suit} /> : null}
-                                                    </div>
-                                                );
-                                            })}
+                                            {laneCards && laneCards.map((card, cardIdx) => (
+                                                <div key={cardIdx} className="result-card-wrapper">
+                                                    <Card card={card} />
+                                                </div>
+                                            ))}
                                         </div>
                                     ))}
                                 </div>

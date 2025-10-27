@@ -208,3 +208,16 @@
   width: 100%;
   height: 100%;
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .result-players-container {
+    grid-template-columns: 1fr; /* Stack players in a single column */
+  }
+
+  .result-card-wrapper {
+    width: clamp(30px, 8vw, 40px); /* Adjust card size based on viewport width */
+    height: auto;
+    margin-left: -15px; /* Reduce overlap */
+  }
+}
