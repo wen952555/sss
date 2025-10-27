@@ -24,10 +24,12 @@ const check_for_three_flushes = (hand) => {
     const suits = parsedHand.map(c => c.suit);
     const suitCounts = suits.reduce((acc, suit) => ({ ...acc, [suit]: (acc[suit] || 0) + 1 }), {});
 
-    const flush3Suit = Object.keys(suitCounts).find(suit => suitCounts[suit] === 3);
-    const flush5Suit = Object.keys(suitCounts).find(suit => suitCounts[suit] === 5);
+    const counts = Object.values(suitCounts).sort((a, b) => a - b);
 
-    if (flush3Suit && flush5Suit) {
+    if (JSON.stringify(counts) === JSON.stringify([3, 5, 5])) {
+        const flush3Suit = Object.keys(suitCounts).find(suit => suitCounts[suit] === 3);
+        const flush5Suits = Object.keys(suitCounts).filter(suit => suitCounts[suit] === 5);
+
         const front = parsedHand.filter(c => c.suit === flush3Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
         const middle = parsedHand.filter(c => c.suit === flush5Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
         const back = parsedHand.filter(c => c.suit !== flush3Suit && c.suit !== flush5Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);

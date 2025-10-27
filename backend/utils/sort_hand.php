@@ -20,11 +20,14 @@ if (!function_exists('check_for_three_flushes')) {
         $suits = array_map(fn($c) => substr($c, 0, 1), $hand);
         $suit_counts = array_count_values($suits);
 
-        if (in_array(3, $suit_counts) && in_array(5, $suit_counts)) {
-            $flush3_suit = array_search(3, $suit_counts);
-            $flush5_suit = array_search(5, $suit_counts);
+        $counts = array_values($suit_counts);
+        sort($counts);
 
-            if ($flush3_suit && $flush5_suit) {
+        if ($counts === [3, 5, 5]) {
+            $flush3_suit = array_search(3, $suit_counts);
+            $flush5_suits = array_keys($suit_counts, 5);
+
+            if ($flush3_suit && count($flush5_suits) === 2) {
                 $front = array_filter($hand, fn($c) => substr($c, 0, 1) === $flush3_suit);
                 $middle = array_filter($hand, fn($c) => substr($c, 0, 1) === $flush5_suit);
                 $back = array_values(array_diff($hand, $front, $middle));
