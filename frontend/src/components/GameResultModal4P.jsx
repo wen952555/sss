@@ -1,6 +1,5 @@
 import React from 'react';
 import Card from './Card';
-import { parseCard } from '../utils/pokerEvaluator';
 import './GameResultModal.css';
 
 const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = false, user }) => {
@@ -65,15 +64,11 @@ const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = f
                                     </div>
                                     {lanes.map((laneCards, idx) => (
                                         <div key={idx} className="result-cards-row">
-                                            {laneCards && laneCards.map((cardData, cardIdx) => {
-                                                // Definitive fix: Handle both string and object data types.
-                                                const card = typeof cardData === 'string' ? parseCard(cardData) : cardData;
-                                                return (
-                                                    <div key={cardIdx} className="result-card-wrapper">
-                                                        {card ? <Card card={card} /> : null}
-                                                    </div>
-                                                );
-                                            })}
+                                            {laneCards && laneCards.map((card, cardIdx) => (
+                                                <div key={cardIdx} className="result-card-wrapper">
+                                                    <Card card={card} />
+                                                </div>
+                                            ))}
                                         </div>
                                     ))}
                                 </div>

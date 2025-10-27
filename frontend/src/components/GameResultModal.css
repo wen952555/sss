@@ -205,3 +205,48 @@
   width: 100%;
   height: 100%;
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .result-modal-container {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+
+  .result-players-container {
+    gap: 10px;
+  }
+
+  .result-modal-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .result-card-wrapper {
+    width: clamp(30px, 10vw, 45px); /* Fluid card width */
+    height: auto;
+    margin-left: -20px; /* Adjust overlap for smaller cards */
+  }
+}
+
+@media (max-width: 480px) {
+  .result-modal-header {
+    padding: 15px;
+  }
+
+  .result-players-container {
+    padding: 10px;
+  }
+
+  .player-result-row {
+    padding: 10px;
+  }
+
+  .result-card-wrapper {
+    width: clamp(25px, 9vw, 35px);
+    margin-left: -18px;
+  }
+
+  .result-modal-footer {
+    flex-direction: column;
+  }
+}
