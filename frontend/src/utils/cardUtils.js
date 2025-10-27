@@ -15,9 +15,9 @@ export const sanitizeHand = (hand) => {
   }
 
   const sanitizeLane = (lane) =>
-    (lane || [])
-      .map(cardStr => (typeof cardStr === 'string' ? parseCard(cardStr) : cardStr))
-      .filter(Boolean);
+    (Array.isArray(lane) ? lane : [])
+      .map(card => (typeof card === 'string' ? parseCard(card) : card))
+      .filter(card => card && card.rank && card.suit);
 
   return {
     top: sanitizeLane(hand.top),
