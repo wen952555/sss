@@ -11,7 +11,7 @@ const check_for_dragon = (hand) => {
         unique_ranks.sort((a, b) => a - b);
         if (unique_ranks[12] - unique_ranks[0] === 12) {
             const sortedHand = parsedHand.sort((a, b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
-            return { top: sortedHand.slice(0, 3), middle: sortedHand.slice(3, 8), bottom: sortedHand.slice(8, 13) };
+            return { front: sortedHand.slice(0, 3), middle: sortedHand.slice(3, 8), back: sortedHand.slice(8, 13) };
         }
     }
     return null;
@@ -31,10 +31,17 @@ const check_for_three_flushes = (hand) => {
         const flush5Suits = Object.keys(suitCounts).filter(suit => suitCounts[suit] === 5);
 
         const front = parsedHand.filter(c => c.suit === flush3Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
-        const middle = parsedHand.filter(c => c.suit === flush5Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
-        const back = parsedHand.filter(c => c.suit !== flush3Suit && c.suit !== flush5Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
+        let middle = parsedHand.filter(c => c.suit === flush5Suits[0]).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
+        let back = parsedHand.filter(c => c.suit === flush5Suits[1]).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
 
-        return { top: front, middle: middle, bottom: back };
+        // Ensure middle is higher than back by poker hand rules
+        const middleEval = evaluate5Cards(middle.map(parseCard));
+        const backEval = evaluate5Cards(back.map(parseCard));
+
+        if (compareHands(middleEval, backEval) < 0) {
+            [middle, back] = [back, middle]; // Swap
+        }
+        return { front, middle, back };
     }
     return null;
 }
@@ -57,7 +64,7 @@ const check_for_six_and_a_half_pairs = (hand) => {
 
         const sortedHand = [single, ...pairCards].map(c => `${c.rank}_of_${c.suit}`);
 
-        return { top: [sortedHand[0], sortedHand[1], sortedHand[2]], middle: sortedHand.slice(3, 8), bottom: sortedHand.slice(8, 13) };
+        return { front: [sortedHand[0], sortedHand[1], sortedHand[2]], middle: sortedHand.slice(3, 8), back: sortedHand.slice(8, 13) };
     }
     return null;
 }
@@ -111,7 +118,7 @@ export const findBestArrangement = (hand, count = 1) => {
 
             if (compareHands(middleEval, backEval) <= 0 && compareHands(frontEval, middleEval) <= 0) {
                 const totalScore = backEval.rank * 10000 + middleEval.rank * 100 + frontEval.rank;
-                arrangements.push({ score: totalScore, arrangement: { top: front, middle, bottom: back } });
+                arrangements.push({ score: totalScore, arrangement: { front, middle, back } });
             }
         }
     }
@@ -132,9 +139,9 @@ export const findBestArrangement = (hand, count = 1) => {
         const sortedHand = hand.map(parseCard).filter(Boolean).sort((a, b) => b.value - a.value);
         const cardKeys = sortedHand.map(c => `${c.rank}_of_${c.suit}`);
         return [{
-          top: cardKeys.slice(0, 3),
+          front: cardKeys.slice(0, 3),
           middle: cardKeys.slice(3, 8),
-          bottom: cardKeys.slice(8, 13),
+          back: cardKeys.slice(8, 13),
         }];
     }
 
