@@ -26,21 +26,32 @@ const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = f
 
                 <div className="result-players-container">
                     {result.players.map((player) => {
-                        const playerScore = player.score;
                         const isMe = player.id === user.id;
-                        const playerName = isMe ? '你' : player.name;
+                        const playerName = isMe ? '你' : (player.name || player.phone);
                         const hand = player.hand;
                         const lanes = hand ? [hand.top, hand.middle, hand.bottom] : [];
+                        const playerScore = isMe ? player.score : player.pairwiseScore;
 
                         return (
-                            <div key={player.name} className={`player-result-row ${isMe ? 'is-me' : ''}`}>
+                            <div key={player.id} className={`player-result-row ${isMe ? 'is-me' : ''}`}>
                                 <div className="result-hand-container">
                                     <div className="player-info">
                                         <span className="player-name">{playerName}</span>
-                                        {playerScore !== 'N/A' && (
-                                          <span className={`player-score ${playerScore > 0 ? 'score-win' : (playerScore < 0 ? 'score-loss' : '')}`}>
-                                              {playerScore > 0 ? `+${playerScore}` : playerScore}
-                                          </span>
+                                        {playerScore !== undefined && (
+                                            <span className={`player-score ${playerScore > 0 ? 'score-win' : (playerScore < 0 ? 'score-loss' : '')}`}>
+                                                {playerScore > 0 ? `+${playerScore}` : playerScore}
+                                            </span>
+                                        )}
+                                        {isMe && player.pairwiseScores && (
+                                            <div className="pairwise-scores">
+                                                {player.pairwiseScores.map(ps => (
+                                                    <div key={ps.opponentName}>
+                                                        vs {ps.opponentName}: <span className={ps.score > 0 ? 'score-win' : (ps.score < 0 ? 'score-loss' : '')}>
+                                                            {ps.score > 0 ? `+${ps.score}` : ps.score}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         )}
                                         {!isMe && player.laneResults && (
                                             <div className="lane-results">
