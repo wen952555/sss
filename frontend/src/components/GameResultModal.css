@@ -57,12 +57,16 @@
   color: #ef5350;
 }
 
+/* Updated for 2x2 Grid Layout */
 .result-players-container {
   padding: 20px;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto);
+  gap: 20px;
+  justify-items: center;
+  align-items: start;
 }
 
 .player-result-row {
@@ -180,16 +184,24 @@
   border-radius: 12px;
 }
 
+/* Updated for Compact Card Stacking */
 .result-cards-row {
   display: flex;
-  justify-content: flex-start; /* Align cards to the left of the row */
-  /* No flex-wrap, to keep cards in a single line as requested */
+  justify-content: flex-start;
+  padding-left: 20px; /* Add some padding so the overlap doesn't hide the first card */
+  margin-bottom: 5px; /* Space between lanes */
 }
 
 .result-card-wrapper {
   width: 50px;
   height: 70px;
-  margin: 0 2px;
+  margin-left: -25px; /* Overlap cards by 50% of their width */
+  transition: transform 0.2s ease-in-out;
+}
+
+.result-card-wrapper:hover {
+  transform: translateY(-10px) scale(1.1); /* Enlarge and lift card on hover */
+  z-index: 10;
 }
 
 .result-cards-row .card {
