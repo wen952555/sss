@@ -113,6 +113,26 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       }
 
       resultPlayers.forEach(p => { p.score = scores[p.id]; });
+
+      const humanPlayer = resultPlayers.find(p => p.id === user.id);
+      if (humanPlayer) {
+          resultPlayers.forEach(p => {
+              if (p.id !== user.id) {
+                  const pairwiseScore = calculateSinglePairScore(humanPlayer.hand, p.hand);
+                  p.pairwiseScore = pairwiseScore;
+              }
+          });
+          humanPlayer.pairwiseScores = resultPlayers
+              .filter(p => p.id !== user.id)
+              .map(opponent => {
+                  const score = calculateSinglePairScore(humanPlayer.hand, opponent.hand);
+                  return {
+                      opponentName: opponent.phone,
+                      score: score,
+                  };
+              });
+      }
+
       setGameResult({ players: resultPlayers });
       setPlayerState('finished');
       return;
@@ -252,6 +272,24 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
 
           // eslint-disable-next-line react/prop-types
           const humanPlayer = resultPlayers.find(p => p.id === user.id);
+          if (humanPlayer) {
+            resultPlayers.forEach(p => {
+              if (p.id !== user.id) {
+                const pairwiseScore = calculateSinglePairScore(humanPlayer.hand, p.hand);
+                p.pairwiseScore = pairwiseScore * pointMultiplier;
+              }
+            });
+            // Also calculate pairwise scores for the human player against others
+            humanPlayer.pairwiseScores = resultPlayers
+              .filter(p => p.id !== user.id)
+              .map(opponent => {
+                  const score = calculateSinglePairScore(humanPlayer.hand, opponent.hand);
+                  return {
+                      opponentName: opponent.name,
+                      score: score * pointMultiplier,
+                  };
+              });
+          }
           if (humanPlayer) {
             const humanPlayerHand = humanPlayer.hand;
             resultPlayers.forEach(player => {
