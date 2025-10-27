@@ -1,6 +1,74 @@
 <?php
 // backend/utils/sort_hand.php
 
+if (!function_exists('check_for_dragon')) {
+    function check_for_dragon($hand) {
+        $ranks = array_map('get_card_rank', $hand);
+        $unique_ranks = array_unique($ranks);
+        sort($unique_ranks);
+
+        if (count($unique_ranks) === 13 && $unique_ranks[12] - $unique_ranks[0] === 12) {
+            usort($hand, fn($a, $b) => get_card_rank($a) - get_card_rank($b));
+            return ['front' => array_slice($hand, 0, 3), 'middle' => array_slice($hand, 3, 5), 'back' => array_slice($hand, 8, 5)];
+        }
+        return null;
+    }
+}
+
+if (!function_exists('check_for_three_flushes')) {
+    function check_for_three_flushes($hand) {
+        $suits = array_map(fn($c) => substr($c, 0, 1), $hand);
+        $suit_counts = array_count_values($suits);
+
+        if (in_array(3, $suit_counts) && in_array(5, $suit_counts)) {
+            $flush3_suit = array_search(3, $suit_counts);
+            $flush5_suit = array_search(5, $suit_counts);
+
+            if ($flush3_suit && $flush5_suit) {
+                $front = array_filter($hand, fn($c) => substr($c, 0, 1) === $flush3_suit);
+                $middle = array_filter($hand, fn($c) => substr($c, 0, 1) === $flush5_suit);
+                $back = array_values(array_diff($hand, $front, $middle));
+
+                usort($front, fn($a, $b) => get_card_rank($a) - get_card_rank($b));
+                usort($middle, fn($a, $b) => get_card_rank($a) - get_card_rank($b));
+                usort($back, fn($a, $b) => get_card_rank($a) - get_card_rank($b));
+
+                return ['front' => $front, 'middle' => $middle, 'back' => $back];
+            }
+        }
+        return null;
+    }
+}
+
+if (!function_exists('check_for_six_and_a_half_pairs')) {
+    function check_for_six_and_a_half_pairs($hand) {
+        $ranks = array_map('get_card_rank', $hand);
+        $counts = array_count_values($ranks);
+        $pairs = 0;
+        foreach ($counts as $count) {
+            if ($count === 2) {
+                $pairs++;
+            }
+        }
+
+        if ($pairs === 6) {
+            $single_rank = array_search(1, $counts);
+            $single = null;
+            $pairs = [];
+            foreach ($hand as $card) {
+                if (get_card_rank($card) === $single_rank) {
+                    $single = $card;
+                } else {
+                    $pairs[] = $card;
+                }
+            }
+            usort($pairs, fn($a, $b) => get_card_rank($a) - get_card_rank($b));
+            return ['front' => [$single, $pairs[0], $pairs[1]], 'middle' => array_slice($pairs, 2, 5), 'back' => array_slice($pairs, 7, 5)];
+        }
+        return null;
+    }
+}
+
 if (!function_exists('get_combinations')) {
     function get_combinations($array, $k) {
         $results = [];
@@ -108,6 +176,16 @@ if (!function_exists('compare_hands')) {
 }
 
 function find_best_arrangement($hand) {
+    if ($dragon = check_for_dragon($hand)) {
+        return $dragon;
+    }
+    if ($six_and_a_half_pairs = check_for_six_and_a_half_pairs($hand)) {
+        return $six_and_a_half_pairs;
+    }
+    if ($three_flushes = check_for_three_flushes($hand)) {
+        return $three_flushes;
+    }
+
     $all_5_card_combos_back = get_combinations($hand, 5);
     $best_arrangement = null;
     $best_score = -1;

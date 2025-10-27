@@ -2,6 +2,64 @@ import { parseCard, evaluateHand as evaluate5Cards, compareHands } from './poker
 
 const rankMap = { 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
 
+const check_for_dragon = (hand) => {
+    const parsedHand = hand.map(parseCard).filter(Boolean);
+    if (parsedHand.length !== 13) return null;
+
+    const unique_ranks = [...new Set(parsedHand.map(c => c.value))];
+    if (unique_ranks.length === 13) {
+        unique_ranks.sort((a, b) => a - b);
+        if (unique_ranks[12] - unique_ranks[0] === 12) {
+            const sortedHand = parsedHand.sort((a, b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
+            return { top: sortedHand.slice(0, 3), middle: sortedHand.slice(3, 8), bottom: sortedHand.slice(8, 13) };
+        }
+    }
+    return null;
+}
+
+const check_for_three_flushes = (hand) => {
+    const parsedHand = hand.map(parseCard).filter(Boolean);
+    if (parsedHand.length !== 13) return null;
+
+    const suits = parsedHand.map(c => c.suit);
+    const suitCounts = suits.reduce((acc, suit) => ({ ...acc, [suit]: (acc[suit] || 0) + 1 }), {});
+
+    const flush3Suit = Object.keys(suitCounts).find(suit => suitCounts[suit] === 3);
+    const flush5Suit = Object.keys(suitCounts).find(suit => suitCounts[suit] === 5);
+
+    if (flush3Suit && flush5Suit) {
+        const front = parsedHand.filter(c => c.suit === flush3Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
+        const middle = parsedHand.filter(c => c.suit === flush5Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
+        const back = parsedHand.filter(c => c.suit !== flush3Suit && c.suit !== flush5Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
+
+        return { top: front, middle: middle, bottom: back };
+    }
+    return null;
+}
+
+const check_for_six_and_a_half_pairs = (hand) => {
+    const parsedHand = hand.map(parseCard).filter(Boolean);
+    if (parsedHand.length !== 13) return null;
+
+    const ranks = parsedHand.map(c => c.value);
+    const counts = ranks.reduce((acc, rank) => ({ ...acc, [rank]: (acc[rank] || 0) + 1 }), {});
+
+    const pairs = Object.values(counts).filter(count => count === 2).length;
+
+    if (pairs === 6) {
+        const singleRank = parseInt(Object.keys(counts).find(rank => counts[rank] === 1));
+        const single = parsedHand.find(c => c.value === singleRank);
+        const pairCards = parsedHand.filter(c => c.value !== singleRank);
+
+        pairCards.sort((a, b) => a.value - b.value);
+
+        const sortedHand = [single, ...pairCards].map(c => `${c.rank}_of_${c.suit}`);
+
+        return { top: [sortedHand[0], sortedHand[1], sortedHand[2]], middle: sortedHand.slice(3, 8), bottom: sortedHand.slice(8, 13) };
+    }
+    return null;
+}
+
 export const getCombinations = (array, k) => {
   if (k === 0) return [[]];
   if (!array || array.length < k) return [];
@@ -25,6 +83,15 @@ const evaluate3Cards = (hand) => {
 };
 
 export const findBestArrangement = (hand) => {
+  const dragon = check_for_dragon(hand);
+  if (dragon) return dragon;
+
+  const six_and_a_half_pairs = check_for_six_and_a_half_pairs(hand);
+  if (six_and_a_half_pairs) return six_and_a_half_pairs;
+
+  const three_flushes = check_for_three_flushes(hand);
+  if (three_flushes) return three_flushes;
+
   const all5CardCombosBack = getCombinations(hand, 5);
   let bestArrangement = null;
   let bestScore = -1;
