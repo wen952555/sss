@@ -27,7 +27,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
   const [timeLeft, setTimeLeft] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
   const [sortedHandIndex, setSortedHandIndex] = useState(0);
-  const [trialHand, setTrialHand] = useState([]);
 
   const [hasPlayerInteracted, setHasPlayerInteracted] = useState(false);
 
@@ -173,7 +172,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       const deck = suits.flatMap(suit => ranks.map(rank => `${rank}_of_${suit}`));
       deck.sort(() => Math.random() - 0.5);
       const playerHand = deck.slice(0, 13).map(key => ({ key, ...parseCard(key) }));
-      setTrialHand(playerHand);
       setInitialLanes({
         top: playerHand.slice(0, 3),
         middle: playerHand.slice(3, 8),
@@ -351,7 +349,8 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
 
   const handleAutoSort = useCallback(async () => {
     if (isTrial) {
-      const bestArrangement = findBestArrangement(trialHand.map(c => c.key));
+      const allCards = [...topLane, ...middleLane, ...bottomLane];
+      const bestArrangement = findBestArrangement(allCards.map(c => c.key));
       const mappedArrangement = {
         top: bestArrangement.front,
         middle: bestArrangement.middle,
