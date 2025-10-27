@@ -91,7 +91,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       const resultPlayers = [
         { id: user.id, phone: user.phone, hand: handToSend, is_auto_managed: false },
         ...aiHands,
-      ];
+      ].map(p => ({ ...p, hand: sanitizeHand(p.hand) }));
 
       const playerHands = resultPlayers.reduce((acc, p) => ({ ...acc, [p.id]: p.hand }), {});
       const playerIds = resultPlayers.map(p => p.id);
