@@ -30,18 +30,23 @@ const check_for_three_flushes = (hand) => {
         const flush3Suit = Object.keys(suitCounts).find(suit => suitCounts[suit] === 3);
         const flush5Suits = Object.keys(suitCounts).filter(suit => suitCounts[suit] === 5);
 
-        const front = parsedHand.filter(c => c.suit === flush3Suit).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
-        let middle = parsedHand.filter(c => c.suit === flush5Suits[0]).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
-        let back = parsedHand.filter(c => c.suit === flush5Suits[1]).sort((a,b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
+        const frontCards = parsedHand.filter(c => c.suit === flush3Suit).sort((a,b) => a.value - b.value);
+        let middleCards = parsedHand.filter(c => c.suit === flush5Suits[0]).sort((a,b) => a.value - b.value);
+        let backCards = parsedHand.filter(c => c.suit === flush5Suits[1]).sort((a,b) => a.value - b.value);
 
         // Ensure middle is higher than back by poker hand rules
-        const middleEval = evaluate5Cards(middle.map(parseCard));
-        const backEval = evaluate5Cards(back.map(parseCard));
+        const middleEval = evaluate5Cards(middleCards);
+        const backEval = evaluate5Cards(backCards);
 
         if (compareHands(middleEval, backEval) < 0) {
-            [middle, back] = [back, middle]; // Swap
+            [middleCards, backCards] = [backCards, middleCards]; // Swap
         }
-        return { front, middle, back };
+
+        return {
+            front: frontCards.map(c => `${c.rank}_of_${c.suit}`),
+            middle: middleCards.map(c => `${c.rank}_of_${c.suit}`),
+            back: backCards.map(c => `${c.rank}_of_${c.suit}`)
+        };
     }
     return null;
 }
@@ -64,7 +69,11 @@ const check_for_six_and_a_half_pairs = (hand) => {
 
         const sortedHand = [single, ...pairCards].map(c => `${c.rank}_of_${c.suit}`);
 
-        return { front: [sortedHand[0], sortedHand[1], sortedHand[2]], middle: sortedHand.slice(3, 8), back: sortedHand.slice(8, 13) };
+        return {
+          front: sortedHand.slice(0, 3),
+          middle: sortedHand.slice(3, 8),
+          back: sortedHand.slice(8, 13)
+        };
     }
     return null;
 }
