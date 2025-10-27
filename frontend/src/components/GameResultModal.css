@@ -57,16 +57,12 @@
   color: #ef5350;
 }
 
-/* Updated for 2x2 Grid Layout */
 .result-players-container {
   padding: 20px;
   overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, auto);
-  gap: 20px;
-  justify-items: center;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .player-result-row {
@@ -188,15 +184,16 @@
 .result-cards-row {
   display: flex;
   justify-content: flex-start;
-  padding-left: 20px; /* Add some padding so the overlap doesn't hide the first card */
-  margin-bottom: 5px; /* Space between lanes */
+  padding-left: 30px; /* Base padding */
 }
 
 .result-card-wrapper {
-  width: 50px;
-  height: 70px;
-  margin-left: -25px; /* Overlap cards by 50% of their width */
+  width: 40px; /* Smaller card width */
+  height: 56px; /* Maintain aspect ratio */
+  margin-left: -30px; /* Tighter overlap */
   transition: transform 0.2s ease-in-out;
+  box-shadow: -2px 0px 5px rgba(0,0,0,0.3); /* Add shadow for depth */
+  border-radius: 4px;
 }
 
 .result-card-wrapper:hover {
@@ -207,50 +204,4 @@
 .result-cards-row .card {
   width: 100%;
   height: 100%;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .result-modal-container {
-    max-width: 95vw;
-    max-height: 95vh;
-  }
-
-  .result-players-container {
-    grid-template-columns: 1fr; /* Stack players in a single column */
-    gap: 10px;
-  }
-
-  .result-modal-header h2 {
-    font-size: 1.5rem;
-  }
-
-  .result-card-wrapper {
-    width: clamp(30px, 10vw, 45px); /* Fluid card width */
-    height: auto;
-    margin-left: -20px; /* Adjust overlap for smaller cards */
-  }
-}
-
-@media (max-width: 480px) {
-  .result-modal-header {
-    padding: 15px;
-  }
-
-  .result-players-container {
-    padding: 10px;
-  }
-
-  .player-result-row {
-    padding: 10px;
-  }
-
-  .result-card-wrapper {
-    width: clamp(25px, 9vw, 35px);
-    margin-left: -18px;
-  }
-
-  .result-modal-footer {
-    flex-direction: column;
-  }
 }
