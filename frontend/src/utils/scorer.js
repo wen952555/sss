@@ -29,6 +29,9 @@ const parseCard = (cardInput) => {
 export const SUIT_ORDER = { 'spades': 4, 'hearts': 3, 'clubs': 2, 'diamonds': 1 };
 
 export function getGroupedValues(cards) {
+  if (!Array.isArray(cards)) {
+    return {};
+  }
   const counts = {};
   for (const cardStr of cards) {
     const card = parseCard(cardStr);
@@ -49,7 +52,7 @@ export function getGroupedValues(cards) {
 }
 
 export function isStraight(cards) {
-  if (!cards || cards.length === 0) return false;
+  if (!Array.isArray(cards) || cards.length === 0) return false;
   const parsedCards = cards.map(parseCard).filter(Boolean);
   if (parsedCards.length !== cards.length) return false;
 
@@ -61,7 +64,7 @@ export function isStraight(cards) {
 }
 
 export function isFlush(cards) {
-  if (!cards || cards.length === 0) return false;
+  if (!Array.isArray(cards) || cards.length === 0) return false;
   const parsedCards = cards.map(parseCard).filter(Boolean);
   if (parsedCards.length !== cards.length) return false;
 
@@ -70,7 +73,7 @@ export function isFlush(cards) {
 }
 
 export function getSssAreaType(cards, area) {
-  if (!cards || cards.length === 0) return "高牌";
+  if (!Array.isArray(cards) || cards.length === 0) return "高牌";
   const grouped = getGroupedValues(cards);
   const isF = isFlush(cards);
   const isS = isStraight(cards);
