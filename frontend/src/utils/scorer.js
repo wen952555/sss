@@ -105,26 +105,37 @@ export function compareSssArea(a, b, area) {
 
   if (typeA === '顺子' || typeA === '同花顺') {
     const getStraightHighCard = (cards) => {
-      let vals = [...new Set(cards.map(c => VALUE_ORDER[parseCard(c).rank]))];
+      const parsedCards = cards.map(parseCard).filter(Boolean);
+      if (parsedCards.length !== cards.length) return 0; // Invalid straight
+
+      let vals = [...new Set(parsedCards.map(c => c.value))];
       vals.sort((a, b) => a - b);
       const isAceLow = JSON.stringify(vals) === JSON.stringify([2, 3, 4, 5, 14]);
-      const isAceHigh = JSON.stringify(vals) === JSON.stringify([10, 11, 12, 13, 14]);
+      // For A-2-3-4-5, the high card for ranking purposes is the 5.
+      if (isAceLow) return 5;
 
-      if (isAceHigh) return 14; // Highest straight
-      if (isAceLow) return 13.5; // Second highest straight
-
-      return vals[vals.length - 1]; // Regular straights are ranked by their high card
+      return vals[vals.length - 1]; // Otherwise, it's the highest value card.
     };
     const valA = getStraightHighCard(a);
     const valB = getStraightHighCard(b);
     if (valA !== valB) return valA - valB;
   }
 
+  // If straights are equal, compare by suit of high card (for straight flushes)
   if (typeA === '同花' || typeA === '同花顺') {
-    const suitA = SUIT_ORDER[parseCard(a[0]).suit];
-    const suitB = SUIT_ORDER[parseCard(b[0]).suit];
+    const parsedA = a.map(parseCard).filter(Boolean);
+    const parsedB = b.map(parseCard).filter(Boolean);
+    if (parsedA.length !== a.length || parsedB.length !== b.length) return 0; // Contains invalid cards
+
+    // Sort by value to find the highest card to compare suits
+    parsedA.sort((c1, c2) => c2.value - c1.value);
+    parsedB.sort((c1, c2) => c2.value - c1.value);
+
+    const suitA = SUIT_ORDER[parsedA[0].suit];
+    const suitB = SUIT_ORDER[parsedB[0].suit];
     if (suitA !== suitB) return suitA - suitB;
   }
+
 
   const groupedA = getGroupedValues(a);
   const groupedB = getGroupedValues(b);
@@ -165,9 +176,22 @@ export function getSssAreaScore(cards, area) {
 }
 
 export function getSpecialType(hand) {
-    const all_cards = [...hand.top, ...hand.middle, ...hand.bottom];
+    // Defensive check: Ensure all lanes are arrays before spreading.
+    const all_cards = [
+        ...(Array.isArray(hand.top) ? hand.top : []),
+        ...(Array.isArray(hand.middle) ? hand.middle : []),
+        ...(Array.isArray(hand.bottom) ? hand.bottom : [])
+    ];
 
-    const ranks = all_cards.map(card => parseCard(card).rank);
+    // Filter out any null or invalid card entries after parsing
+    const parsedCards = all_cards.map(parseCard).filter(Boolean);
+
+    // If parsing results in a different number of cards, we have invalid data.
+    if (parsedCards.length !== 13) {
+        return null;
+    }
+
+    const ranks = parsedCards.map(card => card.rank);
     if (new Set(ranks).size === 13) {
         return '一条龙';
     }
