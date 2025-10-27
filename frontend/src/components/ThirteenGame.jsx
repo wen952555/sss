@@ -376,7 +376,6 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       });
       const data = await response.json();
       if (data.success) {
-        console.log("Raw API response:", data.hand);
         // By setting hasPlayerInteracted to false before updating the lanes,
         // we ensure the new hand from the server is always rendered.
         setHasPlayerInteracted(false);
@@ -385,12 +384,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
           middle: data.hand.middle,
           bottom: data.hand.back,
         };
-        console.log("Mapped hand:", mappedHand);
-        const sanitized = sanitizeHand(mappedHand);
-        console.log("Sanitized hand:", sanitized);
-        setInitialLanes(sanitized);
+        setInitialLanes(sanitizeHand(mappedHand));
         // Cycle to the next index for the next click
-        setSortedHandIndex((prevIndex) => (prevIndex + 1) % 5);
+        setArrangementIndex((prevIndex) => (prevIndex + 1) % 5);
       } else {
         throw new Error(data.message || 'Failed to fetch pre-sorted hand.');
       }
