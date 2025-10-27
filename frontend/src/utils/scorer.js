@@ -97,8 +97,12 @@ export function sssAreaTypeRank(type, area) {
 }
 
 export function compareSssArea(a, b, area) {
-  const typeA = getSssAreaType(a, area);
-  const typeB = getSssAreaType(b, area);
+  // Defensive check: If a lane is not a valid array, treat it as the lowest possible hand.
+  const safeA = Array.isArray(a) ? a : [];
+  const safeB = Array.isArray(b) ? b : [];
+
+  const typeA = getSssAreaType(safeA, area);
+  const typeB = getSssAreaType(safeB, area);
   const rankA = sssAreaTypeRank(typeA, area);
   const rankB = sssAreaTypeRank(typeB, area);
   if (rankA !== rankB) return rankA - rankB;
