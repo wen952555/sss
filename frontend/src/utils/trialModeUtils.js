@@ -84,51 +84,59 @@ const evaluate3Cards = (hand) => {
   return { rank: 0, values: ranks }; // High Card
 };
 
-export const findBestArrangement = (hand) => {
-  const dragon = check_for_dragon(hand);
-  if (dragon) return dragon;
+export const findBestArrangement = (hand, count = 1) => {
+    const dragon = check_for_dragon(hand);
+    if (dragon) return [dragon];
 
-  const six_and_a_half_pairs = check_for_six_and_a_half_pairs(hand);
-  if (six_and_a_half_pairs) return six_and_a_half_pairs;
+    const six_and_a_half_pairs = check_for_six_and_a_half_pairs(hand);
+    if (six_and_a_half_pairs) return [six_and_a_half_pairs];
 
-  const three_flushes = check_for_three_flushes(hand);
-  if (three_flushes) return three_flushes;
+    const three_flushes = check_for_three_flushes(hand);
+    if (three_flushes) return [three_flushes];
 
-  const all5CardCombosBack = getCombinations(hand, 5);
-  let bestArrangement = null;
-  let bestScore = -1;
+    const all5CardCombosBack = getCombinations(hand, 5);
+    const arrangements = [];
 
-  for (const back of all5CardCombosBack) {
-    const remaining8 = hand.filter(c => !back.includes(c));
-    const all5CardCombosMiddle = getCombinations(remaining8, 5);
+    for (const back of all5CardCombosBack) {
+        const remaining8 = hand.filter(c => !back.includes(c));
+        const all5CardCombosMiddle = getCombinations(remaining8, 5);
 
-    for (const middle of all5CardCombosMiddle) {
-      const front = remaining8.filter(c => !middle.includes(c));
-      if (front.length !== 3) continue;
+        for (const middle of all5CardCombosMiddle) {
+            const front = remaining8.filter(c => !middle.includes(c));
+            if (front.length !== 3) continue;
 
-      const backEval = evaluate5Cards(back.map(parseCard));
-      const middleEval = evaluate5Cards(middle.map(parseCard));
-      const frontEval = evaluate3Cards(front);
+            const backEval = evaluate5Cards(back.map(parseCard));
+            const middleEval = evaluate5Cards(middle.map(parseCard));
+            const frontEval = evaluate3Cards(front);
 
-      if (compareHands(middleEval, backEval) <= 0 && compareHands(frontEval, middleEval) <= 0) {
-        const totalScore = backEval.rank * 10000 + middleEval.rank * 100 + frontEval.rank;
-        if (totalScore > bestScore) {
-          bestScore = totalScore;
-          bestArrangement = { top: front, middle, bottom: back };
+            if (compareHands(middleEval, backEval) <= 0 && compareHands(frontEval, middleEval) <= 0) {
+                const totalScore = backEval.rank * 10000 + middleEval.rank * 100 + frontEval.rank;
+                arrangements.push({ score: totalScore, arrangement: { top: front, middle, bottom: back } });
+            }
         }
-      }
     }
-  }
 
-  if (!bestArrangement) {
-    const sortedHand = hand.map(parseCard).filter(Boolean).sort((a, b) => b.value - a.value);
-    const cardKeys = sortedHand.map(c => `${c.rank}_of_${c.suit}`);
-    return {
-      top: cardKeys.slice(0, 3),
-      middle: cardKeys.slice(3, 8),
-      bottom: cardKeys.slice(8, 13),
-    };
-  }
+    arrangements.sort((a, b) => b.score - a.score);
 
-  return bestArrangement;
+    const unique_arrangements = [];
+    const seen = new Set();
+    for (const item of arrangements) {
+        const key = JSON.stringify(item.arrangement);
+        if (!seen.has(key)) {
+            unique_arrangements.push(item.arrangement);
+            seen.add(key);
+        }
+    }
+
+    if (unique_arrangements.length === 0) {
+        const sortedHand = hand.map(parseCard).filter(Boolean).sort((a, b) => b.value - a.value);
+        const cardKeys = sortedHand.map(c => `${c.rank}_of_${c.suit}`);
+        return [{
+          top: cardKeys.slice(0, 3),
+          middle: cardKeys.slice(3, 8),
+          bottom: cardKeys.slice(8, 13),
+        }];
+    }
+
+    return unique_arrangements.slice(0, count);
 };
