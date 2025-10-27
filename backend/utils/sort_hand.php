@@ -178,20 +178,19 @@ if (!function_exists('compare_hands')) {
     }
 }
 
-function find_best_arrangement($hand) {
+function find_best_arrangement($hand, $count = 1) {
     if ($dragon = check_for_dragon($hand)) {
-        return $dragon;
+        return [$dragon];
     }
     if ($six_and_a_half_pairs = check_for_six_and_a_half_pairs($hand)) {
-        return $six_and_a_half_pairs;
+        return [$six_and_a_half_pairs];
     }
     if ($three_flushes = check_for_three_flushes($hand)) {
-        return $three_flushes;
+        return [$three_flushes];
     }
 
     $all_5_card_combos_back = get_combinations($hand, 5);
-    $best_arrangement = null;
-    $best_score = -1;
+    $arrangements = [];
 
     foreach ($all_5_card_combos_back as $back) {
         $remaining_8 = array_values(array_diff($hand, $back));
@@ -206,13 +205,22 @@ function find_best_arrangement($hand) {
 
             if (compare_hands($middle_eval, $back_eval) <= 0 && compare_hands($front_eval, $middle_eval) <= 0) {
                 $total_score = $back_eval[0] * 10000 + $middle_eval[0] * 100 + $front_eval[0];
-                if ($total_score > $best_score) {
-                    $best_score = $total_score;
-                    $best_arrangement = ['front' => $front, 'middle' => $middle, 'back' => $back];
-                }
+                $arrangements[] = ['score' => $total_score, 'arrangement' => ['front' => $front, 'middle' => $middle, 'back' => $back]];
             }
         }
     }
 
-    return $best_arrangement;
+    usort($arrangements, fn($a, $b) => $b['score'] - $a['score']);
+
+    $unique_arrangements = [];
+    $seen = [];
+    foreach ($arrangements as $item) {
+        $key = serialize($item['arrangement']);
+        if (!isset($seen[$key])) {
+            $unique_arrangements[] = $item['arrangement'];
+            $seen[$key] = true;
+        }
+    }
+
+    return array_slice($unique_arrangements, 0, $count);
 }

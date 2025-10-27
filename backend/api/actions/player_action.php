@@ -160,6 +160,21 @@ try {
                     $stmt->bind_param("sii", $handJson, $roomId, $player_ids[$i]);
                     $stmt->execute();
                     $stmt->close();
+
+                    // Pre-compute and store arrangements
+                    $arrangements = find_best_arrangement($hands[$i], 5);
+                    $arrangementsJson = json_encode($arrangements);
+                    $stmt = $conn->prepare("INSERT INTO player_hands (user_id, hand, arrangements) VALUES (?, ?, ?)");
+                    $stmt->bind_param("iss", $player_ids[$i], $handJson, $arrangementsJson);
+                    $stmt->execute();
+                    $stmt->close();
+
+                    // Clean up old hands, keeping only the last 20
+                    $stmt = $conn->prepare("DELETE FROM player_hands WHERE user_id = ? AND id NOT IN (SELECT id FROM (SELECT id FROM player_hands WHERE user_id = ? ORDER BY created_at DESC LIMIT 20) as t)");
+                    $stmt->bind_param("ii", $player_ids[$i], $player_ids[$i]);
+                    $stmt->execute();
+                    $stmt->close();
+
                     if ($player_ids[$i] == $userId) {
                         $userHand = $hands[$i];
                     }

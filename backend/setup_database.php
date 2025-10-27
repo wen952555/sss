@@ -88,6 +88,16 @@ CREATE TABLE IF NOT EXISTS `tg_admin_states` (
   `state_data` text DEFAULT NULL,
   PRIMARY KEY (`chat_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `player_hands` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `hand` text NOT NULL,
+  `arrangements` text,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ";
 
 if ($conn->multi_query($sql)) {

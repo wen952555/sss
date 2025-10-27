@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../db_connect.php';
-require_once __DIR__ . '/../../utils/sort_hand.php';
 
 header('Content-Type: application/json');
 
@@ -14,6 +13,7 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 
 $userId = $post_data['userId'] ?? null;
 $roomId = $post_data['roomId'] ?? null;
+$index = $post_data['index'] ?? 0;
 
 if (!$userId || !$roomId) {
     http_response_code(400);
@@ -25,32 +25,26 @@ $conn = null;
 try {
     $conn = db_connect();
 
-    // Get the player's initial hand from the room_players table
-    $stmt = $conn->prepare("SELECT initial_hand FROM room_players WHERE user_id = ? AND room_id = ?");
-    $stmt->bind_param("ii", $userId, $roomId);
+    // Get the player's latest hand and arrangements from the player_hands table
+    $stmt = $conn->prepare("SELECT arrangements FROM player_hands WHERE user_id = ? ORDER BY created_at DESC LIMIT 1");
+    $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
-    if (!$result || empty($result['initial_hand'])) {
-        throw new Exception("Could not find the player's hand for the current room.");
+    if (!$result || empty($result['arrangements'])) {
+        throw new Exception("Could not find pre-computed arrangements for the player.");
     }
 
-    $hand = json_decode($result['initial_hand'], true);
+    $arrangements = json_decode($result['arrangements'], true);
 
-    if (count($hand) !== 13) {
-        throw new Exception("Invalid hand size. Expected 13 cards.");
+    if (count($arrangements) === 0) {
+        throw new Exception("No valid arrangements found.");
     }
 
-    // Use the new utility to find the best arrangement
-    $best_arrangement = find_best_arrangement($hand);
+    $arrangement = $arrangements[$index % count($arrangements)];
 
-    if (!$best_arrangement) {
-        throw new Exception("Could not determine a valid hand arrangement.");
-    }
-
-    // The hand is already arranged into front, middle, back by the utility
-    echo json_encode(['success' => true, 'hand' => $best_arrangement]);
+    echo json_encode(['success' => true, 'hand' => $arrangement]);
 
 } catch (Exception $e) {
     http_response_code(500);
