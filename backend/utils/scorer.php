@@ -202,9 +202,6 @@ function getSpecialTypePhp($hand) {
 }
 
 function calculateSinglePairScorePhp($p1_hand, $p2_hand) {
-    error_log("[scorer.php] calculateSinglePairScorePhp START");
-    error_log("[scorer.php] p1_hand: " . json_encode($p1_hand));
-    error_log("[scorer.php] p2_hand: " . json_encode($p2_hand));
     global $SSS_SCORES_PHP;
     $p1_special_type = getSpecialTypePhp($p1_hand);
     $p2_special_type = getSpecialTypePhp($p2_hand);

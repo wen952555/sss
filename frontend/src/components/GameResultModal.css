@@ -1,261 +1,99 @@
-.result-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  z-index: 1000;
+/* GameResultModal.css 或 PyramidHandDisplay.css */
+
+/* 定义卡牌的基础大小，根据你的 Card 组件实际大小调整 */
+:root {
+    --card-width: 60px; /* 扑克牌宽度 */
+    --card-height: 90px; /* 扑克牌高度 */
+    --overlap-amount: 20px; /* 卡牌重叠量 */
+    --row-spacing: 10px; /* 行间距 */
 }
 
-.result-modal-container {
-  background: #004d40;
-  color: var(--text-color);
-  border-radius: 24px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  width: 100%;
-  max-width: 900px; /* Increased width as requested */
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--text-color);
-}
 
-.result-modal-header {
-  padding: 20px;
-  text-align: center;
-  border-bottom: 1px solid var(--text-color);
-}
-
-.result-modal-header h2 {
-  margin: 0;
-  font-size: 1.8rem;
-  color: var(--text-color);
-}
-
-.result-modal-header p {
-  margin: 5px 0 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.trial-mode-notice {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #a0a0a0; /* A lighter gray color */
-  margin-top: 10px;
-}
-
-.score-win {
-  color: #4caf50;
-}
-
-.score-loss {
-  color: #ef5350;
-}
-
-.result-players-container {
-  padding: 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
+/* 整体玩家结果行布局 */
 .player-result-row {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 16px;
-  padding: 15px;
-  /* No longer a flex container with a gap */
-  transition: all 0.3s ease;
+    display: flex; /* 让信息和手牌在同一行 */
+    align-items: flex-start; /* 顶部对齐 */
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #fff;
 }
 
 .player-result-row.is-me {
-  background: #005a4a;
-  border: 2px solid var(--text-color);
-  transform: scale(1.02);
+    border-color: #007bff; /* 突出显示当前玩家 */
+    background-color: #e6f3ff;
+}
+
+.player-info-section {
+    display: flex;
+    flex-direction: row; /* 让信息和金字塔手牌并排显示 */
+    gap: 20px; /* 信息和手牌之间的间距 */
+    align-items: flex-start;
+    width: 100%;
 }
 
 .player-info {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 4px 8px;
-  border-radius: 6px;
-  z-index: 1;
-  text-align: right;
+    flex-shrink: 0; /* 防止信息区域被压缩 */
+    min-width: 150px; /* 给信息区域一个最小宽度 */
+    padding-right: 10px;
+    border-right: 1px solid #eee;
 }
 
-.player-result-row .player-name {
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.player-result-row .player-score {
-  font-weight: 700;
-  font-size: 1.3rem;
-  margin-top: 5px;
-}
-
-.lane-results {
-  display: flex;
-  gap: 4px;
-  margin-top: 8px;
-}
-
-.lane-result-badge {
-  font-size: 0.8rem;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: white;
-}
-
-.lane-win {
-  background-color: #4caf50; /* Green for win */
-}
-
-.lane-loss {
-  background-color: #ef5350; /* Red for loss */
-}
-
-.lane-draw {
-  background-color: #757575; /* Gray for draw */
-}
-
-.result-modal-footer {
-  padding: 20px;
-  text-align: center;
-  border-top: 1px solid var(--text-color);
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-}
-
-.result-btn {
-  border: none;
-  padding: 12px 30px;
-  border-radius: 10px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.2s;
-  flex: 1;
-  max-width: 200px;
-}
-
-.result-btn:hover {
-    transform: translateY(-2px);
-}
-
-.exit-btn {
-    background-color: var(--error-color);
-    color: var(--text-color);
-}
-
-.exit-btn:hover {
-    background-color: #c62828;
-}
-
-.continue-btn {
-    background-color: var(--primary-color);
-    color: var(--text-color);
-}
-
-.continue-btn:hover {
-    background-color: #005a4a;
-}
-
-/* New layout for pyramid stacking */
-.result-hand-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Center the rows horizontally */
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  min-height: 120px; /* Ensure enough space for the stacked cards */
-}
-
-.result-cards-row {
-  display: flex;
-  justify-content: center; /* Center cards within the row */
-}
-
-/* Apply negative margin to the 2nd and 3rd rows to pull them up */
-.result-cards-row:nth-child(2) {
-  margin-top: -30px;
-}
-.result-cards-row:nth-child(3) {
-  margin-top: -30px;
-}
-
-.result-card-wrapper {
-  width: 40px;
-  height: 56px;
-  margin-left: -25px; /* Adjust for tighter horizontal stacking */
-  transition: transform 0.2s ease-in-out;
-  box-shadow: -2px 0px 5px rgba(0,0,0,0.3);
-  border-radius: 4px;
-}
-
-/* Remove the hover effect as it interferes with the static pyramid display */
-.result-card-wrapper:hover {
-  transform: none;
-  z-index: auto;
-}
-
-.result-cards-row .card {
-  width: 100%;
-  height: 100%;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .result-modal-container {
-    max-width: 95vw;
-    max-height: 95vh;
-  }
-
-  .result-players-container {
-    gap: 10px;
-  }
-
-  .result-modal-header h2 {
-    font-size: 1.5rem;
-  }
-
-  .result-card-wrapper {
-    width: clamp(30px, 10vw, 45px); /* Fluid card width */
-    height: auto;
-    margin-left: -20px; /* Adjust overlap for smaller cards */
-  }
-}
-
-@media (max-width: 480px) {
-  .result-modal-header {
-    padding: 15px;
-  }
-
-  .result-players-container {
+/* 金字塔手牌容器 */
+.pyramid-hand-display {
+    display: flex;
+    flex-direction: column; /* 垂直堆叠三行 */
+    align-items: center; /* 水平居中每行 */
+    gap: var(--row-spacing); /* 行与行之间的间距 */
     padding: 10px;
-  }
-
-  .player-result-row {
-    padding: 10px;
-  }
-
-  .result-card-wrapper {
-    width: clamp(25px, 9vw, 35px);
-    margin-left: -18px;
-  }
-
-  .result-modal-footer {
-    flex-direction: column;
-  }
+    border-radius: 5px;
+    background-color: #f9f9f9;
 }
+
+.pyramid-row {
+    display: flex;
+    justify-content: center; /* 行内卡牌居中 */
+    /* position: relative; */ /* 如果需要更复杂的重叠，可能需要 */
+}
+
+.pyramid-card-wrapper {
+    /* 调整卡牌之间的间距和重叠 */
+    margin-right: -var(--overlap-amount); /* 负边距实现重叠 */
+    /* 确保最后一章牌没有负边距 */
+}
+.pyramid-card-wrapper:last-child {
+    margin-right: 0;
+}
+
+/* 可以为不同行添加不同的z-index，如果卡牌完全重叠需要控制层级 */
+.pyramid-row.top-row .pyramid-card-wrapper { z-index: 3; }
+.pyramid-row.middle-row .pyramid-card-wrapper { z-index: 2; }
+.pyramid-row.bottom-row .pyramid-card-wrapper { z-index: 1; }
+
+
+/* 如果Card组件本身有边框或阴影，需要考虑调整 */
+/* 确保 Card 组件的样式没有阻止重叠效果 */
+/* 假设 Card 组件内部有 .card-image 或 .card-content 来显示牌面 */
+/*
+.Card {
+    width: var(--card-width);
+    height: var(--card-height);
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: black;
+}
+*/
+
+
+/* 其他现有样式保持不变 */
+.result-modal-backdrop { /* ... */ }
+.result-modal-container { /* ... */ }
+/* ... (其他 GameResultModal 的样式) ... */

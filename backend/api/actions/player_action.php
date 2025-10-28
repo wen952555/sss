@@ -258,8 +258,6 @@ try {
                 }
                 $stmt->close();
 
-                error_log("[player_action.php] All hands submitted. Calculating scores. Player hands: " . json_encode($playerHands));
-
                 $playerIds = array_keys($playerHands);
                 $scores = array_fill_keys($playerIds, 0);
 
@@ -272,8 +270,6 @@ try {
                         $scores[$p2_id] -= $score_result['total_score'];
                     }
                 }
-
-                error_log("[player_action.php] Score calculation complete. Scores: " . json_encode($scores));
 
                 $stmt = $conn->prepare("UPDATE room_players SET score = ? WHERE room_id = ? AND user_id = ?");
                 foreach ($scores as $pId => $score) {
