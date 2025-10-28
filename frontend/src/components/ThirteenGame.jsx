@@ -26,7 +26,8 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
-  const [sortedHandIndex, setSortedHandIndex] = useState(0);
+  const [trialHand, setTrialHand] = useState([]);
+  const [arrangementIndex, setArrangementIndex] = useState(0);
 
   const [hasPlayerInteracted, setHasPlayerInteracted] = useState(false);
 
@@ -89,7 +90,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       const resultPlayers = [
         { id: user.id, phone: user.phone, hand: handToSend, is_auto_managed: false },
         ...aiHands,
-      ];
+      ].map(p => ({ ...p, hand: sanitizeHand(p.hand) }));
 
       const playerHands = resultPlayers.reduce((acc, p) => ({ ...acc, [p.id]: p.hand }), {});
       const playerIds = resultPlayers.map(p => p.id);
@@ -111,6 +112,26 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       }
 
       resultPlayers.forEach(p => { p.score = scores[p.id]; });
+
+      const humanPlayer = resultPlayers.find(p => p.id === user.id);
+      if (humanPlayer) {
+          resultPlayers.forEach(p => {
+              if (p.id !== user.id) {
+                  const pairwiseScore = calculateSinglePairScore(humanPlayer.hand, p.hand);
+                  p.pairwiseScore = pairwiseScore;
+              }
+          });
+          humanPlayer.pairwiseScores = resultPlayers
+              .filter(p => p.id !== user.id)
+              .map(opponent => {
+                  const score = calculateSinglePairScore(humanPlayer.hand, opponent.hand);
+                  return {
+                      opponentName: opponent.phone,
+                      score: score,
+                  };
+              });
+      }
+
       setGameResult({ players: resultPlayers });
       setPlayerState('finished');
       return;
@@ -172,6 +193,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
       const deck = suits.flatMap(suit => ranks.map(rank => `${rank}_of_${suit}`));
       deck.sort(() => Math.random() - 0.5);
       const playerHand = deck.slice(0, 13).map(key => ({ key, ...parseCard(key) }));
+      setTrialHand(playerHand);
       setInitialLanes({
         top: playerHand.slice(0, 3),
         middle: playerHand.slice(3, 8),
@@ -249,6 +271,24 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
 
           // eslint-disable-next-line react/prop-types
           const humanPlayer = resultPlayers.find(p => p.id === user.id);
+          if (humanPlayer) {
+            resultPlayers.forEach(p => {
+              if (p.id !== user.id) {
+                const pairwiseScore = calculateSinglePairScore(humanPlayer.hand, p.hand);
+                p.pairwiseScore = pairwiseScore * pointMultiplier;
+              }
+            });
+            // Also calculate pairwise scores for the human player against others
+            humanPlayer.pairwiseScores = resultPlayers
+              .filter(p => p.id !== user.id)
+              .map(opponent => {
+                  const score = calculateSinglePairScore(humanPlayer.hand, opponent.hand);
+                  return {
+                      opponentName: opponent.name,
+                      score: score * pointMultiplier,
+                  };
+              });
+          }
           if (humanPlayer) {
             const humanPlayerHand = humanPlayer.hand;
             resultPlayers.forEach(player => {
@@ -349,14 +389,15 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
 
   const handleAutoSort = useCallback(async () => {
     if (isTrial) {
-      const allCards = [...topLane, ...middleLane, ...bottomLane];
-      const bestArrangement = findBestArrangement(allCards.map(c => c.key));
+      const arrangements = findBestArrangement(trialHand.map(c => c.key), 5);
+      const arrangement = arrangements[arrangementIndex % arrangements.length];
       const mappedArrangement = {
-        top: bestArrangement.front,
-        middle: bestArrangement.middle,
-        bottom: bestArrangement.back,
+        top: arrangement.front,
+        middle: arrangement.middle,
+        bottom: arrangement.back,
       };
       setInitialLanes(sanitizeHand(mappedArrangement));
+      setArrangementIndex(prev => prev + 1);
       return;
     }
     setIsLoading(true);
@@ -367,12 +408,11 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
         body: JSON.stringify({
           userId: user.id,
           roomId: roomId,
-          index: sortedHandIndex,
+          index: arrangementIndex,
         }),
       });
       const data = await response.json();
       if (data.success) {
-        console.log("Raw API response:", data.hand);
         // By setting hasPlayerInteracted to false before updating the lanes,
         // we ensure the new hand from the server is always rendered.
         setHasPlayerInteracted(false);
@@ -381,12 +421,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
           middle: data.hand.middle,
           bottom: data.hand.back,
         };
-        console.log("Mapped hand:", mappedHand);
-        const sanitized = sanitizeHand(mappedHand);
-        console.log("Sanitized hand:", sanitized);
-        setInitialLanes(sanitized);
+        setInitialLanes(sanitizeHand(mappedHand));
         // Cycle to the next index for the next click
-        setSortedHandIndex((prevIndex) => (prevIndex + 1) % 5);
+        setArrangementIndex((prevIndex) => (prevIndex + 1) % 5);
       } else {
         throw new Error(data.message || 'Failed to fetch pre-sorted hand.');
       }
@@ -395,7 +432,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
     } finally {
       setIsLoading(false);
     }
-  }, [roomId, user, sortedHandIndex, setInitialLanes, isTrial, topLane, middleLane, bottomLane]);
+  }, [roomId, user, arrangementIndex, setInitialLanes, isTrial, trialHand]);
 
   // eslint-disable-next-line react/prop-types
   const me = players.find(p => p.id === user.id);
