@@ -1,11 +1,11 @@
 import React from 'react';
-import Card from './Card';
+import PlayerHandPyramid from './PlayerHandPyramid'; // Import the new component
 import './GameResultModal.css';
 
-const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = false, user }) => {
-    console.log("[GameResultModal4P.jsx] Received result prop:", JSON.stringify(result, null, 2));
-
-    if (!result || !result.players || result.players.length === 0) return null;
+const GameResultModal4P = ({ result, onClose, onPlayAgain, isTrial = false, user }) => {
+    if (!result || !result.players || result.players.length === 0) {
+        return null;
+    }
 
     const me = result.players.find(p => p.id === user.id) || result.players[0];
     const myTotalScore = me.score || 0;
@@ -29,13 +29,11 @@ const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = f
                     {result.players.map((player) => {
                         const isMe = player.id === user.id;
                         const playerName = isMe ? '你' : (player.name || player.phone);
-                        const hand = player.hand;
-                        const lanes = hand ? [hand.top, hand.middle, hand.bottom] : [];
                         const playerScore = isMe ? player.score : player.pairwiseScore;
 
                         return (
                             <div key={player.id} className={`player-result-row ${isMe ? 'is-me' : ''}`}>
-                                <div className="result-hand-container">
+                                <div className="player-info-section">
                                     <div className="player-info">
                                         <span className="player-name">{playerName}</span>
                                         {playerScore !== undefined && (
@@ -64,15 +62,8 @@ const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = f
                                             </div>
                                         )}
                                     </div>
-                                    {lanes.map((laneCards, idx) => (
-                                        <div key={idx} className="result-cards-row">
-                                            {laneCards && laneCards.map((card, cardIdx) => (
-                                                <div key={cardIdx} className="result-card-wrapper">
-                                                    <Card card={card} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ))}
+                                    {/* Replace the old rendering logic with the new component */}
+                                    <PlayerHandPyramid hand={player.hand} />
                                 </div>
                             </div>
                         );
