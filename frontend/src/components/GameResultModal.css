@@ -170,35 +170,44 @@
     background-color: #005a4a;
 }
 
+/* New layout for pyramid stacking */
 .result-hand-container {
-  position: relative; /* Context for the absolute positioned player-info */
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center; /* Center the rows horizontally */
   padding: 10px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 12px;
+  min-height: 120px; /* Ensure enough space for the stacked cards */
 }
 
-/* Updated for Compact Card Stacking */
 .result-cards-row {
   display: flex;
-  justify-content: flex-start;
-  padding-left: 30px; /* Base padding */
+  justify-content: center; /* Center cards within the row */
+}
+
+/* Apply negative margin to the 2nd and 3rd rows to pull them up */
+.result-cards-row:nth-child(2) {
+  margin-top: -30px;
+}
+.result-cards-row:nth-child(3) {
+  margin-top: -30px;
 }
 
 .result-card-wrapper {
-  width: 40px; /* Smaller card width */
-  height: 56px; /* Maintain aspect ratio */
-  margin-left: -30px; /* Tighter overlap */
+  width: 40px;
+  height: 56px;
+  margin-left: -25px; /* Adjust for tighter horizontal stacking */
   transition: transform 0.2s ease-in-out;
-  box-shadow: -2px 0px 5px rgba(0,0,0,0.3); /* Add shadow for depth */
+  box-shadow: -2px 0px 5px rgba(0,0,0,0.3);
   border-radius: 4px;
 }
 
+/* Remove the hover effect as it interferes with the static pyramid display */
 .result-card-wrapper:hover {
-  transform: translateY(-10px) scale(1.1); /* Enlarge and lift card on hover */
-  z-index: 10;
+  transform: none;
+  z-index: auto;
 }
 
 .result-cards-row .card {
