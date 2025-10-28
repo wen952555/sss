@@ -3,6 +3,8 @@ import Card from './Card';
 import './GameResultModal.css';
 
 const GameResultModal4P = ({ result, onClose, onPlayAgain, gameType, isTrial = false, user }) => {
+    console.log("[GameResultModal4P.jsx] Received result prop:", JSON.stringify(result, null, 2));
+
     if (!result || !result.players || result.players.length === 0) return null;
 
     const me = result.players.find(p => p.id === user.id) || result.players[0];
