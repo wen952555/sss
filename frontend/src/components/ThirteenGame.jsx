@@ -242,6 +242,7 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
           handleHandData(data.hand);
         }
         if (data.gameStatus === 'finished' && data.result) {
+          console.log("[ThirteenGame.jsx] Raw result from API:", JSON.stringify(data.result, null, 2));
           const resultPlayers = data.result.players.map(p => ({
             ...p,
             hand: sanitizeHand(p.hand),
@@ -307,7 +308,9 @@ const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTr
             });
           }
 
-          setGameResult({ players: resultPlayers });
+          const finalGameResult = { players: resultPlayers };
+          console.log("[ThirteenGame.jsx] Processed gameResult before setting state:", JSON.stringify(finalGameResult, null, 2));
+          setGameResult(finalGameResult);
         }
       } else {
         setErrorMessage(data.message || '获取游戏状态失败');
