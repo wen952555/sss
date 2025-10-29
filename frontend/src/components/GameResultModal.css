@@ -71,29 +71,36 @@
 .pyramid-row.middle-row .pyramid-card-wrapper { z-index: 2; }
 .pyramid-row.bottom-row .pyramid-card-wrapper { z-index: 1; }
 
-
-/* 如果Card组件本身有边框或阴影，需要考虑调整 */
-/* 确保 Card 组件的样式没有阻止重叠效果 */
-/* 假设 Card 组件内部有 .card-image 或 .card-content 来显示牌面 */
-/*
-.Card {
-    width: var(--card-width);
-    height: var(--card-height);
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+.result-modal-footer {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2em;
-    font-weight: bold;
-    color: black;
+    justify-content: space-around;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
 }
-*/
 
+.result-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color: 0.3s;
+}
 
-/* 其他现有样式保持不变 */
-.result-modal-backdrop { /* ... */ }
-.result-modal-container { /* ... */ }
-/* ... (其他 GameResultModal 的样式) ... */
+.exit-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.exit-btn:hover {
+    background-color: #d32f2f;
+}
+
+.continue-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.continue-btn:hover {
+    background-color: #45a049;
+}
