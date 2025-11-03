@@ -1,3 +1,9 @@
+.play-seat {
+  margin-right: 8px !important;
+  width: 22% !important;
+  min-width: 70px !important;
+}
+
 @media (max-width: 480px) {
   .play-seat {
     margin-right: 4px !important;
