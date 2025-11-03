@@ -1,3 +1,25 @@
+.game-container {
+  background: #164b2e;
+  min-height: 100vh;
+  font-family: inherit;
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+.game-content {
+  width: 100%;
+  margin: 0 auto;
+  background: transparent;
+  border-radius: 22px;
+  padding: 16px;
+  border: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 650px;
+  box-sizing: border-box;
+}
+
 .play-seat {
   margin-right: 8px !important;
   width: 22% !important;
@@ -5,6 +27,9 @@
 }
 
 @media (max-width: 480px) {
+  .game-container {
+    padding: 15px;
+  }
   .play-seat {
     margin-right: 4px !important;
     width: 24% !important;
