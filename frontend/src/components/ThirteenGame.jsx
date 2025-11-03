@@ -7,6 +7,7 @@ import GameResultModal from './GameResultModal';
 
 const AI_NAMES = ['小明', '小红', '小刚'];
 
+const OUTER_MAX_WIDTH = 420;
 const PAI_DUN_HEIGHT = 133;
 const CARD_HEIGHT = Math.round(PAI_DUN_HEIGHT * 0.94);
 const CARD_WIDTH = Math.round(CARD_HEIGHT * 46 / 66);
