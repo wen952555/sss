@@ -5,7 +5,7 @@ import { getShuffledDeck, dealHands } from './DealCards';
 import './Play.css';
 import GameResultModal from './GameResultModal';
 
-const AI_NAMES = ['小明', '小红', '小刚'];
+const AI_NAMES = ['Player 2', 'Player 3', 'Player 4'];
 
 const OUTER_MAX_WIDTH = 420;
 const PAI_DUN_HEIGHT = 133;
@@ -146,7 +146,7 @@ export default function ThirteenGame({ onBackToLobby }) {
       return;
     }
     const allPlayers = [
-      { name: '你', head, middle, tail },
+      { name: 'You', head, middle, tail },
       ...aiPlayers.map(ai => ({ name: ai.name, head: ai.head, middle: ai.middle, tail: ai.tail }))
     ];
     const resScores = calcSSSAllScores(allPlayers);
@@ -184,7 +184,7 @@ export default function ThirteenGame({ onBackToLobby }) {
       >
         <div>{name}</div>
         <div style={{ marginTop: 4, fontSize: 13, fontWeight: 400 }}>
-          {isMe ? '你' : (aiDone ? '已理牌' : '理牌中…')}
+          {isMe ? 'You' : (aiDone ? 'Ready' : 'Processing...')}
         </div>
       </div>
     );
@@ -286,7 +286,7 @@ export default function ThirteenGame({ onBackToLobby }) {
               fontWeight: 500,
               userSelect: 'none'
             }}>
-              请放牌
+              Please place cards
             </div>
           }
           {renderPaiDunCards(arr, area)}
@@ -349,7 +349,7 @@ export default function ThirteenGame({ onBackToLobby }) {
             }}
             onClick={onBackToLobby}
           >
-            &lt; 退出房间
+            &lt; Exit Room
           </button>
           <div style={{
             flex: 1,
@@ -362,16 +362,16 @@ export default function ThirteenGame({ onBackToLobby }) {
             textShadow: '0 2px 7px #23e67a44'
           }}>
             <span role="img" aria-label="coin" style={{ fontSize: 18, marginRight: 4 }}>🪙</span>
-            积分: 100
+            Score: 100
           </div>
         </div>
         <div style={{ display: 'flex', marginBottom: 18, gap: 8 }}>
-          {renderPlayerSeat('你', 0, true)}
+          {renderPlayerSeat('You', 0, true)}
           {aiPlayers.map((ai, idx) => renderPlayerSeat(ai.name, idx + 1, false))}
         </div>
-        {renderPaiDun(head, '头道', 'head', '#23e67a')}
-        {renderPaiDun(middle, '中道', 'middle', '#23e67a')}
-        {renderPaiDun(tail, '尾道', 'tail', '#23e67a')}
+        {renderPaiDun(head, 'Top', 'head', '#23e67a')}
+        {renderPaiDun(middle, 'Middle', 'middle', '#23e67a')}
+        {renderPaiDun(tail, 'Bottom', 'tail', '#23e67a')}
         <div style={{ display: 'flex', gap: 12, marginBottom: 0, marginTop: 14 }}>
           <button
             style={{
@@ -392,7 +392,7 @@ export default function ThirteenGame({ onBackToLobby }) {
               transition: 'background 0.16s'
             }}
             onClick={handleReady}
-          >{isReady ? '取消' : '准备'}</button>
+          >{isReady ? 'Cancel' : 'Ready'}</button>
           <button
             style={{
               flex: 1,
@@ -409,7 +409,7 @@ export default function ThirteenGame({ onBackToLobby }) {
             }}
             onClick={handleSmartSplit}
             disabled={!isReady}
-          >智能理牌</button>
+          >Smart Split</button>
           <button
             style={{
               flex: 1,
@@ -428,7 +428,7 @@ export default function ThirteenGame({ onBackToLobby }) {
             }}
             onClick={isReady ? handleStartCompare : undefined}
             disabled={!isReady || aiProcessed.some(p=>!p)}
-          >比牌</button>
+          >Compare</button>
         </div>
         <div style={{ color: '#c3e1d1', textAlign: 'center', fontSize: 16, marginTop: 8, minHeight: 24 }}>
           {msg}
@@ -436,7 +436,7 @@ export default function ThirteenGame({ onBackToLobby }) {
         <GameResultModal
           show={showResult}
           players={[
-            { name: '你', head, middle, tail },
+            { name: 'You', head, middle, tail },
             ...aiPlayers
           ]}
           scores={scores}
