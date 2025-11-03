@@ -1,0 +1,11 @@
+@media (max-width: 480px) {
+  .play-seat {
+    margin-right: 4px !important;
+    width: 24% !important;
+    min-width: 0 !important;
+  }
+  .card-img {
+    width: 39px !important;
+    height: 57px !important;
+  }
+}
