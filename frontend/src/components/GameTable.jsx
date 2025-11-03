@@ -63,14 +63,24 @@ const GameTable = ({
           }
           <div className="pai-dun-cards-container">
             {cards.map((card, idx) => {
-              // The card object from the backend has rank and suit, not a single 'key'
-              const cardName = `${card.rank}_of_${card.suit}`;
+              // The card object only contains a 'key' property. We must parse it.
+              const parts = card.key.split('_of_');
+              const rank = parts[0];
+              const suit = parts[1];
+
+              const RANK_MAP = {
+                'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack',
+                'a': 'ace', 'k': 'king', 'q': 'queen', 'j': 'jack'
+              };
+              const rankName = RANK_MAP[rank] || rank;
+              const cardName = `${rankName}_of_${suit}`;
+
               return (
                 <img
-                  key={card.key} // Keep key for React's reconciliation
+                  key={card.key}
                   src={`/cards/${cardName}.svg`}
                   alt={cardName}
-                  className={`card-img ${selectedCards.includes(card) ? 'selected' : ''}`}
+                  className={`card-img ${selectedCards.some(c => c.key === card.key) ? 'selected' : ''}`}
                   style={{ zIndex: idx }}
                   onClick={(e) => { e.stopPropagation(); onCardClick(card); }}
                   draggable={false}
