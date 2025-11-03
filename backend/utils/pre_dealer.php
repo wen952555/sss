@@ -12,10 +12,8 @@ define('REPLENISH_THRESHOLD', 10);
  * Returns the appropriate deck of cards based on the number of players.
  */
 function get_deck_for_players($playerCount) {
-    if ($playerCount !== 4) {
-        error_log("Invalid player count requested: " . $playerCount . ". Only 4-player games are supported.");
-        return [];
-    }
+    // This function now supports any player count by returning a standard deck.
+    // The previous restriction for 4 players has been removed.
     $ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
     $standard_suits = ['spades', 'hearts', 'clubs', 'diamonds'];
     $deck = [];
@@ -33,10 +31,15 @@ function get_deck_for_players($playerCount) {
 function deal_new_game($playerCount) {
     $deck = get_deck_for_players($playerCount);
     shuffle($deck);
-    $hands = [];
+    $hands = array_fill(0, $playerCount, []);
     $cards_per_player = 13;
-    for ($i = 0; $i < $playerCount; $i++) {
-        $hands[] = array_slice($deck, $i * $cards_per_player, $cards_per_player);
+    for ($i = 0; $i < ($playerCount * $cards_per_player); $i++) {
+        if (!isset($deck[$i])) {
+            // This should not happen in a standard 52-card game with 4 or fewer players.
+            // But as a safeguard, we break the loop if we run out of cards.
+            break;
+        }
+        $hands[$i % $playerCount][] = $deck[$i];
     }
     return $hands;
 }
