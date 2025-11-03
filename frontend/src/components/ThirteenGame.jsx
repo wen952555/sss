@@ -7,7 +7,6 @@ import GameResultModal from './GameResultModal';
 
 const AI_NAMES = ['小明', '小红', '小刚'];
 
-const OUTER_MAX_WIDTH = 420;
 const PAI_DUN_HEIGHT = 133;
 const CARD_HEIGHT = Math.round(PAI_DUN_HEIGHT * 0.94);
 const CARD_WIDTH = Math.round(CARD_HEIGHT * 46 / 66);
@@ -314,25 +313,8 @@ export default function ThirteenGame({ onBackToLobby }) {
   }
 
   return (
-    <div style={{
-      background: 'transparent',
-      minHeight: '100vh',
-      fontFamily: 'inherit'
-    }}>
-      <div style={{
-        maxWidth: OUTER_MAX_WIDTH,
-        width: '100%',
-        margin: '30px auto',
-        background: 'transparent',
-        borderRadius: 22,
-        padding: 16,
-        border: 'none',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 650,
-        boxSizing: 'border-box'
-      }}>
+    <div className="game-container">
+      <div className="game-content">
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
           <button
             style={{
