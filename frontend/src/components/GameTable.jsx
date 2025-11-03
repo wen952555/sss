@@ -1,26 +1,21 @@
 import React from 'react';
-import Card from './Card';
 import Lane from './Lane';
 import GameResultModal from './GameResultModal';
-import './GameTable.css';
+import './Play.css'; // Using the new CSS file name
 
 const GameTable = ({
   gameType,
-  title,
   players,
   user,
   topLane,
   middleLane,
   bottomLane,
-  unassignedCards,
   selectedCards,
   LANE_LIMITS,
   playerState,
-  isGameInProgress,
   isLoading,
   gameResult,
   errorMessage,
-  isOnline,
   onBackToLobby,
   onReady,
   isReady,
@@ -31,71 +26,127 @@ const GameTable = ({
   onCloseResult,
   onPlayAgain,
 }) => {
+  const isConfirmDisabled = isLoading ||
+    playerState !== 'arranging' ||
+    topLane.length !== LANE_LIMITS.top ||
+    middleLane.length !== LANE_LIMITS.middle ||
+    bottomLane.length !== LANE_LIMITS.bottom;
 
-  const isConfirmDisabled = isLoading || 
-                            playerState !== 'arranging' || 
-                            topLane.length !== LANE_LIMITS.top || 
-                            middleLane.length !== LANE_LIMITS.middle || 
-                            bottomLane.length !== LANE_LIMITS.bottom;
+  const renderPlayerSeat = (p) => {
+    const isMe = p.id === user.id;
+    const playerClass = `player-seat ${isMe ? 'me' : ''} ${p.is_ready ? 'ready' : ''}`;
+    const displayName = isMe ? '你' : `玩家${p.phone.slice(-4)}`;
 
-  const renderPlayerName = (p) => {
-    if (String(p.id).startsWith('ai')) return p.phone;
-    if (p.id === user.id) return '你';
-    return `玩家${p.phone.slice(-4)}`;
+    let statusText = '等待中...';
+    if (playerState === 'waiting') {
+      statusText = p.is_ready ? '已准备' : '未准备';
+    } else if (playerState === 'arranging') {
+      statusText = '理牌中...';
+    } else if (playerState === 'submitted') {
+      statusText = p.has_submitted ? '已提交' : '理牌中...';
+    }
+
+    return (
+      <div key={p.id} className={playerClass}>
+        <div className="player-name">{displayName}</div>
+        <div className="player-status">{statusText}</div>
+      </div>
+    );
   };
 
-  return (
-    <div className="game-table-container">
-      <div className="game-table-header">
-        <button onClick={onBackToLobby} className="table-action-btn back-btn">&larr; 退出</button>
-        <div className="game-table-title">
-          {title}
-          <span className={`connection-status-indicator ${isOnline ? 'online' : 'offline'}`}></span>
+  const renderPaiDun = (cards, area) => {
+    return (
+      <div className="pai-dun-row" onClick={() => onLaneClick(area)}>
+        <div className="pai-dun-cards-wrapper">
+          {cards.length === 0 && playerState === 'arranging' &&
+            <div className="pai-dun-placeholder">请放牌</div>
+          }
+          <div className="pai-dun-cards-container">
+            {cards.map((card, idx) => {
+              // The card object from the backend has rank and suit, not a single 'key'
+              const cardName = `${card.rank}_of_${card.suit}`;
+              return (
+                <img
+                  key={card.key} // Keep key for React's reconciliation
+                  src={`/cards/${cardName}.svg`}
+                  alt={cardName}
+                  className={`card-img ${selectedCards.includes(card) ? 'selected' : ''}`}
+                  style={{ zIndex: idx }}
+                  onClick={(e) => { e.stopPropagation(); onCardClick(card); }}
+                  draggable={false}
+                />
+              );
+            })}
+          </div>
         </div>
-        {user && <div className="user-points">积分: {user.points}</div>}
+        <div className="pai-dun-label">
+          {area === 'top' ? '头道' : area === 'middle' ? '中道' : '尾道'} ({cards.length})
+        </div>
       </div>
+    );
+  }
 
-      {unassignedCards.length > 0 && (
-          <Lane title="待选牌" cards={unassignedCards} onCardClick={onCardClick} selectedCards={selectedCards} />
-      )}
+  return (
+    <div className="game-container">
+      <div className="game-content">
+        <div className="top-bar">
+          <button className="btn btn-back" onClick={onBackToLobby}>&lt; 退出房间</button>
+          <div className="score-display">
+            <span role="img" aria-label="coin" className="coin-icon">🪙</span>
+            积分: {user?.points ?? 'N/A'}
+          </div>
+        </div>
 
-      <div className="lanes-container">
-        <Lane title="头道" cards={topLane} onCardClick={onCardClick} onLaneClick={() => onLaneClick('top')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.top} />
-        <Lane title="中道" cards={middleLane} onCardClick={onCardClick} onLaneClick={() => onLaneClick('middle')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.middle} />
-        <Lane title="尾道" cards={bottomLane} onCardClick={onCardClick} onLaneClick={() => onLaneClick('bottom')} selectedCards={selectedCards} expectedCount={LANE_LIMITS.bottom} isDisabled={LANE_LIMITS.bottom === 0} />
-      </div>
+        <div className="player-seats-container">
+          {players.map(renderPlayerSeat)}
+        </div>
 
-      {errorMessage && <p className="error-text">{errorMessage}</p>}
-      <div className="game-table-footer">
-        {playerState === 'waiting' && (
-          <button
-            onClick={onReady}
-            className={`table-action-btn ready-btn ${isReady ? 'is-ready' : ''}`}
-            disabled={isLoading}
-          >
-            {isReady ? '取消准备' : '准备'}
-          </button>
+        {playerState === 'arranging' || playerState === 'submitted' ? (
+          <div className="pai-dun-area">
+            {renderPaiDun(topLane, 'top')}
+            {renderPaiDun(middleLane, 'middle')}
+            {renderPaiDun(bottomLane, 'bottom')}
+          </div>
+        ) : (
+          <div className="waiting-area">
+            <p>等待所有玩家准备开始游戏...</p>
+          </div>
         )}
-        {isGameInProgress && (
-          <>
+
+        <div className="message-display">{errorMessage}</div>
+
+        <div className="action-buttons-container">
+          {playerState === 'waiting' && (
             <button
-              onClick={onAutoSort}
-              className="table-action-btn sort-btn"
-              disabled={isLoading || playerState !== 'arranging'}
+              onClick={onReady}
+              className="btn btn-action"
+              disabled={isLoading}
             >
-              智能理牌
+              {isReady ? '取消准备' : '准备'}
             </button>
-            <button
-              onClick={onConfirm}
-              disabled={isConfirmDisabled}
-              className="table-action-btn confirm-btn"
-            >
-              {playerState === 'submitted' ? '等待开牌' : '确认比牌'}
-            </button>
-          </>
-        )}
+          )}
+          {(playerState === 'arranging' || playerState === 'submitted') && (
+            <>
+              <button
+                onClick={onAutoSort}
+                className="btn btn-action"
+                disabled={isLoading || playerState !== 'arranging'}
+              >
+                智能理牌
+              </button>
+              <button
+                onClick={onConfirm}
+                disabled={isConfirmDisabled}
+                className="btn btn-action btn-compare"
+              >
+                {playerState === 'submitted' ? '等待开牌' : '确认比牌'}
+              </button>
+            </>
+          )}
+        </div>
+
+        {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} user={user} />}
       </div>
-      {gameResult && <GameResultModal result={gameResult} onClose={onCloseResult} onPlayAgain={onPlayAgain} gameType={gameType} isTrial={gameType === 'trial'} user={user} />}
     </div>
   );
 };
