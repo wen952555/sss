@@ -2,21 +2,21 @@
   background: #164b2e;
   min-height: 100vh;
   font-family: inherit;
-  padding: 30px;
+  padding: 0;
   box-sizing: border-box;
 }
 
 .game-content {
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
   background: transparent;
-  border-radius: 22px;
+  border-radius: 0;
   padding: 16px;
   border: none;
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 650px;
+  min-height: 100vh;
   box-sizing: border-box;
 }
 
@@ -26,9 +26,34 @@
   min-width: 70px !important;
 }
 
+.pai-dun-cards-container {
+  position: relative;
+  height: 133px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+}
+
+.card-img {
+  position: relative;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: -20px;
+}
+
+.card-img.selected {
+  border: 2.5px solid #ff4444;
+  box-shadow: 0 0 16px 2px #ff4444cc;
+}
+
 @media (max-width: 480px) {
   .game-container {
-    padding: 15px;
+    padding: 0;
   }
   .play-seat {
     margin-right: 4px !important;
@@ -38,5 +63,6 @@
   .card-img {
     width: 39px !important;
     height: 57px !important;
+    margin-right: -25px;
   }
 }
