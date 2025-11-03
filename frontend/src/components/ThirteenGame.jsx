@@ -7,7 +7,6 @@ import GameResultModal from './GameResultModal';
 
 const AI_NAMES = ['小明', '小红', '小刚'];
 
-const OUTER_MAX_WIDTH = 420;
 const PAI_DUN_HEIGHT = 133;
 const CARD_HEIGHT = Math.round(PAI_DUN_HEIGHT * 0.94);
 const CARD_WIDTH = Math.round(CARD_HEIGHT * 46 / 66);
@@ -191,29 +190,8 @@ export default function ThirteenGame({ onBackToLobby }) {
   }
 
   function renderPaiDunCards(arr, area) {
-    const paddingX = 16;
-    const maxWidth = OUTER_MAX_WIDTH - 2 * paddingX - 70;
-    let overlap = Math.floor(CARD_WIDTH / 3);
-    if (arr.length > 1) {
-      const totalWidth = CARD_WIDTH + (arr.length - 1) * overlap;
-      if (totalWidth > maxWidth) {
-        overlap = Math.floor((maxWidth - CARD_WIDTH) / (arr.length - 1));
-      }
-    }
-    let lefts = [];
-    let startX = 0;
-    for (let i = 0; i < arr.length; ++i) {
-      lefts.push(startX + i * overlap);
-    }
     return (
-      <div style={{
-        position: 'relative',
-        height: PAI_DUN_HEIGHT,
-        width: '100%',
-        minWidth: 0,
-        boxSizing: 'border-box',
-        overflow: 'visible'
-      }}>
+      <div className="pai-dun-cards-container">
         {arr.map((card, idx) => {
           const isSelected = selected.area === area && selected.cards.includes(card);
           return (
@@ -221,22 +199,11 @@ export default function ThirteenGame({ onBackToLobby }) {
               key={card}
               src={`/cards/${card}.svg`}
               alt={card}
-              className="card-img"
+              className={`card-img ${isSelected ? 'selected' : ''}`}
               style={{
-                position: 'absolute',
-                left: lefts[idx],
-                top: (PAI_DUN_HEIGHT - CARD_HEIGHT) / 2,
                 zIndex: idx,
                 width: CARD_WIDTH,
                 height: CARD_HEIGHT,
-                borderRadius: 5,
-                border: isSelected ? '2.5px solid #ff4444' : 'none',
-                boxShadow: isSelected
-                  ? '0 0 16px 2px #ff4444cc'
-                  : 'none',
-                cursor: isReady ? 'pointer' : 'not-allowed',
-                background: '#fff',
-                transition: 'border .13s, box-shadow .13s'
               }}
               onClick={e => { if (isReady) handleCardClick(card, area, e); }}
               draggable={false}
