@@ -1,399 +1,474 @@
-import React, { useState } from 'react';
-import { findBestArrangement } from '../utils/trialModeUtils';
-import { calcSSSAllScores, isFoul } from '../utils/sssScorer';
-import { getShuffledDeck, dealHands } from './DealCards';
-import './Play.css';
-import GameResultModal from './GameResultModal';
+import { useState, useEffect, useCallback } from 'react';
+import { useCardArrangement } from '../hooks/useCardArrangement';
+import GameTable from './GameTable';
+import { isSssFoul, calculateSinglePairScore, compareSssArea } from '../utils/scorer.js';
+import { parseCard } from '../utils/pokerEvaluator.js';
+import { sanitizeHand } from '../utils/cardUtils.js';
+import { findBestArrangement } from '../utils/trialModeUtils.js';
 
-const AI_NAMES = ['小明', '小红', '小刚'];
+// eslint-disable-next-line react/prop-types
+const ThirteenGame = ({ onBackToLobby, user, roomId, gameType, playerCount, isTrial = false }) => {
+  const {
+    topLane,
+    middleLane,
+    bottomLane,
+    selectedCards,
+    LANE_LIMITS,
+    setInitialLanes,
+    handleCardClick,
+    handleLaneClick,
+  } = useCardArrangement();
 
-const PAI_DUN_HEIGHT = 133;
-const CARD_HEIGHT = Math.round(PAI_DUN_HEIGHT * 0.94);
-const CARD_WIDTH = Math.round(CARD_HEIGHT * 46 / 66);
+  const [playerState, setPlayerState] = useState('waiting');
+  const [players, setPlayers] = useState([]);
+  const [gameResult, setGameResult] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [trialHand, setTrialHand] = useState([]);
+  const [arrangementIndex, setArrangementIndex] = useState(0);
 
-export default function ThirteenGame({ onBackToLobby }) {
-  const [head, setHead] = useState([]);
-  const [middle, setMiddle] = useState([]);
-  const [tail, setTail] = useState([]);
-  const [selected, setSelected] = useState({ area: '', cards: [] });
-  const [msg, setMsg] = useState('');
-  const [aiPlayers, setAiPlayers] = useState([
-    { name: AI_NAMES[0], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-    { name: AI_NAMES[1], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-    { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-  ]);
-  const [showResult, setShowResult] = useState(false);
-  const [scores, setScores] = useState([0,0,0,0]);
-  const [isReady, setIsReady] = useState(false);
-  const [hasCompared, setHasCompared] = useState(false);
-  const [foulStates, setFoulStates] = useState([false, false, false, false]);
-  const [mySplits, setMySplits] = useState([]);
-  const [splitIndex, setSplitIndex] = useState(0);
-  const [aiProcessed, setAiProcessed] = useState([false, false, false]);
+  const [hasPlayerInteracted, setHasPlayerInteracted] = useState(false);
 
-  function handleReady() {
-    if (!isReady) {
-      const deck = getShuffledDeck();
-      const [myHand, ...aiHands] = dealHands(deck);
-      setHead(myHand.slice(0, 3));
-      setMiddle(myHand.slice(3, 8));
-      setTail(myHand.slice(8, 13));
-      setIsReady(true);
-      setHasCompared(false);
-      setMsg('');
-      setShowResult(false);
-      setScores([0,0,0,0]);
-      setSelected({ area: '', cards: [] });
-      setFoulStates([false, false, false, false]);
-      setMySplits([]); setSplitIndex(0);
-      setAiProcessed([false, false, false]);
-      setAiPlayers([
-        { name: AI_NAMES[0], isAI: true, cards13: aiHands[0], head: aiHands[0].slice(0,3), middle: aiHands[0].slice(3,8), tail: aiHands[0].slice(8,13), processed: false },
-        { name: AI_NAMES[1], isAI: true, cards13: aiHands[1], head: aiHands[1].slice(0,3), middle: aiHands[1].slice(3,8), tail: aiHands[1].slice(8,13), processed: false },
-        { name: AI_NAMES[2], isAI: true, cards13: aiHands[2], head: aiHands[2].slice(0,3), middle: aiHands[2].slice(3,8), tail: aiHands[2].slice(8,13), processed: false },
-      ]);
-      setTimeout(() => {
-        const splits = findBestArrangement(myHand, 5);
-        setMySplits(splits);
-        setSplitIndex(0);
-      }, 0);
-      aiHands.forEach((hand, idx) => {
-        setTimeout(() => {
-          setAiPlayers(old => {
-            const newAis = [...old];
-            const split = findBestArrangement(hand)[0];
-            newAis[idx] = { ...newAis[idx], head: split.front, middle: split.middle, tail: split.back, processed: true };
-            return newAis;
-          });
-          setAiProcessed(proc => {
-            const arr = [...proc];
-            arr[idx] = true;
-            return arr;
-          });
-        }, 400 + idx * 350);
-      });
+  const handleHandData = useCallback((handData) => {
+    if (hasPlayerInteracted) return; // Ignore server updates after user interaction
+
+    // The server now always sends a pre-arranged hand object.
+    // We sanitize it to ensure it's safe to use.
+    setInitialLanes(sanitizeHand(handData));
+  }, [setInitialLanes, hasPlayerInteracted]);
+
+  // Track user interaction
+  useEffect(() => {
+    if (topLane.length > 0 || middleLane.length > 0 || bottomLane.length > 0) {
+      setHasPlayerInteracted(true);
+    }
+  }, [topLane, middleLane, bottomLane]);
+
+  const handleConfirm = useCallback((hand = null) => {
+    let handToSend;
+    if (hand && hand.top && hand.top.length > 0 && hand.top[0].rank) {
+      handToSend = {
+        top: hand.top.map(c => `${c.rank}_of_${c.suit}`),
+        middle: hand.middle.map(c => `${c.rank}_of_${c.suit}`),
+        bottom: hand.bottom.map(c => `${c.rank}_of_${c.suit}`),
+      };
     } else {
-      setHead([]); setMiddle([]); setTail([]);
-      setAiPlayers([
-        { name: AI_NAMES[0], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-        { name: AI_NAMES[1], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-        { name: AI_NAMES[2], isAI: true, cards13: [], head: [], middle: [], tail: [], processed: false },
-      ]);
-      setIsReady(false);
-      setHasCompared(false);
-      setMsg('');
-      setShowResult(false);
-      setScores([0,0,0,0]);
-      setSelected({ area: '', cards: [] });
-      setFoulStates([false, false, false, false]);
-      setMySplits([]); setSplitIndex(0);
-      setAiProcessed([false, false, false]);
+      handToSend = {
+        top: topLane.map(c => c.key),
+        middle: middleLane.map(c => c.key),
+        bottom: bottomLane.map(c => c.key),
+      };
     }
-  }
 
-  function handleCardClick(card, area, e) {
-    e.stopPropagation();
-    setSelected(prev => {
-      if (prev.area !== area) return { area, cards: [card] };
-      const isSelected = prev.cards.includes(card);
-      let nextCards;
-      if (isSelected) {
-        nextCards = prev.cards.filter(c => c !== card);
-      } else {
-        nextCards = [...prev.cards, card];
-      }
-      return { area, cards: nextCards };
-    });
-  }
-
-  function moveTo(dest) {
-    if (!selected.cards.length) return;
-    let newHead = [...head], newMiddle = [...middle], newTail = [...tail];
-    const from = selected.area;
-    if (from === 'head') newHead = newHead.filter(c => !selected.cards.includes(c));
-    if (from === 'middle') newMiddle = newMiddle.filter(c => !selected.cards.includes(c));
-    if (from === 'tail') newTail = newTail.filter(c => !selected.cards.includes(c));
-    if (dest === 'head') newHead = [...newHead, ...selected.cards];
-    if (dest === 'middle') newMiddle = [...newMiddle, ...selected.cards];
-    if (dest === 'tail') newTail = [...newTail, ...selected.cards];
-    setHead(newHead); setMiddle(newMiddle); setTail(newTail);
-    setSelected({ area: dest, cards: [] });
-    setMsg('');
-  }
-
-  function handleSmartSplit() {
-    if (!mySplits.length) {
-      setMsg('智能分牌计算中，请稍候…');
+    if (isSssFoul(handToSend)) {
+      setErrorMessage('你的牌组不符合规则（倒水）');
       return;
     }
-    const nextIdx = (splitIndex + 1) % mySplits.length;
-    setSplitIndex(nextIdx);
-    const split = mySplits[nextIdx];
-    setHead(split.front);
-    setMiddle(split.middle);
-    setTail(split.back);
-    setMsg(`已切换智能分牌方案 ${nextIdx + 1}/${mySplits.length}`);
-  }
 
-  function handleStartCompare() {
-    if (aiProcessed.some(p => !p)) {
-      setMsg('请等待所有玩家提交理牌');
-      return;
-    }
-    if (head.length !== 3 || middle.length !== 5 || tail.length !== 5) {
-      setMsg('请按 3-5-5 张分配');
-      return;
-    }
-    const allPlayers = [
-      { name: '你', head, middle, tail },
-      ...aiPlayers.map(ai => ({ name: ai.name, head: ai.head, middle: ai.middle, tail: ai.tail }))
-    ];
-    const resScores = calcSSSAllScores(allPlayers);
-    const fouls = allPlayers.map(p => isFoul(p.head, p.middle, p.tail));
-    setScores(resScores);
-    setFoulStates(fouls);
-    setShowResult(true);
-    setHasCompared(true);
-    setMsg('');
-    setIsReady(false);
-  }
+    if (isTrial) {
+      const allCards = [...topLane, ...middleLane, ...bottomLane];
+      const deck = ['hearts', 'diamonds', 'clubs', 'spades']
+        .flatMap(suit => ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'].map(rank => `${rank}_of_${suit}`))
+        .filter(cardKey => !allCards.some(c => c.key === cardKey));
+      deck.sort(() => Math.random() - 0.5);
 
-  function renderPlayerSeat(name, idx, isMe) {
-    const aiDone = idx > 0 ? aiProcessed[idx - 1] : false;
-    return (
-      <div
-        key={name}
-        className="play-seat"
-        style={{
-          border: 'none',
-          borderRadius: 10,
-          marginRight: 8,
-          width: '22%',
-          minWidth: 70,
-          color: isMe ? '#23e67a' : (aiDone ? '#23e67a' : '#fff'),
-          background: isMe ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-          textAlign: 'center',
-          padding: '12px 0',
-          fontWeight: 700,
-          fontSize: 17,
-          boxShadow: "0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a",
-          boxSizing: 'border-box',
-          transition: 'color .28s'
-        }}
-      >
-        <div>{name}</div>
-        <div style={{ marginTop: 4, fontSize: 13, fontWeight: 400 }}>
-          {isMe ? '你' : (aiDone ? '已理牌' : '理牌中…')}
-        </div>
-      </div>
-    );
-  }
+      const aiHands = players
+        .filter(p => p.is_auto_managed)
+        .map((p, i) => {
+          const hand = deck.slice(i * 13, (i + 1) * 13);
+          const bestArrangement = findBestArrangement(hand);
+          const mappedArrangement = {
+            top: bestArrangement.front,
+            middle: bestArrangement.middle,
+            bottom: bestArrangement.back,
+          };
+          return { ...p, hand: mappedArrangement };
+        });
 
-  function renderPaiDunCards(arr, area) {
-    return (
-      <div className="pai-dun-cards-container">
-        {arr.map((card, idx) => {
-          const isSelected = selected.area === area && selected.cards.includes(card);
-          return (
-            <img
-              key={card}
-              src={`/cards/${card}.svg`}
-              alt={card}
-              className={`card-img ${isSelected ? 'selected' : ''}`}
-              style={{
-                zIndex: idx,
-                width: CARD_WIDTH,
-                height: CARD_HEIGHT,
-              }}
-              onClick={e => { if (isReady) handleCardClick(card, area, e); }}
-              draggable={false}
-            />
-          );
-        })}
-      </div>
-    );
-  }
+      const resultPlayers = [
+        { id: user.id, phone: user.phone, hand: handToSend, is_auto_managed: false },
+        ...aiHands,
+      ].map(p => ({ ...p, hand: sanitizeHand(p.hand) }));
 
-  function renderPaiDun(arr, label, area, color) {
-    return (
-      <div
-        style={{
-          width: '100%',
-          borderRadius: 14,
-          background: 'rgba(0, 255, 0, 0.1)',
-          minHeight: PAI_DUN_HEIGHT,
-          height: PAI_DUN_HEIGHT,
-          marginBottom: 20,
-          position: 'relative',
-          boxShadow: "0 4px 22px #23e67a44, 0 1.5px 5px #1a462a6a",
-          display: 'flex',
-          alignItems: 'center',
-          boxSizing: 'border-box',
-          paddingLeft: 16,
-          paddingRight: 70,
-        }}
-        onClick={() => { if (isReady) moveTo(area); }}
-      >
-        <div style={{
-          flex: 1,
-          height: '100%',
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          minWidth: 0,
-        }}>
-          {arr.length === 0 &&
-            <div style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              color: '#c3d6c6',
-              fontSize: 18,
-              fontWeight: 500,
-              userSelect: 'none'
-            }}>
-              请放牌
-            </div>
+      const playerHands = resultPlayers.reduce((acc, p) => ({ ...acc, [p.id]: p.hand }), {});
+      const playerIds = resultPlayers.map(p => p.id);
+      const scores = playerIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
+
+      try {
+        for (let i = 0; i < playerIds.length; i++) {
+          for (let j = i + 1; j < playerIds.length; j++) {
+            const p1_id = playerIds[i];
+            const p2_id = playerIds[j];
+            const pair_score = calculateSinglePairScore(playerHands[p1_id], playerHands[p2_id]);
+            scores[p1_id] += pair_score;
+            scores[p2_id] -= pair_score;
           }
-          {renderPaiDunCards(arr, area)}
-        </div>
-        <div
-          style={{
-            position: 'absolute',
-            right: 16,
-            top: 0,
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            color,
-            fontSize: 18,
-            fontWeight: 600,
-            pointerEvents: 'none',
-            background: 'transparent',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {label} ({arr.length})
-        </div>
-      </div>
-    );
-  }
+        }
+      } catch (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+
+      resultPlayers.forEach(p => { p.score = scores[p.id]; });
+
+      const humanPlayer = resultPlayers.find(p => p.id === user.id);
+      if (humanPlayer) {
+          resultPlayers.forEach(p => {
+              if (p.id !== user.id) {
+                  const pairwiseScore = calculateSinglePairScore(humanPlayer.hand, p.hand);
+                  p.pairwiseScore = pairwiseScore;
+              }
+          });
+          humanPlayer.pairwiseScores = resultPlayers
+              .filter(p => p.id !== user.id)
+              .map(opponent => {
+                  const score = calculateSinglePairScore(humanPlayer.hand, opponent.hand);
+                  return {
+                      opponentName: opponent.phone,
+                      score: score,
+                  };
+              });
+      }
+
+      setGameResult({ players: resultPlayers });
+      setPlayerState('finished');
+      return;
+    }
+
+
+    setIsLoading(true);
+    fetch('/api/?action=player_action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        // eslint-disable-next-line react/prop-types
+        userId: user.id,
+        roomId: roomId,
+        action: 'submit_hand',
+        hand: handToSend,
+      }),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to submit hand.');
+      }
+      setPlayerState('submitted');
+    })
+    .catch(error => {
+      setErrorMessage(error.message);
+    })
+    .finally(() => {
+      setIsLoading(false);
+    });
+  }, [roomId, user, topLane, middleLane, bottomLane, isTrial, players]);
+
+  const handleAutoConfirm = useCallback(() => {
+    const hand = {
+      top: topLane,
+      middle: middleLane,
+      bottom: bottomLane,
+    };
+    handleConfirm(hand);
+  }, [topLane, middleLane, bottomLane, handleConfirm]);
+
+  useEffect(() => {
+    if (isTrial) {
+      // Setup local trial game
+      const aiPlayers = [
+        { id: 1, phone: 'AI 1', is_ready: true, is_auto_managed: true },
+        { id: 2, phone: 'AI 2', is_ready: true, is_auto_managed: true },
+        { id: 3, phone: 'AI 3', is_ready: true, is_auto_managed: true },
+      ];
+      setPlayers([
+        { id: user.id, phone: user.phone, is_ready: true, is_auto_managed: false },
+        ...aiPlayers,
+      ]);
+      setPlayerState('arranging');
+      // Locally deal cards
+      const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+      const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      const deck = suits.flatMap(suit => ranks.map(rank => `${rank}_of_${suit}`));
+      deck.sort(() => Math.random() - 0.5);
+      const playerHand = deck.slice(0, 13).map(key => ({ key, ...parseCard(key) }));
+      setTrialHand(playerHand);
+      setInitialLanes({
+        top: playerHand.slice(0, 3),
+        middle: playerHand.slice(3, 8),
+        bottom: playerHand.slice(8, 13),
+      });
+    }
+  }, [isTrial, user, setInitialLanes]);
+
+  useEffect(() => {
+    if (playerState === 'arranging' && !isTrial) {
+      setTimeLeft(100);
+    } else {
+      setTimeLeft(null);
+    }
+  }, [playerState, isTrial]);
+
+  useEffect(() => {
+    if (timeLeft === null) return;
+    if (timeLeft === 0) {
+      handleAutoConfirm();
+      setTimeLeft(null);
+      return;
+    }
+    const intervalId = setInterval(() => {
+      setTimeLeft(t => (t > 0 ? t - 1 : 0));
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [timeLeft, handleAutoConfirm]);
+
+  const fetchGameStatus = useCallback(async () => {
+    if (isTrial || !roomId || !user) return;
+    try {
+      // eslint-disable-next-line react/prop-types
+      const url = `/api/?action=game_status&roomId=${roomId}&userId=${user.id}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.success) {
+        if (!isOnline) {
+          setIsOnline(true);
+          setErrorMessage('');
+        }
+        setPlayers(data.players);
+        setPlayerState(data.gameStatus);
+        if ((data.gameStatus === 'playing' || data.gameStatus === 'arranging' || data.gameStatus === 'submitted') && data.hand) {
+          handleHandData(data.hand);
+        }
+        if (data.gameStatus === 'finished' && data.result) {
+          const resultPlayers = data.result.players.map(p => ({
+            ...p,
+            hand: sanitizeHand(p.hand),
+          }));
+
+          const playerHands = resultPlayers.reduce((acc, p) => {
+            acc[p.id] = p.hand;
+            return acc;
+          }, {});
+
+          const playerIds = resultPlayers.map(p => p.id);
+          const scores = playerIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
+
+          for (let i = 0; i < playerIds.length; i++) {
+            for (let j = i + 1; j < playerIds.length; j++) {
+              const p1_id = playerIds[i];
+              const p2_id = playerIds[j];
+              const pair_score = calculateSinglePairScore(playerHands[p1_id], playerHands[p2_id]);
+              scores[p1_id] += pair_score;
+              scores[p2_id] -= pair_score;
+            }
+          }
+
+          const pointMultiplier = gameType === 'thirteen' ? 2 : (gameType === 'thirteen-5' ? 5 : (gameType === 'thirteen-10' ? 10 : 1));
+          resultPlayers.forEach(p => {
+            p.score = scores[p.id] * pointMultiplier;
+          });
+
+          // eslint-disable-next-line react/prop-types
+          const humanPlayer = resultPlayers.find(p => p.id === user.id);
+          if (humanPlayer) {
+            resultPlayers.forEach(p => {
+              if (p.id !== user.id) {
+                const pairwiseScore = calculateSinglePairScore(humanPlayer.hand, p.hand);
+                p.pairwiseScore = pairwiseScore * pointMultiplier;
+              }
+            });
+            // Also calculate pairwise scores for the human player against others
+            humanPlayer.pairwiseScores = resultPlayers
+              .filter(p => p.id !== user.id)
+              .map(opponent => {
+                  const score = calculateSinglePairScore(humanPlayer.hand, opponent.hand);
+                  return {
+                      opponentName: opponent.name,
+                      score: score * pointMultiplier,
+                  };
+              });
+          }
+          if (humanPlayer) {
+            const humanPlayerHand = humanPlayer.hand;
+            resultPlayers.forEach(player => {
+              // eslint-disable-next-line react/prop-types
+              if (player.id === user.id) {
+                player.laneResults = ['draw', 'draw', 'draw'];
+              } else {
+                player.laneResults = ['top', 'middle', 'bottom'].map(area => {
+                  const cmp = compareSssArea(player.hand[area], humanPlayerHand[area], area);
+                  if (cmp > 0) return 'win';
+                  if (cmp < 0) return 'loss';
+                  return 'draw';
+                });
+              }
+            });
+          }
+
+          setGameResult({ players: resultPlayers });
+        }
+      } else {
+        setErrorMessage(data.message || '获取游戏状态失败');
+      }
+    } catch (error) {
+      if (isOnline) {
+        setIsOnline(false);
+      }
+      console.error("Failed to fetch game status:", error);
+    }
+  }, [roomId, user, isOnline, gameType, handleHandData, isTrial]);
+
+  useEffect(() => {
+    if (isTrial) return;
+    fetchGameStatus();
+    const intervalId = setInterval(fetchGameStatus, 1000);
+    return () => clearInterval(intervalId);
+  }, [fetchGameStatus, isTrial]);
+
+  useEffect(() => {
+    if (isTrial || !gameResult || !gameResult.players) return;
+    const playerIds = gameResult.players.map(p => p.id).sort((a, b) => a - b);
+    // eslint-disable-next-line react/prop-types
+    if (user.id === playerIds[0]) {
+      const scores = gameResult.players.reduce((acc, p) => ({ ...acc, [p.id]: p.score }), {});
+      fetch('/api/?action=save_scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, scores }),
+      });
+    }
+  }, [gameResult, roomId, user, isTrial]);
+
+  const handleLeaveRoom = useCallback(() => {
+    if (isTrial || !user || !roomId) {
+      onBackToLobby();
+      return;
+    }
+    fetch('/api/?action=leave_room', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // eslint-disable-next-line react/prop-types
+      body: JSON.stringify({ userId: user.id, roomId }),
+    })
+    .then(() => {
+      onBackToLobby();
+    });
+  }, [user, roomId, onBackToLobby, isTrial]);
+
+  const handleReady = useCallback(async () => {
+    if (isTrial || !user || !roomId) return;
+    // eslint-disable-next-line react/prop-types
+    const me = players.find(p => p.id === user.id);
+    const currentIsReady = me ? me.is_ready : false;
+    const action = currentIsReady ? 'unready' : 'ready';
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/?action=player_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          // eslint-disable-next-line react/prop-types
+          userId: user.id,
+          roomId: roomId,
+          action: action,
+        }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || `Failed to ${action}.`);
+      }
+      await fetchGameStatus();
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, roomId, players, fetchGameStatus, isTrial]);
+
+  const handleAutoSort = useCallback(async () => {
+    if (isTrial) {
+      const arrangements = findBestArrangement(trialHand.map(c => c.key), 5);
+      const arrangement = arrangements[arrangementIndex % arrangements.length];
+      const mappedArrangement = {
+        top: arrangement.front,
+        middle: arrangement.middle,
+        bottom: arrangement.back,
+      };
+      setInitialLanes(sanitizeHand(mappedArrangement));
+      setArrangementIndex(prev => prev + 1);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/?action=auto_sort_hand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          roomId: roomId,
+          index: arrangementIndex,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        // By setting hasPlayerInteracted to false before updating the lanes,
+        // we ensure the new hand from the server is always rendered.
+        setHasPlayerInteracted(false);
+        const mappedHand = {
+          top: data.hand.front,
+          middle: data.hand.middle,
+          bottom: data.hand.back,
+        };
+        setInitialLanes(sanitizeHand(mappedHand));
+        // Cycle to the next index for the next click
+        setArrangementIndex((prevIndex) => (prevIndex + 1) % 5);
+      } else {
+        throw new Error(data.message || 'Failed to fetch pre-sorted hand.');
+      }
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [roomId, user, arrangementIndex, setInitialLanes, isTrial, trialHand]);
+
+  // eslint-disable-next-line react/prop-types
+  const me = players.find(p => p.id === user.id);
+  const isReady = me ? me.is_ready : false;
+  const isGameInProgress = playerState === 'arranging' || playerState === 'submitted';
 
   return (
-    <div className="game-container">
-      <div className="game-content">
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
-          <button
-            style={{
-              background: 'linear-gradient(90deg,#fff 60%,#e0fff1 100%)',
-              color: '#234',
-              fontWeight: 'bold',
-              border: 'none',
-              borderRadius: 9,
-              padding: '7px 22px',
-              cursor: 'pointer',
-              marginRight: 18,
-              fontSize: 17,
-              boxShadow: '0 1.5px 6px #23e67a30'
-            }}
-            onClick={onBackToLobby}
-          >
-            &lt; 退出房间
-          </button>
-          <div style={{
-            flex: 1,
-            textAlign: 'right',
-            color: '#23e67a',
-            fontWeight: 900,
-            fontSize: 21,
-            letterSpacing: 2,
-            marginRight: 8,
-            textShadow: '0 2px 7px #23e67a44'
-          }}>
-            <span role="img" aria-label="coin" style={{ fontSize: 18, marginRight: 4 }}>🪙</span>
-            积分: 100
-          </div>
-        </div>
-        <div style={{ display: 'flex', marginBottom: 18, gap: 8 }}>
-          {renderPlayerSeat('你', 0, true)}
-          {aiPlayers.map((ai, idx) => renderPlayerSeat(ai.name, idx + 1, false))}
-        </div>
-        {renderPaiDun(head, '头道', 'head', '#23e67a')}
-        {renderPaiDun(middle, '中道', 'middle', '#23e67a')}
-        {renderPaiDun(tail, '尾道', 'tail', '#23e67a')}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 0, marginTop: 14 }}>
-          <button
-            style={{
-              flex: 1,
-              background: !isReady
-                ? 'linear-gradient(90deg,#23e67a 80%,#43ffb8 100%)'
-                : '#b0b0b0',
-              color: '#fff',
-              fontWeight: 700,
-              border: 'none',
-              borderRadius: 10,
-              padding: '13px 0',
-              fontSize: 18,
-              cursor: !isReady || hasCompared ? 'pointer' : 'pointer',
-              boxShadow: !isReady
-                ? '0 2px 9px #23e67a22'
-                : 'none',
-              transition: 'background 0.16s'
-            }}
-            onClick={handleReady}
-          >{isReady ? '取消' : '准备'}</button>
-          <button
-            style={{
-              flex: 1,
-              background: '#23e67a',
-              color: '#fff',
-              fontWeight: 700,
-              border: 'none',
-              borderRadius: 10,
-              padding: '13px 0',
-              fontSize: 18,
-              cursor: isReady ? 'pointer' : 'not-allowed',
-              boxShadow: '0 2px 9px #23e67a44',
-              transition: 'background 0.16s'
-            }}
-            onClick={handleSmartSplit}
-            disabled={!isReady}
-          >智能理牌</button>
-          <button
-            style={{
-              flex: 1,
-              background: isReady
-                ? '#ffb14d'
-                : '#ddd',
-              color: isReady ? '#222' : '#fff',
-              fontWeight: 700,
-              border: 'none',
-              borderRadius: 10,
-              padding: '13px 0',
-              fontSize: 18,
-              cursor: isReady && aiProcessed.every(x=>x) ? 'pointer' : 'not-allowed',
-              boxShadow: isReady ? '0 2px 9px #ffb14d55' : 'none',
-              transition: 'background 0.16s'
-            }}
-            onClick={isReady ? handleStartCompare : undefined}
-            disabled={!isReady || aiProcessed.some(p=>!p)}
-          >比牌</button>
-        </div>
-        <div style={{ color: '#c3e1d1', textAlign: 'center', fontSize: 16, marginTop: 8, minHeight: 24 }}>
-          {msg}
-        </div>
-        <GameResultModal
-          show={showResult}
-          players={[
-            { name: '你', head, middle, tail },
-            ...aiPlayers
-          ]}
-          scores={scores}
-          foulStates={foulStates}
-          onClose={() => setShowResult(false)}
-        />
-      </div>
-    </div>
+    <GameTable
+      gameType={gameType}
+      title={`玩家: ${players.length} / ${playerCount || 4}`}
+      players={players}
+      user={user}
+      topLane={topLane}
+      middleLane={middleLane}
+      bottomLane={bottomLane}
+      unassignedCards={[]}
+      selectedCards={selectedCards}
+      LANE_LIMITS={LANE_LIMITS}
+      playerState={playerState}
+      timeLeft={timeLeft}
+      isLoading={isLoading}
+      gameResult={gameResult}
+      errorMessage={errorMessage}
+      isReady={isReady}
+      isGameInProgress={isGameInProgress}
+      isOnline={isOnline}
+      onBackToLobby={handleLeaveRoom}
+      onReady={handleReady}
+      onConfirm={() => handleConfirm()}
+      onAutoSort={handleAutoSort}
+      onCardClick={handleCardClick}
+      onLaneClick={handleLaneClick}
+      onCloseResult={() => setGameResult(null)}
+      onPlayAgain={handleLeaveRoom}
+    />
   );
-}
+};
+
+export default ThirteenGame;
