@@ -1,46 +1,38 @@
 from playwright.sync_api import sync_playwright, expect
 
 def run_verification(playwright):
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context()
-    page = context.new_page()
+    # Define devices
+    devices = {
+        "mobile": playwright.devices['iPhone 13 Pro'],
+        "desktop": {"viewport": {"width": 1920, "height": 1080}}
+    }
 
-    try:
-        # 1. Navigate to the app and start the trial game
-        page.goto("http://localhost:5173/", wait_until="domcontentloaded")
-        expect(page.locator('.lobby-container')).to_be_visible(timeout=15000)
-        page.locator('.game-card.thirteen-bg').first.click()
-        expect(page.locator('.mode-card.trial-mode')).to_be_visible(timeout=10000)
-        page.locator('.mode-card.trial-mode').click()
-        ready_button = page.get_by_role("button", name="点击准备")
-        expect(ready_button).to_be_visible(timeout=10000)
-        ready_button.click()
-        expect(page.locator('.lane-wrapper').nth(0).locator('.card-wrapper').first).to_be_visible(timeout=10000)
+    for name, device_config in devices.items():
+        print(f"--- Starting {name} verification ---")
+        browser = playwright.chromium.launch(headless=True)
+        context = browser.new_context(**device_config)
+        page = context.new_page()
 
-        # 2. Select all cards from the middle lane and move them to the top lane
-        middle_lane_cards = page.locator('.lane-wrapper').nth(1).locator('.card-wrapper')
-        for i in range(5):
-            middle_lane_cards.nth(i).click()
+        try:
+            # 1. Navigate to the app and start the trial game
+            page.goto("http://localhost:5173/", wait_until="domcontentloaded")
+            expect(page.locator('.lobby-container')).to_be_visible(timeout=15000)
 
-        top_lane = page.locator('.lane-wrapper').nth(0)
-        top_lane.click()
+            # 2. Click the trial button
+            trial_button = page.locator('.trial-btn')
+            expect(trial_button).to_be_visible(timeout=10000)
+            trial_button.click()
 
-        # 3. Take a screenshot to show the overfilled lane
-        page.screenshot(path="verification_overfilled.png")
+            # 3. Wait for game table to be visible
+            expect(page.locator('.game-container')).to_be_visible(timeout=10000)
 
-        # 4. Click the confirm button
-        confirm_button = page.get_by_role("button", name="确认比牌")
-        confirm_button.click()
+            # 4. Take screenshot
+            screenshot_path = f"/home/swebot/jules-scratch/verification/verification_buttons_{name}.png"
+            page.screenshot(path=screenshot_path)
+            print(f"{name.capitalize()} screenshot saved as {screenshot_path}")
 
-        # 5. Assert that an error message is displayed
-        error_message = page.locator('.error-text')
-        expect(error_message).to_contain_text("牌道数量错误！")
-
-        # 6. Take a screenshot of the error
-        page.screenshot(path="verification_error.png")
-
-    finally:
-        browser.close()
+        finally:
+            browser.close()
 
 with sync_playwright() as p:
     run_verification(p)
