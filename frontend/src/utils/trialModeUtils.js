@@ -11,7 +11,7 @@ const check_for_dragon = (hand) => {
         unique_ranks.sort((a, b) => a - b);
         if (unique_ranks[12] - unique_ranks[0] === 12) {
             const sortedHand = parsedHand.sort((a, b) => a.value - b.value).map(c => `${c.rank}_of_${c.suit}`);
-            return { front: sortedHand.slice(0, 3), middle: sortedHand.slice(3, 8), back: sortedHand.slice(8, 13) };
+            return { top: sortedHand.slice(0, 3), middle: sortedHand.slice(3, 8), bottom: sortedHand.slice(8, 13) };
         }
     }
     return null;
@@ -43,9 +43,9 @@ const check_for_three_flushes = (hand) => {
         }
 
         return {
-            front: frontCards.map(c => `${c.rank}_of_${c.suit}`),
+            top: frontCards.map(c => `${c.rank}_of_${c.suit}`),
             middle: middleCards.map(c => `${c.rank}_of_${c.suit}`),
-            back: backCards.map(c => `${c.rank}_of_${c.suit}`)
+            bottom: backCards.map(c => `${c.rank}_of_${c.suit}`)
         };
     }
     return null;
@@ -70,9 +70,9 @@ const check_for_six_and_a_half_pairs = (hand) => {
         const sortedHand = [single, ...pairCards].map(c => `${c.rank}_of_${c.suit}`);
 
         return {
-          front: sortedHand.slice(0, 3),
+          top: sortedHand.slice(0, 3),
           middle: sortedHand.slice(3, 8),
-          back: sortedHand.slice(8, 13)
+          bottom: sortedHand.slice(8, 13)
         };
     }
     return null;
@@ -127,7 +127,7 @@ export const findBestArrangement = (hand, count = 1) => {
 
             if (compareHands(middleEval, backEval) <= 0 && compareHands(frontEval, middleEval) <= 0) {
                 const totalScore = backEval.rank * 10000 + middleEval.rank * 100 + frontEval.rank;
-                arrangements.push({ score: totalScore, arrangement: { front, middle, back } });
+                arrangements.push({ score: totalScore, arrangement: { top: front, middle, bottom: back } });
             }
         }
     }
@@ -139,7 +139,7 @@ export const findBestArrangement = (hand, count = 1) => {
     for (const item of arrangements) {
         const key = JSON.stringify(item.arrangement);
         if (!seen.has(key)) {
-            unique_arrangements.push(item.arrangement);
+            unique_arrangements.push(item);
             seen.add(key);
         }
     }
@@ -148,9 +148,12 @@ export const findBestArrangement = (hand, count = 1) => {
         const sortedHand = hand.map(parseCard).filter(Boolean).sort((a, b) => b.value - a.value);
         const cardKeys = sortedHand.map(c => `${c.rank}_of_${c.suit}`);
         return [{
-          front: cardKeys.slice(0, 3),
-          middle: cardKeys.slice(3, 8),
-          back: cardKeys.slice(8, 13),
+          score: 0,
+          arrangement: {
+            top: cardKeys.slice(0, 3),
+            middle: cardKeys.slice(3, 8),
+            bottom: cardKeys.slice(8, 13),
+          }
         }];
     }
 
