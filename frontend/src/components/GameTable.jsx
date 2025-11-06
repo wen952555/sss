@@ -63,11 +63,8 @@ const GameTable = ({
           }
           <div className="pai-dun-cards-container">
             {cards.map((card, idx) => {
-              if (!card || !card.key) return null;
-              // The card object only contains a 'key' property. We must parse it.
-              const parts = card.key.split('_of_');
-              const rank = parts[0];
-              const suit = parts[1];
+              if (!card || !card.rank || !card.suit) return null;
+              const { rank, suit } = card;
 
               const RANK_MAP = {
                 'A': 'ace', 'K': 'king', 'Q': 'queen', 'J': 'jack',
@@ -78,10 +75,10 @@ const GameTable = ({
 
               return (
                 <img
-                  key={card.key}
+                  key={`${rank}_of_${suit}`}
                   src={`/cards/${cardName}.svg`}
                   alt={cardName}
-                  className={`card-img ${selectedCards.some(c => c.key === card.key) ? 'selected' : ''}`}
+                  className={`card-img ${selectedCards.some(c => c.rank === rank && c.suit === suit) ? 'selected' : ''}`}
                   style={{ zIndex: idx }}
                   onClick={(e) => { e.stopPropagation(); onCardClick(card); }}
                   draggable={false}
