@@ -102,13 +102,13 @@ const evaluate3Cards = (hand) => {
 
 export const findBestArrangement = (hand, count = 1) => {
     const dragon = check_for_dragon(hand);
-    if (dragon) return [dragon];
+    if (dragon) return [{ score: 100000, arrangement: dragon }];
 
     const six_and_a_half_pairs = check_for_six_and_a_half_pairs(hand);
-    if (six_and_a_half_pairs) return [six_and_a_half_pairs];
+    if (six_and_a_half_pairs) return [{ score: 50000, arrangement: six_and_a_half_pairs }];
 
     const three_flushes = check_for_three_flushes(hand);
-    if (three_flushes) return [three_flushes];
+    if (three_flushes) return [{ score: 75000, arrangement: three_flushes }];
 
     const all5CardCombosBack = getCombinations(hand, 5);
     const arrangements = [];
