@@ -20,8 +20,8 @@
   width: 100%;
   margin: 0;
   padding: 1rem;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
   min-height: 100vh;
   box-sizing: border-box;
 }
@@ -87,10 +87,9 @@
 /* Pai Dun Area (Card Rows) */
 .pai-dun-area {
   margin-bottom: 1rem;
-  flex-grow: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+  justify-content: flex-start;
 }
 
 .pai-dun-row {
@@ -98,7 +97,7 @@
   border-radius: 14px;
   background: rgba(0, 255, 0, 0.1);
   min-height: 10vh;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   position: relative;
   box-shadow: none; /* Removed glow */
   border: 1px solid rgba(35, 230, 122, 0.4);
@@ -176,7 +175,6 @@
 
 /* Waiting Area */
 .waiting-area {
-  flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,7 +189,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: auto;
   padding-top: 1rem;
 }
 
