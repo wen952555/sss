@@ -118,12 +118,14 @@ const ThirteenGame = () => {
   };
 
   const handleAutoSort = () => {
-    const arrangement = findBestArrangement(unassignedCards.map(c => `${c.rank}_of_${c.suit}`));
-    const sanitizedArrangement = sanitizeHand(arrangement);
-    setTopLane(sanitizedArrangement.top);
-    setMiddleLane(sanitizedArrangement.middle);
-    setBottomLane(sanitizedArrangement.bottom);
-    setUnassignedCards([]);
+    const bestArrangements = findBestArrangement(unassignedCards.map(c => `${c.rank}_of_${c.suit}`));
+    if (bestArrangements.length > 0) {
+      const sanitizedArrangement = sanitizeHand(bestArrangements[0].arrangement);
+      setTopLane(sanitizedArrangement.top);
+      setMiddleLane(sanitizedArrangement.middle);
+      setBottomLane(sanitizedArrangement.bottom);
+      setUnassignedCards([]);
+    }
   };
   
   const handlePlayAgain = () => {
