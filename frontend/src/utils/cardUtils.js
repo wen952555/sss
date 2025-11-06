@@ -11,7 +11,7 @@ export const areCardsEqual = (card1, card2) =>
  */
 export const sanitizeHand = (hand) => {
   if (!hand) {
-    return { top: [], middle: [], bottom: [] };
+    return { top: [], middle: [], bottom: [], unassigned: [] };
   }
 
   const sanitizeLane = (lane) =>
@@ -23,5 +23,6 @@ export const sanitizeHand = (hand) => {
     top: sanitizeLane(hand.top),
     middle: sanitizeLane(hand.middle),
     bottom: sanitizeLane(hand.bottom),
+    unassigned: sanitizeLane(hand.unassigned),
   };
 };

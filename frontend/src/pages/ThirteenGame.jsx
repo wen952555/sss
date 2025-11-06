@@ -4,6 +4,7 @@ import useGame from '../hooks/useGame';
 import { useParams, useNavigate } from 'react-router-dom';
 import { findBestArrangement } from '../utils/trialModeUtils';
 import { parseCard } from '../utils/pokerEvaluator';
+import { sanitizeHand } from '../utils/cardUtils';
 
 const ThirteenGame = () => {
   const { gameId } = useParams();
@@ -31,7 +32,8 @@ const ThirteenGame = () => {
     if (isTrial && game && game.players) {
       const player = game.players.find(p => p.id === user.id);
       if (player && player.hand) {
-        setUnassignedCards(player.hand.map(parseCard).filter(Boolean));
+        const sanitizedHand = sanitizeHand({ top: [], middle: [], bottom: [], unassigned: player.hand });
+        setUnassignedCards(sanitizedHand.unassigned);
         setPlayerState('arranging');
         setIsGameInProgress(true);
       }
@@ -117,9 +119,10 @@ const ThirteenGame = () => {
 
   const handleAutoSort = () => {
     const arrangement = findBestArrangement(unassignedCards.map(c => `${c.rank}_of_${c.suit}`));
-    setTopLane(arrangement.top.map(parseCard).filter(Boolean));
-    setMiddleLane(arrangement.middle.map(parseCard).filter(Boolean));
-    setBottomLane(arrangement.bottom.map(parseCard).filter(Boolean));
+    const sanitizedArrangement = sanitizeHand(arrangement);
+    setTopLane(sanitizedArrangement.top);
+    setMiddleLane(sanitizedArrangement.middle);
+    setBottomLane(sanitizedArrangement.bottom);
     setUnassignedCards([]);
   };
   
