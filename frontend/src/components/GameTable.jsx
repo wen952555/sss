@@ -63,6 +63,7 @@ const GameTable = ({
           }
           <div className="pai-dun-cards-container">
             {cards.map((card, idx) => {
+              if (!card || !card.key) return null;
               // The card object only contains a 'key' property. We must parse it.
               const parts = card.key.split('_of_');
               const rank = parts[0];

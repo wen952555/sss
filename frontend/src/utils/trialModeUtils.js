@@ -148,12 +148,12 @@ export const findBestArrangement = (hand, count = 1) => {
         const sortedHand = hand.map(parseCard).filter(Boolean).sort((a, b) => b.value - a.value);
         const cardKeys = sortedHand.map(c => `${c.rank}_of_${c.suit}`);
         return [{
-          score: 0,
-          arrangement: {
-            top: cardKeys.slice(0, 3),
-            middle: cardKeys.slice(3, 8),
-            bottom: cardKeys.slice(8, 13),
-          }
+            score: 0,
+            arrangement: {
+                top: cardKeys.slice(0, 3),
+                middle: cardKeys.slice(3, 8),
+                bottom: cardKeys.slice(8, 13),
+            }
         }];
     }
 
