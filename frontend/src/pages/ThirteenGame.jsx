@@ -135,7 +135,8 @@ const ThirteenGame = () => {
     // In a real app, you might need to fetch a new hand or reset the game state on the server
     if (isTrial) {
       const player = game.players.find(p => p.id === user.id);
-      setUnassignedCards(player.hand.map(parseCard).filter(Boolean));
+      const sanitizedHand = sanitizeHand({ top: [], middle: [], bottom: [], unassigned: player.hand });
+      setUnassignedCards(sanitizedHand.unassigned);
       setPlayerState('arranging');
     } else {
       // For online games, you might navigate to a new game or back to the lobby
@@ -143,11 +144,22 @@ const ThirteenGame = () => {
     }
   };
 
+  const sanitizedGame = React.useMemo(() => {
+    if (!game) return null;
+    return {
+      ...game,
+      players: game.players.map(p => ({
+        ...p,
+        hand: sanitizeHand(p.hand),
+      })),
+    };
+  }, [game]);
+
   return (
     <GameTable
       gameType={isTrial ? 'trial' : 'online'}
       title={isTrial ? '十三水-试玩' : (game ? game.name : '加载中...')}
-      players={game ? game.players : []}
+      players={sanitizedGame ? sanitizedGame.players : []}
       user={user}
 
       topLane={topLane}
