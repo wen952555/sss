@@ -1,22 +1,22 @@
 export default {
-  // 1. Añadir 'context' a los argumentos de la función
-  async fetch(request, env, context) {
+  // 修正：对于 Service Worker 模式，fetch 签名只接收 request 和 env
+  async fetch(request, env) {
     try {
       const url = new URL(request.url);
 
-      // Especialmente manejar la solicitud /favicon.ico, devolver 204 No Content
+      // 特殊处理 /favicon.ico 请求，直接返回 204 No Content
       if (url.pathname === '/favicon.ico') {
         return new Response(null, { status: 204 });
       }
 
-      // Solo solicitudes de proxy que comiencen con /api/
+      // 只代理对 /api/ 的请求
       if (url.pathname.startsWith('/api/')) {
-        // Nombre de dominio del backend
+        // 后端域名
         const backendUrl = 'https://9525.ip-ddns.com'; 
         
         const newUrl = new URL(backendUrl + url.pathname + url.search);
 
-        // Construir una nueva solicitud para enviar al backend
+        // 构造一个新的请求，发往后端
         const newRequest = new Request(newUrl, {
           method: request.method,
           headers: request.headers,
@@ -24,13 +24,13 @@ export default {
           redirect: 'follow',
         });
         
-        // Añadir alguna información de cabecera personalizada, opcional
+        // 添加一些自定义头信息，可选
         newRequest.headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP'));
 
         try {
           const response = await fetch(newRequest);
           
-          // Se necesita crear una nueva Response para modificar las cabeceras CORS
+          // 需要创建一个新的Response来修改CORS头
           const newHeaders = new Headers(response.headers);
           newHeaders.set('Access-Control-Allow-Origin', url.origin);
           newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -48,11 +48,11 @@ export default {
         }
       }
 
-      // 2. Para solicitudes que no son de /api/, usar context.next() para que Cloudflare Pages maneje los archivos estáticos
-      return context.next(request);
+      // 修正：对于非 /api/ 请求，直接使用全局的 fetch(request) 让 Cloudflare Pages 处理静态文件
+      return fetch(request);
 
     } catch (e) {
-      // Este es un bloque catch global para capturar cualquier excepción no capturada
+      // 这是一个全局的catch块，用于捕获任何未被捕获的异常
       console.error('Global catch (Worker top-level) error:', e);
       return new Response(`A critical error occurred in the Worker: ${e.message}`, { status: 500 });
     }
