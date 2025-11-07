@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-// import { getTablesStatus } from '../api'; // 假设API已封装
+import styles from './Lobby.module.css';
 
 const Lobby = ({ onEnterGame }) => {
     const [tables, setTables] = useState([]);
@@ -9,10 +10,9 @@ const Lobby = ({ onEnterGame }) => {
     useEffect(() => {
         const fetchStatus = async () => {
             try {
-                // 前端请求的是代理路径，而不是后端真实域名
                 const response = await fetch('/api/tables/status');
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(`Network response was not ok: ${response.statusText}`);
                 }
                 const data = await response.json();
                 setTables(data.tables);
@@ -24,49 +24,52 @@ const Lobby = ({ onEnterGame }) => {
         };
 
         fetchStatus();
-        // 可以设置一个定时器来轮询桌子状态
-        const intervalId = setInterval(fetchStatus, 5000); // 每5秒刷新一次
+        const intervalId = setInterval(fetchStatus, 5000);
 
-        return () => clearInterval(intervalId); // 组件卸载时清除定时器
+        return () => clearInterval(intervalId);
     }, []);
 
-    if (loading) return <div>加载中...</div>;
-    if (error) return <div>错误: {error}</div>;
+    if (loading) return <div className={styles.loading}>加载中...</div>;
+    if (error) return <div className={styles.error}>错误: {error}</div>;
 
     const renderTable = (table) => {
         const isFull = table.status === 'in_game' || table.players_current >= table.players_needed;
-        const text = isFull 
+        const buttonText = isFull
             ? `游戏中 (${table.players_current}/${table.players_needed})` 
             : `加入 (${table.players_current}/${table.players_needed})`;
 
         return (
-            <div key={table.table_id} className="table-card">
-                <h3>{table.score_type}分场 - {table.table_number}号桌</h3>
+            <div
+                key={table.table_id}
+                className={styles.tableCard}
+                onClick={() => !isFull && onEnterGame(table.table_id)}
+            >
+                <h3 className={styles.tableName}>{`${table.score_type}分场 - ${table.table_number}号桌`}</h3>
                 <button 
-                    onClick={() => !isFull && onEnterGame(table.table_id)} 
                     disabled={isFull}
                 >
-                    {text}
+                    {buttonText}
                 </button>
             </div>
         );
     }
     
-    // 分组渲染桌子
     const scoreGroups = tables.reduce((acc, table) => {
-        acc[table.score_type] = acc[table.score_type] || [];
-        acc[table.score_type].push(table);
+        const { score_type } = table;
+        if (!acc[score_type]) {
+            acc[score_type] = [];
+        }
+        acc[score_type].push(table);
         return acc;
     }, {});
 
-
     return (
-        <div className="lobby-container">
-            <h1>游戏大厅</h1>
+        <div className={styles.lobbyContainer}>
+            <h1 className={styles.title}>游戏大厅</h1>
             {Object.entries(scoreGroups).map(([score, tables]) => (
-                 <div key={score} className="score-group">
-                    <h2>{score}分场</h2>
-                    <div className="tables-wrapper">
+                 <div key={score} className={styles.scoreGroup}>
+                    <h2 className={styles.scoreTitle}>{`${score}分场`}</h2>
+                    <div className={styles.tablesWrapper}>
                         {tables.map(renderTable)}
                     </div>
                  </div>

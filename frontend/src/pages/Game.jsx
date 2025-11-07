@@ -1,21 +1,20 @@
+
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
-// import { getNextCard, submitHand } from '../api';
+import styles from './Game.module.css';
 
-const Game = ({ tableId }) => {
-    const [hand, setHand] = useState([]); // 玩家手牌
-    const [gameState, setGameState] = useState(null); // 游戏状态
+const Game = ({ tableId, onBack }) => {
+    const [hand, setHand] = useState([]);
+    const [gameState, setGameState] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // 模拟获取手牌
     useEffect(() => {
         const fetchFirstHand = () => {
             setLoading(true);
-            // 模拟API返回的手牌数据，例如 ['s1', 's2', 's3', ..., 's13']
-            const mockHand = Array.from({ length: 13 }, (_, i) => `s${i + 1}`);
+            const mockHand = Array.from({ length: 13 }, (_, i) => ({ rank: (i + 1).toString(), suit: 'spades' }));
             setHand(mockHand);
             setGameState({
-                tableName: '2分场 - 1号桌',
+                tableName: `桌号 ${tableId}`,
                 round: '1/20'
             });
             setLoading(false);
@@ -23,12 +22,8 @@ const Game = ({ tableId }) => {
         fetchFirstHand();
     }, [tableId]);
     
-    // TODO: 实现理牌逻辑 (拖拽排序等)
-
     const handleSubmit = () => {
         alert('提交牌型！（逻辑待实现）');
-        // const sortedHand = { front: [...], middle: [...], back: [...] };
-        // submitHand({ tableId, hand: sortedHand });
     };
 
     if (loading) {
@@ -36,23 +31,23 @@ const Game = ({ tableId }) => {
     }
 
     return (
-        <div className="game-container">
-            <div className="game-info">
-                <h2>{gameState.tableName}</h2>
+        <div className={styles.gameContainer}>
+            <button onClick={onBack} className={styles.backButton}>返回大厅</button>
+            <div className={styles.gameInfo}>
+                <h2 className={styles.title}>{gameState.tableName}</h2>
                 <p>进度: {gameState.round}</p>
             </div>
             
-            <div className="player-hand-area">
+            <div className={styles.playerHandArea}>
                 <h3>我的手牌</h3>
-                <div className="cards-display">
-                    {hand.map(cardCode => (
-                        <Card key={cardCode} cardCode={cardCode} />
+                <div className={styles.cardsDisplay}>
+                    {hand.map((card, index) => (
+                        <Card key={index} card={card} />
                     ))}
                 </div>
             </div>
 
-            <div className="action-area">
-                {/* 未来这里是三墩牌的放置区域 */}
+            <div className={styles.actionArea}>
                 <button onClick={handleSubmit}>确定牌型</button>
             </div>
         </div>

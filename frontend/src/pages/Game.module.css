@@ -1,0 +1,34 @@
+
+.gameContainer {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: var(--card-background);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.title {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 2rem;
+}
+
+.backButton {
+    margin-bottom: 2rem;
+}
+
+.gameArea {
+    /* Styles for the game area will be added here */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .gameContainer {
+        padding: 1rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+}
