@@ -2,6 +2,11 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // 特殊处理 /favicon.ico 请求，直接返回 204 No Content
+    if (url.pathname === '/favicon.ico') {
+      return new Response(null, { status: 204 });
+    }
+
     // 只代理对 /api/ 的请求
     if (url.pathname.startsWith('/api/')) {
       // 后端域名
