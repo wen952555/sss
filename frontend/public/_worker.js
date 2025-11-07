@@ -41,6 +41,7 @@ export default {
         });
 
       } catch (e) {
+        console.error('Worker fetch error:', e);
         return new Response('Backend server error', { status: 502 });
       }
     }
