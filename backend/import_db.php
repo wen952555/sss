@@ -41,7 +41,9 @@ CREATE TABLE `point_transfers` (
   `amount` BIGINT NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`from_user_id`) REFERENCES `users`(`id`),
-  FOREIGN KEY (`to_user_id`) REFERENCES `users`(`id`)
+  FOREIGN KEY (`to_user_id`) REFERENCES `users`(`id`),
+  INDEX `idx_from_user_id` (`from_user_id`),
+  INDEX `idx_to_user_id` (`to_user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 预生成牌局表
@@ -67,7 +69,9 @@ CREATE TABLE `batch_player_status` (
   `completed_at` TIMESTAMP NULL DEFAULT NULL,
   `settlement_group_id` INT UNSIGNED DEFAULT NULL,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`),
-  UNIQUE KEY `player_batch` (`user_id`, `table_id`, `batch_number`)
+  UNIQUE KEY `player_batch` (`user_id`, `table_id`, `batch_number`),
+  INDEX `idx_status` (`status`),
+  INDEX `idx_settlement_group_id` (`settlement_group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 玩家场次任务分配表 (用于乱序反作弊)
@@ -104,7 +108,8 @@ CREATE TABLE `settlement_results` (
   `score` INT NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`),
-  FOREIGN KEY (`pre_gen_game_id`) REFERENCES `pre_generated_games`(`id`)
+  FOREIGN KEY (`pre_gen_game_id`) REFERENCES `pre_generated_games`(`id`),
+  INDEX `idx_settlement_user` (`settlement_group_id`, `user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ";
 

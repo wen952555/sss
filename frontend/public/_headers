@@ -1,0 +1,17 @@
+/cards/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.css
+  Cache-Control: public, max-age=31536000
+
+/assets/*.js
+  Cache-Control: public, max-age=31536000
+
+/src/*.js
+  Cache-Control: public, max-age=31536000
+
+/src/*.jsx
+  Cache-Control: public, max-age=31536000
+
+/*
+  Cache-Control: public, max-age=3600
