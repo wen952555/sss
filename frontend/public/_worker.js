@@ -1,21 +1,22 @@
 export default {
-  async fetch(request, env) {
+  // 1. Añadir 'context' a los argumentos de la función
+  async fetch(request, env, context) {
     try {
       const url = new URL(request.url);
 
-      // 特殊处理 /favicon.ico 请求，直接返回 204 No Content
+      // Especialmente manejar la solicitud /favicon.ico, devolver 204 No Content
       if (url.pathname === '/favicon.ico') {
         return new Response(null, { status: 204 });
       }
 
-      // 只代理对 /api/ 的请求
+      // Solo solicitudes de proxy que comiencen con /api/
       if (url.pathname.startsWith('/api/')) {
-        // 后端域名
+        // Nombre de dominio del backend
         const backendUrl = 'https://9525.ip-ddns.com'; 
         
         const newUrl = new URL(backendUrl + url.pathname + url.search);
 
-        // 构造一个新的请求，发往后端
+        // Construir una nueva solicitud para enviar al backend
         const newRequest = new Request(newUrl, {
           method: request.method,
           headers: request.headers,
@@ -23,13 +24,13 @@ export default {
           redirect: 'follow',
         });
         
-        // 添加一些自定义头信息，可选
+        // Añadir alguna información de cabecera personalizada, opcional
         newRequest.headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP'));
 
         try {
           const response = await fetch(newRequest);
           
-          // 需要创建一个新的Response来修改CORS头
+          // Se necesita crear una nueva Response para modificar las cabeceras CORS
           const newHeaders = new Headers(response.headers);
           newHeaders.set('Access-Control-Allow-Origin', url.origin);
           newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -47,11 +48,11 @@ export default {
         }
       }
 
-      // 对于非 /api/ 请求，让Cloudflare Pages正常处理静态文件
-      return env.fetch(request);
+      // 2. Para solicitudes que no son de /api/, usar context.next() para que Cloudflare Pages maneje los archivos estáticos
+      return context.next(request);
 
     } catch (e) {
-      // 这是一个全局的catch块，用于捕获任何未被捕获的异常
+      // Este es un bloque catch global para capturar cualquier excepción no capturada
       console.error('Global catch (Worker top-level) error:', e);
       return new Response(`A critical error occurred in the Worker: ${e.message}`, { status: 500 });
     }
