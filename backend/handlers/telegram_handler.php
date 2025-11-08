@@ -1,1 +1,87 @@
-<?php\n// handlers/telegram_handler.php\n\nfunction handleTelegramMessage($pdo, $config, $message) {\n    $chat_id = $message['chat']['id'];\n    $text = $message['text'];\n\n    // 安全检查：只允许管理员操作\n    if ($chat_id != $config['admin_chat_id']) {\n        sendMessage($config['token'], $chat_id, \"You are not authorized.\");\n        return;\n    }\n\n    $parts = explode(' ', $text);\n    $command = $parts[0];\n\n    switch ($command) {\n        case '/delete_user':\n            $userId4d = $parts[1] ?? '';\n            if ($userId4d) {\n                $stmt = $pdo->prepare(\"DELETE FROM users WHERE user_id_4d = ?\");\n                $stmt->execute([$userId4d]);\n                if ($stmt->rowCount() > 0) {\n                    sendMessage($config['token'], $chat_id, \"User {\$userId4d} deleted successfully.\");\n                } else {\n                    sendMessage($config['token'], $chat_id, \"User {\$userId4d} not found.\");\n                }\n            }\n            break;\n\n        case '/set_points':\n            $userId4d = $parts[1] ?? '';\n            $points = $parts[2] ?? '';\n            if ($userId4d && is_numeric($points)) {\n                 $stmt = $pdo->prepare(\"UPDATE users SET points = ? WHERE user_id_4d = ?\");\n                 $stmt->execute([(int)$points, $userId4d]);\n                 if ($stmt->rowCount() > 0) {\n                    sendMessage($config['token'], $chat_id, \"User {\$userId4d}'s points set to {\$points}.\");\n                } else {\n                    sendMessage($config['token'], $chat_id, \"User {\$userId4d} not found.\");\n                }\n            } else {\n                sendMessage($config['token'], $chat_id, \"Usage: /set_points <user_id_4d> <amount>\");\n            }\n            break;\n            \n        default:\n            sendMessage($config['token'], $chat_id, \"Unknown command.\");\n            break;\n    }\n}\n\nfunction sendMessage($token, $chat_id, $text) {\n    $url = \"https://api.telegram.org/bot{\$token}/sendMessage\";\n    $params = [\n        'chat_id' => $chat_id,\n        'text' => $text,\n    ];\n    // 使用 file_get_contents 发送请求 (Serv00 通常支持)\n    $options = [\n        'http' => [\n            'method'  => 'POST',\n            'header'  => \"Content-Type: application/x-www-form-urlencoded\\r\\n\",\n            'content' => http_build_query($params),\n        ],\n    ];\n    $context = stream_context_create($options);\n    file_get_contents($url, false, $context);\n}
+<?php
+// handlers/telegram_handler.php
+
+function handleTelegramMessage($pdo, $config, $message) {
+    $chat_id = $message['chat']['id'];
+    $text = $message['text'] ?? '';
+    $parts = explode(' ', $text);
+    $command = $parts[0];
+
+    // The /start command is a public command to check if the bot is alive.
+    if ($command === '/start') {
+        sendMessage($config['token'], $chat_id, "Hello! The bot is running.");
+        return;
+    }
+
+    // All other commands are admin-only.
+    // We check for authorization from this point onwards.
+    if ($chat_id != $config['admin_chat_id']) {
+        sendMessage($config['token'], $chat_id, "You are not authorized to use this command.");
+        return;
+    }
+
+    switch ($command) {
+        case '/delete_user':
+            $userId4d = $parts[1] ?? '';
+            if ($userId4d) {
+                $stmt = $pdo->prepare("DELETE FROM users WHERE user_id_4d = ?");
+                $stmt->execute([$userId4d]);
+                if ($stmt->rowCount() > 0) {
+                    sendMessage($config['token'], $chat_id, "User {$userId4d} deleted successfully.");
+                } else {
+                    sendMessage($config['token'], $chat_id, "User {$userId4d} not found.");
+                }
+            }
+            break;
+
+        case '/set_points':
+            $userId4d = $parts[1] ?? '';
+            $points = $parts[2] ?? '';
+            if ($userId4d && is_numeric($points)) {
+                 $stmt = $pdo->prepare("UPDATE users SET points = ? WHERE user_id_4d = ?");
+                 $stmt->execute([(int)$points, $userId4d]);
+                 if ($stmt->rowCount() > 0) {
+                    sendMessage($config['token'], $chat_id, "User {$userId4d}'s points set to {$points}.");
+                } else {
+                    sendMessage($config['token'], $chat_id, "User {$userId4d} not found.");
+                }
+            } else {
+                sendMessage($config['token'], $chat_id, "Usage: /set_points <user_id_4d> <amount>");
+            }
+            break;
+
+        default:
+            sendMessage($config['token'], $chat_id, "Unknown command.");
+            break;
+    }
+}
+
+function sendMessage($token, $chat_id, $text) {
+    $url = "https://api.telegram.org/bot{$token}/sendMessage";
+    $params = [
+        'chat_id' => $chat_id,
+        'text' => $text,
+    ];
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+
+    if(curl_errno($ch)){
+        error_log('Curl error: ' . curl_error($ch));
+    }
+
+    curl_close($ch);
+
+    // Optional: log Telegram's response for more insight
+    if ($response) {
+        $decoded_response = json_decode($response, true);
+        if (!$decoded_response['ok']) {
+            error_log('Telegram API Error: ' . $decoded_response['description']);
+        }
+    }
+}
