@@ -1,60 +1,38 @@
+// public/_worker.js
+
 export default {
-  // 修正：对于 Service Worker 模式，fetch 签名只接收 request 和 env
-  async fetch(request, env) {
-    try {
-      const url = new URL(request.url);
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
 
-      // 特殊处理 /favicon.ico 请求，直接返回 204 No Content
-      if (url.pathname === '/favicon.ico') {
-        return new Response(null, { status: 204 });
-      }
+    // 只代理 /api/ 开头的请求
+    if (url.pathname.startsWith('/api/')) {
+      const backendUrl = 'https://9525.ip-ddns.com' + url.pathname + url.search;
+      
+      // 构造一个新的请求到后端
+      const backendRequest = new Request(backendUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+        redirect: 'follow'
+      });
 
-      // 只代理对 /api/ 的请求
-      if (url.pathname.startsWith('/api/')) {
-        // 后端域名
-        const backendUrl = 'https://9525.ip-ddns.com'; 
-        
-        const newUrl = new URL(backendUrl + url.pathname + url.search);
+      // 发送请求到后端
+      const response = await fetch(backendRequest);
 
-        // 构造一个新的请求，发往后端
-        const newRequest = new Request(newUrl, {
-          method: request.method,
-          headers: request.headers,
-          body: request.body,
-          redirect: 'follow',
-        });
-        
-        // 添加一些自定义头信息，可选
-        newRequest.headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP'));
+      // 创建一个新的响应头，允许跨域
+      const headers = new Headers(response.headers);
+      headers.set('Access-Control-Allow-Origin', '*'); // 或者你的前端域名
+      headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+      headers.set('Access-control-allow-headers', 'Content-Type, Authorization');
 
-        try {
-          const response = await fetch(newRequest);
-          
-          // 需要创建一个新的Response来修改CORS头
-          const newHeaders = new Headers(response.headers);
-          newHeaders.set('Access-Control-Allow-Origin', url.origin);
-          newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-          newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-          return new Response(response.body, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: newHeaders,
-          });
-
-        } catch (e) {
-          console.error('Inner catch (API proxy) error:', e);
-          return new Response(`Backend server error: ${e.message}`, { status: 502 });
-        }
-      }
-
-      // 修正：对于非 /api/ 请求，直接使用全局的 fetch(request) 让 Cloudflare Pages 处理静态文件
-      return fetch(request);
-
-    } catch (e) {
-      // 这是一个全局的catch块，用于捕获任何未被捕获的异常
-      console.error('Global catch (Worker top-level) error:', e);
-      return new Response(`A critical error occurred in the Worker: ${e.message}`, { status: 500 });
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: headers
+      });
     }
+
+    // 对于非 API 请求，让 Cloudflare Pages 正常处理 (返回静态文件)
+    return env.ASSETS.fetch(request);
   },
 };
