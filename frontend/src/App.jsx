@@ -7,6 +7,7 @@ import './App.css';
 function App() {
   const [token, setToken] = useState(localStorage.getItem('authToken'));
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const verifyToken = async () => {
@@ -17,19 +18,26 @@ function App() {
           if (response.success) {
             setUser(response.user);
           } else {
+            console.log('Token verification failed:', response.message);
             handleLogout();
           }
         } catch (error) {
+          console.error('Token verification error:', error);
           handleLogout();
         }
       }
+      setIsLoading(false);
     };
+    
     verifyToken();
   }, [token]);
 
-  const handleLoginSuccess = (newToken) => {
+  const handleLoginSuccess = (newToken, userData) => {
     localStorage.setItem('authToken', newToken);
     setToken(newToken);
+    if (userData) {
+      setUser(userData);
+    }
   };
 
   const handleLogout = () => {
@@ -38,6 +46,10 @@ function App() {
     setUser(null);
     apiService.setToken(null);
   };
+
+  if (isLoading) {
+    return <div className="App">加载中...</div>;
+  }
 
   return (
     <div className="App">
@@ -55,7 +67,6 @@ function App() {
           <Auth onLoginSuccess={handleLoginSuccess} />
         ) : (
           <Lobby />
-          // 这里可以根据状态切换到 GameBoard
         )}
       </main>
     </div>

@@ -1,1 +1,133 @@
-<?php\n// handlers/user_handler.php\n\nfunction handleRegister($pdo, $data) {\n    $phone = $data['phone'] ?? '';\n    $password = $data['password'] ?? '';\n\n    if (empty($phone) || empty($password)) {\n        http_response_code(400);\n        echo json_encode(['success' => false, 'message' => 'Phone and password are required.']);\n        return;\n    }\n\n    // 检查手机号是否已存在\n    $stmt = $pdo->prepare(\"SELECT id FROM users WHERE phone = ?\");\n    $stmt->execute([$phone]);\n    if ($stmt->fetch()) {\n        http_response_code(409);\n        echo json_encode(['success' => false, 'message' => 'Phone number already registered.']);\n        return;\n    }\n\n    // 生成唯一的4位数ID\n    do {\n        $userId4d = str_pad(mt_rand(1000, 9999), 4, '0', STR_PAD_LEFT);\n        $stmt = $pdo->prepare(\"SELECT id FROM users WHERE user_id_4d = ?\");\n        $stmt->execute([$userId4d]);\n    } while ($stmt->fetch());\n\n    $passwordHash = password_hash($password, PASSWORD_DEFAULT);\n\n    $stmt = $pdo->prepare(\"INSERT INTO users (user_id_4d, phone, password_hash) VALUES (?, ?, ?)\");\n    if ($stmt->execute([$userId4d, $phone, $passwordHash])) {\n        echo json_encode(['success' => true, 'message' => 'Registration successful.']);\n    } else {\n        http_response_code(500);\n        echo json_encode(['success' => false, 'message' => 'Failed to register user.']);\n    }\n}\n\nfunction handleLogin($pdo, $data) {\n    $phone = $data['phone'] ?? '';\n    $password = $data['password'] ?? '';\n\n    $stmt = $pdo->prepare(\"SELECT id, password_hash FROM users WHERE phone = ?\");\n    $stmt->execute([$phone]);\n    $user = $stmt->fetch();\n\n    if ($user && password_verify($password, $user['password_hash'])) {\n        $token = bin2hex(random_bytes(32));\n        $updateStmt = $pdo->prepare(\"UPDATE users SET auth_token = ? WHERE id = ?\");\n        $updateStmt->execute([$token, $user['id']]);\n        echo json_encode(['success' => true, 'token' => $token]);\n    } else {\n        http_response_code(401);\n        echo json_encode(['success' => false, 'message' => 'Invalid phone or password.']);\n    }\n}\n\nfunction getUserByToken($pdo, $token) {\n    if (empty($token)) {\n        return null;\n    }\n    $stmt = $pdo->prepare(\"SELECT id, user_id_4d, phone, points FROM users WHERE auth_token = ?\");\n    $stmt->execute([$token]);\n    return $stmt->fetch();\n}
+<?php
+// handlers/user_handler.php
+
+function handleRegister($pdo, $data) {
+    $phone = $data['phone'] ?? '';
+    $password = $data['password'] ?? '';
+
+    // 验证输入
+    if (empty($phone) || empty($password)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => '手机号和密码不能为空']);
+        return;
+    }
+
+    // 验证手机号格式 (简单的11位数字验证)
+    if (!preg_match('/^1[3-9]\d{9}$/', $phone)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => '手机号格式不正确']);
+        return;
+    }
+
+    // 验证密码长度
+    if (strlen($password) < 6) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => '密码长度不能少于6位']);
+        return;
+    }
+
+    // 检查手机号是否已存在
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE phone = ?");
+    $stmt->execute([$phone]);
+    if ($stmt->fetch()) {
+        http_response_code(409);
+        echo json_encode(['success' => false, 'message' => '手机号已被注册']);
+        return;
+    }
+
+    // 生成唯一的4位数ID
+    $maxAttempts = 10;
+    $attempts = 0;
+    $userId4d = null;
+    
+    do {
+        $userId4d = str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE user_id_4d = ?");
+        $stmt->execute([$userId4d]);
+        $attempts++;
+        
+        if ($attempts > $maxAttempts) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => '系统繁忙，请稍后重试']);
+            return;
+        }
+    } while ($stmt->fetch());
+
+    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO users (user_id_4d, phone, password_hash, points) VALUES (?, ?, ?, 1000)");
+        if ($stmt->execute([$userId4d, $phone, $passwordHash])) {
+            echo json_encode([
+                'success' => true, 
+                'message' => '注册成功',
+                'user_id_4d' => $userId4d
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => '注册失败，请稍后重试']);
+        }
+    } catch (PDOException $e) {
+        error_log("Registration error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => '数据库错误，请稍后重试']);
+    }
+}
+
+function handleLogin($pdo, $data) {
+    $phone = $data['phone'] ?? '';
+    $password = $data['password'] ?? '';
+
+    if (empty($phone) || empty($password)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => '手机号和密码不能为空']);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT id, password_hash, user_id_4d, points FROM users WHERE phone = ?");
+        $stmt->execute([$phone]);
+        $user = $stmt->fetch();
+
+        if ($user && password_verify($password, $user['password_hash'])) {
+            // 生成新的token
+            $token = bin2hex(random_bytes(32));
+            
+            // 更新用户token
+            $updateStmt = $pdo->prepare("UPDATE users SET auth_token = ? WHERE id = ?");
+            $updateStmt->execute([$token, $user['id']]);
+            
+            echo json_encode([
+                'success' => true, 
+                'token' => $token,
+                'user' => [
+                    'user_id_4d' => $user['user_id_4d'],
+                    'points' => $user['points']
+                ]
+            ]);
+        } else {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => '手机号或密码错误']);
+        }
+    } catch (PDOException $e) {
+        error_log("Login error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => '登录失败，请稍后重试']);
+    }
+}
+
+function getUserByToken($pdo, $token) {
+    if (empty($token)) {
+        return null;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("SELECT id, user_id_4d, phone, points FROM users WHERE auth_token = ?");
+        $stmt->execute([$token]);
+        return $stmt->fetch();
+    } catch (PDOException $e) {
+        error_log("Get user by token error: " . $e->getMessage());
+        return null;
+    }
+}
+?>

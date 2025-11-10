@@ -10,7 +10,7 @@ const apiService = {
   },
 
   async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}/${endpoint}`;
+    const url = `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -25,37 +25,52 @@ const apiService = {
       headers,
     };
 
+    // 确保有body时序列化
+    if (config.body && typeof config.body === 'object') {
+      config.body = JSON.stringify(config.body);
+    }
+
     try {
       const response = await fetch(url, config);
-      return response.json();
+      
+      // 检查HTTP状态码
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error('API request error:', error);
-      return { success: false, message: 'Network error or server is down.' };
+      return { 
+        success: false, 
+        message: error.message || 'Network error or server is down.' 
+      };
     }
   },
 
   // 用户相关
   login(phone, password) {
-    return this.request('login', {
+    return this.request('/login', {
       method: 'POST',
-      body: JSON.stringify({ phone, password }),
+      body: { phone, password },
     });
   },
 
   register(phone, password) {
-    return this.request('register', {
+    return this.request('/register', {
       method: 'POST',
-      body: JSON.stringify({ phone, password }),
+      body: { phone, password },
     });
   },
-  
+
   getUser() {
-    return this.request('get-user');
+    return this.request('/get-user');
   },
 
   // 游戏相关
   getTablesStatus() {
-      return this.request('tables-status');
+    return this.request('/tables-status');
   }
 };
 
