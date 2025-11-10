@@ -3,51 +3,70 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    console.log(`Incoming request: ${pathname}`);
+    console.log(`Incoming request: ${request.method} ${pathname}`);
 
-    // 只代理 /api/ 开头的请求
+    // 处理 API 请求
     if (pathname.startsWith('/api/')) {
-      // 提取 action 名称（移除 /api/ 前缀）
-      const action = pathname.replace('/api/', '');
+      // 提取 action（移除 /api/ 前缀）
+      const action = pathname.slice(5); // 移除 '/api/'
       
-      // 构建后端URL - 使用查询参数方式
+      // 构建后端URL
       const backendUrl = `https://9525.ip-ddns.com/api.php?action=${action}`;
-
-      console.log(`Proxying to backend: ${backendUrl}`);
+      
+      console.log(`Proxying to: ${backendUrl}`);
 
       try {
-        // 构造新的请求到后端
+        // 准备请求头
+        const headers = new Headers();
+        headers.set('Content-Type', 'application/json');
+        
+        // 复制原始请求的授权头
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader) {
+          headers.set('Authorization', authHeader);
+        }
+
+        // 获取请求体
+        let body = null;
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          body = await request.text();
+        }
+
+        // 创建后端请求
         const backendRequest = new Request(backendUrl, {
           method: request.method,
-          headers: {
-            'Content-Type': 'application/json',
-            ...Object.fromEntries(request.headers)
-          },
-          body: request.body,
+          headers: headers,
+          body: body,
           redirect: 'follow'
         });
 
-        // 发送请求到后端
+        // 发送请求
         const response = await fetch(backendRequest);
-
+        
         console.log(`Backend response status: ${response.status}`);
 
-        // 创建新的响应头，允许跨域
-        const headers = new Headers(response.headers);
-        headers.set('Access-Control-Allow-Origin', '*');
-        headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-        headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        // 克隆响应以便读取和返回
+        const responseClone = response.clone();
+        const responseText = await responseClone.text();
+        console.log(`Backend response body: ${responseText.substring(0, 200)}`);
 
-        return new Response(response.body, {
+        // 创建新的响应
+        return new Response(responseText, {
           status: response.status,
           statusText: response.statusText,
-          headers: headers
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          }
         });
+
       } catch (error) {
         console.error('Proxy error:', error);
         return new Response(JSON.stringify({
           success: false,
-          message: '无法连接到服务器，请稍后重试'
+          message: '无法连接到服务器: ' + error.message
         }), {
           status: 503,
           headers: {
@@ -58,7 +77,7 @@ export default {
       }
     }
 
-    // 对于非 API 请求，让 Cloudflare Pages 正常处理 (返回静态文件)
+    // 对于非 API 请求，返回静态文件
     return env.ASSETS.fetch(request);
   },
 };

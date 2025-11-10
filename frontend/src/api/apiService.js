@@ -1,6 +1,3 @@
-// src/api/apiService.js
-
-// 使用 Worker 代理
 const API_BASE_URL = '/api';
 
 const apiService = {
@@ -11,7 +8,6 @@ const apiService = {
   },
 
   async request(endpoint, options = {}) {
-    // 确保endpoint不以/开头（因为API_BASE_URL已经有/）
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     const url = `${API_BASE_URL}/${normalizedEndpoint}`;
     
@@ -31,7 +27,6 @@ const apiService = {
       headers,
     };
 
-    // 确保有body时序列化
     if (config.body && typeof config.body === 'object') {
       config.body = JSON.stringify(config.body);
     }
@@ -39,12 +34,28 @@ const apiService = {
     try {
       const response = await fetch(url, config);
       
-      // 检查HTTP状态码
+      // 首先获取原始响应文本
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+      
+      // 检查响应内容类型
+      const contentType = response.headers.get('content-type');
+      console.log('Content-Type:', contentType);
+      
+      // 检查状态码
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
+      // 尝试解析JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+      }
+      
       return data;
     } catch (error) {
       console.error('API request error:', error);
@@ -55,7 +66,7 @@ const apiService = {
     }
   },
 
-  // 用户相关 - 使用简单的端点名称，Worker会转换为正确的后端URL
+  // ... 其他方法保持不变
   login(phone, password) {
     return this.request('login', {
       method: 'POST',
@@ -74,7 +85,6 @@ const apiService = {
     return this.request('get-user');
   },
 
-  // 游戏相关
   getTablesStatus() {
     return this.request('tables-status');
   }
