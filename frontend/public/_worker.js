@@ -1,33 +1,38 @@
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    console.log(`Incoming request: ${pathname}`);
 
     // 只代理 /api/ 开头的请求
-    if (url.pathname.startsWith('/api/')) {
-      // 移除 /api 前缀，直接转发到后端
-      const backendPath = url.pathname.replace(/^\/api/, '');
-      const backendUrl = 'https://9525.ip-ddns.com' + backendPath + url.search;
+    if (pathname.startsWith('/api/')) {
+      // 提取 action 名称（移除 /api/ 前缀）
+      const action = pathname.replace('/api/', '');
+      
+      // 构建后端URL - 使用查询参数方式
+      const backendUrl = `https://9525.ip-ddns.com/api.php?action=${action}`;
 
-      console.log(`Proxying request to: ${backendUrl}`);
+      console.log(`Proxying to backend: ${backendUrl}`);
 
       try {
-        // 构造一个新的请求到后端
+        // 构造新的请求到后端
         const backendRequest = new Request(backendUrl, {
           method: request.method,
-          headers: request.headers,
+          headers: {
+            'Content-Type': 'application/json',
+            ...Object.fromEntries(request.headers)
+          },
           body: request.body,
           redirect: 'follow'
         });
 
-        // 发送请求到后端，设置超时
-        const response = await Promise.race([
-          fetch(backendRequest),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Request timeout')), 10000)
-          )
-        ]);
+        // 发送请求到后端
+        const response = await fetch(backendRequest);
 
-        // 创建一个新的响应头，允许跨域
+        console.log(`Backend response status: ${response.status}`);
+
+        // 创建新的响应头，允许跨域
         const headers = new Headers(response.headers);
         headers.set('Access-Control-Allow-Origin', '*');
         headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');

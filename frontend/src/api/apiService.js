@@ -1,4 +1,7 @@
-const API_BASE_URL = '/api'; // 通过Cloudflare Worker代理
+// src/api/apiService.js
+
+// 使用 Worker 代理
+const API_BASE_URL = '/api';
 
 const apiService = {
   token: null,
@@ -8,10 +11,12 @@ const apiService = {
   },
 
   async request(endpoint, options = {}) {
-    // 确保endpoint以/开头
-    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const url = `${API_BASE_URL}${normalizedEndpoint}`;
+    // 确保endpoint不以/开头（因为API_BASE_URL已经有/）
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const url = `${API_BASE_URL}/${normalizedEndpoint}`;
     
+    console.log(`Making API request to: ${url}`);
+
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -36,10 +41,6 @@ const apiService = {
       
       // 检查HTTP状态码
       if (!response.ok) {
-        // 如果是502错误，说明Worker无法连接到后端
-        if (response.status === 502) {
-          throw new Error('服务器暂时不可用，请稍后重试');
-        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
@@ -54,28 +55,28 @@ const apiService = {
     }
   },
 
-  // 用户相关
+  // 用户相关 - 使用简单的端点名称，Worker会转换为正确的后端URL
   login(phone, password) {
-    return this.request('/login', {
+    return this.request('login', {
       method: 'POST',
       body: { phone, password },
     });
   },
 
   register(phone, password) {
-    return this.request('/register', {
+    return this.request('register', {
       method: 'POST',
       body: { phone, password },
     });
   },
 
   getUser() {
-    return this.request('/get-user');
+    return this.request('get-user');
   },
 
   // 游戏相关
   getTablesStatus() {
-    return this.request('/tables-status');
+    return this.request('tables-status');
   }
 };
 

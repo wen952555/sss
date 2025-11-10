@@ -1,7 +1,6 @@
 <?php
 // api.php
 header("Content-Type: application/json");
-// CORS headers - 在Cloudflare Worker代理模式下，这些可以宽松设置
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -15,13 +14,8 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/handlers/user_handler.php';
 require_once __DIR__ . '/handlers/game_handler.php';
 
-// 获取请求路径
-$request_uri = $_SERVER['REQUEST_URI'];
-$path = parse_url($request_uri, PHP_URL_PATH);
-
-// 从路径中提取action
-$path_parts = explode('/', $path);
-$action = end($path_parts);
+// 获取查询参数中的action
+$action = $_GET['action'] ?? '';
 
 // 获取请求数据
 $input = file_get_contents('php://input');
@@ -33,10 +27,8 @@ if (!empty($input)) {
     }
 }
 
-// 如果没有从路径获取到action，尝试从查询参数获取
-if (empty($action) || $action === 'api.php') {
-    $action = $_GET['action'] ?? '';
-}
+// 记录请求日志（调试用）
+error_log("API Request: action=$action, method=" . $_SERVER['REQUEST_METHOD'] . ", data=" . json_encode($data));
 
 $pdo = getDBConnection();
 
@@ -47,6 +39,10 @@ switch ($action) {
         exit;
     case 'login':
         handleLogin($pdo, $data);
+        exit;
+    case '':
+        // 默认响应
+        echo json_encode(['success' => true, 'message' => 'API is running', 'timestamp' => date('Y-m-d H:i:s')]);
         exit;
 }
 
@@ -78,7 +74,6 @@ switch ($action) {
     case 'tables-status':
         handleGetTablesStatus($pdo, $user['id']);
         break;
-    // ... 其他游戏相关的路由
     default:
         http_response_code(404);
         echo json_encode(['success' => false, 'message' => 'Action not found: ' . $action]);
