@@ -1,5 +1,3 @@
-// src/api/apiService.js
-
 const API_BASE_URL = '/api'; // 通过Cloudflare Worker代理
 
 const apiService = {
@@ -10,7 +8,10 @@ const apiService = {
   },
 
   async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+    // 确保endpoint以/开头
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${API_BASE_URL}${normalizedEndpoint}`;
+    
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -35,6 +36,10 @@ const apiService = {
       
       // 检查HTTP状态码
       if (!response.ok) {
+        // 如果是502错误，说明Worker无法连接到后端
+        if (response.status === 502) {
+          throw new Error('服务器暂时不可用，请稍后重试');
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
@@ -44,7 +49,7 @@ const apiService = {
       console.error('API request error:', error);
       return { 
         success: false, 
-        message: error.message || 'Network error or server is down.' 
+        message: error.message || '网络错误，请检查网络连接' 
       };
     }
   },

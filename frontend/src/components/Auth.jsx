@@ -82,6 +82,7 @@ const Auth = ({ onLoginSuccess }) => {
           onChange={(e) => setPhone(e.target.value)}
           required
           maxLength="11"
+          autoComplete="tel"
         />
         <input
           type="password"
@@ -90,6 +91,7 @@ const Auth = ({ onLoginSuccess }) => {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength="6"
+          autoComplete={isLogin ? "current-password" : "new-password"}
         />
         <button type="submit" disabled={isLoading}>
           {isLoading ? '处理中...' : (isLogin ? '登录' : '注册')}
