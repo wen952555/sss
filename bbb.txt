@@ -1,0 +1,384 @@
+File: backend/db.php
+---
+<?php
+// db.php
+
+// 增加错误报告，便于调试
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+function getDBConnection() {
+    static $pdo = null;
+
+    if ($pdo === null) {
+        $envPath = __DIR__ . '/.env';
+
+        if (!file_exists($envPath) || !is_readable($envPath)) {
+            // 提供清晰的错误信息
+            die("Error: .env file not found or is not readable at {$envPath}\n");
+        }
+
+        $config = parse_ini_file($envPath);
+
+        if ($config === false) {
+            die("Error: Failed to parse .env file. Please check its format.\n");
+        }
+
+        // 检查必要的配置是否存在
+        $required_keys = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'];
+        foreach ($required_keys as $key) {
+            if (!isset($config[$key])) {
+                die("Error: Missing required key '{$key}' in .env file.\n");
+            }
+        }
+
+        $dsn = "mysql:host={$config['DB_HOST']};dbname={$config['DB_NAME']};charset=utf8mb4";
+        $options = [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ];
+
+        try {
+            $pdo = new PDO($dsn, $config['DB_USER'], $config['DB_PASS'], $options);
+        } catch (PDOException $e) {
+            // 在命令行中显示更详细的错误
+            die("Database Connection Failed: " . $e->getMessage() . "\n");
+        }
+    }
+
+    return $pdo;
+}
+
+function getTelegramConfig() {
+    static $config = null;
+    if ($config === null) {
+        $envPath = __DIR__ . '/.env';
+        if (!file_exists($envPath) || !is_readable($envPath)) {
+            die("Error: .env file for Telegram not found or is not readable at {$envPath}\n");
+        }
+        $config = parse_ini_file($envPath);
+        if ($config === false) {
+             die("Error: Failed to parse .env file for Telegram. Please check its format.\n");
+        }
+    }
+
+    // 检查必要的 Telegram 配置
+    $required_keys = ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_ADMIN_CHAT_ID'];
+    foreach ($required_keys as $key) {
+        if (!isset($config[$key])) {
+            die("Error: Missing required key '{$key}' in .env file.\n");
+        }
+    }
+
+    return [
+        'token' => $config['TELEGRAM_BOT_TOKEN'],
+        'admin_chat_id' => $config['TELEGRAM_ADMIN_CHAT_ID']
+    ];
+}
+
+?>
+---
+File: backend/handlers/game_handler.php
+---
+<?php\n// handlers/game_handler.php\n\nfunction handleGetTablesStatus($pdo, $userId) {\n    // 这是一个复杂的查询，需要根据我们讨论的逻辑来实现\n    // 简化逻辑：查询每个桌子(1-6)最新一个未完成的场次状态\n    $tablesStatus = [];\n    for ($i = 1; $i <= 6; $i++) {\n        $stmt = $pdo->prepare("\n            SELECT b.id as batch_id, COUNT(ps.user_id) as player_count, b.status\n            FROM game_batches b\n            LEFT JOIN batch_player_status ps ON b.id = ps.batch_id\n            WHERE b.table_id = ? AND b.status != 'completed'\n            GROUP BY b.id, b.status\n            ORDER BY b.batch_number DESC LIMIT 1\n        ");\n        $stmt->execute([$i]);\n        $batch = $stmt->fetch();\n\n        $score_type_map = [1 => 2, 2 => 2, 3 => 5, 4 => 5, 5 => 10, 6 => 10];\n        $table_number_map = [1 => 1, 2 => 2, 3 => 1, 4 => 2, 5 => 1, 6 => 2];\n        \n        if ($batch) {\n             $status = ($batch['player_count'] >= 4) ? 'in_game' : 'waiting';\n             // 这里需要更精确的状态判断，比如从 batch_player_status 中判断\n             $tablesStatus[] = [\n                'table_id' => $i,\n                'score_type' => $score_type_map[$i],\n                'table_number' => $table_number_map[$i],\n                'status' => $status,\n                'players_current' => (int)$batch['player_count'],\n                'players_needed' => 4,\n            ];\n        } else {\n            // 没有活跃场次，桌子空闲\n            $tablesStatus[] = [\n                'table_id' => $i,\n                'score_type' => $score_type_map[$i],\n                'table_number' => $table_number_map[$i],\n                'status' => 'waiting',\n                'players_current' => 0,\n                'players_needed' => 4,\n            ];\n        }\n    }\n    \n    echo json_encode(['success' => true, 'tables' => $tablesStatus]);\n}\n\n// 此处应有 handleJoinTable, handleGetNextCard, handleSubmitHand 等函数\n// 它们的逻辑会严格遵循我们之前讨论的数据库交互流程
+---
+File: backend/handlers/user_handler.php
+---
+<?php\n// handlers/user_handler.php\n\nfunction handleRegister($pdo, $data) {\n    $phone = $data['phone'] ?? '';\n    $password = $data['password'] ?? '';\n\n    if (empty($phone) || empty($password)) {\n        http_response_code(400);\n        echo json_encode(['success' => false, 'message' => 'Phone and password are required.']);\n        return;\n    }\n\n    // 检查手机号是否已存在\n    $stmt = $pdo->prepare(\"SELECT id FROM users WHERE phone = ?\");\n    $stmt->execute([$phone]);\n    if ($stmt->fetch()) {\n        http_response_code(409);\n        echo json_encode(['success' => false, 'message' => 'Phone number already registered.']);\n        return;\n    }\n\n    // 生成唯一的4位数ID\n    do {\n        $userId4d = str_pad(mt_rand(1000, 9999), 4, '0', STR_PAD_LEFT);\n        $stmt = $pdo->prepare(\"SELECT id FROM users WHERE user_id_4d = ?\");\n        $stmt->execute([$userId4d]);\n    } while ($stmt->fetch());\n\n    $passwordHash = password_hash($password, PASSWORD_DEFAULT);\n\n    $stmt = $pdo->prepare(\"INSERT INTO users (user_id_4d, phone, password_hash) VALUES (?, ?, ?)\");\n    if ($stmt->execute([$userId4d, $phone, $passwordHash])) {\n        echo json_encode(['success' => true, 'message' => 'Registration successful.']);\n    } else {\n        http_response_code(500);\n        echo json_encode(['success' => false, 'message' => 'Failed to register user.']);\n    }\n}\n\nfunction handleLogin($pdo, $data) {\n    $phone = $data['phone'] ?? '';\n    $password = $data['password'] ?? '';\n\n    $stmt = $pdo->prepare(\"SELECT id, password_hash FROM users WHERE phone = ?\");\n    $stmt->execute([$phone]);\n    $user = $stmt->fetch();\n\n    if ($user && password_verify($password, $user['password_hash'])) {\n        $token = bin2hex(random_bytes(32));\n        $updateStmt = $pdo->prepare(\"UPDATE users SET auth_token = ? WHERE id = ?\");\n        $updateStmt->execute([$token, $user['id']]);\n        echo json_encode(['success' => true, 'token' => $token]);\n    } else {\n        http_response_code(401);\n        echo json_encode(['success' => false, 'message' => 'Invalid phone or password.']);\n    }\n}\n\nfunction getUserByToken($pdo, $token) {\n    if (empty($token)) {\n        return null;\n    }\n    $stmt = $pdo->prepare(\"SELECT id, user_id_4d, phone, points FROM users WHERE auth_token = ?\");\n    $stmt->execute([$token]);\n    return $stmt->fetch();\n}
+---
+File: backend/handlers/telegram_handler.php
+---
+<?php
+// handlers/telegram_handler.php
+
+function handleTelegramMessage($pdo, $config, $message) {
+    $chat_id = $message['chat']['id'];
+    $text = $message['text'] ?? '';
+    $parts = explode(' ', $text);
+    $command = $parts[0];
+
+    // The /start command is a public command to check if the bot is alive.
+    if ($command === '/start') {
+        sendMessage($config['token'], $chat_id, "Hello! The bot is running.");
+        return;
+    }
+
+    // All other commands are admin-only.
+    // We check for authorization from this point onwards.
+    if ($chat_id != $config['admin_chat_id']) {
+        sendMessage($config['token'], $chat_id, "You are not authorized to use this command.");
+        return;
+    }
+
+    switch ($command) {
+        case '/delete_user':
+            $userId4d = $parts[1] ?? '';
+            if ($userId4d) {
+                $stmt = $pdo->prepare("DELETE FROM users WHERE user_id_4d = ?");
+                $stmt->execute([$userId4d]);
+                if ($stmt->rowCount() > 0) {
+                    sendMessage($config['token'], $chat_id, "User {$userId4d} deleted successfully.");
+                } else {
+                    sendMessage($config['token'], $chat_id, "User {$userId4d} not found.");
+                }
+            }
+            break;
+
+        case '/set_points':
+            $userId4d = $parts[1] ?? '';
+            $points = $parts[2] ?? '';
+            if ($userId4d && is_numeric($points)) {
+                 $stmt = $pdo->prepare("UPDATE users SET points = ? WHERE user_id_4d = ?");
+                 $stmt->execute([(int)$points, $userId4d]);
+                 if ($stmt->rowCount() > 0) {
+                    sendMessage($config['token'], $chat_id, "User {$userId4d}'s points set to {$points}.");
+                } else {
+                    sendMessage($config['token'], $chat_id, "User {$userId4d} not found.");
+                }
+            } else {
+                sendMessage($config['token'], $chat_id, "Usage: /set_points <user_id_4d> <amount>");
+            }
+            break;
+
+        default:
+            sendMessage($config['token'], $chat_id, "Unknown command.");
+            break;
+    }
+}
+
+function sendMessage($token, $chat_id, $text) {
+    $url = "https://api.telegram.org/bot{$token}/sendMessage";
+    $params = [
+        'chat_id' => $chat_id,
+        'text' => $text,
+    ];
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+
+    if(curl_errno($ch)){
+        error_log('Curl error: ' . curl_error($ch));
+    }
+
+    curl_close($ch);
+
+    // Optional: log Telegram's response for more insight
+    if ($response) {
+        $decoded_response = json_decode($response, true);
+        if (!$decoded_response['ok']) {
+            error_log('Telegram API Error: ' . $decoded_response['description']);
+        }
+    }
+}
+
+---
+File: backend/api.php
+---
+<?php\n// api.php\nheader(\"Content-Type: application/json\");\nheader(\"Access-Control-Allow-Origin: *\"); // 在Cloudflare Worker代理模式下，这个可以宽松设置\nheader(\"Access-Control-Allow-Methods: GET, POST, OPTIONS\");\nheader(\"Access-Control-Allow-Headers: Content-Type, Authorization\");\n\n// 处理 OPTIONS 预检请求\nif ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {\n    exit(0);\n}\n\nrequire_once __DIR__ . '/db.php';\nrequire_once __DIR__ . '/handlers/user_handler.php';\nrequire_once __DIR__ . '/handlers/game_handler.php';\n\n$action = $_GET['action'] ?? '';\n$data = json_decode(file_get_contents('php://input'), true);\n\n$pdo = getDBConnection();\n\n// 无需认证的路由\nswitch ($action) {\n    case 'register':\n        handleRegister($pdo, $data);\n        exit;\n    case 'login':\n        handleLogin($pdo, $data);\n        exit;\n}\n\n// ---- 需要认证的路由 ----\n$headers = getallheaders();\n$authHeader = $headers['Authorization'] ?? '';\n$token = str_replace('Bearer ', '', $authHeader);\n\n$user = getUserByToken($pdo, $token);\nif (!$user) {\n    http_response_code(401);\n    echo json_encode(['success' => false, 'message' => 'Unauthorized']);\n    exit;\n}\n\n// 已认证的路由\nswitch ($action) {\n    case 'get-user':\n        echo json_encode(['success' => true, 'user' => ['id' => $user['id'], 'user_id_4d' => $user['user_id_4d'], 'phone' => $user['phone'], 'points' => $user['points']]]);\n        break;\n    case 'tables-status':\n        handleGetTablesStatus($pdo, $user['id']);\n        break;\n    // ... 其他游戏相关的路由\n    default:\n        http_response_code(404);\n        echo json_encode(['success' => false, 'message' => 'Action not found']);\n        break;\n}
+---
+File: backend/import_db.php
+---
+<?php
+// import_db.php
+// 在 SSH 中运行: php /path/to/your/project/backend/import_db.php
+
+// 增加错误报告，便于调试
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// 确保当前目录正确
+chdir(__DIR__);
+
+require_once './db.php';
+
+try {
+    echo "Attempting to connect to the database...\n";
+    $pdo = getDBConnection();
+    echo "Successfully connected to the database.\n\n";
+
+    $sql = "
+    -- 删除已存在的表，用于重新初始化
+    DROP TABLE IF EXISTS `settlement_results`, `user_game_submissions`, `batch_player_status`, `game_batches`, `pre_generated_games`, `users`;
+
+    -- 用户表
+    CREATE TABLE `users` (
+      `id` INT AUTO_INCREMENT PRIMARY KEY,
+      `user_id_4d` VARCHAR(4) NOT NULL UNIQUE,
+      `phone` VARCHAR(20) NOT NULL UNIQUE,
+      `password_hash` VARCHAR(255) NOT NULL,
+      `points` BIGINT NOT NULL DEFAULT 1000,
+      `auth_token` VARCHAR(64) NULL UNIQUE,
+      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    -- 预生成牌局表
+    CREATE TABLE `pre_generated_games` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `table_id` INT NOT NULL,
+        `game_index_in_table` INT NOT NULL,
+        `dealt_cards_json` JSON NOT NULL,
+        INDEX (`table_id`, `game_index_in_table`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    -- 场次管理表 (已简化，只作标识)
+    CREATE TABLE `game_batches` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `table_id` INT NOT NULL,
+        `batch_number` INT NOT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY (`table_id`, `batch_number`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    -- 玩家场次状态表
+    CREATE TABLE `batch_player_status` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `user_id` INT NOT NULL,
+        `batch_id` INT NOT NULL,
+        `status` ENUM('in_progress', 'completed', 'settled', 'abandoned') NOT NULL DEFAULT 'in_progress',
+        `games_played_count` INT NOT NULL DEFAULT 0,
+        `assignment_order_json` JSON NOT NULL, -- 存储乱序后的牌局索引
+        `completed_at` TIMESTAMP NULL,
+        `settlement_group_id` INT NULL,
+        FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+        FOREIGN KEY (`batch_id`) REFERENCES `game_batches`(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    -- 玩家单局提交记录表
+    CREATE TABLE `user_game_submissions` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `user_id` INT NOT NULL,
+        `pre_gen_game_id` INT NOT NULL,
+        `submitted_cards_json` JSON NOT NULL,
+        `is_ai_generated` BOOLEAN NOT NULL DEFAULT FALSE,
+        `submitted_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+        FOREIGN KEY (`pre_gen_game_id`) REFERENCES `pre_generated_games`(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+    -- 结算结果详情表
+    CREATE TABLE `settlement_results` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `settlement_group_id` INT NOT NULL,
+        `user_id` INT NOT NULL,
+        `pre_gen_game_id` INT NOT NULL,
+        `score` INT NOT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX (`settlement_group_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ";
+
+    echo "Executing SQL statements...\n";
+    $pdo->exec($sql);
+    echo "All tables created successfully.\n";
+
+} catch (PDOException $e) {
+    die("Database error: " . $e->getMessage() . "\n");
+} catch (Throwable $e) {
+    die("An unexpected error occurred: " . $e->getMessage() . "\n");
+}
+
+?>
+---
+File: backend/telegram_webhook.php
+---
+<?php
+
+/**
+ * telegram_webhook.php
+ *
+ * 这是 Telegram Bot 的唯一 Webhook 入口点。
+ * 它的职责是：
+ * 1. 接收来自 Telegram 服务器的 POST 请求。
+ * 2. 记录请求（用于调试）。
+ * 3. 引入核心处理逻辑。
+ * 4. 确保在任何情况下都向 Telegram 返回一个 HTTP 200 响应。
+ */
+
+// --- 调试日志记录 (可选，但在排错时非常有用) ---
+// 这会在 telegram_webhook.php 文件的同目录下创建一个 telegram_log.txt 文件
+// 记录下所有收到的原始请求数据。
+// 在生产环境中可以注释掉此部分以提升性能。
+try {
+    $raw_input = file_get_contents("php://input");
+    if ($raw_input) {
+        $log_message = "--- Request Received at: " . date('Y-m-d H:i:s') . " ---\n";
+        $log_message .= $raw_input . "\n\n";
+        file_put_contents("telegram_log.txt", $log_message, FILE_APPEND);
+    }
+} catch (Exception $e) {
+    // 如果日志记录失败，也不要中断脚本
+    // 可以在服务器错误日志中记录这个问题
+    error_log('Failed to write to telegram_log.txt: ' . $e->getMessage());
+}
+
+
+// --- 核心逻辑处理 ---
+try {
+    // 引入数据库连接和配置文件加载器
+    // 这是所有操作的基础，如果此文件有问题，脚本会在这里停止
+    require_once __DIR__ . '/db.php';
+
+    // 引入 Telegram 消息处理器
+    require_once __DIR__ . '/handlers/telegram_handler.php';
+
+    // 从请求体中解码 JSON 数据
+    $update = json_decode($raw_input, true);
+
+    // 检查是否是有效的消息更新
+    if (isset($update["message"])) {
+        // 获取数据库连接实例
+        $pdo = getDBConnection();
+        // 获取 Telegram 配置 (Token 和 Admin Chat ID)
+        $config = getTelegramConfig();
+
+        // 将消息交由处理器函数进行处理
+        handleTelegramMessage($pdo, $config, $update["message"]);
+
+    } elseif (isset($update["callback_query"])) {
+        // 预留位置：未来如果使用内联按钮，可以在这里处理回调查询
+        // handleCallbackQuery($pdo, $config, $update["callback_query"]);
+    }
+
+} catch (Throwable $e) {
+    // 捕获所有可能的致命错误 (包括 require 失败, 数据库连接失败等)
+    // 记录到服务器的 PHP 错误日志中，这对于调试至关重要
+    error_log(
+        'Fatal error in telegram_webhook.php: ' . $e->getMessage() .
+        ' in ' . $e->getFile() . ' on line ' . $e->getLine()
+    );
+} finally {
+    // --- 确保响应 ---
+    // 无论上面的 try-catch 块中发生了什么，
+    // 都必须向 Telegram 返回一个 HTTP 200 OK 响应。
+    // 这可以防止 Telegram 因未收到确认而反复重发相同的消息。
+    if (!headers_sent()) {
+        header('Content-Type: application/json');
+        http_response_code(200);
+        // 可以返回一个空的 JSON 对象或简单的成功消息
+        echo json_encode(['status' => 'ok']);
+    }
+}
+
+// 确保脚本在这里干净地结束
+exit();
+
+?>
+---
+File: backend/.env.example
+---
+DB_HOST=localhost
+DB_NAME=your_db_name
+DB_USER=your_db_user
+DB_PASS=your_db_password
+
+# 在 Telegram 中从 @BotFather 获取
+TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
+# 给你的机器人发送一条消息，然后访问 https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates 获取你的 chat_id
+TELEGRAM_ADMIN_CHAT_ID="your_admin_chat_id"
+---
