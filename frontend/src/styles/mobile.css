@@ -1,0 +1,235 @@
+/* 移动端响应式样式 */
+:root {
+  --card-width: 60px;
+  --card-height: 84px;
+  --card-margin: 2px;
+  --header-height: 50px;
+  --footer-height: 60px;
+}
+
+@media (max-width: 768px) {
+  body {
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+
+  #root {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 100vh;
+  }
+
+  .App-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: #2c3e50;
+    color: white;
+    z-index: 1000;
+    padding: 0 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .App-header h1 {
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  .user-info {
+    font-size: 0.8rem;
+  }
+
+  .App main {
+    margin-top: var(--header-height);
+    margin-bottom: var(--footer-height);
+    padding: 10px;
+    min-height: calc(100vh - var(--header-height) - var(--footer-height));
+  }
+
+  /* 游戏界面布局 */
+  .game-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* 牌桌区域 */
+  .table-area {
+    flex: 1;
+    position: relative;
+    background: #27ae60;
+    border-radius: 10px;
+    margin: 5px;
+    overflow: hidden;
+  }
+
+  /* 手牌区域 */
+  .hand-area {
+    height: 120px;
+    background: #34495e;
+    border-radius: 10px 10px 0 0;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+  }
+
+  /* 牌道区域 */
+  .lanes-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    background: #2c3e50;
+    border-radius: 0 0 10px 10px;
+  }
+
+  .lane {
+    background: #34495e;
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  .lane-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    color: white;
+    font-size: 0.9rem;
+  }
+
+  .lane-cards {
+    display: flex;
+    gap: 2px;
+    min-height: 50px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* 卡片样式 */
+  .card {
+    width: var(--card-width);
+    height: var(--card-height);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  }
+
+  .card.selected {
+    transform: translateY(-10px);
+    box-shadow: 0 6px 12px rgba(255,255,0,0.5);
+    border: 2px solid gold;
+  }
+
+  /* 按钮样式 */
+  .game-button {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin: 5px;
+  }
+
+  .game-button:disabled {
+    background: #7f8c8d;
+    cursor: not-allowed;
+  }
+
+  .game-button:not(:disabled):hover {
+    background: #c0392b;
+  }
+
+  /* 底部操作栏 */
+  .action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--footer-height);
+    background: #2c3e50;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 10px;
+    z-index: 1000;
+  }
+
+  /* 比牌界面 */
+  .comparison-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    padding: 20px;
+  }
+
+  .comparison-content {
+    background: #34495e;
+    border-radius: 15px;
+    padding: 20px;
+    max-width: 95%;
+    max-height: 90%;
+    overflow-y: auto;
+  }
+
+  .player-comparison {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: #2c3e50;
+  }
+
+  .player-winner {
+    background: #27ae60;
+    border: 2px solid gold;
+  }
+
+  /* 响应式卡片尺寸 */
+  @media (max-width: 480px) {
+    :root {
+      --card-width: 50px;
+      --card-height: 70px;
+    }
+    
+    .hand-area {
+      height: 100px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    :root {
+      --card-width: 45px;
+      --card-height: 63px;
+    }
+  }
+}

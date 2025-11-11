@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Auth from './components/Auth';
 import Lobby from './components/Lobby';
+import GameBoard from './components/GameBoard';
 import apiService from './api/apiService';
 import './App.css';
+import './styles/mobile.css';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('authToken'));
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [currentView, setCurrentView] = useState('lobby'); // 'lobby', 'game'
+  const [currentTable, setCurrentTable] = useState(null);
 
   useEffect(() => {
     const verifyToken = async () => {
@@ -28,7 +31,6 @@ function App() {
         }
       }
       setIsLoading(false);
-      setAuthChecked(true);
     };
     
     verifyToken();
@@ -39,7 +41,6 @@ function App() {
     apiService.setToken(newToken);
     setToken(newToken);
     
-    // 确保 token 设置后再获取用户信息
     if (!userData) {
       try {
         const response = await apiService.getUser();
@@ -59,13 +60,24 @@ function App() {
     setToken(null);
     setUser(null);
     apiService.setToken(null);
+    setCurrentView('lobby');
+  };
+
+  const handleJoinTable = (tableId) => {
+    setCurrentTable(tableId);
+    setCurrentView('game');
+  };
+
+  const handleExitGame = () => {
+    setCurrentView('lobby');
+    setCurrentTable(null);
   };
 
   if (isLoading) {
     return (
       <div className="App">
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
-          <h1>十三水游戏</h1>
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
           <p>加载中...</p>
         </div>
       </div>
@@ -83,11 +95,17 @@ function App() {
           </div>
         )}
       </header>
+      
       <main>
         {!token || !user ? (
           <Auth onLoginSuccess={handleLoginSuccess} />
+        ) : currentView === 'lobby' ? (
+          <Lobby onJoinTable={handleJoinTable} />
         ) : (
-          <Lobby />
+          <GameBoard 
+            tableId={currentTable} 
+            onExitGame={handleExitGame}
+          />
         )}
       </main>
     </div>
