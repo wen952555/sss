@@ -12,7 +12,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState('lobby'); // 'lobby', 'game'
   const [currentTable, setCurrentTable] = useState(null);
-  const [joinMessage, setJoinMessage] = useState('');
 
   useEffect(() => {
     const verifyToken = async () => {
@@ -63,43 +62,17 @@ function App() {
     apiService.setToken(null);
     setCurrentView('lobby');
     setCurrentTable(null);
-    setJoinMessage('');
   };
 
   const handleJoinTable = async (tableId) => {
-    try {
-      setJoinMessage(`正在加入桌子 ${tableId}...`);
-      
-      // 模拟加入过程
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // 这里可以调用真实的加入API
-      // const response = await apiService.joinTable(tableId);
-      // if (response.success) {
-      //   setCurrentTable(tableId);
-      //   setCurrentView('game');
-      // } else {
-      //   setJoinMessage(`加入失败: ${response.message}`);
-      //   setTimeout(() => setJoinMessage(''), 3000);
-      // }
-      
-      // 临时：直接进入游戏
-      setCurrentTable(tableId);
-      setCurrentView('game');
-      setJoinMessage('');
-      
-    } catch (error) {
-      console.error('Join table error:', error);
-      setJoinMessage('加入游戏失败，请重试');
-      setTimeout(() => setJoinMessage(''), 3000);
-    }
+    // 直接进入游戏，不显示任何提示
+    setCurrentTable(tableId);
+    setCurrentView('game');
   };
 
   const handleExitGame = () => {
     setCurrentView('lobby');
     setCurrentTable(null);
-    setJoinMessage('已退出游戏');
-    setTimeout(() => setJoinMessage(''), 2000);
   };
 
   if (isLoading) {
@@ -124,40 +97,6 @@ function App() {
           </div>
         )}
       </header>
-      
-      {/* 加入游戏提示 */}
-      {joinMessage && (
-        <div style={{
-          position: 'fixed',
-          top: '60px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: '#3498db',
-          color: 'white',
-          padding: '10px 20px',
-          borderRadius: '20px',
-          zIndex: 1000,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          animation: 'slideDown 0.3s ease-out'
-        }}>
-          {joinMessage}
-        </div>
-      )}
-
-      <style>
-        {`
-          @keyframes slideDown {
-            from {
-              transform: translateX(-50%) translateY(-20px);
-              opacity: 0;
-            }
-            to {
-              transform: translateX(-50%) translateY(0);
-              opacity: 1;
-            }
-          }
-        `}
-      </style>
       
       <main>
         {!token || !user ? (
