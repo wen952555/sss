@@ -99,6 +99,27 @@ const apiService = {
       method: 'POST',
       body: { table_id: tableId },
     });
+  },
+
+  // 获取游戏状态
+  getGameState(tableId) {
+    return this.request(`game-state?table_id=${tableId}`);
+  },
+
+  // 提交手牌
+  submitHand(tableId, hand) {
+    return this.request('submit-hand', {
+      method: 'POST',
+      body: { table_id: tableId, hand },
+    });
+  },
+
+  // 退出游戏
+  exitGame(tableId) {
+    return this.request('exit-game', {
+      method: 'POST',
+      body: { table_id: tableId },
+    });
   }
 };
 

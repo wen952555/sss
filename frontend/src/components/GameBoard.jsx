@@ -267,6 +267,25 @@ const GameBoard = ({ tableId, onExitGame }) => {
 
   return (
     <div className="game-container">
+      {/* 开发提示横幅 */}
+      <div style={{
+        position: 'absolute',
+        top: '10px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'linear-gradient(45deg, #ff6b6b, #feca57)',
+        color: 'white',
+        padding: '8px 20px',
+        borderRadius: '20px',
+        zIndex: 100,
+        fontSize: '0.8rem',
+        fontWeight: 'bold',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        textAlign: 'center'
+      }}>
+        🚧 演示模式 - 功能开发中
+      </div>
+
       {/* 游戏牌桌 */}
       <GameTable
         players={gameState.players}
