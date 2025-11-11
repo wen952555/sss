@@ -12,7 +12,7 @@ function handleRegister($pdo, $data) {
         return;
     }
 
-    // 验证手机号格式 (简单的11位数字验证)
+    // 验证手机号格式
     if (!preg_match('/^1[3-9]\d{9}$/', $phone)) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => '手机号格式不正确']);
