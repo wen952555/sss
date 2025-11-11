@@ -23,7 +23,7 @@ const Auth = ({ onLoginSuccess }) => {
       return;
     }
     
-    if (!/^1[3-9]\d{9}$/.test(phone)) {
+    if (!/^1[3-9]\\d{9}$/.test(phone)) {
       setError('手机号格式不正确');
       return;
     }
