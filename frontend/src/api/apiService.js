@@ -1,3 +1,5 @@
+// src/api/apiService.js
+
 const API_BASE_URL = '/api';
 
 const apiService = {
@@ -5,13 +7,14 @@ const apiService = {
 
   setToken(token) {
     this.token = token;
+    console.log('Token set:', token ? 'Yes' : 'No');
   },
 
   async request(endpoint, options = {}) {
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     const url = `${API_BASE_URL}/${normalizedEndpoint}`;
     
-    console.log(`Making API request to: ${url}`);
+    console.log(`Making API request to: ${url}`, { hasToken: !!this.token });
 
     const headers = {
       'Content-Type': 'application/json',
@@ -36,14 +39,14 @@ const apiService = {
       
       // 首先获取原始响应文本
       const responseText = await response.text();
-      console.log('Raw response:', responseText);
-      
-      // 检查响应内容类型
-      const contentType = response.headers.get('content-type');
-      console.log('Content-Type:', contentType);
+      console.log('Raw response:', responseText.substring(0, 200));
       
       // 检查状态码
       if (!response.ok) {
+        // 如果是401错误，可能是token问题
+        if (response.status === 401) {
+          console.warn('Authentication failed, token might be invalid');
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
@@ -66,7 +69,7 @@ const apiService = {
     }
   },
 
-  // ... 其他方法保持不变
+  // 用户相关
   login(phone, password) {
     return this.request('login', {
       method: 'POST',
@@ -85,8 +88,17 @@ const apiService = {
     return this.request('get-user');
   },
 
+  // 游戏相关
   getTablesStatus() {
     return this.request('tables-status');
+  },
+
+  // 加入桌子（待实现）
+  joinTable(tableId) {
+    return this.request('join-table', {
+      method: 'POST',
+      body: { table_id: tableId },
+    });
   }
 };
 
