@@ -27,13 +27,22 @@ function formatCardData($cards) {
     
     return array_map(function($card) {
         if (is_array($card)) {
-            return $card; // 已经是对象格式
+            // 如果已经是对象格式，确保filename有.svg扩展名
+            if (isset($card['filename']) && !str_ends_with($card['filename'], '.svg')) {
+                $card['filename'] = $card['filename'] . '.svg';
+            }
+            return $card;
         }
         
         // 解析字符串格式的卡片
-        if (is_string($card) && strpos($card, '_of_') !== false) {
+        if (is_string($card)) {
             $filename = $card;
-            $cardName = str_replace('.svg', '', $card);
+            // 确保有.svg扩展名
+            if (!str_ends_with($filename, '.svg')) {
+                $filename = $filename . '.svg';
+            }
+            
+            $cardName = str_replace('.svg', '', $filename);
             list($value, $suit) = explode('_of_', $cardName);
             
             $suitSymbols = [
