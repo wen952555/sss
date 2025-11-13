@@ -1,7 +1,7 @@
 import React from 'react';
 import Card from './Card';
 
-const CardArea = ({ title, cards, area, maxCards, onCardMove, onCardReturn, gameStatus }) => {
+const CardArea = ({ title, cards, area, maxCards, onCardMove, gameStatus }) => {
   const handleDrop = (e) => {
     e.preventDefault();
     if (gameStatus !== 'playing') return;
@@ -29,9 +29,13 @@ const CardArea = ({ title, cards, area, maxCards, onCardMove, onCardReturn, game
 
   const getAreaStyle = () => {
     const isFull = cards.length >= maxCards;
+    const isValid = cards.length === maxCards;
+    
     return {
-      background: isFull ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-      border: isFull ? '2px solid #4CAF50' : '2px dashed rgba(255, 255, 255, 0.3)'
+      background: isValid ? 'rgba(76, 175, 80, 0.1)' : 
+                  isFull ? 'rgba(255, 193, 7, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+      border: isValid ? '2px solid #4CAF50' : 
+              isFull ? '2px solid #FFC107' : '2px dashed rgba(255, 255, 255, 0.3)'
     };
   };
 
@@ -46,18 +50,17 @@ const CardArea = ({ title, cards, area, maxCards, onCardMove, onCardReturn, game
         <h4>{title}</h4>
         <span>
           {cards.length}/{maxCards}
-          {cards.length >= maxCards && ' ✓'}
+          {cards.length === maxCards && ' ✓'}
         </span>
       </div>
       
       <div className="card-slot">
-        {cards.map(card => (
+        {cards.map((card, index) => (
           <Card
-            key={card.filename}
+            key={typeof card === 'object' ? card.filename : `${card}-${index}`}
             card={card}
             area={area}
             draggable={gameStatus === 'playing'}
-            onDoubleClick={() => gameStatus === 'playing' && onCardReturn(card, area)}
           />
         ))}
         {cards.length === 0 && (
