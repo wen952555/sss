@@ -16,42 +16,57 @@ require_once '../config/database.php';
 require_once '../models/UserModel.php';
 require_once '../utils/Auth.php';
 
-$database = new Database();
-$db = $database->getConnection();
-$userModel = new UserModel($db);
-
-$input = json_decode(file_get_contents('php://input'), true);
-
-// 确保输入解析成功
-if (json_last_error() !== JSON_ERROR_NONE) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => '无效的JSON数据']);
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $action = $_GET['action'] ?? '';
+try {
+    $database = new Database();
+    $db = $database->getConnection();
     
-    if ($action == 'login') {
-        $phone = $input['phone'] ?? '';
-        $password = $input['password'] ?? '';
+    if (!$db) {
+        throw new Exception('无法连接到数据库');
+    }
+    
+    $userModel = new UserModel($db);
+
+    // 获取输入数据
+    $input = file_get_contents('php://input');
+    if (empty($input)) {
+        throw new Exception('请求体为空');
+    }
+    
+    $input = json_decode($input, true);
+
+    // 确保输入解析成功
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception('无效的JSON数据');
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $action = $_GET['action'] ?? '';
         
-        if (empty($phone) || empty($password)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => '手机号和密码不能为空']);
-            exit;
-        }
-        
-        // 基本手机号验证
-        if (strlen($phone) !== 11 || !is_numeric($phone)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => '请输入11位手机号']);
-            exit;
-        }
-        
-        try {
+        if ($action == 'login') {
+            $phone = $input['phone'] ?? '';
+            $password = $input['password'] ?? '';
+            
+            if (empty($phone) || empty($password)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '手机号和密码不能为空']);
+                exit;
+            }
+            
+            // 基本手机号验证
+            if (strlen($phone) !== 11 || !is_numeric($phone)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '请输入11位手机号']);
+                exit;
+            }
+            
             $user = $userModel->getUserByPhone($phone);
-            if (!$user || !password_verify($password, $user['password_hash'])) {
+            if (!$user) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => '手机号或密码错误']);
+                exit;
+            }
+            
+            if (!password_verify($password, $user['password_hash'])) {
                 http_response_code(401);
                 echo json_encode(['success' => false, 'message' => '手机号或密码错误']);
                 exit;
@@ -70,37 +85,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'user' => $user
             ]);
             
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => '服务器错误，请稍后重试']);
-        }
-        
-    } elseif ($action == 'register') {
-        $phone = $input['phone'] ?? '';
-        $password = $input['password'] ?? '';
-        $email = $input['email'] ?? '';
-        
-        // 验证手机号格式
-        if (empty($phone) || strlen($phone) !== 11 || !is_numeric($phone)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => '请输入11位手机号']);
-            exit;
-        }
-        
-        if (empty($password) || strlen($password) < 6) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => '密码长度至少6位']);
-            exit;
-        }
-        
-        // 检查手机号是否已存在
-        if ($userModel->phoneExists($phone)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => '手机号已注册']);
-            exit;
-        }
-        
-        try {
+        } elseif ($action == 'register') {
+            $phone = $input['phone'] ?? '';
+            $password = $input['password'] ?? '';
+            $email = $input['email'] ?? '';
+            
+            // 验证手机号格式
+            if (empty($phone) || strlen($phone) !== 11 || !is_numeric($phone)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '请输入11位手机号']);
+                exit;
+            }
+            
+            if (empty($password) || strlen($password) < 6) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '密码长度至少6位']);
+                exit;
+            }
+            
+            // 检查手机号是否已存在
+            if ($userModel->phoneExists($phone)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '手机号已注册']);
+                exit;
+            }
+            
             $user_id = $userModel->createUser($phone, $password, $email);
             if ($user_id) {
                 echo json_encode([
@@ -110,23 +119,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 ]);
             } else {
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => '注册失败']);
+                echo json_encode(['success' => false, 'message' => '注册失败，请稍后重试']);
             }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => '服务器错误，请稍后重试']);
-        }
-        
-    } elseif ($action == 'find_user_id') {
-        $phone = $input['phone'] ?? '';
-        
-        if (empty($phone) || strlen($phone) !== 11 || !is_numeric($phone)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => '请输入11位手机号']);
-            exit;
-        }
-        
-        try {
+            
+        } elseif ($action == 'find_user_id') {
+            $phone = $input['phone'] ?? '';
+            
+            if (empty($phone) || strlen($phone) !== 11 || !is_numeric($phone)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '请输入11位手机号']);
+                exit;
+            }
+            
             $user = $userModel->getUserByPhone($phone);
             if (!$user) {
                 http_response_code(404);
@@ -139,16 +143,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'user_id' => $user['user_id'],
                 'phone' => $user['phone']
             ]);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => '服务器错误，请稍后重试']);
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '无效的操作']);
         }
     } else {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => '无效的操作']);
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => '方法不允许']);
     }
-} else {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => '方法不允许']);
+} catch (Exception $e) {
+    error_log("Auth API Error: " . $e->getMessage());
+    
+    http_response_code(500);
+    echo json_encode([
+        'success' => false, 
+        'message' => '服务器错误: ' . $e->getMessage()
+    ]);
 }
 ?>
