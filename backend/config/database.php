@@ -8,10 +8,45 @@ class Database {
 
     public function __construct() {
         // 从环境变量或直接设置获取数据库配置
+        // serv00 通常使用 localhost 作为数据库主机
         $this->host = getenv('DB_HOST') ?: 'localhost';
-        $this->db_name = getenv('DB_NAME') ?: 'thirteen_water';
-        $this->username = getenv('DB_USERNAME') ?: 'root';
+        $this->db_name = getenv('DB_NAME') ?: 'wenge9529_thirteenwater';
+        $this->username = getenv('DB_USERNAME') ?: 'wenge9529';
         $this->password = getenv('DB_PASSWORD') ?: '';
+        
+        // 如果没有设置环境变量，尝试从 .env 文件读取
+        if (empty($this->password)) {
+            $this->loadEnvFile();
+        }
+    }
+    
+    private function loadEnvFile() {
+        $env_file = __DIR__ . '/../.env';
+        if (file_exists($env_file)) {
+            $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (strpos(trim($line), '#') === 0) continue; // 跳过注释
+                
+                list($key, $value) = explode('=', $line, 2);
+                $key = trim($key);
+                $value = trim($value);
+                
+                switch ($key) {
+                    case 'DB_HOST':
+                        $this->host = $value;
+                        break;
+                    case 'DB_NAME':
+                        $this->db_name = $value;
+                        break;
+                    case 'DB_USERNAME':
+                        $this->username = $value;
+                        break;
+                    case 'DB_PASSWORD':
+                        $this->password = $value;
+                        break;
+                }
+            }
+        }
     }
 
     public function getConnection() {

@@ -1,6 +1,14 @@
 <?php
 // 数据库初始化脚本
-require_once '../config/database.php';
+// 使用绝对路径来包含文件
+
+// 获取当前脚本的目录
+$current_dir = __DIR__;
+// 获取项目根目录（public_html）
+$root_dir = dirname($current_dir);
+
+// 包含数据库配置文件
+require_once $root_dir . '/config/database.php';
 
 $database = new Database();
 

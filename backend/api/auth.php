@@ -8,13 +8,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-// 关闭错误输出，避免污染JSON响应
+// 关闭错误输出
 ini_set('display_errors', 0);
 error_reporting(0);
 
-require_once '../config/database.php';
-require_once '../models/UserModel.php';
-require_once '../utils/Auth.php';
+// 使用绝对路径包含文件
+$root_dir = dirname(__DIR__);
+require_once $root_dir . '/config/database.php';
+require_once $root_dir . '/models/UserModel.php';
+require_once $root_dir . '/utils/Auth.php';
 
 try {
     $database = new Database();
@@ -122,27 +124,6 @@ try {
                 echo json_encode(['success' => false, 'message' => '注册失败，请稍后重试']);
             }
             
-        } elseif ($action == 'find_user_id') {
-            $phone = $input['phone'] ?? '';
-            
-            if (empty($phone) || strlen($phone) !== 11 || !is_numeric($phone)) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'message' => '请输入11位手机号']);
-                exit;
-            }
-            
-            $user = $userModel->getUserByPhone($phone);
-            if (!$user) {
-                http_response_code(404);
-                echo json_encode(['success' => false, 'message' => '手机号未注册']);
-                exit;
-            }
-            
-            echo json_encode([
-                'success' => true,
-                'user_id' => $user['user_id'],
-                'phone' => $user['phone']
-            ]);
         } else {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => '无效的操作']);
@@ -157,7 +138,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false, 
-        'message' => '服务器错误: ' . $e->getMessage()
+        'message' => '服务器错误，请稍后重试'
     ]);
 }
 ?>
