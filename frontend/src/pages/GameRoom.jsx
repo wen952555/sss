@@ -12,6 +12,8 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
   const [gameStatus, setGameStatus] = useState('waiting');
   const [roomInfo, setRoomInfo] = useState(null);
   const [currentGame, setCurrentGame] = useState(null);
+  const [selectedCards, setSelectedCards] = useState([]);
+  const [lastSelectedArea, setLastSelectedArea] = useState(null);
 
   // 初始化游戏
   const initGame = async () => {
@@ -39,11 +41,76 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     }
   };
 
+  // 处理卡片点击选择
+  const handleCardClick = (card, area) => {
+    const cardKey = `${area}-${typeof card === 'object' ? card.filename : card}`;
+    
+    setSelectedCards(prev => {
+      const isSelected = prev.some(selected => 
+        selected.cardKey === cardKey
+      );
+      
+      if (isSelected) {
+        // 取消选择
+        return prev.filter(selected => selected.cardKey !== cardKey);
+      } else {
+        // 添加选择
+        return [...prev, { card, area, cardKey }];
+      }
+    });
+    
+    setLastSelectedArea(area);
+  };
+
+  // 处理区域点击移动
+  const handleAreaClick = (targetArea) => {
+    if (selectedCards.length === 0 || !lastSelectedArea) return;
+    
+    if (targetArea === lastSelectedArea) {
+      // 同区域点击，只清除选择
+      setSelectedCards([]);
+      return;
+    }
+
+    // 移动选中的卡片
+    const newArrangedCards = { ...arrangedCards };
+    
+    // 从原区域移除选中的卡片
+    selectedCards.forEach(({ card, area }) => {
+      newArrangedCards[area] = newArrangedCards[area].filter(c => 
+        typeof c === 'object' ? c.filename !== card.filename : c !== card
+      );
+    });
+    
+    // 添加到目标区域
+    selectedCards.forEach(({ card }) => {
+      newArrangedCards[targetArea].push(card);
+    });
+    
+    setArrangedCards(newArrangedCards);
+    setSelectedCards([]);
+    setLastSelectedArea(null);
+  };
+
   // 提交牌型
   const handleSubmit = async () => {
     const totalArranged = arrangedCards.head.length + arrangedCards.middle.length + arrangedCards.tail.length;
     if (totalArranged !== 13) {
       alert('请确保13张牌全部分配到三道中！');
+      return;
+    }
+
+    // 提交时检查数量
+    if (arrangedCards.head.length !== 3) {
+      alert('头道必须是3张牌！');
+      return;
+    }
+    if (arrangedCards.middle.length !== 5) {
+      alert('中道必须是5张牌！');
+      return;
+    }
+    if (arrangedCards.tail.length !== 5) {
+      alert('尾道必须是5张牌！');
       return;
     }
 
@@ -66,15 +133,9 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     }
   };
 
-  // 移动牌
+  // 移动牌（拖拽功能 - 不再限制数量）
   const moveCard = (card, fromArea, toArea) => {
     if (fromArea === toArea) return;
-
-    if ((toArea === 'head' && arrangedCards[toArea].length >= 3) ||
-        (toArea !== 'head' && arrangedCards[toArea].length >= 5)) {
-      alert('该区域已满！');
-      return;
-    }
 
     const newFrom = arrangedCards[fromArea].filter(c =>
       typeof c === 'object' ? c.filename !== card.filename : c !== card
@@ -93,6 +154,8 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
   const handleRestart = () => {
     if (window.confirm('确定要重新开始游戏吗？')) {
       initGame();
+      setSelectedCards([]);
+      setLastSelectedArea(null);
     }
   };
 
@@ -100,7 +163,15 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
   const handleReset = () => {
     if (currentGame && window.confirm('确定要重置为初始理牌状态吗？')) {
       setArrangedCards(currentGame.preset_arrangement);
+      setSelectedCards([]);
+      setLastSelectedArea(null);
     }
+  };
+
+  // 清除所有选择
+  const clearSelection = () => {
+    setSelectedCards([]);
+    setLastSelectedArea(null);
   };
 
   useEffect(() => {
@@ -131,35 +202,51 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
         </div>
       </div>
 
+      {/* 选择提示 */}
+      {selectedCards.length > 0 && (
+        <div className="selection-info">
+          <span>已选择 {selectedCards.length} 张牌</span>
+          <button className="clear-selection-btn" onClick={clearSelection}>
+            取消选择
+          </button>
+        </div>
+      )}
+
       <div className="card-areas">
         {/* 头道 - 最小牌型（最上面） */}
         <CardArea
-          title="头道（3张）- 最小牌型"
+          title={`头道（${arrangedCards.head.length}/3张）- 最小牌型`}
           cards={arrangedCards.head}
           area="head"
-          maxCards={3}
+          onCardClick={handleCardClick}
+          onAreaClick={handleAreaClick}
           onCardMove={moveCard}
           gameStatus={gameStatus}
+          selectedCards={selectedCards}
         />
 
         {/* 中道 - 中等牌型 */}
         <CardArea
-          title="中道（5张）- 中等牌型"
+          title={`中道（${arrangedCards.middle.length}/5张）- 中等牌型`}
           cards={arrangedCards.middle}
           area="middle"
-          maxCards={5}
+          onCardClick={handleCardClick}
+          onAreaClick={handleAreaClick}
           onCardMove={moveCard}
           gameStatus={gameStatus}
+          selectedCards={selectedCards}
         />
 
         {/* 尾道 - 最大牌型（最下面） */}
         <CardArea
-          title="尾道（5张）- 最大牌型"
+          title={`尾道（${arrangedCards.tail.length}/5张）- 最大牌型`}
           cards={arrangedCards.tail}
           area="tail"
-          maxCards={5}
+          onCardClick={handleCardClick}
+          onAreaClick={handleAreaClick}
           onCardMove={moveCard}
           gameStatus={gameStatus}
+          selectedCards={selectedCards}
         />
       </div>
 
@@ -201,6 +288,12 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
           </button>
         </div>
       )}
+
+      {/* 操作说明 */}
+      <div className="game-instructions">
+        <p>💡 操作说明：点击选择扑克牌（可多选），然后点击目标牌墩区域移动</p>
+        <p>💡 也可以直接拖拽单张扑克牌移动</p>
+      </div>
     </div>
   );
 };

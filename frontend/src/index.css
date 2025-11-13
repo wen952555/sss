@@ -545,3 +545,89 @@ body {
     min-height: 100px;
   }
 }
+
+/* 在文件末尾添加以下样式 */
+
+/* 选择信息提示 */
+.selection-info {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.clear-selection-btn {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.clear-selection-btn:hover {
+  background: rgba(255, 107, 107, 0.3);
+}
+
+/* 被选中的卡片样式 */
+.card.selected {
+  border: 3px solid #FF6B6B !important;
+  box-shadow: 0 0 15px rgba(255, 107, 107, 0.7) !important;
+  transform: translateY(-8px) scale(1.1);
+  z-index: 10;
+}
+
+/* 空区域提示 */
+.empty-area-hint {
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  width: 100%;
+  padding: 30px 20px;
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* 游戏操作说明 */
+.game-instructions {
+  text-align: center;
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.game-instructions p {
+  margin: 5px 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .selection-info {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .clear-selection-btn {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+  
+  .game-instructions {
+    font-size: 12px;
+    padding: 10px;
+  }
+  
+  .empty-area-hint {
+    padding: 20px 15px;
+    font-size: 12px;
+  }
+}

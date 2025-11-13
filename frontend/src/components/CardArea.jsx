@@ -1,7 +1,16 @@
 import React from 'react';
 import Card from './Card';
 
-const CardArea = ({ title, cards, area, maxCards, onCardMove, gameStatus }) => {
+const CardArea = ({ 
+  title, 
+  cards, 
+  area, 
+  onCardMove, 
+  onCardClick,
+  onAreaClick,
+  gameStatus, 
+  selectedCards 
+}) => {
   const handleDrop = (e) => {
     e.preventDefault();
     if (gameStatus !== 'playing') return;
@@ -11,7 +20,7 @@ const CardArea = ({ title, cards, area, maxCards, onCardMove, gameStatus }) => {
 
     try {
       const { card, fromArea } = JSON.parse(cardData);
-      
+
       if (fromArea !== area) {
         onCardMove(card, fromArea, area);
       }
@@ -27,33 +36,47 @@ const CardArea = ({ title, cards, area, maxCards, onCardMove, gameStatus }) => {
     }
   };
 
+  const handleAreaClick = () => {
+    if (gameStatus !== 'playing') return;
+    onAreaClick(area);
+  };
+
   const getAreaStyle = () => {
-    const isFull = cards.length >= maxCards;
-    const isValid = cards.length === maxCards;
-    
+    const cardCount = cards.length;
+    const requiredCount = area === 'head' ? 3 : 5;
+    const isValid = cardCount === requiredCount;
+
     return {
-      background: isValid ? 'rgba(76, 175, 80, 0.1)' : 
-                  isFull ? 'rgba(255, 193, 7, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-      border: isValid ? '2px solid #4CAF50' : 
-              isFull ? '2px solid #FFC107' : '2px dashed rgba(255, 255, 255, 0.3)'
+      background: isValid ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+      border: isValid ? '2px solid #4CAF50' : '2px dashed rgba(255, 255, 255, 0.3)',
+      cursor: gameStatus === 'playing' ? 'pointer' : 'default'
     };
   };
 
+  // 检查卡片是否被选中
+  const isCardSelected = (card) => {
+    return selectedCards.some(selected => {
+      const cardKey = `${area}-${typeof card === 'object' ? card.filename : card}`;
+      return selected.cardKey === cardKey;
+    });
+  };
+
   return (
-    <div 
+    <div
       className="card-area"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
+      onClick={handleAreaClick}
       style={getAreaStyle()}
     >
       <div className="area-header">
         <h4>{title}</h4>
         <span>
-          {cards.length}/{maxCards}
-          {cards.length === maxCards && ' ✓'}
+          {cards.length}/{area === 'head' ? 3 : 5}
+          {cards.length === (area === 'head' ? 3 : 5) && ' ✓'}
         </span>
       </div>
-      
+
       <div className="card-slot">
         {cards.map((card, index) => (
           <Card
@@ -61,16 +84,14 @@ const CardArea = ({ title, cards, area, maxCards, onCardMove, gameStatus }) => {
             card={card}
             area={area}
             draggable={gameStatus === 'playing'}
+            onClick={onCardClick}
+            isSelected={isCardSelected(card)}
+            gameStatus={gameStatus}
           />
         ))}
         {cards.length === 0 && (
-          <div style={{ 
-            color: 'rgba(255,255,255,0.5)', 
-            textAlign: 'center', 
-            width: '100%',
-            padding: '20px'
-          }}>
-            {gameStatus === 'playing' ? '拖放扑克牌到此处' : '等待分配'}
+          <div className="empty-area-hint">
+            {gameStatus === 'playing' ? '点击选择此处作为目标区域' : '等待分配'}
           </div>
         )}
       </div>
