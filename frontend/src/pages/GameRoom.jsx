@@ -109,19 +109,25 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
 
   return (
     <div className="game-room">
-      <div className="room-header">
-        <h2>{roomType}分场 - 十三水游戏</h2>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-          <span>玩家: {userInfo?.phone} | 余额: {userInfo?.balance}分</span>
-          <span>状态: {
-            gameStatus === 'waiting' ? '等待中' :
-            gameStatus === 'playing' ? '进行中' : '已提交'
-          }</span>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-          <button className="link-btn" onClick={onExit}>
+      {/* 紧凑的顶部横幅 */}
+      <div className="game-header-banner">
+        <div className="banner-content">
+          <button className="exit-btn" onClick={onExit}>
             返回大厅
           </button>
+          
+          <div className="game-info">
+            <span className="room-type">{roomType}分场</span>
+            <span className="player-info">玩家: {userInfo?.phone}</span>
+            <span className="balance-info">余额: {userInfo?.balance}分</span>
+          </div>
+          
+          <div className="game-status">
+            状态: {
+              gameStatus === 'waiting' ? '等待中' :
+              gameStatus === 'playing' ? '进行中' : '已提交'
+            }
+          </div>
         </div>
       </div>
 
