@@ -10,16 +10,34 @@ const Login = ({ onLogin, onNavigate }) => {
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    
+    // 手机号输入时自动过滤非数字字符
+    if (name === 'phone') {
+      const filteredValue = value.replace(/\D/g, ''); // 移除非数字字符
+      setFormData({
+        ...formData,
+        [name]: filteredValue
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // 基本手机号验证
+    if (formData.phone.length !== 11) {
+      setError('请输入11位手机号');
+      setLoading(false);
+      return;
+    }
 
     try {
       const result = await authAPI.login(formData.phone, formData.password);
@@ -41,8 +59,9 @@ const Login = ({ onLogin, onNavigate }) => {
     const phone = prompt('请输入手机号查找用户ID:');
     if (!phone) return;
 
-    if (!/^1[3-9]\\d{9}$/.test(phone)) {
-      alert('请输入有效的手机号');
+    // 基本手机号验证
+    if (phone.length !== 11) {
+      alert('请输入11位手机号');
       return;
     }
 
@@ -70,10 +89,13 @@ const Login = ({ onLogin, onNavigate }) => {
             value={formData.phone}
             onChange={handleChange}
             required
-            placeholder="请输入手机号"
-            pattern="1[3-9]\\d{9}"
+            placeholder="请输入11位手机号"
             maxLength="11"
+            minLength="11"
           />
+          <div style={{ fontSize: '12px', color: '#87CEEB', marginTop: '5px' }}>
+            请输入11位手机号
+          </div>
         </div>
 
         <div className="form-group">

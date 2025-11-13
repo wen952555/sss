@@ -13,10 +13,31 @@ const Register = ({ onNavigate }) => {
   const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    
+    // 手机号输入时自动过滤非数字字符
+    if (name === 'phone') {
+      const filteredValue = value.replace(/\D/g, ''); // 移除非数字字符
+      setFormData({
+        ...formData,
+        [name]: filteredValue
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+  };
+
+  const validatePhone = (phone) => {
+    if (phone.length !== 11) {
+      return '手机号必须是11位数字';
+    }
+    if (!/^1[3-9]/.test(phone)) {
+      return '手机号格式不正确';
+    }
+    return null;
   };
 
   const handleSubmit = async (e) => {
@@ -25,9 +46,10 @@ const Register = ({ onNavigate }) => {
     setError('');
     setSuccess('');
 
-    // 验证手机号格式
-    if (!/^1[3-9]\\d{9}$/.test(formData.phone)) {
-      setError('请输入有效的手机号');
+    // 验证手机号
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      setError(phoneError);
       setLoading(false);
       return;
     }
@@ -68,7 +90,7 @@ const Register = ({ onNavigate }) => {
         <h2>注册账号</h2>
         
         {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message" style={{ color: '#4CAF50', marginBottom: '15px', textAlign: 'center' }}>{success}</div>}
+        {success && <div className="success-message">{success}</div>}
 
         <div className="form-group">
           <label htmlFor="phone">手机号</label>
@@ -79,10 +101,13 @@ const Register = ({ onNavigate }) => {
             value={formData.phone}
             onChange={handleChange}
             required
-            placeholder="请输入手机号"
-            pattern="1[3-9]\\d{9}"
+            placeholder="请输入11位手机号"
             maxLength="11"
+            minLength="11"
           />
+          <div style={{ fontSize: '12px', color: '#87CEEB', marginTop: '5px' }}>
+            请输入11位手机号
+          </div>
         </div>
 
         <div className="form-group">

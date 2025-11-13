@@ -151,10 +151,12 @@ const BalanceManager = ({ userInfo, onClose }) => {
                 onChange={handleInputChange}
                 placeholder="请输入4位用户ID"
                 maxLength="4"
-                pattern="[A-Z0-9]{4}"
                 required
                 style={{ textTransform: 'uppercase' }}
               />
+              <div style={{ fontSize: '12px', color: '#87CEEB', marginTop: '5px' }}>
+                请输入4位用户ID（数字和字母组合）
+              </div>
             </div>
 
             <div className="form-group">
