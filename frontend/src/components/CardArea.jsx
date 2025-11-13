@@ -1,82 +1,75 @@
 import React from 'react';
 import Card from './Card';
-import { evaluateHand, HAND_TYPES } from '../utils/gameLogic';
 
-const CardArea = ({ 
-  title, 
-  cards, 
-  maxCards, 
-  onCardClick, 
-  selected = false,
-  onAreaSelect,
-  showEvaluation = true
-}) => {
-  const handleAreaClick = () => {
-    if (onAreaSelect) {
-      onAreaSelect();
+const CardArea = ({ title, cards, area, maxCards, onCardMove, onCardReturn, gameStatus }) => {
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (gameStatus !== 'playing') return;
+
+    const cardData = e.dataTransfer.getData('application/json');
+    if (!cardData) return;
+
+    try {
+      const { card, fromArea } = JSON.parse(cardData);
+      
+      if (fromArea !== area) {
+        onCardMove(card, fromArea, area);
+      }
+    } catch (error) {
+      console.error('拖拽数据解析错误:', error);
     }
   };
 
-  const getEvaluationText = () => {
-    if (!showEvaluation || cards.length === 0) return null;
-    
-    const evaluation = evaluateHand(cards);
-    return `${evaluation.type}`;
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (gameStatus === 'playing') {
+      e.dataTransfer.dropEffect = 'move';
+    }
   };
 
-  const getStatusColor = () => {
-    if (cards.length === maxCards) return '#27ae60'; // 完成 - 绿色
-    if (selected) return '#f39c12'; // 选中 - 橙色
-    return '#34495e'; // 默认
+  const getAreaStyle = () => {
+    const isFull = cards.length >= maxCards;
+    return {
+      background: isFull ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+      border: isFull ? '2px solid #4CAF50' : '2px dashed rgba(255, 255, 255, 0.3)'
+    };
   };
 
   return (
-    <div className="lane">
-      <div 
-        className="lane-header" 
-        onClick={handleAreaClick}
-        style={{ cursor: onAreaSelect ? 'pointer' : 'default' }}
-      >
+    <div 
+      className="card-area"
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      style={getAreaStyle()}
+    >
+      <div className="area-header">
+        <h4>{title}</h4>
         <span>
-          {title} ({cards.length}/{maxCards})
+          {cards.length}/{maxCards}
+          {cards.length >= maxCards && ' ✓'}
         </span>
-        {showEvaluation && (
-          <span style={{ 
-            fontSize: '0.8rem', 
-            color: getStatusColor(),
-            fontWeight: 'bold'
-          }}>
-            {getEvaluationText()}
-          </span>
-        )}
       </div>
-      <div className="lane-cards">
-        {cards.map((card, index) => (
+      
+      <div className="card-slot">
+        {cards.map(card => (
           <Card
-            key={`${card}-${index}`}
-            cardCode={card}
-            onClick={onCardClick}
-            size="normal"
+            key={card.filename}
+            card={card}
+            area={area}
+            draggable={gameStatus === 'playing'}
+            onDoubleClick={() => gameStatus === 'playing' && onCardReturn(card, area)}
           />
         ))}
-        {Array.from({ length: maxCards - cards.length }).map((_, index) => (
-          <div
-            key={`empty-${index}`}
-            style={{
-              width: 'var(--card-width)',
-              height: 'var(--card-height)',
-              border: '2px dashed #7f8c8d',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#7f8c8d',
-              fontSize: '0.8rem'
-            }}
-          >
-            空
+        {cards.length === 0 && (
+          <div style={{ 
+            color: 'rgba(255,255,255,0.5)', 
+            textAlign: 'center', 
+            width: '100%',
+            padding: '20px'
+          }}>
+            {gameStatus === 'playing' ? '拖放扑克牌到此处' : '等待分配'}
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

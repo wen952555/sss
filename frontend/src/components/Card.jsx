@@ -1,39 +1,67 @@
 import React from 'react';
-import { getCardImageUrl } from '../utils/cardHelper';
 
-const Card = ({ 
-  cardCode, 
-  onClick, 
-  selected = false, 
-  disabled = false,
-  size = 'normal'
-}) => {
-  const handleClick = () => {
-    if (!disabled && onClick) {
-      onClick(cardCode);
+const Card = ({ card, area, draggable = true, onDoubleClick }) => {
+  const handleDragStart = (e) => {
+    if (!draggable) {
+      e.preventDefault();
+      return;
     }
+
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      card,
+      fromArea: area
+    }));
   };
 
-  const getCardSize = () => {
-    switch (size) {
-      case 'small':
-        return { width: '40px', height: '56px' };
-      case 'large':
-        return { width: '80px', height: '112px' };
-      default:
-        return { width: 'var(--card-width)', height: 'var(--card-height)' };
-    }
+  const handleDragEnd = (e) => {
+    // 拖拽结束处理
   };
 
   return (
-    <img
-      src={getCardImageUrl(cardCode)}
-      alt={cardCode}
-      className={`card ${selected ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
-      onClick={handleClick}
-      style={getCardSize()}
-      draggable="false"
-    />
+    <div
+      className="card"
+      draggable={draggable}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDoubleClick={onDoubleClick}
+      style={{
+        cursor: draggable ? 'grab' : 'default',
+        opacity: draggable ? 1 : 0.8
+      }}
+      title={card.display}
+    >
+      <img 
+        src={`/cards/${card.filename}`} 
+        alt={card.display}
+        onError={(e) => {
+          // 图片加载失败时显示替代样式
+          e.target.style.display = 'none';
+          const parent = e.target.parentNode;
+          parent.innerHTML = `
+            <div style="
+              width: 100%;
+              height: 100%;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              background: white;
+              color: #333;
+              border-radius: 5px;
+              border: 1px solid #ccc;
+              font-size: 10px;
+              text-align: center;
+              padding: 5px;
+              box-sizing: border-box;
+            ">
+              <div style="font-weight: bold; margin-bottom: 2px;">${card.value}</div>
+              <div>of</div>
+              <div style="margin-top: 2px;">${card.suit}</div>
+            </div>
+          `;
+        }}
+      />
+    </div>
   );
 };
 
