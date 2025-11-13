@@ -21,6 +21,62 @@ require_once $root_dir . '/models/UserModel.php';
 require_once $root_dir . '/utils/Auth.php';
 require_once $root_dir . '/utils/CardGenerator.php';
 
+// 辅助函数：格式化单张卡片
+function formatCardData($cards) {
+    if (!is_array($cards)) return [];
+    
+    return array_map(function($card) {
+        if (is_array($card)) {
+            return $card; // 已经是对象格式
+        }
+        
+        // 解析字符串格式的卡片
+        if (is_string($card) && strpos($card, '_of_') !== false) {
+            $filename = $card;
+            $cardName = str_replace('.svg', '', $card);
+            list($value, $suit) = explode('_of_', $cardName);
+            
+            $suitSymbols = [
+                'clubs' => '♣',
+                'diamonds' => '♦', 
+                'hearts' => '♥',
+                'spades' => '♠'
+            ];
+            
+            $valueMap = [
+                'ace' => 'A', 'king' => 'K', 'queen' => 'Q', 'jack' => 'J',
+                '10' => '10', '9' => '9', '8' => '8', '7' => '7', '6' => '6',
+                '5' => '5', '4' => '4', '3' => '3', '2' => '2'
+            ];
+            
+            return [
+                'filename' => $filename,
+                'value' => $value,
+                'suit' => $suit,
+                'display' => ($valueMap[$value] ?? $value) . ($suitSymbols[$suit] ?? $suit)
+            ];
+        }
+        
+        return $card;
+    }, $cards);
+}
+
+// 辅助函数：格式化整个牌型安排
+function formatCardArrangement($arrangement) {
+    if (!is_array($arrangement)) {
+        return [
+            'head' => [],
+            'middle' => [],
+            'tail' => []
+        ];
+    }
+    return [
+        'head' => formatCardData($arrangement['head'] ?? []),
+        'middle' => formatCardData($arrangement['middle'] ?? []),
+        'tail' => formatCardData($arrangement['tail'] ?? [])
+    ];
+}
+
 try {
     $database = new Database();
     $db = $database->getConnection();
@@ -53,7 +109,6 @@ try {
                 exit;
             }
             
-            // 获取可用牌局
             $game = $gameModel->getAvailableGame($session_type);
             if (!$game) {
                 http_response_code(404);
@@ -61,19 +116,18 @@ try {
                 exit;
             }
             
-            // 标记为已使用
             $gameModel->markGameAsUsed($game['id']);
             
             // 准备返回数据
             $response = [
                 'success' => true,
                 'game_id' => $game['id'],
-                'preset_arrangement' => json_decode($game['player1_arranged'], true),
-                'original_cards' => json_decode($game['player1_original'], true),
+                'preset_arrangement' => formatCardArrangement(json_decode($game['player1_arranged'], true)),
+                'original_cards' => formatCardData(json_decode($game['player1_original'], true)),
                 'ai_arrangements' => [
-                    json_decode($game['player2_arranged'], true),
-                    json_decode($game['player3_arranged'], true),
-                    json_decode($game['player4_arranged'], true)
+                    formatCardArrangement(json_decode($game['player2_arranged'], true)),
+                    formatCardArrangement(json_decode($game['player3_arranged'], true)),
+                    formatCardArrangement(json_decode($game['player4_arranged'], true))
                 ]
             ];
             
@@ -102,7 +156,6 @@ try {
     } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         
-        // 检查JSON解析是否成功
         if (json_last_error() !== JSON_ERROR_NONE) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => '无效的JSON数据']);
@@ -127,14 +180,12 @@ try {
                 exit;
             }
             
-            // 检查是否已提交过
             if ($submissionModel->hasSubmitted($game_id, $user_id)) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => '已提交过该牌局']);
                 exit;
             }
             
-            // 验证牌型是否倒水
             $cardGenerator = new CardGenerator();
             if (!$cardGenerator->validateArrangement(
                 $arranged_cards['head'] ?? [],
@@ -146,7 +197,6 @@ try {
                 exit;
             }
             
-            // 创建提交记录
             $result = $submissionModel->createSubmission($game_id, $user_id, $arranged_cards);
             
             if ($result) {
