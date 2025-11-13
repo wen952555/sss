@@ -19,19 +19,23 @@ const Card = ({ card, area, draggable = true }) => {
 
   // 获取卡片显示名称
   const getCardDisplay = (card) => {
-    if (typeof card === 'object') {
+    if (card && typeof card === 'object') {
       return card.display || card.filename;
     }
-    return card;
+    return card || '';
   };
 
   // 获取卡片文件名
   const getCardFilename = (card) => {
-    if (typeof card === 'object') {
+    if (card && typeof card === 'object') {
       return card.filename;
     }
-    return card;
+    return card || '';
   };
+
+  if (!card) {
+    return <div className="card empty"></div>; // 或者其他占位符
+  }
 
   return (
     <div
