@@ -9,9 +9,10 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     middle: [],
     tail: []
   });
-  const [gameStatus, setGameStatus] = useState('waiting'); // waiting, playing, submitted
+  const [gameStatus, setGameStatus] = useState('waiting');
   const [roomInfo, setRoomInfo] = useState(null);
   const [currentGame, setCurrentGame] = useState(null);
+  const [debugInfo, setDebugInfo] = useState('');
 
   // 初始化游戏
   const initGame = async () => {
@@ -20,11 +21,14 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
       if (result.success) {
         setCurrentGame(result);
         
+        // 记录调试信息
+        setDebugInfo(`获取到牌局: ${result.game_id}, 头道: ${result.preset_arrangement.head.length}张, 中道: ${result.preset_arrangement.middle.length}张, 尾道: ${result.preset_arrangement.tail.length}张`);
+        console.log('API返回数据:', result);
+        
         // 直接使用后端预设的理牌结果
         setArrangedCards(result.preset_arrangement);
         setGameStatus('playing');
         
-        // 模拟创建房间
         setRoomInfo({
           id: result.game_id,
           type: roomType,
@@ -36,12 +40,12 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
       }
     } catch (error) {
       alert('获取牌局失败：' + error.message);
+      console.error('初始化游戏错误:', error);
     }
   };
 
   // 提交牌型
   const handleSubmit = async () => {
-    // 检查是否所有牌都已分配
     const totalArranged = arrangedCards.head.length + arrangedCards.middle.length + arrangedCards.tail.length;
     if (totalArranged !== 13) {
       alert('请确保13张牌全部分配到三道中！');
@@ -54,7 +58,6 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     }
 
     try {
-      // 提交牌型
       const result = await gameAPI.submitCards(currentGame.game_id, arrangedCards);
       
       if (result.success) {
@@ -72,28 +75,23 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
   const moveCard = (card, fromArea, toArea) => {
     if (fromArea === toArea) return;
 
-    setArrangedCards(prev => {
-      // 检查目标区域是否已满
-      if ((toArea === 'head' && prev[toArea].length >= 3) ||
-          (toArea !== 'head' && prev[toArea].length >= 5)) {
-        alert('该区域已满！');
-        return prev; // 返回未修改的状态
-      }
+    if ((toArea === 'head' && arrangedCards[toArea].length >= 3) ||
+        (toArea !== 'head' && arrangedCards[toArea].length >= 5)) {
+      alert('该区域已满！');
+      return;
+    }
 
-      // 从原区域移除
-      const newFrom = prev[fromArea].filter(c => 
-        c && (typeof c === 'object' ? c.filename !== card.filename : c !== card)
-      );
-      
-      // 添加到目标区域
-      const newTo = [...prev[toArea], card];
+    const newFrom = arrangedCards[fromArea].filter(c => 
+      typeof c === 'object' ? c.filename !== card.filename : c !== card
+    );
+    
+    const newTo = [...arrangedCards[toArea], card];
 
-      return {
-        ...prev,
-        [fromArea]: newFrom,
-        [toArea]: newTo
-      };
-    });
+    setArrangedCards(prev => ({
+      ...prev,
+      [fromArea]: newFrom,
+      [toArea]: newTo
+    }));
   };
 
   // 重新开始游戏
@@ -108,6 +106,22 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     if (currentGame && window.confirm('确定要重置为初始理牌状态吗？')) {
       setArrangedCards(currentGame.preset_arrangement);
     }
+  };
+
+  // 检查卡片数据
+  const checkCardData = () => {
+    console.log('当前卡片数据:', arrangedCards);
+    const headCards = arrangedCards.head.map(card => 
+      typeof card === 'object' ? card.filename : card
+    );
+    const middleCards = arrangedCards.middle.map(card => 
+      typeof card === 'object' ? card.filename : card
+    );
+    const tailCards = arrangedCards.tail.map(card => 
+      typeof card === 'object' ? card.filename : card
+    );
+    
+    alert(`头道: ${headCards.join(', ')}\n中道: ${middleCards.join(', ')}\n尾道: ${tailCards.join(', ')}`);
   };
 
   useEffect(() => {
@@ -125,13 +139,30 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
             gameStatus === 'playing' ? '进行中' : '已提交'
           }</span>
         </div>
-        <button className="link-btn" onClick={onExit} style={{ marginTop: '10px' }}>
-          返回大厅
-        </button>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+          <button className="link-btn" onClick={onExit}>
+            返回大厅
+          </button>
+          <button className="link-btn" onClick={checkCardData}>
+            调试卡片
+          </button>
+        </div>
       </div>
 
+      {debugInfo && (
+        <div style={{ 
+          background: 'rgba(255,255,255,0.1)', 
+          padding: '10px', 
+          borderRadius: '5px',
+          marginBottom: '10px',
+          fontSize: '12px'
+        }}>
+          调试信息: {debugInfo}
+        </div>
+      )}
+
       <div className="card-areas">
-        {/* 头道 - 最小牌型（应该在最上面） */}
+        {/* 头道 - 最小牌型（最上面） */}
         <CardArea
           title="头道（3张）- 最小牌型"
           cards={arrangedCards.head}
@@ -151,7 +182,7 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
           gameStatus={gameStatus}
         />
         
-        {/* 尾道 - 最大牌型（应该在最下面） */}
+        {/* 尾道 - 最大牌型（最下面） */}
         <CardArea
           title="尾道（5张）- 最大牌型"
           cards={arrangedCards.tail}
