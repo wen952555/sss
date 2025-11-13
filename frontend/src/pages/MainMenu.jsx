@@ -29,7 +29,6 @@ const MainMenu = ({ userInfo, onSelectRoom, onNavigate }) => {
   };
 
   const refreshUserInfo = () => {
-    // 触发父组件刷新用户信息
     if (window.refreshUserInfo) {
       window.refreshUserInfo();
     }
@@ -37,40 +36,33 @@ const MainMenu = ({ userInfo, onSelectRoom, onNavigate }) => {
 
   return (
     <div className="main-menu">
-      {/* 顶部用户信息和余额管理 */}
-      <div className="user-info">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-          <h2>欢迎，{userInfo?.phone}！</h2>
-          <button 
-            className="btn" 
+      {/* 修改后的用户信息横幅 */}
+      <div className="user-info-banner">
+        <div className="banner-content">
+          <button className="logout-btn" onClick={handleLogout}>
+            退出登录
+          </button>
+          
+          <div className="user-details">
+            <span className="user-id">ID: {userInfo?.user_id}</span>
+            <span className="user-balance">余额: {userInfo?.balance || 0}分</span>
+          </div>
+          
+          <button
+            className="balance-btn"
             onClick={() => setShowBalanceManager(true)}
-            style={{ padding: '8px 16px', fontSize: '14px' }}
           >
             积分管理
           </button>
         </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <div>
-            <p>用户ID: <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>{userInfo?.user_id}</span></p>
-            <p>等级: Lv.{userInfo?.level || 1}</p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#FFD700' }}>
-              余额: {userInfo?.balance || 0} 分
-            </p>
-          </div>
-        </div>
-        
-        <button className="link-btn" onClick={handleLogout}>退出登录</button>
       </div>
 
       {/* 房间选择 */}
       <div className="room-selection">
         <h2 style={{ textAlign: 'center', marginBottom: '30px' }}>选择游戏场次</h2>
-        
+
         {rooms.map(room => (
-          <div 
+          <div
             key={room.type}
             className="room-card"
             onClick={() => handleRoomSelect(room.type)}
@@ -92,7 +84,7 @@ const MainMenu = ({ userInfo, onSelectRoom, onNavigate }) => {
 
       {/* 余额管理弹窗 */}
       {showBalanceManager && (
-        <BalanceManager 
+        <BalanceManager
           userInfo={userInfo}
           onClose={() => {
             setShowBalanceManager(false);

@@ -118,11 +118,75 @@ body {
   padding: 20px;
 }
 
-.user-info {
-  margin-bottom: 40px;
-  padding: 20px;
+.user-info-banner {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+}
+
+.banner-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.logout-btn {
+  background: rgba(244, 67, 54, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background: rgba(244, 67, 54, 0.3);
+  color: #ff5252;
+}
+
+.user-details {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.user-id {
+  font-size: 14px;
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.user-balance {
+  font-size: 14px;
+  color: #FFD700;
+  font-weight: bold;
+}
+
+.balance-btn {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.balance-btn:hover {
+  background: rgba(76, 175, 80, 0.3);
+  color: #45a049;
+}
+
+.user-info {
+  display: none;
 }
 
 .room-selection {
@@ -211,17 +275,23 @@ body {
 
 .game-controls {
   display: flex;
-  gap: 15px;
-  padding: 20px;
+  gap: 10px;
+  padding: 15px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   margin-top: 20px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  min-height: 60px;
+  align-items: center;
 }
 
 .control-btn {
   flex: 1;
-  padding: 15px;
-  font-size: 16px;
+  min-width: 100px;
+  padding: 12px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 /* 移除手牌样式 */
@@ -302,26 +372,75 @@ body {
   .auth-form {
     padding: 20px;
   }
-  
+
   .card {
     width: 50px;
     height: 70px;
   }
-  
+
   .game-controls {
-    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 12px;
   }
-  
+
+  .control-btn {
+    min-width: 90px;
+    padding: 10px;
+    font-size: 13px;
+  }
+
   .room-card {
     padding: 20px;
   }
-  
+
   .modal-content {
     padding: 15px;
   }
-  
+
   .card-area {
     padding: 10px;
     min-height: 120px;
+  }
+
+  .user-details {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .user-info-banner {
+    height: 35px;
+    padding: 0 10px;
+  }
+
+  .logout-btn,
+  .balance-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-controls {
+    gap: 5px;
+    padding: 10px;
+  }
+
+  .control-btn {
+    min-width: 80px;
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .user-details {
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+  }
+
+  .user-id,
+  .user-balance {
+    font-size: 11px;
   }
 }
