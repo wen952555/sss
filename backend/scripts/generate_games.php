@@ -1,11 +1,24 @@
 <?php
-require_once '../config/database.php';
-require_once '../models/GameModel.php';
-require_once '../models/InventoryModel.php';
-require_once '../utils/CardGenerator.php';
+// 使用绝对路径来包含文件
+
+// 获取当前脚本的目录
+$current_dir = __DIR__;
+// 获取项目根目录（public_html）
+$root_dir = dirname($current_dir);
+
+// 包含必要的文件
+require_once $root_dir . '/config/database.php';
+require_once $root_dir . '/models/GameModel.php';
+require_once $root_dir . '/models/InventoryModel.php';
+require_once $root_dir . '/utils/CardGenerator.php';
 
 $database = new Database();
 $db = $database->getConnection();
+
+if (!$db) {
+    die("无法连接到数据库，请检查配置\n");
+}
+
 $gameModel = new GameModel($db);
 $inventoryModel = new InventoryModel($db);
 $cardGenerator = new CardGenerator();

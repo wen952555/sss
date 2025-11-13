@@ -12,16 +12,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 ini_set('display_errors', 0);
 error_reporting(0);
 
-require_once '../config/database.php';
-require_once '../models/GameModel.php';
-require_once '../models/SubmissionModel.php';
-require_once '../models/UserModel.php';
-require_once '../utils/Auth.php';
-require_once '../utils/CardGenerator.php';
+// 使用绝对路径包含文件
+$root_dir = dirname(__DIR__);
+require_once $root_dir . '/config/database.php';
+require_once $root_dir . '/models/GameModel.php';
+require_once $root_dir . '/models/SubmissionModel.php';
+require_once $root_dir . '/models/UserModel.php';
+require_once $root_dir . '/utils/Auth.php';
+require_once $root_dir . '/utils/CardGenerator.php';
 
 try {
     $database = new Database();
     $db = $database->getConnection();
+    
+    if (!$db) {
+        throw new Exception('无法连接到数据库');
+    }
+    
     $gameModel = new GameModel($db);
     $submissionModel = new SubmissionModel($db);
     $userModel = new UserModel($db);
@@ -157,6 +164,8 @@ try {
         echo json_encode(['success' => false, 'message' => '方法不允许']);
     }
 } catch (Exception $e) {
+    error_log("Game API Error: " . $e->getMessage());
+    
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => '服务器错误，请稍后重试']);
 }
