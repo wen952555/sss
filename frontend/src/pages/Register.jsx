@@ -104,6 +104,7 @@ const Register = ({ onNavigate }) => {
             placeholder="请输入11位手机号"
             maxLength="11"
             minLength="11"
+            autoComplete="tel"
           />
           <div style={{ fontSize: '12px', color: '#87CEEB', marginTop: '5px' }}>
             请输入11位手机号
@@ -119,6 +120,7 @@ const Register = ({ onNavigate }) => {
             value={formData.email}
             onChange={handleChange}
             placeholder="请输入邮箱"
+            autoComplete="email"
           />
         </div>
 
@@ -133,6 +135,7 @@ const Register = ({ onNavigate }) => {
             required
             placeholder="请输入密码（至少6位）"
             minLength="6"
+            autoComplete="new-password"
           />
         </div>
 
@@ -147,6 +150,7 @@ const Register = ({ onNavigate }) => {
             required
             placeholder="请再次输入密码"
             minLength="6"
+            autoComplete="new-password"
           />
         </div>
 

@@ -92,6 +92,7 @@ const Login = ({ onLogin, onNavigate }) => {
             placeholder="请输入11位手机号"
             maxLength="11"
             minLength="11"
+            autoComplete="tel"
           />
           <div style={{ fontSize: '12px', color: '#87CEEB', marginTop: '5px' }}>
             请输入11位手机号
@@ -109,6 +110,7 @@ const Login = ({ onLogin, onNavigate }) => {
             required
             placeholder="请输入密码"
             minLength="6"
+            autoComplete="current-password"
           />
         </div>
 

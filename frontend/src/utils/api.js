@@ -23,7 +23,18 @@ const request = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(url, config);
-    const data = await response.json();
+    
+    // 检查响应内容类型
+    const contentType = response.headers.get('content-type');
+    let data;
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      // 如果不是JSON，获取原始文本
+      const text = await response.text();
+      throw new Error(`服务器返回了非JSON响应: ${text.substring(0, 100)}`);
+    }
     
     if (!response.ok) {
       throw new Error(data.message || '请求失败');
@@ -32,7 +43,15 @@ const request = async (endpoint, options = {}) => {
     return data;
   } catch (error) {
     console.error('API请求错误:', error);
-    throw error;
+    
+    // 提供更友好的错误信息
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error('网络连接失败，请检查网络连接');
+    } else if (error.message.includes('非JSON响应')) {
+      throw new Error('服务器响应异常，请稍后重试');
+    } else {
+      throw error;
+    }
   }
 };
 
