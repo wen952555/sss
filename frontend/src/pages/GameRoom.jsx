@@ -131,12 +131,12 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
       </div>
 
       <div className="card-areas">
-        {/* 尾道 - 最大牌型 */}
+        {/* 头道 - 最小牌型（应该在最上面） */}
         <CardArea
-          title="尾道（5张）- 最大牌型"
-          cards={arrangedCards.tail}
-          area="tail"
-          maxCards={5}
+          title="头道（3张）- 最小牌型"
+          cards={arrangedCards.head}
+          area="head"
+          maxCards={3}
           onCardMove={moveCard}
           gameStatus={gameStatus}
         />
@@ -151,12 +151,12 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
           gameStatus={gameStatus}
         />
         
-        {/* 头道 - 最小牌型 */}
+        {/* 尾道 - 最大牌型（应该在最下面） */}
         <CardArea
-          title="头道（3张）- 最小牌型"
-          cards={arrangedCards.head}
-          area="head"
-          maxCards={3}
+          title="尾道（5张）- 最大牌型"
+          cards={arrangedCards.tail}
+          area="tail"
+          maxCards={5}
           onCardMove={moveCard}
           gameStatus={gameStatus}
         />

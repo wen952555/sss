@@ -17,24 +17,49 @@ const Card = ({ card, area, draggable = true }) => {
     // 拖拽结束处理
   };
 
-  // 获取卡片显示名称
-  const getCardDisplay = (card) => {
+  // 解析卡片信息为可读格式
+  const parseCardInfo = (card) => {
     if (card && typeof card === 'object') {
-      return card.display || card.filename;
+      return {
+        display: card.display || '',
+        filename: card.filename || ''
+      };
     }
-    return card || '';
+    
+    // 如果是字符串格式，解析文件名
+    if (typeof card === 'string' && card.includes('_of_')) {
+      const filename = card.endsWith('.svg') ? card : `${card}.svg`;
+      const [value, suit] = filename.replace('.svg', '').split('_of_');
+      
+      const suitSymbols = {
+        'clubs': '♣',
+        'diamonds': '♦', 
+        'hearts': '♥',
+        'spades': '♠'
+      };
+      
+      const valueMap = {
+        'ace': 'A', 'king': 'K', 'queen': 'Q', 'jack': 'J',
+        '10': '10', '9': '9', '8': '8', '7': '7', '6': '6',
+        '5': '5', '4': '4', '3': '3', '2': '2'
+      };
+      
+      return {
+        display: `${valueMap[value] || value}${suitSymbols[suit] || suit}`,
+        filename: filename
+      };
+    }
+    
+    return {
+      display: card || '',
+      filename: card || ''
+    };
   };
 
-  // 获取卡片文件名
-  const getCardFilename = (card) => {
-    if (card && typeof card === 'object') {
-      return card.filename;
-    }
-    return card || '';
-  };
+  const cardInfo = parseCardInfo(card);
 
   if (!card) {
-    return <div className="card empty"></div>; // 或者其他占位符
+    return <div className="card empty"></div>;
   }
 
   return (
@@ -47,31 +72,15 @@ const Card = ({ card, area, draggable = true }) => {
         cursor: draggable ? 'grab' : 'default',
         opacity: draggable ? 1 : 0.8
       }}
-      title={getCardDisplay(card)}
+      title={cardInfo.display}
     >
       <img 
-        src={`/cards/${getCardFilename(card)}`} 
-        alt={getCardDisplay(card)}
+        src={`/cards/${cardInfo.filename}`} 
+        alt={cardInfo.display}
         onError={(e) => {
           // 图片加载失败时显示替代样式
           e.target.style.display = 'none';
           const parent = e.target.parentNode;
-          
-          // 解析卡片信息显示文本
-          let displayText = getCardDisplay(card);
-          if (typeof card === 'string' && card.includes('_of_')) {
-            const [value, suit] = card.replace('.svg', '').split('_of_');
-            const suitSymbols = {
-              'clubs': '♣',
-              'diamonds': '♦', 
-              'hearts': '♥',
-              'spades': '♠'
-            };
-            const valueMap = {
-              'ace': 'A', 'king': 'K', 'queen': 'Q', 'jack': 'J'
-            };
-            displayText = `${valueMap[value] || value}${suitSymbols[suit] || suit}`;
-          }
           
           parent.innerHTML = `
             <div style="
@@ -85,14 +94,20 @@ const Card = ({ card, area, draggable = true }) => {
               color: #333;
               border-radius: 5px;
               border: 1px solid #ccc;
-              font-size: 10px;
+              font-size: 16px;
               text-align: center;
               padding: 5px;
               box-sizing: border-box;
+              font-weight: bold;
             ">
-              <div style="font-weight: bold; margin-bottom: 2px;">${displayText}</div>
+              ${cardInfo.display}
             </div>
           `;
+        }}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain'
         }}
       />
     </div>

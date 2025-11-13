@@ -1,3 +1,4 @@
+
 const API_BASE = '/api';
 
 // 通用请求函数
@@ -24,14 +25,12 @@ const request = async (endpoint, options = {}) => {
   try {
     const response = await fetch(url, config);
     
-    // 检查响应内容类型
     const contentType = response.headers.get('content-type');
     let data;
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
     } else {
-      // 如果不是JSON，获取原始文本
       const text = await response.text();
       throw new Error(`服务器返回了非JSON响应: ${text.substring(0, 100)}`);
     }
@@ -44,7 +43,6 @@ const request = async (endpoint, options = {}) => {
   } catch (error) {
     console.error('API请求错误:', error);
     
-    // 提供更友好的错误信息
     if (error.message.includes('Failed to fetch')) {
       throw new Error('网络连接失败，请检查网络连接');
     } else if (error.message.includes('非JSON响应')) {
@@ -53,6 +51,34 @@ const request = async (endpoint, options = {}) => {
       throw error;
     }
   }
+};
+
+// 将卡片文件名解析为对象
+const parseCardFromFilename = (card) => {
+  if (typeof card !== 'string' || !card.includes('_of_')) {
+    return { display: card, filename: card };
+  }
+  
+  const filename = card.endsWith('.svg') ? card : `${card}.svg`;
+  const [value, suit] = filename.replace('.svg', '').split('_of_');
+  
+  const suitSymbols = {
+    'clubs': '♣',
+    'diamonds': '♦', 
+    'hearts': '♥',
+    'spades': '♠'
+  };
+  
+  const valueMap = {
+    'ace': 'A', 'king': 'K', 'queen': 'Q', 'jack': 'J',
+    '10': '10', '9': '9', '8': '8', '7': '7', '6': '6',
+    '5': '5', '4': '4', '3': '3', '2': '2'
+  };
+  
+  return {
+    display: `${valueMap[value] || value}${suitSymbols[suit] || suit}`,
+    filename: filename
+  };
 };
 
 // 用户API
@@ -78,8 +104,38 @@ export const authAPI = {
 
 // 游戏API
 export const gameAPI = {
-  getGame: (sessionType) =>
-    request(`/game.php?action=get_game&session_type=${sessionType}`),
+  getGame: async (sessionType) => {
+    const result = await request(`/game.php?action=get_game&session_type=${sessionType}`);
+    
+    // 确保卡片数据格式正确
+    if (result.success && result.preset_arrangement) {
+      const formatCards = (cards) => {
+        if (!cards || !Array.isArray(cards)) return [];
+        
+        return cards.map(card => {
+          if (card && typeof card === 'object' && card.filename) {
+            return card; // 已经是正确的对象格式
+          }
+          if (typeof card === 'string') {
+            return parseCardFromFilename(card); // 从字符串转换
+          }
+          return card; // 其他情况，直接返回
+        });
+      };
+      
+      // 处理预设牌型
+      result.preset_arrangement.head = formatCards(result.preset_arrangement.head);
+      result.preset_arrangement.middle = formatCards(result.preset_arrangement.middle);
+      result.preset_arrangement.tail = formatCards(result.preset_arrangement.tail);
+      
+      // 处理原始手牌
+      if (result.original_cards) {
+        result.original_cards = formatCards(result.original_cards);
+      }
+    }
+    
+    return result;
+  },
   
   submitCards: (gameId, arrangedCards) =>
     request('/game.php?action=submit', {
