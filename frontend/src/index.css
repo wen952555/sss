@@ -230,19 +230,79 @@ body {
   flex-direction: column;
 }
 
-.room-header {
-  text-align: center;
-  margin-bottom: 20px;
-  padding: 15px;
+/* 紧凑的游戏顶部横幅 */
+.game-header-banner {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+}
+
+.game-header-banner .banner-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.exit-btn {
+  background: rgba(244, 67, 54, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.exit-btn:hover {
+  background: rgba(244, 67, 54, 0.3);
+  color: #ff5252;
+}
+
+.game-info {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.room-type {
+  font-size: 14px;
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.player-info {
+  font-size: 14px;
+  color: #87CEEB;
+}
+
+.balance-info {
+  font-size: 14px;
+  color: #FFD700;
+  font-weight: bold;
+}
+
+.game-status {
+  font-size: 14px;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+/* 移除原来的房间头部样式 */
+.room-header {
+  display: none;
 }
 
 .card-areas {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 25px; /* 增加牌墩之间的间距 */
   margin-bottom: 0;
 }
 
@@ -250,27 +310,66 @@ body {
   background: rgba(255, 255, 255, 0.1);
   border: 2px dashed rgba(255, 255, 255, 0.3);
   border-radius: 10px;
-  padding: 15px;
-  min-height: 150px;
+  padding: 20px; /* 增加内边距 */
+  min-height: 200px; /* 显著增加牌墩高度 */
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .area-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px; /* 增加标题与卡片的间距 */
 }
 
 .area-header h4 {
   font-size: 18px;
+  font-weight: bold;
 }
 
 .card-slot {
   display: flex;
-  gap: 5px;
+  gap: 8px; /* 增加卡片之间的间距 */
   flex-wrap: wrap;
-  min-height: 80px;
+  min-height: 120px; /* 增加卡片区域最小高度 */
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+/* 移除手牌样式 */
+.hand-cards {
+  display: none;
+}
+
+/* 增大扑克牌样式 */
+.card {
+  width: 100px; /* 从70px增加到100px */
+  height: 140px; /* 从98px增加到140px */
+  cursor: grab;
+  transition: transform 0.2s;
+  user-select: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.card:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.card.dragging {
+  opacity: 0.7;
+  transform: rotate(5deg);
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .game-controls {
@@ -292,34 +391,6 @@ body {
   padding: 12px;
   font-size: 14px;
   white-space: nowrap;
-}
-
-/* 移除手牌样式 */
-.hand-cards {
-  display: none;
-}
-
-/* 扑克牌样式 */
-.card {
-  width: 70px;
-  height: 98px;
-  cursor: grab;
-  transition: transform 0.2s;
-  user-select: none;
-}
-
-.card:hover {
-  transform: translateY(-3px);
-}
-
-.card.dragging {
-  opacity: 0.7;
-}
-
-.card img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 /* 模态框样式 */
@@ -374,8 +445,8 @@ body {
   }
 
   .card {
-    width: 50px;
-    height: 70px;
+    width: 80px; /* 移动端也保持较大尺寸 */
+    height: 112px;
   }
 
   .game-controls {
@@ -400,8 +471,8 @@ body {
   }
 
   .card-area {
-    padding: 10px;
-    min-height: 120px;
+    padding: 15px;
+    min-height: 180px;
   }
 
   .user-details {
@@ -418,6 +489,17 @@ body {
   .balance-btn {
     padding: 4px 8px;
     font-size: 11px;
+  }
+
+  .game-info {
+    gap: 10px;
+  }
+
+  .room-type,
+  .player-info,
+  .balance-info,
+  .game-status {
+    font-size: 12px;
   }
 }
 
@@ -442,5 +524,24 @@ body {
   .user-id,
   .user-balance {
     font-size: 11px;
+  }
+
+  .game-info {
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+  }
+
+  .card {
+    width: 70px;
+    height: 98px;
+  }
+
+  .card-area {
+    min-height: 160px;
+  }
+
+  .card-slot {
+    min-height: 100px;
   }
 }
