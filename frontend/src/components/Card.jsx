@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameStatus, index, totalCards }) => {
+const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameStatus, position }) => {
   const handleDragStart = (e) => {
     if (!draggable || gameStatus !== 'playing') {
       e.preventDefault();
@@ -21,25 +21,6 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
     e.stopPropagation(); // 阻止事件冒泡到牌墩区域
     if (gameStatus !== 'playing') return;
     onClick(card, area);
-  };
-
-  // 计算卡片的位置 - 确保不溢出
-  const getCardPosition = () => {
-    if (totalCards <= 1) return { left: '0px' };
-    
-    // 计算每张牌的位置
-    const cardWidth = 100; // 卡片宽度
-    const containerWidth = 650; // 牌墩容器宽度（估算）
-    const rightMargin = cardWidth / 2; // 右边保留半张牌空位
-    
-    // 可用宽度 = 容器宽度 - 右边空位 - 卡片宽度（确保最后一张牌不溢出）
-    const availableWidth = containerWidth - rightMargin - cardWidth;
-    
-    // 计算每张牌的偏移量
-    const offsetStep = availableWidth / (totalCards - 1);
-    const left = index * offsetStep;
-    
-    return { left: `${left}px` };
   };
 
   // 获取卡片文件名（确保有.svg扩展名）
@@ -70,7 +51,6 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
 
   const cardFilename = getCardFilename(card);
   const cardDisplay = getCardDisplay(card);
-  const cardPosition = getCardPosition();
 
   return (
     <div
@@ -83,7 +63,7 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
         cursor: (draggable && gameStatus === 'playing') ? 'pointer' : 'default',
         opacity: (draggable && gameStatus === 'playing') ? 1 : 0.8,
         position: 'absolute',
-        ...cardPosition
+        left: `${position}px`
       }}
       title={cardDisplay}
     >

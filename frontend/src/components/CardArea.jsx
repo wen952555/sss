@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Card from './Card';
 
 const CardArea = ({ 
@@ -11,6 +11,52 @@ const CardArea = ({
   gameStatus, 
   selectedCards 
 }) => {
+  const slotRef = useRef(null);
+  const [cardPositions, setCardPositions] = useState([]);
+
+  // 计算卡片位置
+  useEffect(() => {
+    if (!slotRef.current || cards.length === 0) {
+      setCardPositions([]);
+      return;
+    }
+
+    const calculatePositions = () => {
+      const slotWidth = slotRef.current.offsetWidth;
+      const cardWidth = 100; // 卡片宽度
+      const halfCardWidth = cardWidth / 2; // 半张牌宽度作为默认间距
+      
+      // 计算所需总宽度
+      const requiredWidth = cards.length * cardWidth + (cards.length - 1) * halfCardWidth;
+      
+      let actualSpacing;
+      if (requiredWidth > slotWidth) {
+        // 如果总宽度超过容器，自适应缩小间距
+        actualSpacing = (slotWidth - cards.length * cardWidth) / (cards.length - 1);
+      } else {
+        // 否则使用半张牌宽度作为间距
+        actualSpacing = halfCardWidth;
+      }
+      
+      // 计算每张牌的位置
+      const positions = cards.map((_, index) => {
+        return index * (cardWidth + actualSpacing);
+      });
+      
+      setCardPositions(positions);
+    };
+
+    calculatePositions();
+
+    // 监听窗口大小变化
+    const handleResize = () => {
+      calculatePositions();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [cards, slotRef]);
+
   const handleDrop = (e) => {
     e.preventDefault();
     if (gameStatus !== 'playing') return;
@@ -77,7 +123,10 @@ const CardArea = ({
         </span>
       </div>
 
-      <div className="card-slot">
+      <div 
+        className="card-slot" 
+        ref={slotRef}
+      >
         {cards.map((card, index) => (
           <Card
             key={typeof card === 'object' ? card.filename : `${card}-${index}`}
@@ -87,8 +136,7 @@ const CardArea = ({
             onClick={onCardClick}
             isSelected={isCardSelected(card)}
             gameStatus={gameStatus}
-            index={index}
-            totalCards={cards.length}
+            position={cardPositions[index] || 0}
           />
         ))}
         {cards.length === 0 && (

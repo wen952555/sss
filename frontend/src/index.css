@@ -359,7 +359,7 @@ body {
   font-weight: bold;
 }
 
-/* 修改卡片槽样式 - 确保不溢出 */
+/* 修改卡片槽样式 - 左对齐堆叠 */
 .card-slot {
   display: flex;
   gap: 0;
@@ -369,10 +369,10 @@ body {
   justify-content: flex-start;
   flex: 1;
   position: relative;
-  padding: 0 50px; /* 左右各留50px边距，确保右边有半张牌空位 */
   overflow: hidden; /* 防止卡片溢出 */
   width: 100%;
   box-sizing: border-box;
+  padding: 0 20px; /* 左右各留20px边距 */
 }
 
 /* 增大扑克牌样式 */
@@ -523,7 +523,7 @@ body {
 
   .card-slot {
     min-height: 112px;
-    padding: 0 40px; /* 移动端减少边距 */
+    padding: 0 15px;
   }
 
   .game-controls {
@@ -636,7 +636,7 @@ body {
 
   .card-slot {
     min-height: 98px;
-    padding: 0 35px; /* 小屏幕减少边距 */
+    padding: 0 10px;
   }
 
   .card-area {
