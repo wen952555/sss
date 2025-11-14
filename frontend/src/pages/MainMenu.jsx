@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import BalanceManager from '../components/BalanceManager';
 
-const MainMenu = ({ userInfo, onSelectRoom, onNavigate }) => {
+const MainMenu = ({ userInfo, onSelectRoom, onNavigate, onLogout }) => {
   const [showBalanceManager, setShowBalanceManager] = useState(false);
 
   const rooms = [
@@ -22,9 +22,7 @@ const MainMenu = ({ userInfo, onSelectRoom, onNavigate }) => {
 
   const handleLogout = () => {
     if (window.confirm('确定要退出登录吗？')) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      onNavigate('login');
+      onLogout();
     }
   };
 

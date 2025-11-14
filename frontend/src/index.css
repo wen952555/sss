@@ -631,3 +631,20 @@ body {
     font-size: 12px;
   }
 }
+
+/* 在文件末尾添加 */
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 18px;
+}
+
+.loading {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px 40px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
