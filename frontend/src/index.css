@@ -344,7 +344,6 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden; /* 防止卡片溢出 */
 }
 
 .area-header {
@@ -359,19 +358,20 @@ body {
   font-weight: bold;
 }
 
-/* 修改卡片槽样式 - 堆叠显示但不溢出 */
+/* 修改卡片槽样式 - 堆叠显示，允许水平滚动 */
 .card-slot {
   display: flex;
+  gap: 0;
   flex-wrap: nowrap;
   min-height: 140px;
   align-items: center;
   justify-content: flex-start;
   flex: 1;
   position: relative;
-  overflow: hidden; /* 防止卡片溢出 */
+  padding: 0 15px;
+  overflow-x: auto; /* 允许水平滚动 */
+  overflow-y: hidden;
   width: 100%;
-  box-sizing: border-box;
-  padding: 0 20px;
 }
 
 /* 增大扑克牌样式 */
@@ -383,6 +383,9 @@ body {
   user-select: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  top: 0;
+  z-index: 1;
 }
 
 .card:hover {
@@ -423,20 +426,6 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-}
-
-/* 更多卡片指示器 */
-.more-cards-indicator {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 12px;
-  z-index: 300;
 }
 
 .game-controls {
@@ -533,7 +522,7 @@ body {
 
   .card-slot {
     min-height: 112px;
-    padding: 0 15px;
+    padding: 0 10px;
   }
 
   .game-controls {
@@ -608,11 +597,6 @@ body {
     padding: 20px 15px;
     font-size: 12px;
   }
-  
-  .more-cards-indicator {
-    font-size: 11px;
-    padding: 4px 8px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -651,7 +635,7 @@ body {
 
   .card-slot {
     min-height: 98px;
-    padding: 0 10px;
+    padding: 0 8px;
   }
 
   .card-area {
@@ -660,11 +644,6 @@ body {
 
   .empty-area-hint {
     font-size: 11px;
-  }
-  
-  .more-cards-indicator {
-    font-size: 10px;
-    padding: 3px 6px;
   }
 }
 
@@ -682,4 +661,23 @@ body {
   padding: 20px 40px;
   border-radius: 10px;
   backdrop-filter: blur(10px);
+}
+
+/* 自定义滚动条样式 */
+.card-slot::-webkit-scrollbar {
+  height: 8px;
+}
+
+.card-slot::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.card-slot::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.card-slot::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }

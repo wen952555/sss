@@ -23,31 +23,12 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
     onClick(card, area);
   };
 
-  // 计算卡片位置 - 堆叠显示，每张牌只遮挡半张
-  const getCardStyle = () => {
-    if (totalCards <= 1) {
-      return {
-        position: 'absolute',
-        left: '0px',
-        zIndex: index
-      };
-    }
-
-    // 计算每张牌的位置，确保不溢出
-    const cardWidth = 100; // 卡片宽度
-    const overlap = 50; // 每张牌遮挡50px（半张牌）
+  // 计算卡片的堆叠位置 - 向左对齐，每张牌遮挡前一张的一半
+  const getCardPosition = () => {
+    // 每张牌向右偏移卡片宽度的一半（50px）
+    const offset = index * 50; // 100px宽度的一半是50px
     
-    // 计算总宽度
-    const totalWidth = cardWidth + (totalCards - 1) * (cardWidth - overlap);
-    
-    // 计算每张牌的位置
-    const position = index * (cardWidth - overlap);
-    
-    return {
-      position: 'absolute',
-      left: `${position}px`,
-      zIndex: index
-    };
+    return { left: `${offset}px` };
   };
 
   // 获取卡片文件名（确保有.svg扩展名）
@@ -78,7 +59,7 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
 
   const cardFilename = getCardFilename(card);
   const cardDisplay = getCardDisplay(card);
-  const cardStyle = getCardStyle();
+  const cardPosition = getCardPosition();
 
   return (
     <div
@@ -90,7 +71,8 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
       style={{
         cursor: (draggable && gameStatus === 'playing') ? 'pointer' : 'default',
         opacity: (draggable && gameStatus === 'playing') ? 1 : 0.8,
-        ...cardStyle
+        position: 'absolute',
+        ...cardPosition
       }}
       title={cardDisplay}
     >
