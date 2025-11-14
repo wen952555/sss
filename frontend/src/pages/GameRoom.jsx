@@ -9,6 +9,7 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     middle: [],
     tail: []
   });
+  const [originalCards, setOriginalCards] = useState(null); // 保存原始牌型
   const [gameStatus, setGameStatus] = useState('waiting');
   const [roomInfo, setRoomInfo] = useState(null);
   const [currentGame, setCurrentGame] = useState(null);
@@ -22,8 +23,10 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
       if (result.success) {
         setCurrentGame(result);
 
-        // 直接使用后端预设的理牌结果
-        setArrangedCards(result.preset_arrangement);
+        // 保存原始牌型和当前牌型
+        const presetArrangement = result.preset_arrangement;
+        setOriginalCards(presetArrangement);
+        setArrangedCards(presetArrangement);
         setGameStatus('playing');
 
         setRoomInfo({
@@ -161,8 +164,13 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
 
   // 重置为初始理牌状态
   const handleReset = () => {
-    if (currentGame && window.confirm('确定要重置为初始理牌状态吗？')) {
-      setArrangedCards(currentGame.preset_arrangement);
+    if (originalCards && window.confirm('确定要重置为初始理牌状态吗？')) {
+      // 使用保存的原始牌型进行重置
+      setArrangedCards({
+        head: [...originalCards.head],
+        middle: [...originalCards.middle],
+        tail: [...originalCards.tail]
+      });
       setSelectedCards([]);
       setLastSelectedArea(null);
     }
