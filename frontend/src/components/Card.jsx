@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameStatus, index }) => {
+const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameStatus, index, totalCards }) => {
   const handleDragStart = (e) => {
     if (!draggable || gameStatus !== 'playing') {
       e.preventDefault();
@@ -25,13 +25,27 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
 
   // 计算卡片位置 - 堆叠显示，每张牌只遮挡半张
   const getCardStyle = () => {
-    // 每张牌向右偏移50px（半张牌宽度）
-    const offset = index * 50;
+    if (totalCards <= 1) {
+      return {
+        position: 'absolute',
+        left: '0px',
+        zIndex: index
+      };
+    }
+
+    // 计算每张牌的位置，确保不溢出
+    const cardWidth = 100; // 卡片宽度
+    const overlap = 50; // 每张牌遮挡50px（半张牌）
+    
+    // 计算总宽度
+    const totalWidth = cardWidth + (totalCards - 1) * (cardWidth - overlap);
+    
+    // 计算每张牌的位置
+    const position = index * (cardWidth - overlap);
     
     return {
-      position: 'relative',
-      left: `${offset}px`,
-      marginLeft: index === 0 ? 0 : '-25px', // 第一张牌不调整，后面的牌向左移动25px以堆叠
+      position: 'absolute',
+      left: `${position}px`,
       zIndex: index
     };
   };

@@ -344,7 +344,7 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: visible; /* 允许卡片堆叠溢出 */
+  overflow: hidden; /* 防止卡片溢出 */
 }
 
 .area-header {
@@ -359,7 +359,7 @@ body {
   font-weight: bold;
 }
 
-/* 修改卡片槽样式 - 堆叠显示 */
+/* 修改卡片槽样式 - 堆叠显示但不溢出 */
 .card-slot {
   display: flex;
   flex-wrap: nowrap;
@@ -368,7 +368,7 @@ body {
   justify-content: flex-start;
   flex: 1;
   position: relative;
-  overflow: visible; /* 允许卡片堆叠溢出 */
+  overflow: hidden; /* 防止卡片溢出 */
   width: 100%;
   box-sizing: border-box;
   padding: 0 20px;
@@ -383,7 +383,6 @@ body {
   user-select: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  display: inline-block; /* 改为行内块元素，便于堆叠 */
 }
 
 .card:hover {
@@ -424,6 +423,20 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+/* 更多卡片指示器 */
+.more-cards-indicator {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  z-index: 300;
 }
 
 .game-controls {
@@ -595,6 +608,11 @@ body {
     padding: 20px 15px;
     font-size: 12px;
   }
+  
+  .more-cards-indicator {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -642,6 +660,11 @@ body {
 
   .empty-area-hint {
     font-size: 11px;
+  }
+  
+  .more-cards-indicator {
+    font-size: 10px;
+    padding: 3px 6px;
   }
 }
 
