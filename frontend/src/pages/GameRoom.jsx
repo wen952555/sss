@@ -315,12 +315,6 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
           </button>
         </div>
       )}
-
-      {/* 操作说明 */}
-      <div className="game-instructions">
-        <p>💡 操作说明：点击选择扑克牌（可多选），然后点击目标牌墩区域移动</p>
-        <p>💡 也可以直接拖拽单张扑克牌移动</p>
-      </div>
     </div>
   );
 };
