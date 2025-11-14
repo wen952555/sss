@@ -23,16 +23,25 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
     onClick(card, area);
   };
 
-  // 计算卡片的堆叠偏移量
+  // 计算卡片的堆叠偏移量 - 优化版本
   const getCardOffset = () => {
     if (totalCards <= 1) return { left: 0 };
     
-    // 计算每张牌的偏移量，让它们堆叠显示
-    const maxOffset = 30; // 最大偏移量
-    const offsetStep = maxOffset / (totalCards - 1);
-    const left = index * offsetStep;
+    // 计算每张牌的偏移量，让它们松散堆叠显示
+    // 确保最后一张牌右边有半张牌的空间
+    const cardWidth = 100; // 卡片宽度
+    const maxCards = area === 'head' ? 3 : 5; // 该区域最大牌数
+    const containerPadding = 20; // 容器内边距
     
-    return { left: `${left}px` };
+    // 计算可用宽度（减去半张牌的空间）
+    const availableWidth = `calc(100% - ${cardWidth / 2}px - ${containerPadding * 2}px)`;
+    
+    // 计算每张牌的偏移步长
+    const step = `calc(${availableWidth} / ${Math.max(totalCards - 1, 1)})`;
+    
+    const left = `calc(${index} * ${step})`;
+    
+    return { left };
   };
 
   // 获取卡片文件名（确保有.svg扩展名）
@@ -99,7 +108,8 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
               background: ${isSelected ? '#FFD700' : 'white'};
               color: #333;
               border-radius: 8px;
-              border: 2px solid ${isSelected ? '#FF6B6B' : '#ccc'}; font-size: 16px;
+              border: 2px solid ${isSelected ? '#FF6B6B' : '#ccc'};
+              font-size: 16px;
               text-align: center;
               padding: 5px;
               box-sizing: border-box;
