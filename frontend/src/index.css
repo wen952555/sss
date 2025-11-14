@@ -306,22 +306,24 @@ body {
   margin-bottom: 0;
 }
 
+/* 修改卡片区域样式，支持堆叠显示 */
 .card-area {
   background: rgba(255, 255, 255, 0.1);
   border: 2px dashed rgba(255, 255, 255, 0.3);
   border-radius: 10px;
-  padding: 20px; /* 增加内边距 */
-  min-height: 200px; /* 显著增加牌墩高度 */
+  padding: 20px;
+  min-height: 200px;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
+  position: relative; /* 为绝对定位的子元素提供定位上下文 */
 }
 
 .area-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px; /* 增加标题与卡片的间距 */
+  margin-bottom: 20px;
 }
 
 .area-header h4 {
@@ -329,35 +331,38 @@ body {
   font-weight: bold;
 }
 
+/* 修改卡片槽样式，支持堆叠显示 */
 .card-slot {
   display: flex;
-  gap: 8px; /* 增加卡片之间的间距 */
-  flex-wrap: wrap;
-  min-height: 120px; /* 增加卡片区域最小高度 */
+  gap: 0; /* 移除卡片间距，因为现在使用绝对定位 */
+  flex-wrap: nowrap; /* 禁止换行 */
+  min-height: 140px; /* 与卡片高度匹配 */
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* 左对齐 */
   flex: 1;
-}
-
-/* 移除手牌样式 */
-.hand-cards {
-  display: none;
+  position: relative; /* 为绝对定位的卡片提供定位上下文 */
+  padding-left: 10px; /* 为堆叠留出空间 */
+  overflow: visible; /* 允许卡片超出容器 */
 }
 
 /* 增大扑克牌样式 */
 .card {
-  width: 100px; /* 从70px增加到100px */
-  height: 140px; /* 从98px增加到140px */
+  width: 100px;
+  height: 140px;
   cursor: grab;
-  transition: transform 0.2s;
+  transition: transform 0.2s, z-index 0.2s;
   user-select: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  position: absolute; /* 使用绝对定位进行堆叠 */
+  top: 0;
+  z-index: 1; /* 默认层级 */
 }
 
 .card:hover {
   transform: translateY(-5px) scale(1.05);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  z-index: 100; /* 悬停时提升层级 */
 }
 
 .card.dragging {
@@ -372,6 +377,63 @@ body {
   border-radius: 6px;
 }
 
+/* 被选中的卡片样式 */
+.card.selected {
+  border: 3px solid #FF6B6B !important;
+  box-shadow: 0 0 15px rgba(255, 107, 107, 0.7) !important;
+  transform: translateY(-8px) scale(1.1);
+  z-index: 200; /* 选中时最高层级 */
+}
+
+/* 空区域提示 */
+.empty-area-hint {
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  width: 100%;
+  padding: 30px 20px;
+  font-style: italic;
+  font-size: 14px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .card {
+    width: 80px;
+    height: 112px;
+  }
+  
+  .card-slot {
+    min-height: 112px;
+    padding-left: 8px;
+  }
+  
+  .card-area {
+    min-height: 180px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    width: 70px;
+    height: 98px;
+  }
+  
+  .card-slot {
+    min-height: 98px;
+    padding-left: 6px;
+  }
+  
+  .card-area {
+    min-height: 160px;
+  }
+}
+
+/* 确保游戏控制按钮在一行显示 */
 .game-controls {
   display: flex;
   gap: 10px;
@@ -391,6 +453,35 @@ body {
   padding: 12px;
   font-size: 14px;
   white-space: nowrap;
+}
+
+/* 移动端游戏控制按钮调整 */
+@media (max-width: 768px) {
+  .game-controls {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .control-btn {
+    min-width: 90px;
+    padding: 10px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-controls {
+    gap: 5px;
+    padding: 10px;
+  }
+
+  .control-btn {
+    min-width: 80px;
+    padding: 8px;
+    font-size: 12px;
+  }
 }
 
 /* 模态框样式 */
@@ -444,11 +535,6 @@ body {
     padding: 20px;
   }
 
-  .card {
-    width: 80px; /* 移动端也保持较大尺寸 */
-    height: 112px;
-  }
-
   .game-controls {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -468,11 +554,6 @@ body {
 
   .modal-content {
     padding: 15px;
-  }
-
-  .card-area {
-    padding: 15px;
-    min-height: 180px;
   }
 
   .user-details {
@@ -531,19 +612,6 @@ body {
     gap: 2px;
     align-items: flex-start;
   }
-
-  .card {
-    width: 70px;
-    height: 98px;
-  }
-
-  .card-area {
-    min-height: 160px;
-  }
-
-  .card-slot {
-    min-height: 100px;
-  }
 }
 
 /* 在文件末尾添加以下样式 */
@@ -574,24 +642,6 @@ body {
 
 .clear-selection-btn:hover {
   background: rgba(255, 107, 107, 0.3);
-}
-
-/* 被选中的卡片样式 */
-.card.selected {
-  border: 3px solid #FF6B6B !important;
-  box-shadow: 0 0 15px rgba(255, 107, 107, 0.7) !important;
-  transform: translateY(-8px) scale(1.1);
-  z-index: 10;
-}
-
-/* 空区域提示 */
-.empty-area-hint {
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
-  width: 100%;
-  padding: 30px 20px;
-  font-style: italic;
-  font-size: 14px;
 }
 
 /* 游戏操作说明 */

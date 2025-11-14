@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameStatus }) => {
+const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameStatus, index, totalCards }) => {
   const handleDragStart = (e) => {
     if (!draggable || gameStatus !== 'playing') {
       e.preventDefault();
@@ -21,6 +21,18 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
     e.stopPropagation(); // 阻止事件冒泡到牌墩区域
     if (gameStatus !== 'playing') return;
     onClick(card, area);
+  };
+
+  // 计算卡片的堆叠偏移量
+  const getCardOffset = () => {
+    if (totalCards <= 1) return { left: 0 };
+    
+    // 计算每张牌的偏移量，让它们堆叠显示
+    const maxOffset = 30; // 最大偏移量
+    const offsetStep = maxOffset / (totalCards - 1);
+    const left = index * offsetStep;
+    
+    return { left: `${left}px` };
   };
 
   // 获取卡片文件名（确保有.svg扩展名）
@@ -51,6 +63,7 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
 
   const cardFilename = getCardFilename(card);
   const cardDisplay = getCardDisplay(card);
+  const cardOffset = getCardOffset();
 
   return (
     <div
@@ -61,7 +74,9 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
       onClick={handleClick}
       style={{
         cursor: (draggable && gameStatus === 'playing') ? 'pointer' : 'default',
-        opacity: (draggable && gameStatus === 'playing') ? 1 : 0.8
+        opacity: (draggable && gameStatus === 'playing') ? 1 : 0.8,
+        position: 'absolute',
+        ...cardOffset
       }}
       title={cardDisplay}
     >
@@ -84,8 +99,7 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
               background: ${isSelected ? '#FFD700' : 'white'};
               color: #333;
               border-radius: 8px;
-              border: 2px solid ${isSelected ? '#FF6B6B' : '#ccc'};
-              font-size: 16px;
+              border: 2px solid ${isSelected ? '#FF6B6B' : '#ccc'}; font-size: 16px;
               text-align: center;
               padding: 5px;
               box-sizing: border-box;

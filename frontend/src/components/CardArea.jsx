@@ -87,6 +87,8 @@ const CardArea = ({
             onClick={onCardClick}
             isSelected={isCardSelected(card)}
             gameStatus={gameStatus}
+            index={index}
+            totalCards={cards.length}
           />
         ))}
         {cards.length === 0 && (
