@@ -23,25 +23,20 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
     onClick(card, area);
   };
 
-  // 计算卡片的堆叠偏移量 - 优化版本
+  // 计算卡片的堆叠偏移量
   const getCardOffset = () => {
     if (totalCards <= 1) return { left: 0 };
     
-    // 计算每张牌的偏移量，让它们松散堆叠显示
-    // 确保最后一张牌右边有半张牌的空间
-    const cardWidth = 100; // 卡片宽度
-    const maxCards = area === 'head' ? 3 : 5; // 该区域最大牌数
-    const containerPadding = 20; // 容器内边距
-    
-    // 计算可用宽度（减去半张牌的空间）
-    const availableWidth = `calc(100% - ${cardWidth / 2}px - ${containerPadding * 2}px)`;
-    
+    // 计算每张牌的偏移量，让它们堆叠显示
+    // 根据区域类型设置最大偏移量
+    const maxOffset = area === 'head' ? 40 : 35; // 头道偏移更大，中道和尾道稍小
+    // 计算可用空间（减去半张牌的宽度）
+    const availableSpace = 100 - 50; // 100是卡片宽度，50是半张牌宽度
     // 计算每张牌的偏移步长
-    const step = `calc(${availableWidth} / ${Math.max(totalCards - 1, 1)})`;
+    const offsetStep = Math.min(maxOffset, availableSpace / (totalCards - 1));
+    const left = index * offsetStep;
     
-    const left = `calc(${index} * ${step})`;
-    
-    return { left };
+    return { left: `${left}px` };
   };
 
   // 获取卡片文件名（确保有.svg扩展名）

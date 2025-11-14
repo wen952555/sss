@@ -1,10 +1,345 @@
-/* 修改卡片区域样式，支持松散堆叠显示 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  min-height: 100vh;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+/* 登录注册样式 */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.auth-form {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-form h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #4CAF50;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  background: #45a049;
+}
+
+.btn-secondary {
+  background: #6c757d;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #87CEEB;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 15px;
+}
+
+.error-message {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  text-align: center;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.success-message {
+  color: #51cf66;
+  background: rgba(81, 207, 102, 0.1);
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  text-align: center;
+  border: 1px solid rgba(81, 207, 102, 0.3);
+}
+
+/* 主菜单样式 */
+.main-menu {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.user-info-banner {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+}
+
+.banner-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.logout-btn {
+  background: rgba(244, 67, 54, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background: rgba(244, 67, 54, 0.3);
+  color: #ff5252;
+}
+
+.user-details {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.user-id {
+  font-size: 14px;
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.user-balance {
+  font-size: 14px;
+  color: #FFD700;
+  font-weight: bold;
+}
+
+.balance-btn {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.balance-btn:hover {
+  background: rgba(76, 175, 80, 0.3);
+  color: #45a049;
+}
+
+.user-info {
+  display: none;
+}
+
+.room-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.room-card {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.room-card:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #4CAF50;
+  transform: translateY(-5px);
+}
+
+.room-card h3 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.room-card p {
+  opacity: 0.9;
+}
+
+/* 游戏房间样式 */
+.game-room {
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 紧凑的游戏顶部横幅 */
+.game-header-banner {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+}
+
+.game-header-banner .banner-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.exit-btn {
+  background: rgba(244, 67, 54, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.exit-btn:hover {
+  background: rgba(244, 67, 54, 0.3);
+  color: #ff5252;
+}
+
+.game-info {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.room-type {
+  font-size: 14px;
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.player-info {
+  font-size: 14px;
+  color: #87CEEB;
+}
+
+.balance-info {
+  font-size: 14px;
+  color: #FFD700;
+  font-weight: bold;
+}
+
+.game-status {
+  font-size: 14px;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+/* 移除原来的房间头部样式 */
+.room-header {
+  display: none;
+}
+
+/* 选择信息提示 */
+.selection-info {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.clear-selection-btn {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.clear-selection-btn:hover {
+  background: rgba(255, 107, 107, 0.3);
+}
+
+.card-areas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 25px; /* 增加牌墩之间的间距 */
+  margin-bottom: 0;
+}
+
 .card-area {
   background: rgba(255, 255, 255, 0.1);
   border: 2px dashed rgba(255, 255, 255, 0.3);
   border-radius: 10px;
-  padding: 20px;
-  min-height: 200px;
+  padding: 20px; /* 增加内边距 */
+  min-height: 200px; /* 显著增加牌墩高度 */
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -15,7 +350,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 20px; /* 增加标题与卡片的间距 */
 }
 
 .area-header h4 {
@@ -23,7 +358,7 @@
   font-weight: bold;
 }
 
-/* 修改卡片槽样式，支持松散堆叠显示 */
+/* 修改卡片槽样式，支持堆叠显示 */
 .card-slot {
   display: flex;
   gap: 0; /* 移除卡片间距，因为现在使用绝对定位 */
@@ -33,10 +368,9 @@
   justify-content: flex-start; /* 左对齐 */
   flex: 1;
   position: relative; /* 为绝对定位的卡片提供定位上下文 */
-  padding: 0 20px; /* 为左右留出空间 */
+  padding-left: 15px; /* 为堆叠留出左边空间 */
+  padding-right: 50px; /* 右边保留半张牌的空位 */
   overflow: visible; /* 允许卡片超出容器 */
-  width: 100%;
-  box-sizing: border-box;
 }
 
 /* 增大扑克牌样式 */
@@ -93,41 +427,6 @@
   transform: translate(-50%, -50%);
 }
 
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .card {
-    width: 80px;
-    height: 112px;
-  }
-  
-  .card-slot {
-    min-height: 112px;
-    padding: 0 15px;
-  }
-  
-  .card-area {
-    min-height: 180px;
-    padding: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .card {
-    width: 70px;
-    height: 98px;
-  }
-  
-  .card-slot {
-    min-height: 98px;
-    padding: 0 10px;
-  }
-  
-  .card-area {
-    min-height: 160px;
-  }
-}
-
-/* 确保游戏控制按钮在一行显示 */
 .game-controls {
   display: flex;
   gap: 10px;
@@ -149,8 +448,83 @@
   white-space: nowrap;
 }
 
-/* 移动端游戏控制按钮调整 */
+/* 游戏操作说明 */
+.game-instructions {
+  text-align: center;
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.game-instructions p {
+  margin: 5px 0;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  padding: 25px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 响应式设计 */
 @media (max-width: 768px) {
+  .auth-form {
+    padding: 20px;
+  }
+
+  .card {
+    width: 80px; /* 移动端也保持较大尺寸 */
+    height: 112px;
+  }
+
+  .card-slot {
+    min-height: 112px;
+    padding-left: 12px;
+    padding-right: 40px; /* 移动端半张牌宽度 */
+  }
+
   .game-controls {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -162,6 +536,66 @@
     min-width: 90px;
     padding: 10px;
     font-size: 13px;
+  }
+
+  .room-card {
+    padding: 20px;
+  }
+
+  .modal-content {
+    padding: 15px;
+  }
+
+  .card-area {
+    padding: 15px;
+    min-height: 180px;
+  }
+
+  .user-details {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .user-info-banner {
+    height: 35px;
+    padding: 0 10px;
+  }
+
+  .logout-btn,
+  .balance-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .game-info {
+    gap: 10px;
+  }
+
+  .room-type,
+  .player-info,
+  .balance-info,
+  .game-status {
+    font-size: 12px;
+  }
+
+  .selection-info {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .clear-selection-btn {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+  
+  .game-instructions {
+    font-size: 12px;
+    padding: 10px;
+  }
+  
+  .empty-area-hint {
+    padding: 20px 15px;
+    font-size: 12px;
   }
 }
 
@@ -176,4 +610,56 @@
     padding: 8px;
     font-size: 12px;
   }
+
+  .user-details {
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+  }
+
+  .user-id,
+  .user-balance {
+    font-size: 11px;
+  }
+
+  .game-info {
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+  }
+
+  .card {
+    width: 70px;
+    height: 98px;
+  }
+
+  .card-slot {
+    min-height: 98px;
+    padding-left: 10px;
+    padding-right: 35px; /* 小屏幕半张牌宽度 */
+  }
+
+  .card-area {
+    min-height: 160px;
+  }
+
+  .empty-area-hint {
+    font-size: 11px;
+  }
+}
+
+/* 加载样式 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 18px;
+}
+
+.loading {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px 40px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
 }
