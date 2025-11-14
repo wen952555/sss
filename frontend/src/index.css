@@ -344,7 +344,7 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden; /* 防止卡片溢出 */
+  overflow: visible; /* 允许卡片堆叠溢出 */
 }
 
 .area-header {
@@ -359,20 +359,19 @@ body {
   font-weight: bold;
 }
 
-/* 修改卡片槽样式 - 左对齐堆叠 */
+/* 修改卡片槽样式 - 堆叠显示 */
 .card-slot {
   display: flex;
-  gap: 0;
   flex-wrap: nowrap;
   min-height: 140px;
   align-items: center;
   justify-content: flex-start;
   flex: 1;
   position: relative;
-  overflow: hidden; /* 防止卡片溢出 */
+  overflow: visible; /* 允许卡片堆叠溢出 */
   width: 100%;
   box-sizing: border-box;
-  padding: 0 20px; /* 左右各留20px边距 */
+  padding: 0 20px;
 }
 
 /* 增大扑克牌样式 */
@@ -384,9 +383,7 @@ body {
   user-select: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  position: absolute;
-  top: 0;
-  z-index: 1;
+  display: inline-block; /* 改为行内块元素，便于堆叠 */
 }
 
 .card:hover {

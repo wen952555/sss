@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameStatus, position }) => {
+const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameStatus, index }) => {
   const handleDragStart = (e) => {
     if (!draggable || gameStatus !== 'playing') {
       e.preventDefault();
@@ -21,6 +21,19 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
     e.stopPropagation(); // 阻止事件冒泡到牌墩区域
     if (gameStatus !== 'playing') return;
     onClick(card, area);
+  };
+
+  // 计算卡片位置 - 堆叠显示，每张牌只遮挡半张
+  const getCardStyle = () => {
+    // 每张牌向右偏移50px（半张牌宽度）
+    const offset = index * 50;
+    
+    return {
+      position: 'relative',
+      left: `${offset}px`,
+      marginLeft: index === 0 ? 0 : '-25px', // 第一张牌不调整，后面的牌向左移动25px以堆叠
+      zIndex: index
+    };
   };
 
   // 获取卡片文件名（确保有.svg扩展名）
@@ -51,6 +64,7 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
 
   const cardFilename = getCardFilename(card);
   const cardDisplay = getCardDisplay(card);
+  const cardStyle = getCardStyle();
 
   return (
     <div
@@ -62,8 +76,7 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
       style={{
         cursor: (draggable && gameStatus === 'playing') ? 'pointer' : 'default',
         opacity: (draggable && gameStatus === 'playing') ? 1 : 0.8,
-        position: 'absolute',
-        left: `${position}px`
+        ...cardStyle
       }}
       title={cardDisplay}
     >
