@@ -193,14 +193,6 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     }
   };
 
-  // 清除所有选择
-  const clearSelection = () => {
-    updateGameState({
-      selectedCards: [],
-      lastSelectedArea: null
-    });
-  };
-
   useEffect(() => {
     initGame();
   }, [roomType]);
@@ -228,16 +220,6 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
           </div>
         </div>
       </div>
-
-      {/* 选择提示 */}
-      {gameState.selectedCards.length > 0 && (
-        <div className="selection-info">
-          <span>已选择 {gameState.selectedCards.length} 张牌</span>
-          <button className="clear-selection-btn" onClick={clearSelection}>
-            取消选择
-          </button>
-        </div>
-      )}
 
       <div className="card-areas">
         {/* 头道 - 最小牌型（最上面） */}
