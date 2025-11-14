@@ -23,20 +23,16 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
     onClick(card, area);
   };
 
-  // 计算卡片的堆叠偏移量
-  const getCardOffset = () => {
-    if (totalCards <= 1) return { left: 0 };
+  // 计算卡片的堆叠位置 - 按比例分布
+  const getCardPosition = () => {
+    if (totalCards <= 1) return { left: '0%' };
     
-    // 计算每张牌的偏移量，让它们堆叠显示
-    // 根据区域类型设置最大偏移量
-    const maxOffset = area === 'head' ? 40 : 35; // 头道偏移更大，中道和尾道稍小
-    // 计算可用空间（减去半张牌的宽度）
-    const availableSpace = 100 - 50; // 100是卡片宽度，50是半张牌宽度
-    // 计算每张牌的偏移步长
-    const offsetStep = Math.min(maxOffset, availableSpace / (totalCards - 1));
-    const left = index * offsetStep;
+    // 计算每张牌的位置百分比
+    // 总可用空间：100% - 5% (右边半张牌的空位)
+    const availableSpace = 95; // 95%的宽度用于放置所有牌
+    const positionPercent = (index / (totalCards - 1)) * availableSpace;
     
-    return { left: `${left}px` };
+    return { left: `${positionPercent}%` };
   };
 
   // 获取卡片文件名（确保有.svg扩展名）
@@ -67,7 +63,7 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
 
   const cardFilename = getCardFilename(card);
   const cardDisplay = getCardDisplay(card);
-  const cardOffset = getCardOffset();
+  const cardPosition = getCardPosition();
 
   return (
     <div
@@ -80,7 +76,7 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
         cursor: (draggable && gameStatus === 'playing') ? 'pointer' : 'default',
         opacity: (draggable && gameStatus === 'playing') ? 1 : 0.8,
         position: 'absolute',
-        ...cardOffset
+        ...cardPosition
       }}
       title={cardDisplay}
     >
