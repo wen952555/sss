@@ -23,16 +23,23 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
     onClick(card, area);
   };
 
-  // 计算卡片的堆叠位置 - 按比例分布
+  // 计算卡片的位置 - 确保不溢出
   const getCardPosition = () => {
-    if (totalCards <= 1) return { left: '0%' };
+    if (totalCards <= 1) return { left: '0px' };
     
-    // 计算每张牌的位置百分比
-    // 总可用空间：100% - 5% (右边半张牌的空位)
-    const availableSpace = 95; // 95%的宽度用于放置所有牌
-    const positionPercent = (index / (totalCards - 1)) * availableSpace;
+    // 计算每张牌的位置
+    const cardWidth = 100; // 卡片宽度
+    const containerWidth = 650; // 牌墩容器宽度（估算）
+    const rightMargin = cardWidth / 2; // 右边保留半张牌空位
     
-    return { left: `${positionPercent}%` };
+    // 可用宽度 = 容器宽度 - 右边空位 - 卡片宽度（确保最后一张牌不溢出）
+    const availableWidth = containerWidth - rightMargin - cardWidth;
+    
+    // 计算每张牌的偏移量
+    const offsetStep = availableWidth / (totalCards - 1);
+    const left = index * offsetStep;
+    
+    return { left: `${left}px` };
   };
 
   // 获取卡片文件名（确保有.svg扩展名）
