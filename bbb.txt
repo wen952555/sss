@@ -1,0 +1,1677 @@
+File: backend/config/database.php\n\n
+<?php
+class Database {
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
+    public $conn;
+
+    public function __construct() {
+        // 从环境变量或直接设置获取数据库配置
+        // serv00 通常使用 localhost 作为数据库主机
+        $this->host = getenv('DB_HOST') ?: 'localhost';
+        $this->db_name = getenv('DB_NAME') ?: 'wenge9529_thirteenwater';
+        $this->username = getenv('DB_USERNAME') ?: 'wenge9529';
+        $this->password = getenv('DB_PASSWORD') ?: '';
+
+        // 如果没有设置环境变量，尝试从 .env 文件读取
+        if (empty($this->password)) {
+            $this->loadEnvFile();
+        }
+    }
+
+    private function loadEnvFile() {
+        $env_file = __DIR__ . '/../.env';
+        if (file_exists($env_file)) {
+            $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (strpos(trim($line), '#') === 0) continue; // 跳过注释
+
+                list($key, $value) = explode('=', $line, 2);
+                $key = trim($key);
+                $value = trim($value);
+
+                switch ($key) {
+                    case 'DB_HOST':
+                        $this->host = $value;
+                        break;
+                    case 'DB_NAME':
+                        $this->db_name = $value;
+                        break;
+                    case 'DB_USERNAME':
+                        $this->username = $value;
+                        break;
+                    case 'DB_PASSWORD':
+                        $this->password = $value;
+                        break;
+                }
+            }
+        }
+    }
+
+    public function getConnection() {
+        $this->conn = null;
+
+        try {
+            $dsn = "mysql:host=" . $this->host . ";dbname=" . $this->db_name . ";charset=utf8mb4";
+
+            $this->conn = new PDO($dsn, $this->username, $this->password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false
+            ]);
+
+        } catch(PDOException $exception) {
+            // 不要直接输出错误信息到响应中
+            error_log("Database connection error: " . $exception->getMessage());
+            return null;
+        }
+
+        return $this->conn;
+    }
+}
+?>\n\n
+File: backend/models/GameModel.php\n\n
+<?php
+class GameModel {
+    private $conn;
+    private $table_name = "pre_generated_games";
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    // 获取可用牌局
+    public function getAvailableGame($session_type) {
+        if (!$this->conn) return null;
+
+        $query = "SELECT * FROM " . $this->table_name . "
+                  WHERE session_type = :session_type AND status = 'available'
+                  ORDER BY session_id, round_number LIMIT 1";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':session_type', $session_type);
+            $stmt->execute();
+
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Database error in getAvailableGame: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // 标记牌局为已使用
+    public function markGameAsUsed($game_id) {
+        if (!$this->conn) return false;
+
+        $query = "UPDATE " . $this->table_name . "
+                  SET status = 'used'
+                  WHERE id = :game_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':game_id', $game_id);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Database error in markGameAsUsed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // 获取特定牌局
+    public function getGameById($game_id) {
+        if (!$this->conn) return null;
+
+        $query = "SELECT * FROM " . $this->table_name . " WHERE id = :game_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':game_id', $game_id);
+            $stmt->execute();
+
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Database error in getGameById: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // 插入新牌局
+    public function createGame($data) {
+        if (!$this->conn) return false;
+
+        $query = "INSERT INTO " . $this->table_name . "
+                  (session_type, session_id, round_number,
+                   player1_original, player1_arranged,
+                   player2_original, player2_arranged,
+                   player3_original, player3_arranged,
+                   player4_original, player4_arranged)
+                  VALUES
+                  (:session_type, :session_id, :round_number,
+                   :player1_original, :player1_arranged,
+                   :player2_original, :player2_arranged,
+                   :player3_original, :player3_arranged,
+                   :player4_original, :player4_arranged)";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+
+            return $stmt->execute($data);
+        } catch (PDOException $e) {
+            error_log("Database error in createGame: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // 统计可用牌局数量
+    public function countAvailableGames($session_type, $status = 'available') {
+        if (!$this->conn) return 0;
+
+        $query = "SELECT COUNT(*) as count FROM " . $this->table_name . "
+                  WHERE session_type = :session_type AND status = :status";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':session_type', $session_type);
+            $stmt->bindParam(':status', $status);
+            $stmt->execute();
+
+            $result = $stmt->fetch();
+            return $result['count'] ?? 0;
+        } catch (PDOException $e) {
+            error_log("Database error in countAvailableGames: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    // 获取下一个session_id和round_number
+    public function getNextGamePosition($session_type) {
+        if (!$this->conn) return ['session_id' => 1, 'round_number' => 1];
+
+        $query = "SELECT MAX(session_id) as max_session,
+                         MAX(round_number) as max_round
+                  FROM " . $this->table_name . "
+                  WHERE session_type = :session_type";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':session_type', $session_type);
+            $stmt->execute();
+
+            $result = $stmt->fetch();
+
+            $next_session = $result['max_session'] ? $result['max_session'] : 0;
+            $next_round = $result['max_round'] ? $result['max_round'] + 1 : 1;
+
+            // 如果round超过20，递增session
+            if ($next_round > 20) {
+                $next_session++;
+                $next_round = 1;
+            }
+
+            return ['session_id' => $next_session, 'round_number' => $next_round];
+        } catch (PDOException $e) {
+            error_log("Database error in getNextGamePosition: " . $e->getMessage());
+            return ['session_id' => 1, 'round_number' => 1];
+        }
+    }
+}
+?>\n\n
+File: backend/models/BalanceTransferModel.php\n\n
+<?php
+class BalanceTransferModel {
+    private $conn;
+    private $table_name = "balance_transfers";
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    // 创建转账记录
+    public function createTransfer($from_user_id, $to_user_id, $amount, $note = '') {
+        if (!$this->conn) return false;
+
+        $query = "INSERT INTO " . $this->table_name . " (from_user_id, to_user_id, amount, note) VALUES (:from_user_id, :to_user_id, :amount, :note)";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':from_user_id', $from_user_id);
+            $stmt->bindParam(':to_user_id', $to_user_id);
+            $stmt->bindParam(':amount', $amount);
+            $stmt->bindParam(':note', $note);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Database error in createTransfer: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // 获取用户的转账记录
+    public function getUserTransfers($user_id, $limit = 20) {
+        if (!$this->conn) return [];
+
+        $query = "SELECT * FROM " . $this->table_name . " WHERE from_user_id = :user_id OR to_user_id = :user_id ORDER BY created_at DESC LIMIT :limit";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Database error in getUserTransfers: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    // 获取最近的转账记录
+    public function getRecentTransfers($user_id, $count = 5) {
+        if (!$this->conn) return [];
+
+        $query = "SELECT u.username, t.amount FROM " . $this->table_name . " t JOIN users u ON t.to_user_id = u.id WHERE t.from_user_id = :user_id ORDER BY t.created_at DESC LIMIT :count";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->bindParam(':count', $count, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Database error in getRecentTransfers: " . $e->getMessage());
+            return [];
+        }
+    }
+}
+?>\n\n
+File: backend/models/UserModel.php\n\n
+<?php
+class UserModel {
+    private $conn;
+    private $table_name = "users";
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    // 生成4位数字+字母的用户ID
+    private function generateUserID() {
+        $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $user_id = '';
+        for ($i = 0; $i < 4; $i++) {
+            $user_id .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $user_id;
+    }
+
+    // 检查用户ID是否唯一
+    private function isUserIDUnique($user_id) {
+        if (!$this->conn) return false;
+
+        $query = "SELECT COUNT(*) as count FROM " . $this->table_name . "
+                  WHERE user_id = :user_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->execute();
+
+            $result = $stmt->fetch();
+            return $result['count'] == 0;
+        } catch (PDOException $e) {
+            error_log("Database error in isUserIDUnique: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // 创建用户（手机号注册）
+    public function createUser($phone, $password, $email = '') {
+        if (!$this->conn) {
+            throw new Exception('数据库连接失败');
+        }
+
+        // 生成唯一用户ID
+        $user_id = $this->generateUserID();
+        $attempts = 0;
+        while (!$this->isUserIDUnique($user_id) && $attempts < 10) {
+            $user_id = $this->generateUserID();
+            $attempts++;
+        }
+
+        if ($attempts >= 10) {
+            throw new Exception('无法生成唯一用户ID');
+        }
+
+        $query = "INSERT INTO " . $this->table_name . "
+                  (phone, user_id, password_hash, email, balance, level)
+                  VALUES (:phone, :user_id, :password, :email, 1000, 1)";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+
+            $password_hash = password_hash($password, PASSWORD_DEFAULT);
+
+            $stmt->bindParam(':phone', $phone);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->bindParam(':password', $password_hash);
+            $stmt->bindParam(':email', $email);
+
+            if ($stmt->execute()) {
+                return $user_id;
+            } else {
+                throw new Exception('执行SQL语句失败');
+            }
+        } catch (PDOException $e) {
+            error_log("Database error in createUser: " . $e->getMessage());
+
+            // 检查是否是重复手机号错误
+            if (strpos($e->getMessage(), 'Duplicate entry') !== false && strpos($e->getMessage(), 'phone') !== false) {
+                throw new Exception('手机号已注册');
+            }
+
+            throw new Exception('数据库错误: ' . $e->getMessage());
+        }
+    }
+
+    // 根据手机号查找用户
+    public function getUserByPhone($phone) {
+        if (!$this->conn) return null;
+
+        $query = "SELECT * FROM " . $this->table_name . "
+                  WHERE phone = :phone";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':phone', $phone);
+            $stmt->execute();
+
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Database error in getUserByPhone: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // 根据用户ID查找用户
+    public function getUserByUserId($user_id) {
+        if (!$this->conn) return null;
+
+        $query = "SELECT id, phone, user_id, email, balance, level, created_at
+                  FROM " . $this->table_name . "
+                  WHERE user_id = :user_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->execute();
+
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Database error in getUserByUserId: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // 根据ID查找用户
+    public function getUserById($id) {
+        if (!$this->conn) return null;
+
+        $query = "SELECT id, phone, user_id, email, balance, level, created_at
+                  FROM " . $this->table_name . "
+                  WHERE id = :id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Database error in getUserById: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // 更新用户余额
+    public function updateBalance($user_id, $new_balance) {
+        if (!$this->conn) return false;
+
+        $query = "UPDATE " . $this->table_name . "
+                  SET balance = :balance
+                  WHERE id = :user_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':balance', $new_balance);
+            $stmt->bindParam(':user_id', $user_id);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Database error in updateBalance: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // 检查手机号是否已存在
+    public function phoneExists($phone) {
+        if (!$this->conn) return false;
+
+        $query = "SELECT COUNT(*) as count FROM " . $this->table_name . "
+                  WHERE phone = :phone";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':phone', $phone);
+            $stmt->execute();
+
+            $result = $stmt->fetch();
+            return $result['count'] > 0;
+        } catch (PDOException $e) {
+            error_log("Database error in phoneExists: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // 更新最后登录时间
+    public function updateLastLogin($user_id) {
+        if (!$this->conn) return false;
+
+        $query = "UPDATE " . $this->table_name . "
+                  SET last_login = CURRENT_TIMESTAMP
+                  WHERE id = :user_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':user_id', $user_id);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Database error in updateLastLogin: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+?>\n\n
+File: backend/models/SubmissionModel.php\n\n
+<?php
+class SubmissionModel {
+    private $conn;
+    private $table_name = "player_submissions";
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    // 创建提交记录
+    public function createSubmission($game_id, $user_id, $arranged_cards, $total_score = 0) {
+        if (!$this->conn) return false;
+
+        $query = "INSERT INTO " . $this->table_name . "
+                  (game_id, user_id, arranged_cards, total_score)
+                  VALUES (:game_id, :user_id, :arranged_cards, :total_score)";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+
+            $arranged_json = json_encode($arranged_cards);
+
+            $stmt->bindParam(':game_id', $game_id);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->bindParam(':arranged_cards', $arranged_json);
+            $stmt->bindParam(':total_score', $total_score);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Database error in createSubmission: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // 检查用户是否已提交过该牌局
+    public function hasSubmitted($game_id, $user_id) {
+        if (!$this->conn) return false;
+
+        $query = "SELECT COUNT(*) as count FROM " . $this->table_name . "
+                  WHERE game_id = :game_id AND user_id = :user_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':game_id', $game_id);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->execute();
+
+            $result = $stmt->fetch();
+            return ($result['count'] ?? 0) > 0;
+        } catch (PDOException $e) {
+            error_log("Database error in hasSubmitted: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+?>\n\n
+File: backend/models/InventoryModel.php\n\n
+<?php
+class InventoryModel {
+    private $conn;
+    private $table_name = "inventory_monitor";
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    // 更新库存统计
+    public function updateInventory($session_type, $total_games, $available_games) {
+        if (!$this->conn) return false;
+
+        $query = "INSERT INTO " . $this->table_name . "
+                  (session_type, total_games, available_games, last_replenish)
+                  VALUES (:session_type, :total_games, :available_games, CURRENT_TIMESTAMP)
+                  ON DUPLICATE KEY UPDATE
+                  total_games = :total_games_update,
+                  available_games = :available_games_update,
+                  last_replenish = CURRENT_TIMESTAMP";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':session_type', $session_type);
+            $stmt->bindParam(':total_games', $total_games);
+            $stmt->bindParam(':available_games', $available_games);
+            $stmt->bindParam(':total_games_update', $total_games);
+            $stmt->bindParam(':available_games_update', $available_games);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Database error in updateInventory: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // 获取库存状态
+    public function getInventoryStatus($session_type) {
+        if (!$this->conn) return null;
+
+        $query = "SELECT * FROM " . $this->table_name . "
+                  WHERE session_type = :session_type";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':session_type', $session_type);
+            $stmt->execute();
+
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Database error in getInventoryStatus: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // 获取所有库存状态
+    public function getAllInventoryStatus() {
+        if (!$this->conn) return [];
+
+        $query = "SELECT * FROM " . $this->table_name;
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            error_log("Database error in getAllInventoryStatus: " . $e->getMessage());
+            return [];
+        }
+    }
+}
+?>\n\n
+File: backend/utils/CardGenerator.php\n\n
+<?php
+class CardGenerator {
+    private $suits = ['clubs', 'diamonds', 'hearts', 'spades'];
+    private $values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
+
+    // 生成完整的一副牌
+    public function generateDeck() {
+        $deck = [];
+        foreach ($this->suits as $suit) {
+            foreach ($this->values as $value) {
+                $deck[] = $value . '_of_' . $suit;
+            }
+        }
+        return $deck;
+    }
+
+    // 洗牌
+    public function shuffleDeck($deck) {
+        shuffle($deck);
+        return $deck;
+    }
+
+    // 发牌给4个玩家
+    public function dealCards() {
+        $deck = $this->generateDeck();
+        $shuffled = $this->shuffleDeck($deck);
+
+        $players = [];
+        for ($i = 0; $i < 4; $i++) {
+            $players[$i] = array_slice($shuffled, $i * 13, 13);
+        }
+
+        return $players;
+    }
+
+    // 基础智能理牌 - 确保不倒水
+    public function smartArrange($cards) {
+        // 简化的理牌算法 - 按点数排序后简单分配
+        $sorted = $this->sortCards($cards);
+
+        // 基础分配：最小的3张放头道，中间5张放中道，最大的5张放尾道
+        $head = array_slice($sorted, 0, 3);
+        $middle = array_slice($sorted, 3, 5);
+        $tail = array_slice($sorted, 8, 5);
+
+        return [
+            'head' => $head,
+            'middle' => $middle,
+            'tail' => $tail
+        ];
+    }
+
+    // 排序扑克牌
+    private function sortCards($cards) {
+        $value_order = [
+            '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7, '8' => 8, '9' => 9, '10' => 10,
+            'jack' => 11, 'queen' => 12, 'king' => 13, 'ace' => 14
+        ];
+        $suit_order = ['clubs' => 0, 'diamonds' => 1, 'hearts' => 2, 'spades' => 3];
+
+        usort($cards, function($a, $b) use ($value_order, $suit_order) {
+            list($a_value, $a_suit) = explode('_of_', $a);
+            list($b_value, $b_suit) = explode('_of_', $b);
+
+            $a_score = $value_order[$a_value] * 10 + $suit_order[$a_suit];
+            $b_score = $value_order[$b_value] * 10 + $suit_order[$b_suit];
+
+            return $a_score - $b_score;
+        });
+
+        return $cards;
+    }
+
+    // 验证牌型是否倒水
+    public function validateArrangement($head, $middle, $tail) {
+        // 基础验证：确保头道 ≤ 中道 ≤ 尾道
+        // 这里简化验证，实际需要比较牌型大小
+        return true; // 基础版本先返回true，后续增强
+    }
+}
+?>\n\n
+File: backend/utils/Auth.php\n\n
+<?php
+class Auth {
+    public static function generateToken($user_id) {
+        $payload = [
+            'user_id' => $user_id,
+            'exp' => time() + (24 * 60 * 60) // 24小时过期
+        ];
+
+        // 简单的token生成，实际应该使用JWT等更安全的方式
+        return base64_encode(json_encode($payload));
+    }
+
+    public static function validateToken($token) {
+        try {
+            $decoded = json_decode(base64_decode($token), true);
+            if (!$decoded || !isset($decoded['user_id']) || !isset($decoded['exp'])) {
+                return false;
+            }
+
+            if ($decoded['exp'] < time()) {
+                return false;
+            }
+
+            return $decoded['user_id'];
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public static function getUserIdFromHeader() {
+        $headers = getallheaders();
+        if (!isset($headers['Authorization'])) {
+            return false;
+        }
+
+        $auth_header = $headers['Authorization'];
+        if (strpos($auth_header, 'Bearer ') !== 0) {
+            return false;
+        }
+
+        $token = substr($auth_header, 7);
+        return self::validateToken($token);
+    }
+}
+?>\n\n
+File: backend/utils/CardComparator.php\n\n
+<?php
+class CardComparator {
+    // 这里可以添加牌型比较逻辑
+    // 暂时留空，后续实现
+}
+?>\n\n
+File: backend/scripts/generate_games.php\n\n
+<?php
+// 使用绝对路径来包含文件
+
+// 获取当前脚本的目录
+$current_dir = __DIR__;
+// 获取项目根目录（public_html）
+$root_dir = dirname($current_dir);
+
+// 包含必要的文件
+require_once $root_dir . '/config/database.php';
+require_once $root_dir . '/models/GameModel.php';
+require_once $root_dir . '/models/InventoryModel.php';
+require_once $root_dir . '/utils/CardGenerator.php';
+
+$database = new Database();
+$db = $database->getConnection();
+
+if (!$db) {
+    die("无法连接到数据库，请检查配置\n");
+}
+
+$gameModel = new GameModel($db);
+$inventoryModel = new InventoryModel($db);
+$cardGenerator = new CardGenerator();
+
+// 配置
+$session_types = ['2', '5', '10'];
+$games_per_type = 960; // 每个类型960局
+$batch_size = 100; // 每批生成数量
+
+foreach ($session_types as $session_type) {
+    echo "开始生成 {$session_type} 分场牌局...\n";
+
+    $current_count = $gameModel->countAvailableGames($session_type);
+    $needed_games = $games_per_type - $current_count;
+
+    if ($needed_games <= 0) {
+        echo "{$session_type} 分场牌局充足，跳过生成\n";
+        continue;
+    }
+
+    echo "需要生成 {$needed_games} 局牌局\n";
+
+    $generated = 0;
+    while ($generated < $needed_games) {
+        $batch_games = min($batch_size, $needed_games - $generated);
+
+        for ($i = 0; $i < $batch_games; $i++) {
+            // 获取下一个位置
+            $position = $gameModel->getNextGamePosition($session_type);
+            $session_id = $position['session_id'];
+            $round_number = $position['round_number'];
+
+            // 生成牌局
+            $players_cards = $cardGenerator->dealCards();
+
+            $game_data = [
+                'session_type' => $session_type,
+                'session_id' => $session_id,
+                'round_number' => $round_number
+            ];
+
+            // 为每个玩家生成智能理牌结果
+            for ($p = 0; $p < 4; $p++) {
+                $original_cards = $players_cards[$p];
+                $arranged_cards = $cardGenerator->smartArrange($original_cards);
+
+                $game_data['player' . ($p + 1) . '_original'] = json_encode($original_cards);
+                $game_data['player' . ($p + 1) . '_arranged'] = json_encode($arranged_cards);
+            }
+
+            // 保存牌局
+            $gameModel->createGame($game_data);
+            $generated++;
+
+            if ($generated % 50 == 0) {
+                echo "已生成 {$generated} 局...\n";
+            }
+        }
+    }
+
+    // 更新库存统计
+    $total_games = $gameModel->countAvailableGames($session_type) +
+                   $gameModel->countAvailableGames($session_type, 'used');
+    $available_games = $gameModel->countAvailableGames($session_type);
+
+    $inventoryModel->updateInventory($session_type, $total_games, $available_games);
+
+    echo "{$session_type} 分场牌局生成完成！总计: {$total_games}, 可用: {$available_games}\n";
+}
+
+echo "所有牌局生成完成！\n";
+?>\n\n
+File: backend/scripts/replenish_inventory.php\n\n
+<?php
+// 使用绝对路径来包含文件
+
+// 获取当前脚本的目录
+$current_dir = __DIR__;
+// 获取项目根目录（public_html）
+$root_dir = dirname($current_dir);
+
+// 包含必要的文件
+require_once $root_dir . '/config/database.php';
+require_once $root_dir . '/models/GameModel.php';
+require_once $root_dir . '/models/InventoryModel.php';
+require_once $root_dir . '/utils/CardGenerator.php';
+
+$database = new Database();
+$db = $database->getConnection();
+
+if (!$db) {
+    die("无法连接到数据库，请检查配置\n");
+}
+
+$gameModel = new GameModel($db);
+$inventoryModel = new InventoryModel($db);
+$cardGenerator = new CardGenerator();
+
+// 配置
+$min_inventory = 240; // 最小库存
+$replenish_amount = 720; // 补货数量
+$session_types = ['2', '5', '10'];
+
+foreach ($session_types as $session_type) {
+    $available_games = $gameModel->countAvailableGames($session_type);
+
+    echo "{$session_type} 分场当前库存: {$available_games}\n";
+
+    if ($available_games > $min_inventory) {
+        echo "库存充足，跳过补货\n";
+        continue;
+    }
+
+    $needed_games = $replenish_amount;
+    echo "开始补货 {$needed_games} 局...\n";
+
+    $generated = 0;
+    while ($generated < $needed_games) {
+        // 获取下一个位置
+        $position = $gameModel->getNextGamePosition($session_type);
+        $session_id = $position['session_id'];
+        $round_number = $position['round_number'];
+
+        // 生成牌局
+        $players_cards = $cardGenerator->dealCards();
+
+        $game_data = [
+            'session_type' => $session_type,
+            'session_id' => $session_id,
+            'round_number' => $round_number
+        ];
+
+        // 为每个玩家生成智能理牌结果
+        for ($p = 0; $p < 4; $p++) {
+            $original_cards = $players_cards[$p];
+            $arranged_cards = $cardGenerator->smartArrange($original_cards);
+
+            $game_data['player' . ($p + 1) . '_original'] = json_encode($original_cards);
+            $game_data['player' . ($p + 1) . '_arranged'] = json_encode($arranged_cards);
+        }
+
+        // 保存牌局
+        $gameModel->createGame($game_data);
+        $generated++;
+
+        if ($generated % 100 == 0) {
+            echo "已补货 {$generated} 局...\n";
+        }
+    }
+
+    // 更新库存统计
+    $total_games = $gameModel->countAvailableGames($session_type) +
+                   $gameModel->countAvailableGames($session_type, 'used');
+    $available_games = $gameModel->countAvailableGames($session_type);
+
+    $inventoryModel->updateInventory($session_type, $total_games, $available_games);
+
+    echo "{$session_type} 分场补货完成！当前库存: {$available_games}\n";
+}
+
+echo "库存补货完成！\n";
+?>\n\n
+File: backend/scripts/init_database.php\n\n
+<?php
+// 数据库初始化脚本
+// 使用绝对路径来包含文件
+
+// 获取当前脚本的目录
+$current_dir = __DIR__;
+// 获取项目根目录（public_html）
+$root_dir = dirname($current_dir);
+
+// 包含数据库配置文件
+require_once $root_dir . '/config/database.php';
+
+$database = new Database();
+
+// 尝试连接数据库
+try {
+    $conn = $database->getConnection();
+
+    if (!$conn) {
+        throw new Exception('无法连接到数据库，请检查配置');
+    }
+
+    echo "数据库连接成功！\n";
+
+    // 创建用户表
+    $sql = "CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        phone VARCHAR(20) UNIQUE NOT NULL,
+        user_id VARCHAR(10) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        email VARCHAR(100),
+        balance INT DEFAULT 1000,
+        level INT DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_login TIMESTAMP NULL,
+        INDEX idx_phone (phone),
+        INDEX idx_user_id (user_id)
+    )";
+
+    $conn->exec($sql);
+    echo "用户表创建成功！\n";
+
+    // 创建预生成牌局表
+    $sql = "CREATE TABLE IF NOT EXISTS pre_generated_games (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        session_type ENUM('2', '5', '10') NOT NULL COMMENT '场次类型',
+        session_id INT NOT NULL COMMENT '场次ID (1-48)',
+        round_number INT NOT NULL COMMENT '局数 (1-20)',
+        player1_original JSON NOT NULL COMMENT '玩家1原始手牌',
+        player1_arranged JSON NOT NULL COMMENT '玩家1智能理牌结果',
+        player2_original JSON NOT NULL COMMENT '玩家2原始手牌',
+        player2_arranged JSON NOT NULL COMMENT '玩家2智能理牌结果',
+        player3_original JSON NOT NULL COMMENT '玩家3原始手牌',
+        player3_arranged JSON NOT NULL COMMENT '玩家3智能理牌结果',
+        player4_original JSON NOT NULL COMMENT '玩家4原始手牌',
+        player4_arranged JSON NOT NULL COMMENT '玩家4智能理牌结果',
+        status ENUM('available', 'used') DEFAULT 'available' COMMENT '牌局状态',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_session_type (session_type),
+        INDEX idx_status (status),
+        UNIQUE KEY uk_session_round (session_type, session_id, round_number)
+    )";
+
+    $conn->exec($sql);
+    echo "预生成牌局表创建成功！\n";
+
+    // 创建玩家提交表
+    $sql = "CREATE TABLE IF NOT EXISTS player_submissions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        game_id INT NOT NULL COMMENT '关联牌局ID',
+        user_id INT NOT NULL COMMENT '玩家ID',
+        arranged_cards JSON NOT NULL COMMENT '玩家提交的分牌结果',
+        total_score INT DEFAULT 0 COMMENT '总得分',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (game_id) REFERENCES pre_generated_games(id),
+        INDEX idx_user_id (user_id),
+        INDEX idx_game_id (game_id)
+    )";
+
+    $conn->exec($sql);
+    echo "玩家提交表创建成功！\n";
+
+    // 创建积分转账记录表
+    $sql = "CREATE TABLE IF NOT EXISTS balance_transfers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        from_user_id INT NOT NULL,
+        to_user_id INT NOT NULL,
+        amount INT NOT NULL,
+        note VARCHAR(255) DEFAULT '',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (from_user_id) REFERENCES users(id),
+        FOREIGN KEY (to_user_id) REFERENCES users(id),
+        INDEX idx_from_user (from_user_id),
+        INDEX idx_to_user (to_user_id)
+    )";
+
+    $conn->exec($sql);
+    echo "积分转账记录表创建成功！\n";
+
+    // 创建库存监控表
+    $sql = "CREATE TABLE IF NOT EXISTS inventory_monitor (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        session_type ENUM('2', '5', '10') NOT NULL,
+        total_games INT DEFAULT 0 COMMENT '总牌局数',
+        available_games INT DEFAULT 0 COMMENT '可用牌局数',
+        last_replenish TIMESTAMP NULL COMMENT '最后补货时间',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_session_type (session_type)
+    )";
+
+    $conn->exec($sql);
+    echo "库存监控表创建成功！\n";
+
+    echo "\n所有数据库表初始化完成！\n";
+
+} catch (Exception $e) {
+    echo "错误: " . $e->getMessage() . "\n";
+    echo "请检查数据库配置是否正确。\n";
+}
+?>\n\n
+File: backend/api/balance.php\n\n
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit(0);
+}
+
+// 关闭错误输出
+ini_set('display_errors', 0);
+error_reporting(0);
+
+// 使用绝对路径包含文件
+$root_dir = dirname(__DIR__);
+require_once $root_dir . '/config/database.php';
+require_once $root_dir . '/models/UserModel.php';
+require_once $root_dir . '/models/BalanceTransferModel.php';
+require_once $root_dir . '/utils/Auth.php';
+
+try {
+    $database = new Database();
+    $db = $database->getConnection();
+
+    if (!$db) {
+        throw new Exception('无法连接到数据库');
+    }
+
+    $userModel = new UserModel($db);
+    $transferModel = new BalanceTransferModel($db);
+
+    $user_id = Auth::getUserIdFromHeader();
+
+    if (!$user_id) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => '未授权访问']);
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        // 检查JSON解析是否成功
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '无效的JSON数据']);
+            exit;
+        }
+
+        $action = $_GET['action'] ?? '';
+
+        if ($action == 'transfer') {
+            $to_user_id = $input['to_user_id'] ?? '';
+            $amount = $input['amount'] ?? 0;
+            $note = $input['note'] ?? '';
+
+            if (empty($to_user_id) || $amount <= 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '参数错误']);
+                exit;
+            }
+
+            // 检查收款用户是否存在
+            $to_user = $userModel->getUserByUserId($to_user_id);
+            if (!$to_user) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => '收款用户不存在']);
+                exit;
+            }
+
+            // 不能给自己转账
+            if ($to_user['id'] == $user_id) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '不能给自己转账']);
+                exit;
+            }
+
+            // 获取当前用户信息
+            $from_user = $userModel->getUserById($user_id);
+
+            // 检查余额是否足够
+            if ($from_user['balance'] < $amount) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '余额不足']);
+                exit;
+            }
+
+            // 开始事务
+            $db->beginTransaction();
+
+            try {
+                // 扣除转出用户余额
+                $new_from_balance = $from_user['balance'] - $amount;
+                $userModel->updateBalance($user_id, $new_from_balance);
+
+                // 增加收款用户余额
+                $new_to_balance = $to_user['balance'] + $amount;
+                $userModel->updateBalance($to_user['id'], $new_to_balance);
+
+                // 记录转账
+                $transferModel->createTransfer($user_id, $to_user['id'], $amount, $note);
+
+                // 提交事务
+                $db->commit();
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => '转账成功',
+                    'new_balance' => $new_from_balance
+                ]);
+
+            } catch (Exception $e) {
+                // 回滚事务
+                $db->rollBack();
+                throw $e;
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '无效的操作']);
+        }
+
+    } elseif ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        $action = $_GET['action'] ?? '';
+
+        if ($action == 'transfers') {
+            $limit = $_GET['limit'] ?? 20;
+            $transfers = $transferModel->getUserTransfers($user_id, $limit);
+
+            echo json_encode(['success' => true, 'transfers' => $transfers]);
+
+        } elseif ($action == 'recent_transfers') {
+            $count = $_GET['count'] ?? 5;
+            $transfers = $transferModel->getRecentTransfers($user_id, $count);
+
+            echo json_encode(['success' => true, 'transfers' => $transfers]);
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '无效的操作']);
+        }
+    } else {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => '方法不允许']);
+    }
+} catch (Exception $e) {
+    error_log("Balance API Error: " . $e->getMessage());
+
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => '服务器错误，请稍后重试']);
+}
+?>\n\n
+File: backend/api/auth.php\n\n
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit(0);
+}
+
+// 关闭错误输出
+ini_set('display_errors', 0);
+error_reporting(0);
+
+// 使用绝对路径包含文件
+$root_dir = dirname(__DIR__);
+require_once $root_dir . '/config/database.php';
+require_once $root_dir . '/models/UserModel.php';
+require_once $root_dir . '/utils/Auth.php';
+
+try {
+    $database = new Database();
+    $db = $database->getConnection();
+
+    if (!$db) {
+        throw new Exception('无法连接到数据库');
+    }
+
+    $userModel = new UserModel($db);
+
+    // 获取输入数据
+    $input = file_get_contents('php://input');
+    if (empty($input)) {
+        throw new Exception('请求体为空');
+    }
+
+    $input = json_decode($input, true);
+
+    // 确保输入解析成功
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception('无效的JSON数据');
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $action = $_GET['action'] ?? '';
+
+        if ($action == 'login') {
+            $phone = $input['phone'] ?? '';
+            $password = $input['password'] ?? '';
+
+            if (empty($phone) || empty($password)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '手机号和密码不能为空']);
+                exit;
+            }
+
+            // 基本手机号验证
+            if (strlen($phone) !== 11 || !is_numeric($phone)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '请输入11位手机号']);
+                exit;
+            }
+
+            $user = $userModel->getUserByPhone($phone);
+            if (!$user) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => '手机号或密码错误']);
+                exit;
+            }
+
+            if (!password_verify($password, $user['password_hash'])) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => '手机号或密码错误']);
+                exit;
+            }
+
+            $token = Auth::generateToken($user['id']);
+            $userModel->updateLastLogin($user['id']);
+
+            // 移除密码哈希
+            unset($user['password_hash']);
+
+            echo json_encode([
+                'success' => true,
+                'message' => '登录成功',
+                'token' => $token,
+                'user' => $user
+            ]);
+
+        } elseif ($action == 'register') {
+            $phone = $input['phone'] ?? '';
+            $password = $input['password'] ?? '';
+            $email = $input['email'] ?? '';
+
+            // 验证手机号格式
+            if (empty($phone) || strlen($phone) !== 11 || !is_numeric($phone)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '请输入11位手机号']);
+                exit;
+            }
+
+            if (empty($password) || strlen($password) < 6) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '密码长度至少6位']);
+                exit;
+            }
+
+            // 检查手机号是否已存在
+            if ($userModel->phoneExists($phone)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '手机号已注册']);
+                exit;
+            }
+
+            $user_id = $userModel->createUser($phone, $password, $email);
+            if ($user_id) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => '注册成功',
+                    'user_id' => $user_id
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => '注册失败，请稍后重试']);
+            }
+
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '无效的操作']);
+        }
+    } else {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => '方法不允许']);
+    }
+} catch (Exception $e) {
+    error_log("Auth API Error: " . $e->getMessage());
+
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => '服务器错误，请稍后重试'
+    ]);
+}
+?>\n\n
+File: backend/api/game.php\n\n
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit(0);
+}
+
+// 关闭错误输出
+ini_set('display_errors', 0);
+error_reporting(0);
+
+// 使用绝对路径包含文件
+$root_dir = dirname(__DIR__);
+require_once $root_dir . '/config/database.php';
+require_once $root_dir . '/models/GameModel.php';
+require_once $root_dir . '/models/SubmissionModel.php';
+require_once $root_dir . '/models/UserModel.php';
+require_once $root_dir . '/utils/Auth.php';
+require_once $root_dir . '/utils/CardGenerator.php';
+
+// 辅助函数：格式化单张卡片
+function formatCardData($cards) {
+    if (!is_array($cards)) return [];
+
+    return array_map(function($card) {
+        if (is_array($card)) {
+            // 如果已经是对象格式，确保filename有.svg扩展名
+            if (isset($card['filename']) && !str_ends_with($card['filename'], '.svg')) {
+                $card['filename'] = $card['filename'] . '.svg';
+            }
+            return $card;
+        }
+
+        // 解析字符串格式的卡片
+        if (is_string($card)) {
+            $filename = $card;
+            // 确保有.svg扩展名
+            if (!str_ends_with($filename, '.svg')) {
+                $filename = $filename . '.svg';
+            }
+
+            $cardName = str_replace('.svg', '', $filename);
+            list($value, $suit) = explode('_of_', $cardName);
+
+            $suitSymbols = [
+                'clubs' => '♣',
+                'diamonds' => '♦',
+                'hearts' => '♥',
+                'spades' => '♠'
+            ];
+
+            $valueMap = [
+                'ace' => 'A', 'king' => 'K', 'queen' => 'Q', 'jack' => 'J',
+                '10' => '10', '9' => '9', '8' => '8', '7' => '7', '6' => '6',
+                '5' => '5', '4' => '4', '3' => '3', '2' => '2'
+            ];
+
+            return [
+                'filename' => $filename,
+                'value' => $value,
+                'suit' => $suit,
+                'display' => ($valueMap[$value] ?? $value) . ($suitSymbols[$suit] ?? $suit)
+            ];
+        }
+
+        return $card;
+    }, $cards);
+}
+
+// 辅助函数：格式化整个牌型安排
+function formatCardArrangement($arrangement) {
+    if (!is_array($arrangement)) {
+        return [
+            'head' => [],
+            'middle' => [],
+            'tail' => []
+        ];
+    }
+    return [
+        'head' => formatCardData($arrangement['head'] ?? []),
+        'middle' => formatCardData($arrangement['middle'] ?? []),
+        'tail' => formatCardData($arrangement['tail'] ?? [])
+    ];
+}
+
+try {
+    $database = new Database();
+    $db = $database->getConnection();
+
+    if (!$db) {
+        throw new Exception('无法连接到数据库');
+    }
+
+    $gameModel = new GameModel($db);
+    $submissionModel = new SubmissionModel($db);
+    $userModel = new UserModel($db);
+
+    // 获取用户ID，但不强制要求认证（为了调试）
+    $user_id = Auth::getUserIdFromHeader();
+
+    // 调试信息：记录认证状态
+    error_log("Game API - User ID from token: " . ($user_id ? $user_id : 'null'));
+
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        $action = $_GET['action'] ?? '';
+
+        if ($action == 'get_game') {
+            // 对于获取游戏，我们暂时放宽认证要求以进行调试
+            if (!$user_id) {
+                // 如果未认证，尝试使用测试用户或返回错误
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => '未授权访问，请重新登录']);
+                exit;
+            }
+
+            $session_type = $_GET['session_type'] ?? '2';
+
+            if (!in_array($session_type, ['2', '5', '10'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '无效的场次类型']);
+                exit;
+            }
+
+            $game = $gameModel->getAvailableGame($session_type);
+            if (!$game) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => '暂无可用牌局']);
+                exit;
+            }
+
+            $gameModel->markGameAsUsed($game['id']);
+
+            // 准备返回数据
+            $response = [
+                'success' => true,
+                'game_id' => $game['id'],
+                'preset_arrangement' => formatCardArrangement(json_decode($game['player1_arranged'], true)),
+                'original_cards' => formatCardData(json_decode($game['player1_original'], true)),
+                'ai_arrangements' => [
+                    formatCardArrangement(json_decode($game['player2_arranged'], true)),
+                    formatCardArrangement(json_decode($game['player3_arranged'], true)),
+                    formatCardArrangement(json_decode($game['player4_arranged'], true))
+                ]
+            ];
+
+            echo json_encode($response);
+
+        } elseif ($action == 'user_info') {
+            if (!$user_id) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => '未授权访问']);
+                exit;
+            }
+
+            $user = $userModel->getUserById($user_id);
+            if (!$user) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => '用户不存在']);
+                exit;
+            }
+
+            echo json_encode(['success' => true, 'user' => $user]);
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '无效的操作']);
+        }
+
+    } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '无效的JSON数据']);
+            exit;
+        }
+
+        $action = $_GET['action'] ?? '';
+
+        if ($action == 'submit') {
+            if (!$user_id) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => '未授权访问']);
+                exit;
+            }
+
+            $game_id = $input['game_id'] ?? null;
+            $arranged_cards = $input['arranged_cards'] ?? null;
+
+            if (!$game_id || !$arranged_cards) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '缺少必要参数']);
+                exit;
+            }
+
+            if ($submissionModel->hasSubmitted($game_id, $user_id)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '已提交过该牌局']);
+                exit;
+            }
+
+            $cardGenerator = new CardGenerator();
+            if (!$cardGenerator->validateArrangement(
+                $arranged_cards['head'] ?? [],
+                $arranged_cards['middle'] ?? [],
+                $arranged_cards['tail'] ?? []
+            )) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '牌型倒水，无法提交']);
+                exit;
+            }
+
+            $result = $submissionModel->createSubmission($game_id, $user_id, $arranged_cards);
+
+            if ($result) {
+                echo json_encode(['success' => true, 'message' => '提交成功']);
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => '提交失败']);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '无效的操作']);
+        }
+    } else {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => '方法不允许']);
+    }
+} catch (Exception $e) {
+    error_log("Game API Error: " . $e->getMessage());
+
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => '服务器错误，请稍后重试']);
+}
+?>\n\n
+File: backend/api/user.php\n\n
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit(0);
+}
+
+// 关闭错误输出
+ini_set('display_errors', 0);
+error_reporting(0);
+
+// 使用绝对路径包含文件
+$root_dir = dirname(__DIR__);
+require_once $root_dir . '/config/database.php';
+require_once $root_dir . '/models/UserModel.php';
+require_once $root_dir . '/models/SubmissionModel.php';
+require_once $root_dir . '/utils/Auth.php';
+
+try {
+    $database = new Database();
+    $db = $database->getConnection();
+
+    if (!$db) {
+        throw new Exception('无法连接到数据库');
+    }
+
+    $userModel = new UserModel($db);
+    $submissionModel = new SubmissionModel($db);
+
+    $user_id = Auth::getUserIdFromHeader();
+
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        if (!$user_id) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => '未授权访问']);
+            exit;
+        }
+
+        $action = $_GET['action'] ?? '';
+
+        if ($action == 'profile') {
+            $user = $userModel->getUserById($user_id);
+            if (!$user) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => '用户不存在']);
+                exit;
+            }
+
+            echo json_encode(['success' => true, 'user' => $user]);
+
+        } elseif ($action == 'submissions') {
+            $limit = $_GET['limit'] ?? 10;
+            $submissions = $submissionModel->getUserSubmissions($user_id, $limit);
+
+            echo json_encode(['success' => true, 'submissions' => $submissions]);
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '无效的操作']);
+        }
+    } else {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => '方法不允许']);
+    }
+} catch (Exception $e) {
+    error_log("User API Error: " . $e->getMessage());
+
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => '服务器错误，请稍后重试']);
+}
+?>\n\n
