@@ -1,3 +1,23 @@
+// 确保所有卡片数据都是标准对象格式
+export const ensureCardObject = (card) => {
+  if (typeof card === 'object' && card.filename) {
+    return card;
+  }
+  if (typeof card === 'string') {
+    // 假设字符串是文件名，例如 'ace_of_spades.svg'
+    const cardObj = parseCardFromFilename(card);
+    if (cardObj) return cardObj;
+  }
+  // 返回一个无效卡片或默认对象，避免崩溃
+  return {
+    filename: 'unknown_card.svg',
+    display: '未知',
+    value: 'unknown',
+    suit: 'unknown',
+    sortValue: 0
+  };
+};
+
 // 验证牌型是否合法 - 增强版本
 export const validateCardArrangement = (head, middle, tail) => {
   // 检查数量

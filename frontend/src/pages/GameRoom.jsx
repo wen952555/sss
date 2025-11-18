@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CardArea from '../components/CardArea';
-import { validateCardArrangement } from '../utils/cardUtils';
+import { validateCardArrangement, ensureCardObject } from '../utils/cardUtils';
 import { gameAPI } from '../utils/api';
 
 const GameRoom = ({ roomType, userInfo, onExit }) => {
@@ -23,17 +23,24 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     try {
       const result = await gameAPI.getGame(roomType);
       if (result.success) {
+        // 标准化卡片数据
+        const standardizedArrangement = {
+          head: result.preset_arrangement.head.map(ensureCardObject),
+          middle: result.preset_arrangement.middle.map(ensureCardObject),
+          tail: result.preset_arrangement.tail.map(ensureCardObject),
+        };
+
         // 完全重置所有状态
         setGameState({
           arrangedCards: {
-            head: [...result.preset_arrangement.head],
-            middle: [...result.preset_arrangement.middle],
-            tail: [...result.preset_arrangement.tail]
+            head: [...standardizedArrangement.head],
+            middle: [...standardizedArrangement.middle],
+            tail: [...standardizedArrangement.tail]
           },
           originalCards: {
-            head: [...result.preset_arrangement.head],
-            middle: [...result.preset_arrangement.middle],
-            tail: [...result.preset_arrangement.tail]
+            head: [...standardizedArrangement.head],
+            middle: [...standardizedArrangement.middle],
+            tail: [...standardizedArrangement.tail]
           },
           gameStatus: 'playing',
           roomInfo: {
@@ -62,15 +69,14 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
 
   // 处理卡片点击选择
   const handleCardClick = (card, area) => {
-    const cardKey = `${area}-${typeof card === 'object' ? card.filename : card}`;
-    
+    const cardKey = `${area}-${card.filename}`;
+    const isSelected = gameState.selectedCards.some(c => c.cardKey === cardKey);
+
     updateGameState({
-      selectedCards: gameState.selectedCards.filter(selected => 
-        selected.cardKey === cardKey
-      ).length > 0 
-        ? gameState.selectedCards.filter(selected => selected.cardKey !== cardKey)
+      selectedCards: isSelected
+        ? gameState.selectedCards.filter(c => c.cardKey !== cardKey)
         : [...gameState.selectedCards, { card, area, cardKey }],
-      lastSelectedArea: area
+      lastSelectedArea: area,
     });
   };
 
@@ -92,9 +98,7 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     
     // 从原区域移除选中的卡片
     gameState.selectedCards.forEach(({ card, area }) => {
-      newArrangedCards[area] = newArrangedCards[area].filter(c => 
-        typeof c === 'object' ? c.filename !== card.filename : c !== card
-      );
+      newArrangedCards[area] = newArrangedCards[area].filter(c => c.filename !== card.filename);
     });
     
     // 添加到目标区域
@@ -161,9 +165,7 @@ const GameRoom = ({ roomType, userInfo, onExit }) => {
     if (fromArea === toArea) return;
 
     const newArrangedCards = { ...gameState.arrangedCards };
-    newArrangedCards[fromArea] = newArrangedCards[fromArea].filter(c =>
-      typeof c === 'object' ? c.filename !== card.filename : c !== card
-    );
+    newArrangedCards[fromArea] = newArrangedCards[fromArea].filter(c => c.filename !== card.filename);
 
     newArrangedCards[toArea] = [...newArrangedCards[toArea], card];
 

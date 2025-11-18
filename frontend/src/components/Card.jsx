@@ -31,34 +31,6 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
     return { left: `${offset}px` };
   };
 
-  // 获取卡片文件名（确保有.svg扩展名）
-  const getCardFilename = (card) => {
-    let filename;
-
-    if (typeof card === 'object') {
-      filename = card.filename;
-    } else {
-      filename = card;
-    }
-
-    // 确保文件名有.svg扩展名
-    if (filename && !filename.endsWith('.svg')) {
-      filename = filename + '.svg';
-    }
-
-    return filename;
-  };
-
-  // 获取卡片显示名称
-  const getCardDisplay = (card) => {
-    if (typeof card === 'object') {
-      return card.display || card.filename;
-    }
-    return card;
-  };
-
-  const cardFilename = getCardFilename(card);
-  const cardDisplay = getCardDisplay(card);
   const cardPosition = getCardPosition();
 
   return (
@@ -74,11 +46,11 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
         position: 'absolute',
         ...cardPosition
       }}
-      title={cardDisplay}
+      title={card.display}
     >
       <img
-        src={`/cards/${cardFilename}`}
-        alt={cardDisplay}
+        src={`/cards/${card.filename}`}
+        alt={card.display}
         onError={(e) => {
           // 图片加载失败时显示替代样式
           e.target.style.display = 'none';
@@ -102,7 +74,7 @@ const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameS
               box-sizing: border-box;
               font-weight: bold;
             ">
-              ${cardDisplay}
+              ${card.display}
             </div>
           `;
         }}
