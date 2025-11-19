@@ -1,16 +1,18 @@
 <?php
 // backend/db.php
-// 用于被 API 文件引用，建立数据库连接
+
+// 1. 允许跨域 (API 通用头)
 header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *"); // 允许跨域作为兜底
+header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+// --- [修复点] 增加 isset 判断，防止命令行运行报错 ---
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// 简单的 Env 解析
+// 2. 加载 .env 环境配置
 function loadEnv($path) {
     if (!file_exists($path)) return;
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -32,12 +34,19 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
+    // 如果是在命令行运行，直接打印错误
+    if (php_sapi_name() === 'cli') {
+        die("数据库连接失败: " . $e->getMessage() . "\n");
+    }
     echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
     exit;
 }
 
-// 验证 Token 的辅助函数
+// 验证 Token 的辅助函数 (保持不变)
 function authenticate($pdo) {
+    // 命令行模式下跳过验证（或者报错）
+    if (php_sapi_name() === 'cli') return null;
+
     $headers = getallheaders();
     $authHeader = $headers['Authorization'] ?? '';
     if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
