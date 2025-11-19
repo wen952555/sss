@@ -1,0 +1,31 @@
+/* frontend/src/components/CardArea.css */
+
+.card-area {
+    width: 100%;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    min-height: 150px; /* Ensure area has a minimum height */
+}
+
+.card-area-title {
+    margin: 0 0 1rem 0;
+    color: var(--text-secondary-color);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.card-area-slot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 30px; /* Offset for the first card's overlap */
+}
+
+/* Create the overlapping card effect */
+.card-area-slot > .card,
+.card-area-slot > .card-placeholder {
+    margin-left: -30px; /* Overlap cards by 30px */
+}
