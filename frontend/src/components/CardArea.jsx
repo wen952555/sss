@@ -84,10 +84,8 @@ const CardArea = ({
 
   // 检查卡片是否被选中
   const isCardSelected = (card) => {
-    return selectedCards.some(selected => {
-      const cardKey = `${area}-${typeof card === 'object' ? card.filename : card}`;
-      return selected.cardKey === cardKey;
-    });
+    const cardKey = `${area}-${card.filename}`;
+    return selectedCards.some(selected => selected.cardKey === cardKey);
   };
 
   return (
@@ -110,7 +108,7 @@ const CardArea = ({
       <div className="card-slot" ref={slotRef}>
         {cards.slice(0, maxVisibleCards).map((card, index) => (
           <Card
-            key={typeof card === 'object' ? card.filename : `${card}-${index}`}
+            key={card.filename}
             card={card}
             area={area}
             draggable={gameStatus === 'playing'}
