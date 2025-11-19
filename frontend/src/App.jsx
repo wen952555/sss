@@ -1,140 +1,54 @@
-import React, { useState, useEffect } from 'react'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import MainMenu from './pages/MainMenu'
-import GameRoom from './pages/GameRoom'
-import { gameAPI } from './utils/api'
-import './index.css'
+import React, { useState, useEffect } from 'react';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import MainMenu from './pages/MainMenu';
+import GameRoom from './pages/GameRoom';
+import GameResult from './pages/GameResult';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('login')
-  const [userInfo, setUserInfo] = useState(null)
-  const [selectedRoom, setSelectedRoom] = useState(null)
-  const [loading, setLoading] = useState(true)
+    const [user, setUser] = useState(null);
+    const [currentView, setCurrentView] = useState('login');
+    const [gameId, setGameId] = useState(null);
 
-  // 检查本地存储的登录状态
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      const token = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('user');
-
-      if (token && savedUser) {
-        try {
-          const user = JSON.parse(savedUser);
-          
-          // 验证token是否仍然有效
-          try {
-            const result = await gameAPI.getUserInfo();
-            if (result.success) {
-              setUserInfo(result.user);
-              setCurrentPage('main');
-              console.log('Token验证成功，用户已登录');
-            } else {
-              throw new Error('Token无效');
-            }
-          } catch (error) {
-            console.error('Token验证失败:', error);
-            // Token无效，清除存储
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            setCurrentPage('login');
-          }
-        } catch (error) {
-          console.error('解析用户信息失败:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setCurrentPage('login');
-        }
-      } else {
-        setCurrentPage('login');
-      }
-      
-      setLoading(false);
+    const handleLogin = (userData) => {
+        setUser(userData);
+        setCurrentView('main-menu');
     };
 
-    checkAuthStatus();
+    const handleLogout = () => {
+        setUser(null);
+        setCurrentView('login');
+    };
 
-    // 设置全局刷新函数
-    window.refreshUserInfo = refreshUserInfo;
-  }, []);
+    const navigate = (view, extra = {}) => {
+        if (extra.gameId) {
+            setGameId(extra.gameId);
+        }
+        setCurrentView(view);
+    };
 
-  // 刷新用户信息
-  const refreshUserInfo = async () => {
-    try {
-      const result = await gameAPI.getUserInfo();
-      if (result.success) {
-        setUserInfo(result.user);
-        localStorage.setItem('user', JSON.stringify(result.user));
-      }
-    } catch (error) {
-      console.error('刷新用户信息失败:', error);
-      // 如果刷新失败，可能是token过期，跳转到登录页
-      if (error.message.includes('登录已过期')) {
-        handleLogout();
-      }
-    }
-  };
+    const renderView = () => {
+        switch (currentView) {
+            case 'login':
+                return <Login onLogin={handleLogin} onNavigate={navigate} />;
+            case 'register':
+                return <Register onLogin={handleLogin} onNavigate={navigate} />;
+            case 'main-menu':
+                return <MainMenu user={user} onNavigate={navigate} onLogout={handleLogout} />;
+            case 'game-room':
+                 return <GameRoom user={user} onNavigate={navigate} />;
+            case 'game-result':
+                return <GameResult gameId={gameId} onNavigate={navigate} />;
+            default:
+                return <Login onLogin={handleLogin} onNavigate={navigate} />;
+        }
+    };
 
-  const handleLogin = (userData) => {
-    setUserInfo(userData);
-    setCurrentPage('main');
-    console.log('用户登录成功:', userData.phone);
-
-    // 设置全局刷新函数
-    window.refreshUserInfo = refreshUserInfo;
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUserInfo(null);
-    setCurrentPage('login');
-    console.log('用户已退出登录');
-  };
-
-  // 在GameRoom中添加登出处理
-  const handleGameRoomExit = () => {
-    setCurrentPage('main');
-    refreshUserInfo();
-  };
-
-  const renderPage = () => {
-    if (loading) {
-      return (
-        <div className="loading-container">
-          <div className="loading">检查登录状态...</div>
+    return (
+        <div className="app-container">
+            {renderView()}
         </div>
-      );
-    }
-
-    switch (currentPage) {
-      case 'login':
-        return <Login onLogin={handleLogin} onNavigate={setCurrentPage} />
-      case 'register':
-        return <Register onNavigate={setCurrentPage} />
-      case 'main':
-        return <MainMenu
-          userInfo={userInfo}
-          onSelectRoom={setSelectedRoom}
-          onNavigate={setCurrentPage}
-          onLogout={handleLogout}
-        />
-      case 'game':
-        return <GameRoom
-          roomType={selectedRoom}
-          userInfo={userInfo}
-          onExit={handleGameRoomExit}
-        />
-      default:
-        return <Login onLogin={handleLogin} onNavigate={setCurrentPage} />
-    }
-  }
-
-  return (
-    <div className="app">
-      {renderPage()}
-    </div>
-  )
+    );
 }
 
-export default App
+export default App;

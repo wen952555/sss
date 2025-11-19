@@ -14,7 +14,6 @@ const GameRoom = ({ user, onNavigate }) => {
     const [selectedCards, setSelectedCards] = useState([]);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchGame = async () => {
@@ -39,14 +38,6 @@ const GameRoom = ({ user, onNavigate }) => {
 
     const handleMoveCards = (targetArea) => {
         if (selectedCards.length === 0) return;
-        setError('');
-
-        const limits = { head: 3, middle: 5, tail: 5 };
-
-        if (limits[targetArea] && playerArrangement[targetArea].length + selectedCards.length > limits[targetArea]) {
-            setError(`"${targetArea}" cannot have more than ${limits[targetArea]} cards.`);
-            return;
-        }
 
         setPlayerArrangement(prev => {
             const newArrangement = { ...prev };
@@ -64,7 +55,6 @@ const GameRoom = ({ user, onNavigate }) => {
     };
 
     const handleAutoArrange = async () => {
-        setError('');
         try {
             const arrangement = await getArrangement(gameData.game_id);
             setPlayerArrangement({
@@ -87,22 +77,19 @@ const GameRoom = ({ user, onNavigate }) => {
             return;
         }
 
-        setIsSubmitting(true);
         try {
             await submitArrangement({
                 game_id: gameData.game_id,
                 arrangement: { head, middle, tail }
             });
-            onNavigate('game-result', { gameId: gameData.game_id });
+            onNavigate('game-result');
         } catch (err) {
             setError('提交失败，服务器错误');
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
     if (isLoading) return <div className="loading-container">正在加载游戏...</div>;
-    if (error && !error.includes("cards")) return <div className="error-container">{error}</div>;
+    if (error) return <div className="error-container">{error}</div>;
 
     return (
         <div className="game-room">
@@ -115,16 +102,14 @@ const GameRoom = ({ user, onNavigate }) => {
              {error && <p className="error-message" style={{ textAlign: 'center', marginTop: '1rem' }}>{error}</p>}
             <div className="game-controls">
                 <div className="arrangement-buttons">
-                    <button onClick={() => handleMoveCards('head')} className="btn btn-secondary" disabled={isSubmitting}>移至头道</button>
-                    <button onClick={() => handleMoveCards('middle')} className="btn btn-secondary" disabled={isSubmitting}>移至中道</button>
-                    <button onClick={() => handleMoveCards('tail')} className="btn btn-secondary" disabled={isSubmitting}>移至尾道</button>
-                    <button onClick={() => handleMoveCards('unassigned')} className="btn btn-secondary" disabled={isSubmitting}>移回手牌</button>
+                    <button onClick={() => handleMoveCards('head')} className="btn btn-secondary">移至头道</button>
+                    <button onClick={() => handleMoveCards('middle')} className="btn btn-secondary">移至中道</button>
+                    <button onClick={() => handleMoveCards('tail')} className="btn btn-secondary">移至尾道</button>
+                    <button onClick={() => handleMoveCards('unassigned')} className="btn btn-secondary">移回手牌</button>
                 </div>
                 <div className="action-buttons">
-                    <button onClick={handleAutoArrange} className="btn btn-secondary" disabled={isSubmitting}>智能理牌</button>
-                    <button onClick={handleConfirm} className="btn btn-primary" disabled={isSubmitting}>
-                        {isSubmitting ? '提交中...' : '确认提交'}
-                    </button>
+                    <button onClick={handleAutoArrange} className="btn btn-secondary">智能理牌</button>
+                    <button onClick={handleConfirm} className="btn btn-primary">确认提交</button>
                 </div>
             </div>
         </div>

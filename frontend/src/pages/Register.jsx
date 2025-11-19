@@ -1,174 +1,82 @@
 import React, { useState } from 'react';
-import { authAPI } from '../utils/api';
+import { registerUser } from '../utils/api';
 
-const Register = ({ onNavigate }) => {
-  const [formData, setFormData] = useState({
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    email: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+const Register = ({ onLogin, onNavigate }) => {
+    const [phone, setPhone] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    // 手机号输入时自动过滤非数字字符
-    if (name === 'phone') {
-      const filteredValue = value.replace(/\D/g, ''); // 移除非数字字符
-      setFormData({
-        ...formData,
-        [name]: filteredValue
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
-    }
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
 
-  const validatePhone = (phone) => {
-    if (phone.length !== 11) {
-      return '手机号必须是11位数字';
-    }
-    if (!/^1[3-9]/.test(phone)) {
-      return '手机号格式不正确';
-    }
-    return null;
-  };
+        if (password !== confirmPassword) {
+            setError('两次输入的密码不一致');
+            return;
+        }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
+        try {
+            const userData = await registerUser({ phone, password });
+            onLogin(userData); // Automatically log in after registration
+        } catch (err) {
+            setError(err.message || '注册失败，请稍后再试');
+        }
+    };
 
-    // 验证手机号
-    const phoneError = validatePhone(formData.phone);
-    if (phoneError) {
-      setError(phoneError);
-      setLoading(false);
-      return;
-    }
+    return (
+        <div className="container">
+            <h2>创建新账户</h2>
+            <p>加入我们，开始您的游戏之旅</p>
+            <form onSubmit={handleSubmit} style={{ marginTop: '2rem' }}>
+                <div className="form-group">
+                    <label htmlFor="phone">手机号</label>
+                    <input
+                        type="tel"
+                        id="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        required
+                        placeholder="请输入您的手机号"
+                    />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">密码</label>
+                    <input
+                        type="password"
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        placeholder="请输入您的密码"
+                    />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="confirmPassword">确认密码</label>
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        placeholder="请再次输入您的密码"
+                    />
+                </div>
 
-    // 验证密码长度
-    if (formData.password.length < 6) {
-      setError('密码长度至少6位');
-      setLoading(false);
-      return;
-    }
+                {error && <p className="error-message">{error}</p>}
 
-    // 验证密码确认
-    if (formData.password !== formData.confirmPassword) {
-      setError('两次输入的密码不一致');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const result = await authAPI.register(formData.phone, formData.password, formData.email);
-      
-      setSuccess(`注册成功！您的用户ID是: ${result.user_id}，请妥善保管`);
-      
-      // 3秒后跳转到登录页面
-      setTimeout(() => {
-        onNavigate('login');
-      }, 3000);
-    } catch (err) {
-      setError(err.message || '注册失败');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="auth-container">
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <h2>注册账号</h2>
-        
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>}
-
-        <div className="form-group">
-          <label htmlFor="phone">手机号</label>
-          <input
-            type="tel"
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            required
-            placeholder="请输入11位手机号"
-            maxLength="11"
-            minLength="11"
-            autoComplete="tel"
-          />
-          <div style={{ fontSize: '12px', color: '#87CEEB', marginTop: '5px' }}>
-            请输入11位手机号
-          </div>
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                    注册
+                </button>
+            </form>
+            <p style={{ marginTop: '2rem', fontSize: '0.9rem' }}>
+                已有账户？{' '}
+                <a onClick={() => onNavigate('login')}>
+                    返回登录
+                </a>
+            </p>
         </div>
-
-        <div className="form-group">
-          <label htmlFor="email">邮箱（可选）</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="请输入邮箱"
-            autoComplete="email"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">密码</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            placeholder="请输入密码（至少6位）"
-            minLength="6"
-            autoComplete="new-password"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="confirmPassword">确认密码</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-            placeholder="请再次输入密码"
-            minLength="6"
-            autoComplete="new-password"
-          />
-        </div>
-
-        <button type="submit" className="btn" disabled={loading || success}>
-          {loading ? '注册中...' : '注册'}
-        </button>
-
-        <button 
-          type="button" 
-          className="link-btn" 
-          onClick={() => onNavigate('login')}
-          style={{ marginTop: '15px' }}
-        >
-          已有账号？点击登录
-        </button>
-      </form>
-    </div>
-  );
+    );
 };
 
 export default Register;
