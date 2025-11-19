@@ -1,75 +1,96 @@
 <?php
 // backend/api/game.php
-require_once '../config/database.php';
-require_once '../models/GameModel.php';
-require_once '../models/SubmissionModel.php';
-require_once '../utils/Auth.php';
-
-header('Content-Type: application/json');
-Auth::check(); // Ensure user is logged in
-
+require '../db.php';
+$user = authenticate($pdo);
 $action = $_GET['action'] ?? '';
-$data = json_decode(file_get_contents('php://input'), true);
-$userId = $_SESSION['user_id'];
 
-$database = new Database();
-$db = $database->getConnection();
-$gameModel = new GameModel($db);
-$submissionModel = new SubmissionModel($db);
+// 获取当前这手牌
+if ($action === 'get_hand') {
+    // 1. 获取玩家当前进度
+    $stmt = $pdo->prepare("SELECT * FROM session_players WHERE user_id = ? AND is_finished = 0");
+    $stmt->execute([$user['id']]);
+    $playerParams = $stmt->fetch(PDO::FETCH_ASSOC);
 
-switch ($action) {
-    case 'get_game':
-        $game = $gameModel->findAvailableGame();
-        if ($game) {
-            echo json_encode([
-                'game_id' => $game['id'],
-                'player_hand' => json_decode($game['player1_original']),
-                'opponents' => [
-                    ['id' => 2, 'name' => 'Opponent 2'],
-                    ['id' => 3, 'name' => 'Opponent 3'],
-                    ['id' => 4, 'name' => 'Opponent 4'],
-                ]
-            ]);
-        } else {
-            http_response_code(404);
-            echo json_encode(['message' => 'No available games']);
-        }
-        break;
+    if (!$playerParams) {
+        echo json_encode(['status' => 'finished', 'message' => '您没有进行中的游戏']);
+        exit;
+    }
 
-    case 'get_arrangement':
-        $gameId = $_GET['game_id'] ?? null;
-        if (!$gameId) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Game ID is required']);
-            exit;
-        }
-        $game = $gameModel->findById($gameId);
-        if ($game) {
-            echo json_encode(json_decode($game['player1_arranged']));
-        } else {
-            http_response_code(404);
-            echo json_encode(['message' => 'Game not found']);
-        }
-        break;
+    $currentStep = $playerParams['current_step']; // 1-20
+    
+    if ($currentStep > 20) {
+         echo json_encode(['status' => 'finished', 'message' => '本场次已结束']);
+         exit;
+    }
 
-    case 'submit':
-        if (empty($data['game_id']) || empty($data['arrangement'])) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Missing required fields']);
-            exit;
-        }
+    $deckOrder = json_decode($playerParams['deck_order'], true);
+    $deckId = $deckOrder[$currentStep - 1]; // 乱序后的真实 Deck ID
+    $seatIndex = $playerParams['seat_index']; // 1-4
 
-        $submissionId = $submissionModel->create($data['game_id'], $userId, $data['arrangement']);
-        if ($submissionId) {
-            echo json_encode(['message' => 'Submission successful', 'submission_id' => $submissionId]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Failed to save submission']);
-        }
-        break;
+    // 2. 从预设库中拿牌
+    $stmt = $pdo->prepare("SELECT cards_json, solutions_json FROM pre_decks WHERE id = ?");
+    $stmt->execute([$deckId]);
+    $deckData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    default:
-        http_response_code(404);
-        echo json_encode(['message' => 'Action not found']);
-        break;
+    $allHands = json_decode($deckData['cards_json'], true);
+    $allSolutions = json_decode($deckData['solutions_json'], true);
+
+    // 玩家的手牌 (seatIndex 从1开始，数组从0开始)
+    $myHand = $allHands[$seatIndex - 1];
+    // 推荐的3种理牌方案
+    $mySolutions = $allSolutions[$seatIndex - 1];
+
+    echo json_encode([
+        'status' => 'success',
+        'round_info' => "第 {$currentStep} / 20 局",
+        'deck_id' => $deckId,
+        'cards' => $myHand, // 乱牌
+        'solutions' => $mySolutions // 智能理牌方案
+    ]);
 }
+
+// 提交牌型
+if ($action === 'submit_hand') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $deckId = $input['deck_id'];
+    $arranged = $input['arranged']; // {front:[], mid:[], back:[]}
+    $sessionId = $input['session_id'];
+
+    $pdo->beginTransaction();
+
+    // 1. 记录提交
+    $sql = "INSERT INTO game_actions (session_id, deck_id, user_id, hand_arranged) VALUES (?, ?, ?, ?)";
+    try {
+        $pdo->prepare($sql)->execute([
+            $sessionId,
+            $deckId,
+            $user['id'],
+            json_encode($arranged)
+        ]);
+
+        // 2. 玩家进度 +1
+        $pdo->prepare("UPDATE session_players SET current_step = current_step + 1 WHERE user_id = ? AND session_id = ?")
+            ->execute([$user['id'], $sessionId]);
+
+        // 3. 检查是否所有人都在这个 deck_id 提交了？(触发结算)
+        // 这里的逻辑是：找出 session_id 里的所有 user_id，检查 game_actions 表里该 deck_id 的记录数是否等于 4
+        $stmt = $pdo->prepare("SELECT count(*) FROM game_actions WHERE session_id = ? AND deck_id = ?");
+        $stmt->execute([$sessionId, $deckId]);
+        $submittedCount = $stmt->fetchColumn();
+
+        if ($submittedCount >= 4) {
+            // 所有人到齐，结算！
+            // TODO: 这里调用 Logic::calculateScore 算出4人得分，更新 game_actions.score_result，并更新 users.points
+            // 为了简化代码，此处省略具体算分，假设每人+10分
+            // ...
+        }
+
+        $pdo->commit();
+        echo json_encode(['status' => 'success']);
+
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        echo json_encode(['status' => 'error', 'message' => '重复提交或系统错误']);
+    }
+}
+?>

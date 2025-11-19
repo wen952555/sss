@@ -1,30 +1,24 @@
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const backendBase = 'https://9525.ip-ddns.com';
 
-    // 代理API请求到后端
+    // 拦截 /api 开头的请求
     if (url.pathname.startsWith('/api/')) {
-      const targetUrl = backendBase + url.pathname + url.search;
+      // 这里填你 Serv00 的真实域名
+      const backendUrl = 'https://9525.ip-ddns.com'; 
       
-      const modifiedRequest = new Request(targetUrl, {
-        headers: request.headers,
-        method: request.method,
-        body: request.body,
-        redirect: 'follow'
-      });
+      // 构造新请求
+      const newUrl = new URL(url.pathname, backendUrl);
+      newUrl.search = url.search; // 保留查询参数
 
-      // 添加CORS头
-      const response = await fetch(modifiedRequest);
-      const modifiedResponse = new Response(response.body, response);
-      modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
-      modifiedResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      modifiedResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      const newRequest = new Request(newUrl, request);
       
-      return modifiedResponse;
+      // 发送给后端
+      return fetch(newRequest);
     }
 
-    // 静态资源请求，直接返回
+    // 其他请求照常处理 (返回静态资源)
     return env.ASSETS.fetch(request);
-  }
+  },
 };
