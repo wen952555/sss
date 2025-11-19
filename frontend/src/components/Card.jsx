@@ -1,19 +1,29 @@
 import React from 'react';
 
 const Card = ({ card, onClick, selected }) => {
-  // 假设 card 对象: { suit: 'spades', rank: 'ace', img: 'ace_of_spades.svg' }
-  // 图片路径指向 public/cards/
+  // 图片路径
   const imgSrc = `/cards/${card.img}`;
 
   return (
     <div 
-      onClick={onClick} 
+      onClick={(e) => {
+        e.stopPropagation(); // 防止冒泡触发牌墩点击
+        onClick();
+      }} 
       className={`
-        relative w-16 h-24 bg-white rounded border shadow-sm transition-transform duration-200
-        ${selected ? '-translate-y-4 border-yellow-400 border-2' : 'border-gray-300'}
+        relative w-14 h-20 sm:w-20 sm:h-28 bg-white rounded-lg shadow-md transition-all duration-100 cursor-pointer
+        ${selected 
+          ? 'border-4 border-red-600 z-10' // 选中：红色粗边框，层级提高
+          : 'border border-gray-400 hover:brightness-90' // 未选中
+        }
       `}
     >
-      <img src={imgSrc} alt={`${card.rank} of ${card.suit}`} className="w-full h-full object-contain" />
+      <img 
+        src={imgSrc} 
+        alt={`${card.rank} of ${card.suit}`} 
+        className="w-full h-full object-contain rounded-md" 
+        draggable="false"
+      />
     </div>
   );
 };

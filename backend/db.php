@@ -18,8 +18,17 @@ function loadEnv($path) {
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         if (strpos(trim($line), '#') === 0) continue;
+        
+        // 使用 limit=2 确保值里面有等号也不会被切断
         list($name, $value) = explode('=', $line, 2);
-        putenv(trim($name) . '=' . trim($value));
+        
+        $name = trim($name);
+        $value = trim($value);
+        
+        // [新增] 自动去除值两端的引号 (" 或 ')
+        $value = trim($value, "\"'");
+        
+        putenv($name . '=' . $value);
     }
 }
 
