@@ -1,91 +1,34 @@
 import React from 'react';
+import './Card.css';
 
-const Card = ({ card, area, draggable = true, onClick, isSelected = false, gameStatus, index, totalCards }) => {
-  const handleDragStart = (e) => {
-    if (!draggable || gameStatus !== 'playing') {
-      e.preventDefault();
-      return;
+const Card = ({ card, isSelected, onClick }) => {
+    if (!card) {
+        return <div className="card-placeholder"></div>;
     }
-
-    e.dataTransfer.setData('application/json', JSON.stringify({
-      card,
-      fromArea: area
-    }));
-  };
-
-  const handleDragEnd = (e) => {
-    // 拖拽结束处理
-  };
-
-  const handleClick = (e) => {
-    e.stopPropagation(); // 阻止事件冒泡到牌墩区域
-    if (gameStatus !== 'playing') return;
-    onClick(card, area);
-  };
-
-  // 计算卡片的堆叠位置 - 向左对齐，每张牌遮挡前一张的一半
-  const getCardPosition = () => {
-    // 每张牌向右偏移卡片宽度的一半（50px）
-    const offset = index * 50; // 100px宽度的一半是50px
     
-    return { left: `${offset}px` };
-  };
+    const cardName = card.replace('_of_', '-'); // e.g., 'ace-spades'
+    const imageUrl = `/cards/${card}.svg`;
 
-  const cardPosition = getCardPosition();
+    const handleClick = () => {
+        if (onClick) {
+            onClick(card);
+        }
+    };
 
-  return (
-    <div
-      className={`card ${isSelected ? 'selected' : ''}`}
-      draggable={draggable && gameStatus === 'playing'}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onClick={handleClick}
-      style={{
-        cursor: (draggable && gameStatus === 'playing') ? 'pointer' : 'default',
-        opacity: (draggable && gameStatus === 'playing') ? 1 : 0.8,
-        position: 'absolute',
-        ...cardPosition
-      }}
-      title={card.display}
-    >
-      <img
-        src={`/cards/${card.filename}`}
-        alt={card.display}
-        onError={(e) => {
-          // 图片加载失败时显示替代样式
-          e.target.style.display = 'none';
-          const parent = e.target.parentNode;
-
-          parent.innerHTML = `
-            <div style="
-              width: 100%;
-              height: 100%;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              background: ${isSelected ? '#FFD700' : 'white'};
-              color: #333;
-              border-radius: 8px;
-              border: 2px solid ${isSelected ? '#FF6B6B' : '#ccc'};
-              font-size: 16px;
-              text-align: center;
-              padding: 5px;
-              box-sizing: border-box;
-              font-weight: bold;
-            ">
-              ${card.display}
-            </div>
-          `;
-        }}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain'
-        }}
-      />
-    </div>
-  );
+    return (
+        <div
+            className={`card ${isSelected ? 'selected' : ''}`}
+            onClick={handleClick}
+        >
+            <img
+                src={imageUrl}
+                alt={cardName}
+                className="card-image"
+                // Prevent drag ghost image
+                onDragStart={(e) => e.preventDefault()}
+            />
+        </div>
+    );
 };
 
 export default Card;
