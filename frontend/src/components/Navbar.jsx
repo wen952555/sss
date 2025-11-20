@@ -12,20 +12,15 @@ const Navbar = () => {
   const [amount, setAmount] = useState('');
   const [msg, setMsg] = useState('');
 
-  // 初始化时从 API 获取最新数据，而不是只读 LocalStorage
+  // 初始化时从 API 获取最新数据
   const fetchLatestUser = async () => {
     try {
       const res = await getUserInfo();
       if (res.data.status === 'success') {
         setUser(res.data.user);
-        // 更新本地缓存以备不时之需
         localStorage.setItem('game_user', JSON.stringify(res.data.user));
-      } else {
-        // token失效等问题，登出
-        handleLogout();
       }
     } catch (e) {
-      // 如果失败，降级读取本地
       const local = localStorage.getItem('game_user');
       if (local) setUser(JSON.parse(local));
     }
@@ -33,7 +28,6 @@ const Navbar = () => {
 
   useEffect(() => {
     fetchLatestUser();
-    // 可以添加定时轮询积分
     const timer = setInterval(fetchLatestUser, 10000);
     return () => clearInterval(timer);
   }, []);
@@ -67,7 +61,7 @@ const Navbar = () => {
         alert('转账成功！');
         setAmount('');
         setShowModal(false);
-        fetchLatestUser(); // 转账成功后立即刷新积分
+        fetchLatestUser(); 
       } else {
         setMsg(res.data.message);
       }
@@ -134,3 +128,5 @@ const Navbar = () => {
     </nav>
   );
 };
+
+export default Navbar;
