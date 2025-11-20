@@ -94,112 +94,88 @@ const GameTable = () => {
     }
   };
 
-  if (loading) return <div className="h-full flex items-center justify-center bg-green-900 text-white">正在连接...</div>;
+  if (loading) return <div className="h-full flex items-center justify-center bg-green-900 text-white">正在加载...</div>;
 
   return (
-    <div className="h-full w-full bg-gradient-to-b from-green-800 to-green-950 text-white flex flex-col overflow-hidden">
-      <div className="bg-black/20 backdrop-blur-sm p-3 flex justify-between items-center shadow-sm shrink-0">
+    <div className="h-full w-full bg-[#1a472a] text-white flex flex-col overflow-hidden select-none">
+      {/* 顶部 */}
+      <div className="bg-black/30 p-3 flex justify-between items-center shadow-md shrink-0 z-50">
         <div>
-          <h1 className="font-bold text-lg tracking-wider text-yellow-400">十三水</h1>
-          <p className="text-xs text-gray-300">{gameData?.round_info}</p>
+          <h1 className="font-bold text-lg text-yellow-400 tracking-widest">十三水</h1>
+          <p className="text-xs text-gray-300 opacity-80">{gameData?.round_info}</p>
         </div>
-        <button onClick={() => navigate('/lobby')} className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded border border-white/20">
-          返回大厅
+        <button onClick={() => navigate('/lobby')} className="text-xs bg-white/10 px-3 py-1.5 rounded border border-white/20">
+          退出
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col p-2 max-w-4xl mx-auto w-full gap-1 overflow-hidden">
+      {/* 牌桌区域 */}
+      <div className="flex-1 flex flex-col justify-evenly p-2 w-full max-w-5xl mx-auto overflow-hidden relative">
         
-        <div className="text-center text-xs text-green-200/70 mb-1 shrink-0 h-5">
-          {selectedCards.length > 0 
-            ? `已选中 ${selectedCards.length} 张，点击目标牌墩移动` 
-            : '点击扑克牌进行多选'}
+        {/* 提示文字 */}
+        <div className="absolute top-2 left-0 right-0 text-center text-xs text-green-200/50 pointer-events-none">
+          {selectedCards.length > 0 ? '点击目标区域移动牌' : '点击选牌'}
         </div>
 
-        {/* 牌墩区域 */}
-        {/* 使用 h-1/4 和 h-1/3 这种比例来分配高度，让牌尽可能大 */}
-        
-        {/* --- 头道 (3张) - 占 25% 高度 --- */}
-        <div 
-          onClick={() => handleRowClick(0)}
-          className={`
-            h-[25%] border-b border-dashed border-white/10 relative
-            flex items-center pl-4 pr-2
-            ${selectedCards.length > 0 ? 'bg-white/5 cursor-pointer' : ''}
-          `}
-        >
-          <div className="absolute left-0 top-1 text-[10px] font-bold text-yellow-500/50 px-1">头道</div>
-          {/* justify-start + gap-2 实现左对齐且有间距 */}
-          <div className="flex gap-2 h-[85%] w-full justify-start items-center overflow-x-auto no-scrollbar">
-            {rows[0].map((card, i) => (
-              <Card 
-                key={`${card.suit}-${card.rank}`} 
-                card={card} 
-                selected={isSelected(0, i)}
-                onClick={() => handleCardSelect(0, i, card)}
-              />
-            ))}
-          </div>
-        </div>
+        {/* --- 牌墩容器组件 --- */}
+        {[0, 1, 2].map((rowIndex) => {
+            const labels = ['头道 (3张)', '中道 (5张)', '尾道 (5张)'];
+            return (
+                <div 
+                  key={rowIndex}
+                  onClick={() => handleRowClick(rowIndex)}
+                  className={`
+                    relative flex flex-col justify-center items-center
+                    /* 虚线框 */
+                    border-b border-dashed border-white/10
+                    /* 高度分配: 头道稍小，中尾道大 */
+                    ${rowIndex === 0 ? 'h-[25%]' : 'h-[35%]'}
+                    transition-colors
+                    ${selectedCards.length > 0 ? 'hover:bg-white/5 cursor-pointer' : ''}
+                  `}
+                >
+                  {/* 标签 */}
+                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-yellow-500/30 rotate-90 sm:rotate-0 sm:left-4 sm:top-2 sm:translate-y-0">
+                    {labels[rowIndex]}
+                  </div>
 
-        {/* --- 中道 (5张) - 占 35% 高度 --- */}
-        <div 
-          onClick={() => handleRowClick(1)}
-          className={`
-            h-[35%] border-b border-dashed border-white/10 relative
-            flex items-center pl-4 pr-2
-            ${selectedCards.length > 0 ? 'bg-white/5 cursor-pointer' : ''}
-          `}
-        >
-          <div className="absolute left-0 top-1 text-[10px] font-bold text-yellow-500/50 px-1">中道</div>
-          <div className="flex gap-2 h-[85%] w-full justify-start items-center overflow-x-auto no-scrollbar">
-            {rows[1].map((card, i) => (
-              <Card 
-                key={`${card.suit}-${card.rank}`} 
-                card={card} 
-                selected={isSelected(1, i)}
-                onClick={() => handleCardSelect(1, i, card)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* --- 尾道 (5张) - 占 35% 高度 --- */}
-        <div 
-          onClick={() => handleRowClick(2)}
-          className={`
-            h-[35%] relative
-            flex items-center pl-4 pr-2
-            ${selectedCards.length > 0 ? 'bg-white/5 cursor-pointer' : ''}
-          `}
-        >
-          <div className="absolute left-0 top-1 text-[10px] font-bold text-yellow-500/50 px-1">尾道</div>
-          <div className="flex gap-2 h-[85%] w-full justify-start items-center overflow-x-auto no-scrollbar">
-            {rows[2].map((card, i) => (
-              <Card 
-                key={`${card.suit}-${card.rank}`} 
-                card={card} 
-                selected={isSelected(2, i)}
-                onClick={() => handleCardSelect(2, i, card)}
-              />
-            ))}
-          </div>
-        </div>
+                  {/* 牌堆叠容器: pl-[45px] 是为了抵消第一张牌不需要负边距，让整体视觉居中 */}
+                  <div className="flex items-center justify-center pl-[20px] sm:pl-[30px]">
+                    {rows[rowIndex].map((card, i) => (
+                      <Card 
+                        key={`${card.suit}-${card.rank}-${i}`} 
+                        card={card} 
+                        selected={isSelected(rowIndex, i)}
+                        onClick={() => handleCardSelect(rowIndex, i, card)}
+                        // 动态 z-index 确保左边的牌压在下面，选中的牌浮在最上面
+                        style={{ zIndex: isSelected(rowIndex, i) ? 100 : i }}
+                      />
+                    ))}
+                    {rows[rowIndex].length === 0 && (
+                        <div className="w-[70px] sm:w-[90px] aspect-[2/3] border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center text-white/20 text-xs">
+                            空
+                        </div>
+                    )}
+                  </div>
+                </div>
+            );
+        })}
 
       </div>
 
-      <div className="bg-black/40 backdrop-blur-md p-3 flex gap-4 items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.3)] shrink-0">
+      {/* 底部按钮 */}
+      <div className="bg-black/40 backdrop-blur-md p-3 pb-6 flex gap-4 items-center justify-center shadow-[0_-5px_20px_rgba(0,0,0,0.5)] shrink-0 z-50">
         <button 
           onClick={handleSmartSort}
-          className="flex-1 bg-amber-500 hover:bg-amber-400 text-black py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform flex flex-col items-center leading-tight"
+          className="flex-1 max-w-[180px] bg-amber-500 text-black py-3 rounded-xl font-bold shadow-[0_4px_0_#b45309] active:shadow-none active:translate-y-1 transition-all flex flex-col items-center"
         >
           <span className="text-sm">智能理牌</span>
-          <span className="text-xs font-normal opacity-80">{['稳健型', '同花/顺子优先', '对子优先'][solutionIndex]}</span>
+          <span className="text-[10px] opacity-70">{['推荐方案 1', '推荐方案 2', '推荐方案 3'][solutionIndex]}</span>
         </button>
         
         <button 
           onClick={handleSubmit}
-          className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform"
+          className="flex-1 max-w-[180px] bg-blue-600 text-white py-3 rounded-xl font-bold shadow-[0_4px_0_#1e40af] active:shadow-none active:translate-y-1 transition-all"
         >
           确认出牌
         </button>
