@@ -1,3 +1,4 @@
+// frontend/src/pages/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginOrRegister } from '../api';
@@ -24,7 +25,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    // 这里的 h-full w-full 配合 App.jsx 的 h-screen 确保全屏
+    <div className="h-full w-full flex items-center justify-center bg-gray-100 p-4 overflow-hidden">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
         <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">十三水</h1>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -44,7 +46,7 @@ const Login = () => {
             onChange={e => setPassword(e.target.value)}
             required
           />
-          <button className="bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 transition">
+          <button className="bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 transition active:scale-95">
             登录 / 注册
           </button>
         </form>

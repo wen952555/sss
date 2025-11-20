@@ -1,3 +1,4 @@
+// frontend/src/pages/GameTable.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getHand, submitHand } from '../api';
@@ -8,14 +9,9 @@ const GameTable = () => {
   const [loading, setLoading] = useState(true);
   const [gameData, setGameData] = useState(null); 
   
-  // 牌墩数据: 0:头道, 1:中道, 2:尾道, 3:待分配区(备用，虽然我们直接发到了墩里)
+  // 牌墩数据
   const [rows, setRows] = useState([[], [], []]); 
-  
-  // 智能理牌当前方案索引
   const [solutionIndex, setSolutionIndex] = useState(0);
-  
-  // 多选状态: 存储被选中的牌的唯一标识 (这里用 suit+rank 组合键，或者用对象引用)
-  // 格式: [{ rIndex: 0, cIndex: 1, card: {...} }, ...]
   const [selectedCards, setSelectedCards] = useState([]);
 
   useEffect(() => {
@@ -35,7 +31,7 @@ const GameTable = () => {
         setGameData(res.data);
         const defaultSol = res.data.solutions[0];
         setRows([defaultSol.front, defaultSol.mid, defaultSol.back]);
-        setSelectedCards([]); // 清空选中
+        setSelectedCards([]);
       }
       setLoading(false);
     } catch (e) {
@@ -44,75 +40,51 @@ const GameTable = () => {
     }
   };
 
-  // 切换智能理牌
   const handleSmartSort = () => {
     if (!gameData || !gameData.solutions) return;
     const nextIndex = (solutionIndex + 1) % gameData.solutions.length;
     setSolutionIndex(nextIndex);
     const sol = gameData.solutions[nextIndex];
     setRows([sol.front, sol.mid, sol.back]);
-    setSelectedCards([]); // 切换方案时清空选中
+    setSelectedCards([]); 
   };
 
-  // 处理点击卡牌 (多选/反选)
   const handleCardSelect = (rIndex, cIndex, card) => {
     const existingIdx = selectedCards.findIndex(
       item => item.rIndex === rIndex && item.cIndex === cIndex
     );
 
     if (existingIdx >= 0) {
-      // 已存在 -> 取消选中
       const newSel = [...selectedCards];
       newSel.splice(existingIdx, 1);
       setSelectedCards(newSel);
     } else {
-      // 不存在 -> 加入选中
       setSelectedCards([...selectedCards, { rIndex, cIndex, card }]);
     }
   };
 
-  // 判断某张牌是否被选中
   const isSelected = (rIndex, cIndex) => {
     return selectedCards.some(item => item.rIndex === rIndex && item.cIndex === cIndex);
   };
 
-  // 处理点击牌墩 (移动逻辑)
   const handleRowClick = (targetRowIndex) => {
-    if (selectedCards.length === 0) return; // 没选牌，点牌墩没反应
+    if (selectedCards.length === 0) return; 
 
-    // 1. 计算目标行还能放多少张
-    const limits = [3, 5, 5];
-    const currentCount = rows[targetRowIndex].length;
-    const maxCount = limits[targetRowIndex];
-    
-    // 如果要移动的牌数量 + 已有数量 > 限制 (可选：你可以选择不限制，让用户随便放，提交时再报错。这里为了体验，暂不强制阻拦，或者只做红框提示)
-    // 你的需求是"不限制牌墩扑克牌数量，提交牌型才检查"，所以这里我们**不做拦截**，直接移动。
-
-    // 2. 执行移动
-    const newRows = [...rows]; // 复制一份
-
-    // 先从原来的位置把牌拿走
-    // 技巧：先收集所有要移动的牌对象，再重新构建每一行
+    const newRows = [...rows]; 
     const cardsToMove = selectedCards.map(s => s.card);
     
-    // 遍历每一行，过滤掉被选中的牌
     for (let i = 0; i < 3; i++) {
       newRows[i] = newRows[i].filter(card => {
-        // 如果这张牌在 cardsToMove 里，就过滤掉
         const isMoving = cardsToMove.some(c => c.suit === card.suit && c.rank === card.rank);
         return !isMoving;
       });
     }
 
-    // 把牌加到目标行
     newRows[targetRowIndex] = [...newRows[targetRowIndex], ...cardsToMove];
-
-    // 3. 更新状态
     setRows(newRows);
-    setSelectedCards([]); // 移动后清空选中
+    setSelectedCards([]); 
   };
 
-  // 提交
   const handleSubmit = async () => {
     if (rows[0].length !== 3 || rows[1].length !== 5 || rows[2].length !== 5) {
       alert("牌型不合法！\n头道需 3 张，中/尾道需 5 张。");
@@ -128,12 +100,13 @@ const GameTable = () => {
     }
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center bg-green-900 text-white">正在发牌...</div>;
+  if (loading) return <div className="h-full flex items-center justify-center bg-green-900 text-white">正在连接...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-800 to-green-950 text-white flex flex-col">
+    // 关键修改：h-full 和 overflow-hidden 保证不滚动
+    <div className="h-full w-full bg-gradient-to-b from-green-800 to-green-950 text-white flex flex-col overflow-hidden">
       {/* 顶部导航栏 */}
-      <div className="bg-black/20 backdrop-blur-sm p-4 flex justify-between items-center shadow-sm">
+      <div className="bg-black/20 backdrop-blur-sm p-3 flex justify-between items-center shadow-sm shrink-0">
         <div>
           <h1 className="font-bold text-lg tracking-wider text-yellow-400">十三水</h1>
           <p className="text-xs text-gray-300">{gameData?.round_info}</p>
@@ -143,27 +116,27 @@ const GameTable = () => {
         </button>
       </div>
 
-      {/* 游戏区域 */}
-      <div className="flex-1 flex flex-col p-2 max-w-3xl mx-auto w-full gap-0">
+      {/* 游戏区域 - flex-1 自动填充剩余高度 */}
+      <div className="flex-1 flex flex-col p-2 max-w-3xl mx-auto w-full gap-0 overflow-hidden">
         
-        {/* 提示语 */}
-        <div className="text-center text-sm text-green-200/70 mb-2">
+        <div className="text-center text-xs text-green-200/70 mb-1 shrink-0">
           {selectedCards.length > 0 
-            ? `已选中 ${selectedCards.length} 张，点击下方任意牌墩区域即可移动` 
+            ? `已选中 ${selectedCards.length} 张，点击目标牌墩移动` 
             : '点击扑克牌进行多选'}
         </div>
 
+        {/* 牌墩区域 - 使用 flex-1 均分高度 */}
         {/* --- 头道 (3张) --- */}
         <div 
           onClick={() => handleRowClick(0)}
           className={`
-            flex-1 min-h-[120px] border-b-2 border-dashed border-white/20 relative
+            flex-1 border-b-2 border-dashed border-white/20 relative
             flex flex-col justify-center items-center transition-colors
             ${selectedCards.length > 0 ? 'hover:bg-white/10 cursor-pointer' : ''}
           `}
         >
           <div className="absolute left-2 top-2 text-xs font-bold text-yellow-500/80 bg-black/30 px-2 rounded">头道</div>
-          <div className="flex gap-2 sm:gap-4 flex-wrap justify-center p-2">
+          <div className="flex gap-2 sm:gap-4 flex-wrap justify-center content-center p-1 h-full w-full">
             {rows[0].map((card, i) => (
               <Card 
                 key={`${card.suit}-${card.rank}`} 
@@ -172,8 +145,7 @@ const GameTable = () => {
                 onClick={() => handleCardSelect(0, i, card)}
               />
             ))}
-            {/* 占位符: 如果没有牌，显示一个虚线框提示 */}
-            {rows[0].length === 0 && <div className="text-white/20 text-sm">点击此处移动牌</div>}
+            {rows[0].length === 0 && <div className="text-white/20 text-sm">头道空</div>}
           </div>
         </div>
 
@@ -181,13 +153,13 @@ const GameTable = () => {
         <div 
           onClick={() => handleRowClick(1)}
           className={`
-            flex-1 min-h-[120px] border-b-2 border-dashed border-white/20 relative
+            flex-1 border-b-2 border-dashed border-white/20 relative
             flex flex-col justify-center items-center transition-colors
             ${selectedCards.length > 0 ? 'hover:bg-white/10 cursor-pointer' : ''}
           `}
         >
           <div className="absolute left-2 top-2 text-xs font-bold text-yellow-500/80 bg-black/30 px-2 rounded">中道</div>
-          <div className="flex gap-1 sm:gap-3 flex-wrap justify-center p-2">
+          <div className="flex gap-1 sm:gap-3 flex-wrap justify-center content-center p-1 h-full w-full">
             {rows[1].map((card, i) => (
               <Card 
                 key={`${card.suit}-${card.rank}`} 
@@ -196,7 +168,7 @@ const GameTable = () => {
                 onClick={() => handleCardSelect(1, i, card)}
               />
             ))}
-             {rows[1].length === 0 && <div className="text-white/20 text-sm">点击此处移动牌</div>}
+             {rows[1].length === 0 && <div className="text-white/20 text-sm">中道空</div>}
           </div>
         </div>
 
@@ -204,13 +176,13 @@ const GameTable = () => {
         <div 
           onClick={() => handleRowClick(2)}
           className={`
-            flex-1 min-h-[120px] relative
+            flex-1 relative
             flex flex-col justify-center items-center transition-colors
             ${selectedCards.length > 0 ? 'hover:bg-white/10 cursor-pointer' : ''}
           `}
         >
           <div className="absolute left-2 top-2 text-xs font-bold text-yellow-500/80 bg-black/30 px-2 rounded">尾道</div>
-          <div className="flex gap-1 sm:gap-3 flex-wrap justify-center p-2">
+          <div className="flex gap-1 sm:gap-3 flex-wrap justify-center content-center p-1 h-full w-full">
             {rows[2].map((card, i) => (
               <Card 
                 key={`${card.suit}-${card.rank}`} 
@@ -219,14 +191,14 @@ const GameTable = () => {
                 onClick={() => handleCardSelect(2, i, card)}
               />
             ))}
-             {rows[2].length === 0 && <div className="text-white/20 text-sm">点击此处移动牌</div>}
+             {rows[2].length === 0 && <div className="text-white/20 text-sm">尾道空</div>}
           </div>
         </div>
 
       </div>
 
-      {/* 底部按钮栏 */}
-      <div className="bg-black/40 backdrop-blur-md p-4 flex gap-4 items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
+      {/* 底部按钮栏 - shrink-0 防止被压缩 */}
+      <div className="bg-black/40 backdrop-blur-md p-3 pb-5 flex gap-4 items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.3)] shrink-0">
         <button 
           onClick={handleSmartSort}
           className="flex-1 max-w-[200px] bg-amber-500 hover:bg-amber-400 text-black py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform flex flex-col items-center leading-tight"

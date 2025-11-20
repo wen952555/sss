@@ -1,26 +1,38 @@
 // frontend/src/pages/Lobby.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { joinGame } from '../api';
 
 const Lobby = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
 
+  // 每次进入大厅，检查是否有未完成的牌局
   useEffect(() => {
-    const u = localStorage.getItem('game_user');
-    if (u) setUser(JSON.parse(u));
+    checkExistingGame();
   }, []);
+
+  const checkExistingGame = async () => {
+    try {
+      // 尝试请求加入接口（带重连检测逻辑）
+      // 这里的 level 参数不重要，如果是重连，后端会忽略 level 直接返回旧 session
+      const res = await joinGame(2); 
+      if (res.data.status === 'success' && res.data.message?.includes('重连')) {
+         // 发现旧牌局，直接跳转
+         navigate('/game');
+      }
+    } catch (e) {
+      // 忽略错误，说明没有进行中的牌局
+    }
+  };
 
   const handleJoin = async (level) => {
     try {
       const res = await joinGame(level);
       if (res.data.status === 'success') {
-        // 存一下 session info 如果需要
         navigate('/game');
       } else {
-        alert('加入失败，请重试');
+        alert(res.data.message || '加入失败');
       }
     } catch (e) {
       console.error(e);
@@ -29,32 +41,34 @@ const Lobby = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <Navbar user={user} />
+    <div className="h-full flex flex-col overflow-hidden">
+      <Navbar />
       
-      <div className="flex-1 p-4 flex flex-col gap-4 justify-center max-w-md mx-auto w-full">
-        {/* 2分场 */}
-        <div 
-          onClick={() => handleJoin(2)}
-          className="bg-gradient-to-r from-green-400 to-green-600 text-white h-32 rounded-xl shadow-lg flex items-center justify-center text-3xl font-bold cursor-pointer active:scale-95 transition"
-        >
-          2 分场
-        </div>
+      <div className="flex-1 bg-gray-100 p-4 flex flex-col gap-4 justify-center items-center overflow-hidden">
+        <div className="w-full max-w-md flex flex-col gap-4">
+          {/* 2分场 */}
+          <div 
+            onClick={() => handleJoin(2)}
+            className="bg-gradient-to-r from-green-500 to-green-700 text-white h-32 rounded-2xl shadow-xl flex items-center justify-center text-3xl font-bold cursor-pointer active:scale-95 transition-transform border-2 border-green-400/30"
+          >
+            2 分场
+          </div>
 
-        {/* 5分场 */}
-        <div 
-          onClick={() => handleJoin(5)}
-          className="bg-gradient-to-r from-blue-400 to-blue-600 text-white h-32 rounded-xl shadow-lg flex items-center justify-center text-3xl font-bold cursor-pointer active:scale-95 transition"
-        >
-          5 分场
-        </div>
+          {/* 5分场 */}
+          <div 
+            onClick={() => handleJoin(5)}
+            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white h-32 rounded-2xl shadow-xl flex items-center justify-center text-3xl font-bold cursor-pointer active:scale-95 transition-transform border-2 border-blue-400/30"
+          >
+            5 分场
+          </div>
 
-        {/* 10分场 */}
-        <div 
-          onClick={() => handleJoin(10)}
-          className="bg-gradient-to-r from-purple-400 to-purple-600 text-white h-32 rounded-xl shadow-lg flex items-center justify-center text-3xl font-bold cursor-pointer active:scale-95 transition"
-        >
-          10 分场
+          {/* 10分场 */}
+          <div 
+            onClick={() => handleJoin(10)}
+            className="bg-gradient-to-r from-purple-500 to-purple-700 text-white h-32 rounded-2xl shadow-xl flex items-center justify-center text-3xl font-bold cursor-pointer active:scale-95 transition-transform border-2 border-purple-400/30"
+          >
+            10 分场
+          </div>
         </div>
       </div>
     </div>

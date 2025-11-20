@@ -1,6 +1,6 @@
+// frontend/src/api.js
 import axios from 'axios';
 
-// 因为有了 _worker.js，这里直接请求本域名的 /api 即可
 const api = axios.create({
   baseURL: '/api', 
   headers: {
@@ -8,7 +8,6 @@ const api = axios.create({
   }
 });
 
-// 请求拦截器：自动带上 Token
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('game_token');
   if (token) {
@@ -19,6 +18,10 @@ api.interceptors.request.use(config => {
 
 export const loginOrRegister = (mobile, password) => 
     api.post('/auth.php?action=login_or_register', { mobile, password });
+
+// 新增：获取最新用户信息
+export const getUserInfo = () => 
+    api.post('/auth.php?action=get_info');
 
 export const searchUser = (mobile) => 
     api.post('/auth.php?action=search_user', { mobile });
