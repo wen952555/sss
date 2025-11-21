@@ -7,7 +7,8 @@ import Card from '../components/Card';
 const GameTable = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false); // 新增：提交状态
+  const [error, setError] = useState(null); // 新增错误状态
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [gameData, setGameData] = useState(null); 
   const [rows, setRows] = useState([[], [], []]); 
   const [solutionIndex, setSolutionIndex] = useState(0);
@@ -19,7 +20,7 @@ const GameTable = () => {
 
   const fetchGame = async () => {
     try {
-      // 如果不是首次加载，就不显示全屏loading，体验更好
+      setError(null);
       if (!gameData) setLoading(true);
       
       const res = await getHand();
@@ -31,22 +32,25 @@ const GameTable = () => {
       }
       
       if (res.data.status === 'retry') {
-          // 后端要求重试（跳过坏牌局）
-          setTimeout(fetchGame, 500);
+          // 后端正在修复数据，自动重试
+          console.log("Retrying...");
+          setTimeout(fetchGame, 800);
           return;
       }
 
       if (res.data.status === 'success') {
         setGameData(res.data);
-        // 初始化牌墩
         const defaultSol = res.data.solutions[0];
         setRows([defaultSol.front, defaultSol.mid, defaultSol.back]);
         setSelectedCards([]);
         setSolutionIndex(0);
+        setLoading(false);
+      } else {
+        throw new Error(res.data.message || "未知错误");
       }
     } catch (e) {
       console.error(e);
-    } finally {
+      setError("无法加载牌局，可能是数据同步问题。");
       setLoading(false);
     }
   };
@@ -93,14 +97,14 @@ const GameTable = () => {
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting) return; // 防止连点
+    if (isSubmitting) return; 
 
     if (rows[0].length !== 3 || rows[1].length !== 5 || rows[2].length !== 5) {
       alert("牌型不合法！\n头道需 3 张，中/尾道需 5 张。");
       return;
     }
     
-    setIsSubmitting(true); // 锁定按钮
+    setIsSubmitting(true); 
 
     try {
       const res = await submitHand(gameData.session_id, gameData.deck_id, {
@@ -108,8 +112,6 @@ const GameTable = () => {
       });
       
       if (res.data.status === 'success') {
-          // 提交成功，立刻获取下一局
-          // 先清空数据，让界面有"刷新"的感觉
           setGameData(null); 
           await fetchGame();
       } else {
@@ -118,17 +120,35 @@ const GameTable = () => {
     } catch (e) {
       alert("网络错误，请重试");
     } finally {
-      setIsSubmitting(false); // 解锁
+      setIsSubmitting(false);
     }
   };
 
-  if (loading || !gameData) return <div className="h-full flex items-center justify-center bg-[#1a472a] text-white font-bold text-xl">正在发牌...</div>;
+  // --- 错误界面 ---
+  if (error) {
+    return (
+        <div className="h-full w-full bg-[#1a472a] text-white flex flex-col items-center justify-center gap-4">
+            <div className="text-xl font-bold text-red-400">⚠️ {error}</div>
+            <button 
+                onClick={() => navigate('/lobby')} 
+                className="bg-white/20 px-6 py-3 rounded-lg hover:bg-white/30 font-bold"
+            >
+                返回大厅 (重置)
+            </button>
+            <button 
+                onClick={() => window.location.reload()} 
+                className="text-sm text-gray-400 underline"
+            >
+                刷新页面
+            </button>
+        </div>
+    );
+  }
+
+  if (loading || !gameData) return <div className="h-full flex items-center justify-center bg-[#1a472a] text-white font-bold text-xl animate-pulse">正在连接牌桌...</div>;
 
   return (
-    // key 属性强制 React 在 deck_id 变化时重绘整个组件，解决状态残留问题
-    <div key={gameData.deck_id} className="h-full w-full bg-[#1a472a] text-white flex flex-col overflow-hidden select-none animate-fade-in">
-      
-      {/* 顶部 */}
+    <div key={gameData.deck_id} className="h-full w-full bg-[#1a472a] text-white flex flex-col overflow-hidden select-none">
       <div className="bg-black/30 p-3 flex justify-between items-center shadow-md shrink-0 z-50">
         <div>
           <h1 className="font-bold text-lg text-yellow-400 tracking-widest">十三水</h1>
@@ -139,9 +159,7 @@ const GameTable = () => {
         </button>
       </div>
 
-      {/* 牌桌区域 */}
-      <div className="flex-1 flex flex-col justify-evenly p-2 w-full max-w-6xl mx-auto relative">
-        
+      <div className="flex-1 flex flex-col w-full max-w-6xl mx-auto relative">
         <div className="absolute top-2 left-0 right-0 text-center text-xs text-green-200/50 pointer-events-none z-10">
           {selectedCards.length > 0 ? '点击目标行移动' : '点击卡牌多选'}
         </div>
@@ -167,7 +185,7 @@ const GameTable = () => {
                   <div className="flex items-center h-full pt-4">
                     {rows[rowIndex].map((card, i) => (
                       <Card 
-                        key={`${card.suit}-${card.rank}-${i}`}
+                        key={`${card.suit}-${card.rank}-${i}`} 
                         card={card} 
                         selected={isSelected(rowIndex, i)}
                         onClick={() => handleCardSelect(rowIndex, i, card)}
@@ -185,12 +203,11 @@ const GameTable = () => {
         })}
       </div>
 
-      {/* 底部按钮 */}
       <div className="bg-black/40 backdrop-blur-md p-4 flex gap-4 items-center justify-center shadow-2xl shrink-0 z-50">
         <button 
           onClick={handleSmartSort}
           disabled={isSubmitting}
-          className="flex-1 max-w-[200px] bg-amber-500 text-black py-3 rounded-xl font-bold shadow-[0_4px_0_#b45309] active:shadow-none active:translate-y-1 transition-all flex flex-col items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 max-w-[200px] bg-amber-500 text-black py-3 rounded-xl font-bold shadow-[0_4px_0_#b45309] active:shadow-none active:translate-y-1 transition-all flex flex-col items-center disabled:opacity-50"
         >
           <span className="text-base">智能理牌</span>
           <span className="text-[10px] opacity-70">{['方案 1', '方案 2', '方案 3'][solutionIndex]}</span>
@@ -201,10 +218,7 @@ const GameTable = () => {
           disabled={isSubmitting}
           className={`
             flex-1 max-w-[200px] text-white py-3 rounded-xl font-bold shadow-[0_4px_0_#1e40af] transition-all
-            ${isSubmitting 
-               ? 'bg-gray-500 cursor-wait shadow-none translate-y-1' 
-               : 'bg-blue-600 active:shadow-none active:translate-y-1'
-            }
+            ${isSubmitting ? 'bg-gray-500 cursor-wait' : 'bg-blue-600 active:shadow-none active:translate-y-1'}
           `}
         >
           {isSubmitting ? '提交中...' : '确认出牌'}
