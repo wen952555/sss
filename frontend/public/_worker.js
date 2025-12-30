@@ -1,24 +1,26 @@
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     // 拦截 /api 开头的请求
     if (url.pathname.startsWith('/api/')) {
-      // 这里填你 Serv00 的真实域名
+      // 修正：将 /api/... 转发到 后端的 /backend/api/...
       const backendUrl = 'https://9525.ip-ddns.com'; 
+      const targetPath = '/backend' + url.pathname;
       
-      // 构造新请求
-      const newUrl = new URL(url.pathname, backendUrl);
-      newUrl.search = url.search; // 保留查询参数
+      const newUrl = new URL(targetPath, backendUrl);
+      newUrl.search = url.search; 
 
-      const newRequest = new Request(newUrl, request);
+      const newRequest = new Request(newUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+        redirect: 'follow'
+      });
       
-      // 发送给后端
       return fetch(newRequest);
     }
 
-    // 其他请求照常处理 (返回静态资源)
     return env.ASSETS.fetch(request);
   },
 };
