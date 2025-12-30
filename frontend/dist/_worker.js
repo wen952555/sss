@@ -4,10 +4,10 @@ export default {
 
     // 拦截 API 请求
     if (url.pathname.startsWith('/api/')) {
-      // 这里确保指向您真正的 Serv00 后端地址
-      // 如果后端和前端在同一个 Serv00 域名下，请确认域名是否正确
+      // 修正：后端 URL 指向正确的域名
       const BACKEND_HOST = 'https://9525.ip-ddns.com'; 
-      const targetPath = '/backend' + url.pathname;
+      // 修正：移除了错误的 /backend 前缀
+      const targetPath = url.pathname;
       const newUrl = new URL(targetPath, BACKEND_HOST);
       newUrl.search = url.search;
 
