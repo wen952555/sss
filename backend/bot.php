@@ -1,4 +1,8 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // backend/bot.php
 require 'db.php';
 
@@ -89,7 +93,6 @@ if (empty($session)) {
         
         if ($count < 80) {
             sendMessage($chatId, $msg . "⚠️ 正在补货...", $botToken);
-            $needed = 320 - $count;
             require_once 'core/DeckGenerator.php';
             DeckGenerator::fill($pdo, $needed);
             $msg = "✅ 已补满 320 局。";

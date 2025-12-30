@@ -1,9 +1,9 @@
 <?php
 // backend/db.php
 
-// 1. 开启错误显示（仅供调试，解决 502）
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+echo "Debug: Starting db.php\n";
 
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
@@ -15,33 +15,49 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 }
 
 function loadEnv($path) {
-    if (!file_exists($path)) return;
+    echo "Debug: Inside loadEnv function.\n";
+    if (!file_exists($path)) {
+        echo "Debug: .env file not found at $path\n";
+        return;
+    }
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         if (strpos(trim($line), '#') === 0) continue;
         if (!strpos($line, '=')) continue;
         list($name, $value) = explode('=', $line, 2);
-        putenv(trim($name) . '=' . trim($value, "\"' "));
+        $name = trim($name);
+        $value = trim($value, "\"' ");
+        putenv("$name=$value");
+        echo "Debug: Set ENV var $name\n";
     }
+    echo "Debug: Finished loadEnv function.\n";
 }
 
+echo "Debug: About to call loadEnv.\n";
 loadEnv(__DIR__ . '/.env');
+echo "Debug: Finished calling loadEnv.\n";
 
 try {
+    echo "Debug: Entering try block.\n";
     $host = getenv('DB_HOST');
     $db   = getenv('DB_DATABASE');
     $user = getenv('DB_USERNAME');
     $pass = getenv('DB_PASSWORD');
-    
-    // 如果获取不到环境变量，直接报错
+
+    echo "Debug: DB_HOST = [$host]\n";
+    echo "Debug: DB_DATABASE = [$db]\n";
+    echo "Debug: DB_USERNAME = [$user]\n";
+
     if (!$host || !$db || !$user) {
         throw new Exception("数据库配置信息(ENV)加载失败，请检查 backend/.env 文件");
     }
 
+    echo "Debug: About to create new PDO object.\n";
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    echo "Debug: PDO object created successfully.\n";
 } catch (Exception $e) {
-    http_response_code(500); // 改为 500 以便识别是程序报错
+    http_response_code(500);
     echo json_encode([
         'status' => 'error', 
         'message' => 'DB Error: ' . $e->getMessage()
