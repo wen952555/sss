@@ -1,20 +1,40 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --gold: #d4af37;
+  --gold-glow: rgba(212, 175, 55, 0.5);
+}
+
 body {
   margin: 0;
+  background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
+  color: #fff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
-  background-color: #0f172a; /* Slate 900 */
 }
 
-/* 扑克牌高亮边框动画 */
-.ring-4 {
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 0 15px rgba(250, 204, 21, 0.6); /* 选中的发光效果 */
+/* 扑克牌选中高亮：金光环绕 */
+.card-selected {
+  outline: 4px solid var(--gold);
+  border-radius: 8px;
+  box-shadow: 0 0 20px var(--gold-glow);
+  transform: scale(1.05);
+  z-index: 50 !important;
 }
 
-/* 牌堆层叠效果 */
-.flex.-space-x-6 img {
-  @apply transition-transform;
+/* 毛玻璃容器 */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* 牌堆层叠优化 */
+.card-stack img {
+  filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.4));
+  transition: all 0.2s ease;
 }

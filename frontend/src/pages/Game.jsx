@@ -3,136 +3,108 @@ import api from '../api';
 import { useNavigate } from 'react-router-dom';
 
 export default function Game() {
-  const [pool, setPool] = useState([]); // 待分配的牌
-  const [head, setHead] = useState([]); // 头道 (最多3张)
-  const [mid, setMid] = useState([]);  // 中道 (最多5张)
-  const [back, setBack] = useState([]); // 尾道 (最多5张)
-  const [selectedIndices, setSelectedIndices] = useState([]); // 选中的牌索引
+  const [rows, setRows] = useState({ head: [], mid: [], back: [] });
+  const [selected, setSelected] = useState([]); // [{row, index}]
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 1. 发牌
+  // 1. 自动理牌核心：按权值分配，确保 Back >= Mid >= Head
+  const autoArrange = (cards) => {
+    const rankOrder = { '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'jack':11, 'queen':12, 'king':13, 'ace':14 };
+    // 简单贪心排序：将点数之和最高的放在后道
+    const sorted = [...cards].sort((a, b) => rankOrder[b.split('_')[0]] - rankOrder[a.split('_')[0]]);
+    return {
+      back: sorted.slice(0, 5),
+      mid: sorted.slice(5, 10),
+      head: sorted.slice(10, 13)
+    };
+  };
+
   const dealGame = async () => {
+    setLoading(true);
     try {
       const res = await api.get('/game_deal.php');
-      setPool(res.data.hand);
-      setHead([]); setMid([]); setBack([]); setSelectedIndices([]);
+      setRows(autoArrange(res.data.hand));
+      setSelected([]);
     } catch (e) { navigate('/login'); }
+    finally { setLoading(false); }
   };
 
-  // 2. 选择牌 (多选)
-  const toggleSelect = (index) => {
-    if (selectedIndices.includes(index)) {
-      setSelectedIndices(selectedIndices.filter(i => i !== index));
+  // 2. 选择逻辑：多选
+  const toggleSelect = (rowName, index) => {
+    const key = `${rowName}-${index}`;
+    const isSelected = selected.find(s => s.row === rowName && s.index === index);
+    if (isSelected) {
+      setSelected(selected.filter(s => !(s.row === rowName && s.index === index)));
     } else {
-      setSelectedIndices([...selectedIndices, index]);
+      setSelected([...selected, { row: rowName, index }]);
     }
   };
 
-  // 3. 移动牌到指定道
-  const moveTo = (target, setTarget, limit) => {
-    if (selectedIndices.length === 0) return;
-    if (target.length + selectedIndices.length > limit) {
-      alert(`该道最多只能有 ${limit} 张牌`);
-      return;
-    }
+  // 3. 交换逻辑：点击目标行进行位置互换
+  const moveSelectedTo = (targetRow) => {
+    if (selected.length === 0 || selected.every(s => s.row === targetRow)) return;
 
-    const cardsToMove = selectedIndices.map(i => pool[i]);
-    const newPool = pool.filter((_, i) => !selectedIndices.includes(i));
-    
-    setTarget([...target, ...cardsToMove]);
-    setPool(newPool);
-    setSelectedIndices([]);
+    const newRows = JSON.parse(JSON.stringify(rows));
+    selected.forEach((s, i) => {
+      // 这里的交换逻辑：将选中的牌与目标行的前几张互换
+      const temp = newRows[targetRow][i % newRows[targetRow].length];
+      newRows[targetRow][i % newRows[targetRow].length] = newRows[s.row][s.index];
+      newRows[s.row][s.index] = temp;
+    });
+
+    setRows(newRows);
+    setSelected([]);
   };
 
-  // 4. 重置 (回退到Pool)
-  const resetLayout = () => {
-    setPool([...pool, ...head, ...mid, ...back]);
-    setHead([]); setMid([]); setBack([]); setSelectedIndices([]);
-  };
-
-  // 5. 智能理牌 (简单逻辑：按点数大小自动分配)
-  const smartSort = () => {
-    const allCards = [...pool, ...head, ...mid, ...back];
-    // 简单的点数映射用于排序
-    const rankMap = { '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'jack':11, 'queen':12, 'king':13, 'ace':14 };
-    const sorted = allCards.sort((a, b) => rankMap[b.split('_')[0]] - rankMap[a.split('_')[0]]);
-
-    setBack(sorted.slice(0, 5));  // 最大的5张放尾道
-    setMid(sorted.slice(5, 10));  // 中间的5张放中道
-    setHead(sorted.slice(10, 13)); // 剩余3张放头道
-    setPool([]);
-    setSelectedIndices([]);
-  };
-
-  const CardItem = ({ card, index, isSelected, onToggle }) => (
+  const Card = ({ card, row, index }) => (
     <div 
-      onClick={() => onToggle(index)}
-      className={`relative cursor-pointer transition-all duration-200 ${isSelected ? 'ring-4 ring-yellow-400 rounded-lg scale-105' : ''}`}
+      onClick={(e) => { e.stopPropagation(); toggleSelect(row, index); }}
+      className={`relative card-stack ${selected.find(s => s.row === row && s.index === index) ? 'card-selected' : ''}`}
     >
-      <img src={`/cards/${card}.svg`} alt={card} className="w-16 h-22 md:w-20 md:h-28 shadow-lg" />
+      <img src={`/cards/${card}.svg`} className="w-20 h-28 md:w-28 md:h-40 pointer-events-none" alt={card} />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-2">
-      <div className="flex justify-between p-2">
-        <button onClick={() => navigate('/dashboard')} className="bg-gray-700 px-3 py-1 rounded">返回</button>
-        <div className="space-x-2">
-          <button onClick={smartSort} className="bg-purple-600 px-3 py-1 rounded font-bold">智能理牌</button>
-          <button onClick={dealGame} className="bg-blue-600 px-3 py-1 rounded font-bold">发牌</button>
-          <button onClick={resetLayout} className="bg-red-600 px-3 py-1 rounded font-bold">重置</button>
-        </div>
+    <div className="min-h-screen p-4 flex flex-col items-center">
+      {/* 顶部导航 */}
+      <div className="w-full max-w-5xl flex justify-between items-center mb-10">
+        <button onClick={() => navigate('/dashboard')} className="glass-panel px-6 py-2 rounded-full text-sm font-bold border border-white/20">退出房间</button>
+        <h1 className="text-2xl font-black tracking-widest text-yellow-500 uppercase">Thirteen Royal</h1>
+        <button onClick={dealGame} disabled={loading} className="bg-yellow-600 hover:bg-yellow-500 text-black px-8 py-2 rounded-full font-black shadow-2xl transition-all disabled:opacity-50">
+          {loading ? '发牌中...' : '重新发牌'}
+        </button>
       </div>
 
-      <div className="flex flex-col items-center mt-4 space-y-6">
-        {/* 头道 */}
-        <div 
-          onClick={() => moveTo(head, setHead, 3)}
-          className="w-full max-w-sm bg-black/30 p-4 rounded-xl border-2 border-dashed border-gray-600 min-h-[120px]"
-        >
-          <p className="text-center text-xs text-gray-400 mb-2">头道 (点击此处移入)</p>
-          <div className="flex justify-center -space-x-6">
-            {head.map((c, i) => <img key={i} src={`/cards/${c}.svg`} className="w-16 h-22" />)}
-          </div>
-        </div>
+      {/* 牌局主区 */}
+      <div className="w-full max-w-4xl space-y-8">
+        {['head', 'mid', 'back'].map((row) => (
+          <div 
+            key={row}
+            onClick={() => moveSelectedTo(row)}
+            className="glass-panel p-4 rounded-3xl relative flex flex-col items-center group cursor-pointer hover:bg-white/10 transition-colors"
+          >
+            <div className="absolute -left-4 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-bold text-yellow-600 uppercase tracking-widest">
+              {row === 'head' ? 'Front' : row === 'mid' ? 'Middle' : 'Back'}
+            </div>
+            
+            <div className="flex -space-x-8 md:-space-x-12">
+              {rows[row].map((c, i) => <Card key={`${row}-${i}`} card={c} row={row} index={i} />)}
+            </div>
 
-        {/* 中道 */}
-        <div 
-          onClick={() => moveTo(mid, setMid, 5)}
-          className="w-full max-w-sm bg-black/30 p-4 rounded-xl border-2 border-dashed border-gray-600 min-h-[120px]"
-        >
-          <p className="text-center text-xs text-gray-400 mb-2">中道 (点击此处移入)</p>
-          <div className="flex justify-center -space-x-6">
-            {mid.map((c, i) => <img key={i} src={`/cards/${c}.svg`} className="w-16 h-22" />)}
+            {/* 如果选中了牌，显示移入光效 */}
+            {selected.length > 0 && !selected.every(s => s.row === row) && (
+              <div className="absolute inset-0 border-2 border-yellow-500/30 rounded-3xl animate-pulse flex items-center justify-end pr-4">
+                <span className="text-yellow-500 text-xs font-bold">点击交换至此</span>
+              </div>
+            )}
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* 尾道 */}
-        <div 
-          onClick={() => moveTo(back, setBack, 5)}
-          className="w-full max-w-sm bg-black/30 p-4 rounded-xl border-2 border-dashed border-gray-600 min-h-[120px]"
-        >
-          <p className="text-center text-xs text-gray-400 mb-2">尾道 (点击此处移入)</p>
-          <div className="flex justify-center -space-x-6">
-            {back.map((c, i) => <img key={i} src={`/cards/${c}.svg`} className="w-16 h-22" />)}
-          </div>
-        </div>
-
-        {/* 待分配的牌区 (Pool) */}
-        <div className="w-full mt-10 bg-gray-800/50 p-4 rounded-t-3xl">
-          <p className="text-center text-sm mb-4 font-bold text-blue-300">手中持牌 ({pool.length})</p>
-          <div className="grid grid-cols-5 gap-2 md:grid-cols-7 justify-items-center">
-            {pool.map((card, index) => (
-              <CardItem 
-                key={index} 
-                card={card} 
-                index={index} 
-                isSelected={selectedIndices.includes(index)}
-                onToggle={toggleSelect}
-              />
-            ))}
-          </div>
-        </div>
+      <div className="mt-12 text-center">
+        <p className="text-white/40 text-xs uppercase tracking-widest">操作指引: 点击扑克牌进行多选，点击其他牌墩区域执行位置交换</p>
       </div>
     </div>
   );
