@@ -1,8 +1,12 @@
 <?php
 session_start();
-require __DIR__ . '/db.php';
-require __DIR__ . '/utils.php';
-require __DIR__ . '/lib/SmartSorter.php';
+// 强制设置时区为亚洲/上海，确保预约日期一致
+date_default_timezone_set('Asia/Shanghai');
+
+// 修正路径：由于此文件就在 backend 目录下，直接引用同级目录的 db.php
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/utils.php';
+require_once __DIR__ . '/lib/SmartSorter.php';
 
 header('Content-Type: application/json');
 
@@ -13,7 +17,7 @@ if (!$user_id) {
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
-$session_type = $data['session_type'] ?? 'today'; // Default to 'today'
+$session_type = $data['session_type'] ?? 'today';
 $hand = $data['hand'] ?? null;
 
 if (!in_array($session_type, ['today', 'tomorrow'])) {
@@ -26,28 +30,28 @@ if (empty($hand) || !is_array($hand)) {
     exit;
 }
 
-// --- Backend Validation using SmartSorter ---
+// 验证牌型
 try {
     $sorter = new SmartSorter($hand);
     $result = $sorter->getHandResult();
     if (strpos($result['description'], '错误') !== false) {
-        sendJSON(['status' => 'error', 'message' => '您提交的牌型不符合规则: ' . $result['description']], 400);
+        sendJSON(['status' => 'error', 'message' => '牌型不合规: ' . $result['description']], 400);
         exit;
     }
     $hand_description = $result['description'];
     $hand_rank = $result['rank'];
 } catch (Exception $e) {
-    sendJSON(['status' => 'error', 'message' => '验证牌型时出错: ' . $e->getMessage()], 500);
+    sendJSON(['status' => 'error', 'message' => '牌型验证失败'], 500);
     exit;
 }
-// --- End Validation ---
 
+// 计算预约日期
 $reservation_date = ($session_type === 'tomorrow') ? date('Y-m-d', strtotime('+1 day')) : date('Y-m-d');
 
 $pdo->beginTransaction();
 
 try {
-    // Check for existing reservation for the selected session
+    // 检查是否重复预约
     $stmt = $pdo->prepare("SELECT id FROM reservations WHERE user_id = ? AND reservation_date = ? AND session_type = ?");
     $stmt->execute([$user_id, $reservation_date, $session_type]);
     if ($stmt->fetch()) {
@@ -56,27 +60,24 @@ try {
         exit;
     }
 
-    // Create the reservation with hand details
+    // 写入数据库 - 确保字段名为 hand_description
     $stmt = $pdo->prepare(
         "INSERT INTO reservations (user_id, reservation_date, session_type, hand_description, hand_rank) VALUES (?, ?, ?, ?, ?)"
     );
     $stmt->execute([$user_id, $reservation_date, $session_type, $hand_description, $hand_rank]);
     $reservation_id = $pdo->lastInsertId();
 
-    // Commit transaction
     $pdo->commit();
 
     sendJSON([
         'status' => 'success',
-        'message' => '预约成功！您以 [' . $hand_description . '] 预约了 [' . $session_type . '] 场次。',
+        'message' => '预约成功！已记录您的 [' . $hand_description . ']',
         'reservation_id' => $reservation_id
     ], 201);
 
 } catch (Exception $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
+    if ($pdo->inTransaction()) { $pdo->rollBack(); }
     error_log("Reservation Error: " . $e->getMessage());
-    sendJSON(['status' => 'error', 'message' => '服务器内部错误，预约失败'], 500);
+    sendJSON(['status' => 'error', 'message' => '服务器错误，预约未成功'], 500);
 }
 ?>

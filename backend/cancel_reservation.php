@@ -1,7 +1,11 @@
 <?php
 session_start();
-require __DIR__ . '/db.php';
-require __DIR__ . '/utils.php';
+// 强制设置时区为亚洲/上海
+date_default_timezone_set('Asia/Shanghai');
+
+// 修正路径
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/utils.php';
 
 header('Content-Type: application/json');
 
