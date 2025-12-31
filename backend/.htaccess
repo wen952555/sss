@@ -1,17 +1,27 @@
-# backend/.htaccess
-RewriteEngine On
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-# 如果请求的不是一个已存在的文件或目录，则将请求重写到 index.php（如果你有统一的入口）
-# RewriteCond %{REQUEST_FILENAME} !-f
-# RewriteCond %{REQUEST_FILENAME} !-d
-# RewriteRule ^(.*)$ index.php [QSA,L]
+    # 1. 处理 Authorization 头（部分服务器会过滤掉它）
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# 设置CORS头（作为Apache层面的额外保障）
-Header always set Access-Control-Allow-Origin "https://xxx.9525.ip-ddns.com"
+    # 2. 自动匹配 .php 后缀
+    # 如果请求的文件名不存在，但加上 .php 后存在，则重写
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.*)$ $1.php [L]
+</IfModule>
+
+# 3. 强制跨域头 (Apache 层级)
+# 使用 SetEnvIf 动态匹配来源，解决 Credentials 为 true 时不能用 * 的问题
+SetEnvIf Origin "^http(s)?://(.+\.)?(9525\.ip-ddns\.com)$" RS_CORS=$0
+Header always set Access-Control-Allow-Origin %{RS_CORS}e env=RS_CORS
 Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
 Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
 Header always set Access-Control-Allow-Credentials "true"
+Header always set Access-Control-Max-Age "86400"
 
-# 处理OPTIONS预检请求
+# 4. 快速响应 OPTIONS 预检请求
 RewriteCond %{REQUEST_METHOD} OPTIONS
 RewriteRule ^(.*)$ $1 [R=200,L]
