@@ -33,6 +33,17 @@ export default function Dashboard() {
     } catch (e) { alert(e.response.data.error); }
   };
 
+  const logout = async () => {
+    try {
+      await api.post('/logout.php');
+      navigate('/login');
+    } catch (e) {
+      console.error('Logout failed', e);
+      // Even if the server-side logout fails, we can still redirect to login
+      navigate('/login');
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -50,6 +61,10 @@ export default function Dashboard() {
 
         <button onClick={() => navigate('/game')} className="w-full h-16 bg-yellow-600 text-black rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] transition-transform">
           开始游戏
+        </button>
+
+        <button onClick={logout} className="w-full h-16 bg-red-600 text-white rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] transition-transform">
+          退出登录
         </button>
 
         <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5">
