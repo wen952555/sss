@@ -1,6 +1,18 @@
 <?php
-function generateShortId($length = 4) {
-    return substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, $length);
+// Note: This function now requires the PDO database connection object.
+function generateUniqueShortId($pdo, $length = 4) {
+    // Using a smaller, more readable character set.
+    $chars = "0123456789abcdefghijklmnopqrstuvwxyz";
+    do {
+        $short_id = '';
+        for ($i = 0; $i < $length; $i++) {
+            $short_id .= $chars[rand(0, strlen($chars) - 1)];
+        }
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE short_id = ?");
+        $stmt->execute([$short_id]);
+    } while ($stmt->fetchColumn());
+
+    return $short_id;
 }
 
 function sendJSON($data, $code = 200) {
