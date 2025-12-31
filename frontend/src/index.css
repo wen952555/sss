@@ -4,7 +4,17 @@
 
 body {
   margin: 0;
-  background-color: #1a1a1a;
-  color: white;
-  font-family: sans-serif;
+  overflow-x: hidden;
+  background-color: #0f172a; /* Slate 900 */
+}
+
+/* 扑克牌高亮边框动画 */
+.ring-4 {
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 0 15px rgba(250, 204, 21, 0.6); /* 选中的发光效果 */
+}
+
+/* 牌堆层叠效果 */
+.flex.-space-x-6 img {
+  @apply transition-transform;
 }
