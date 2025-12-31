@@ -1,0 +1,6 @@
+{
+  "appId": "com.wen952555.sss",
+  "appName": "sss",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

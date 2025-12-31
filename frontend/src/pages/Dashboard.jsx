@@ -36,7 +36,7 @@ const ReservationBlock = ({ title, onReserve, loading, count, user_has_reserved,
           disabled={user_has_reserved || loading}
           className="w-full h-14 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold text-lg shadow-lg hover:scale-105 transition-transform disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          {loading ? '查询中...' : (user_has_reserved ? '已预约' : '立即预约 (10 积分)')}
+          {loading ? '查询中...' : (user_has_reserved ? '已预约' : '立即预约')}
         </button>
       </div>
     );
@@ -118,21 +118,13 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-md mx-auto space-y-6">
         
-        <div className="bg-gradient-to-b from-white/10 to-transparent p-8 rounded-[2.5rem] border border-white/10 text-center shadow-lg relative">
+        <div className="bg-gradient-to-b from-white/10 to-transparent p-6 rounded-[2.5rem] border border-white/10 text-center shadow-lg relative">
           <div className="absolute top-4 right-4">
             <button onClick={logout} className="text-white/40 hover:text-white text-xs">退出</button>
           </div>
-          <p className="text-xs text-white/40 uppercase tracking-widest mb-1">当前积分</p>
-          <h2 className="text-5xl font-black text-yellow-400 mb-6">{user.points}</h2>
-          <div className="flex justify-between text-sm px-4 text-white/60">
-            <span>ID: {user.short_id}</span>
-            <span>账号: {user.username}</span>
-          </div>
+          <h2 className="text-3xl font-bold text-yellow-400 mb-2">欢迎, {user.username}</h2>
+          <p className="text-sm text-white/60">ID: {user.short_id}</p>
         </div>
-
-        <button onClick={() => navigate('/game')} className="w-full h-16 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black rounded-2xl font-black text-xl shadow-lg hover:scale-105 transition-transform">
-          进入游戏
-        </button>
 
         <div className="space-y-4">
           <ReservationBlock 
