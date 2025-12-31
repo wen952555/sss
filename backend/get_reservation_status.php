@@ -30,7 +30,7 @@ try {
     // --- Sub-query to get top 3 hands for a given session ---
     $getTopHands = function($date, $session_type) use ($pdo) {
         $sql = "
-            SELECT u.username, r.hand_info, r.hand_rank
+            SELECT u.username, r.hand_description, r.hand_rank
             FROM reservations r
             JOIN users u ON r.user_id = u.id
             WHERE r.reservation_date = ? AND r.session_type = ?
