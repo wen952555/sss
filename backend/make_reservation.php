@@ -58,7 +58,7 @@ try {
 
     // Create the reservation with hand details
     $stmt = $pdo->prepare(
-        "INSERT INTO reservations (user_id, reservation_date, session_type, hand_info, hand_rank) VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO reservations (user_id, reservation_date, session_type, hand_description, hand_rank) VALUES (?, ?, ?, ?, ?)"
     );
     $stmt->execute([$user_id, $reservation_date, $session_type, $hand_description, $hand_rank]);
     $reservation_id = $pdo->lastInsertId();
