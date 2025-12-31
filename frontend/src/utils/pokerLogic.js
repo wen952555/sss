@@ -1,35 +1,63 @@
 const RANK_ORDER = { '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'jack':11, 'queen':12, 'king':13, 'ace':14 };
-const PATTERN_NAMES = ["散牌", "对子", "两对", "三条", "顺子", "同花", "葫芦", "四条", "同花顺"];
 
-export const getHandDetails = (cards) => {
-  if (cards.length === 0) return { score: 0, name: "" };
+// 牌型分值定义
+export const SCORES = { 
+  STRAIGHT_FLUSH: 800, FOUR_OF_A_KIND: 700, FULL_HOUSE: 600, 
+  FLUSH: 500, STRAIGHT: 400, THREE_OF_A_KIND: 300, 
+  TWO_PAIR: 200, PAIR: 100, HIGH_CARD: 0 
+};
+
+// 提取牌的点数和花色
+const parseCard = (c) => ({ rank: RANK_ORDER[c.split('_')[0]], suit: c.split('_')[2], raw: c });
+
+// 寻找最佳5张组合 (贪心搜索)
+function findBestFive(cards) {
+  const parsed = cards.map(parseCard).sort((a, b) => b.rank - a.rank);
   
-  const ranks = cards.map(c => RANK_ORDER[c.split('_')[0]]).sort((a, b) => a - b);
-  const suits = cards.map(c => c.split('_')[2]);
+  // 这里简化展示核心逻辑：优先寻找顺子、同花
+  const suits = {}; parsed.forEach(c => suits[c.suit] = [...(suits[c.suit] || []), c]);
+  // 同花检查
+  for (let s in suits) {
+    if (suits[s].length >= 5) return suits[s].slice(0, 5).map(c => c.raw);
+  }
   
-  const counts = {};
-  ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
-  const valCounts = Object.values(counts).sort((a, b) => b - a);
-  
-  const isFlush = new Set(suits).size === 1 && cards.length === 5;
-  let isStraight = false;
-  if (cards.length === 5) {
-    const uniqueRanks = [...new Set(ranks)];
-    if (uniqueRanks.length === 5 && (ranks[4] - ranks[0] === 4)) isStraight = true;
-    if (ranks.join(',') === '2,3,4,5,14') isStraight = true; // A2345 顺子
+  // 顺子检查
+  const unique = []; const seen = new Set();
+  parsed.forEach(c => { if(!seen.has(c.rank)) { unique.push(c); seen.add(c.rank); }});
+  for (let i = 0; i <= unique.length - 5; i++) {
+    if (unique[i].rank - unique[i+4].rank === 4) return unique.slice(i, i+5).map(c => c.raw);
   }
 
-  let type = 0; // 0: 散牌
-  if (isFlush && isStraight) type = 8;
-  else if (valCounts[0] === 4) type = 7;
-  else if (valCounts[0] === 3 && valCounts[1] === 2) type = 6;
-  else if (isFlush) type = 5;
-  else if (isStraight) type = 4;
-  else if (valCounts[0] === 3) type = 3;
-  else if (valCounts[0] === 2 && valCounts[1] === 2) type = 2;
-  else if (valCounts[0] === 2) type = 1;
+  // 默认返回点数最大的5张
+  return cards.slice(0, 5);
+}
 
-  // 计算一个用于比较的绝对分值: 类型权重 + 最大牌权重
-  const score = type * 1000000 + ranks[ranks.length-1];
-  return { type, score, name: PATTERN_NAMES[type] };
+// 最终导出：智能分牌
+export const smartSort = (allCards) => {
+  let remaining = [...allCards].sort((a, b) => {
+    return RANK_ORDER[b.split('_')[0]] - RANK_ORDER[a.split('_')[0]];
+  });
+
+  const back = findBestFive(remaining);
+  remaining = remaining.filter(c => !back.includes(c));
+
+  const mid = findBestFive(remaining);
+  remaining = remaining.filter(c => !mid.includes(c));
+
+  const head = remaining;
+
+  return { head, mid, back };
+};
+
+export const getPatternName = (cards) => {
+  if (cards.length === 0) return "";
+  const ranks = cards.map(c => RANK_ORDER[c.split('_')[0]]).sort((a,b)=>a-b);
+  const counts = {}; ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
+  const v = Object.values(counts).sort((a,b)=>b-a);
+  if (v[0] === 4) return "四条";
+  if (v[0] === 3 && v[1] === 2) return "葫芦";
+  if (v[0] === 3) return "三条";
+  if (v[0] === 2 && v[1] === 2) return "两对";
+  if (v[0] === 2) return "对子";
+  return "散牌";
 };

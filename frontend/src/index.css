@@ -1,40 +1,27 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --gold: #d4af37;
-  --gold-glow: rgba(212, 175, 55, 0.5);
-}
-
 body {
   margin: 0;
-  background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
-  color: #fff;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
+  padding: 0;
+  /* 禁止手机端长按弹出菜单和选择文本 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  background-color: #064e3b;
+  overflow: hidden; /* 防止手机端页面晃动 */
+  position: fixed; /* 锁定屏幕高度 */
+  width: 100%;
+  height: 100%;
 }
 
-/* 扑克牌选中高亮：金光环绕 */
-.card-selected {
-  outline: 4px solid var(--gold);
-  border-radius: 8px;
-  box-shadow: 0 0 20px var(--gold-glow);
-  transform: scale(1.05);
-  z-index: 50 !important;
+/* 针对 iOS 安全区域的适配 */
+.min-h-screen {
+  min-height: -webkit-fill-available;
 }
 
-/* 毛玻璃容器 */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-}
-
-/* 牌堆层叠优化 */
-.card-stack img {
-  filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.4));
-  transition: all 0.2s ease;
+/* 卡牌选中动画：仅发光不弹起，防止点击时布局跳动 */
+.ring-2 {
+  transition: box-shadow 0.2s ease-in-out;
+  box-shadow: 0 0 15px rgba(250, 204, 21, 0.8);
 }
