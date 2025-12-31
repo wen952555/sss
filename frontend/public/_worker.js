@@ -1,21 +1,26 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    
-    // 如果请求是以 /api 开头，转发到 Serv00 后端
     if (url.pathname.startsWith('/api/')) {
-      const backendUrl = 'https://wen76674.serv00.net' + url.pathname.replace('/api', '') + url.search;
+      const backendUrl = 'https://wen76674.serv00.net' + url.pathname.replace('/api', '');
       
       const newRequest = new Request(backendUrl, {
         method: request.method,
         headers: request.headers,
-        body: request.body,
+        body: request.method !== 'GET' ? await request.blob() : null,
+        redirect: 'follow'
       });
 
-      return fetch(newRequest);
+      const response = await fetch(newRequest);
+      
+      // 克隆响应以修改头部
+      const newResponse = new Response(response.body, response);
+      newResponse.headers.set('Access-Control-Allow-Origin', url.origin);
+      newResponse.headers.set('Access-Control-Allow-Credentials', 'true');
+      newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      
+      return newResponse;
     }
-
-    // 否则返回静态资源
     return env.ASSETS.fetch(request);
-  },
+  }
 };

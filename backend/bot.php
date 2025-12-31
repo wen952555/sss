@@ -1,40 +1,50 @@
 <?php
 require 'db.php';
-$update = json_decode(file_get_contents("php://input"), true);
-$admin_id = getEnvConfig('ADMIN_TG_ID'); // .env 中的管理员ID
+require 'utils.php';
+
+$content = file_get_contents("php://input");
+$update = json_decode($content, true);
 $token = getEnvConfig('BOT_TOKEN');
+$admin_id = getEnvConfig('ADMIN_TG_ID');
 
-if (!$update) exit;
+if (!$update || !isset($update['message'])) exit;
 
-$chat_id = $update['message']['chat']['id'];
-$text = $update['message']['text'];
+$message = $update['message'];
+$chat_id = $message['chat']['id'];
+$text = $message['text'] ?? '';
 
-// 简单的指令解析: /points 4位ID 增减值
-if ($chat_id == $admin_id) {
-    if (strpos($text, '/points') === 0) {
-        $parts = explode(' ', $text);
-        $target_id = $parts[1];
-        $amount = (int)$parts[2];
-        $stmt = $pdo->prepare("UPDATE users SET points = points + ? WHERE short_id = ?");
-        $stmt->execute([$amount, $target_id]);
-        sendMessage($chat_id, "用户 $target_id 积分已调整 $amount", $token);
-    }
-    if (strpos($text, '/del') === 0) {
-        $target_id = explode(' ', $text)[1];
-        $pdo->prepare("DELETE FROM users WHERE short_id = ?")->execute([$target_id]);
-        sendMessage($chat_id, "用户 $target_id 已删除", $token);
-    }
-    if ($text == '/users') {
-        $stmt = $pdo->query("SELECT short_id, phone, points FROM users");
-        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $msg = "用户列表:\n";
-        foreach($res as $u) $msg .= "ID: {$u['short_id']} | {$u['phone']} | 积分: {$u['points']}\n";
-        sendMessage($chat_id, $msg, $token);
-    }
+function reply($cid, $txt, $tok) {
+    $url = "https://api.telegram.org/bot$tok/sendMessage";
+    $data = ['chat_id' => $cid, 'text' => $txt];
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_exec($ch);
+    curl_close($ch);
 }
 
-function sendMessage($chat_id, $text, $token) {
-    $url = "https://api.telegram.org/bot$token/sendMessage?chat_id=$chat_id&text=".urlencode($text);
-    file_get_contents($url);
+if ($chat_id != $admin_id) {
+    reply($chat_id, "您没有管理员权限。您的ID是: " . $chat_id, $token);
+    exit;
 }
-?>
+
+if ($text == '/start') {
+    reply($chat_id, "指令列表:\n/users - 查看所有用户\n/points [ID] [数量] - 增减积分\n/del [ID] - 删除用户", $token);
+} elseif ($text == '/users') {
+    $stmt = $pdo->query("SELECT short_id, phone, points FROM users");
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $out = "用户列表:\n";
+    foreach($users as $u) $out .= "ID: {$u['short_id']} | 手机: {$u['phone']} | 积分: {$u['points']}\n";
+    reply($chat_id, $out, $token);
+} elseif (preg_match('/^\/points\s+(\w+)\s+(-?\d+)/', $text, $m)) {
+    $sid = $m[1];
+    $amt = (int)$m[2];
+    $stmt = $pdo->prepare("UPDATE users SET points = points + ? WHERE short_id = ?");
+    $stmt->execute([$amt, $sid]);
+    reply($chat_id, "用户 $sid 积分已更新 $amt", $token);
+} elseif (preg_match('/^\/del\s+(\w+)/', $text, $m)) {
+    $sid = $m[1];
+    $stmt = $pdo->prepare("DELETE FROM users WHERE short_id = ?");
+    $stmt->execute([$sid]);
+    reply($chat_id, "用户 $sid 已从系统删除", $token);
+}
