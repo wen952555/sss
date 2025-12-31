@@ -1,5 +1,5 @@
 import React from 'react';
-import { getCardImage, getCardText, getCardColorClass } from '../utils/cards';
+import { getCardImage, getCardText, getCardColorClass } from '../utils/cardUtils';
 
 const Card = ({ 
   cardCode, 
