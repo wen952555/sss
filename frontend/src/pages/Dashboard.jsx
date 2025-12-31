@@ -128,13 +128,13 @@ export default function Dashboard() {
 
         <div className="space-y-4">
           <ReservationBlock 
-            title="今晚 8 点场"
+            title="今晚 8 点结算场"
             onReserve={() => makeReservation('today')}
             loading={reservationInfo.loading}
             {...reservationInfo.today}
           />
           <ReservationBlock 
-            title="明晚 8 点场"
+            title="明晚 8 点结算场"
             onReserve={() => makeReservation('tomorrow')}
             loading={reservationInfo.loading}
             {...reservationInfo.tomorrow}

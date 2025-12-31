@@ -43,26 +43,26 @@ try {
     };
 
     // --- Process Today's Session ---
-    $stmt_today = $pdo->prepare("SELECT COUNT(*) as count FROM reservations WHERE reservation_date = ?");
+    $stmt_today = $pdo->prepare("SELECT COUNT(*) as count FROM reservations WHERE reservation_date = ? AND session_type = 'today'");
     $stmt_today->execute([$today_date]);
     $response['today']['count'] = (int) $stmt_today->fetchColumn();
-    // $response['today']['top_hands'] = $getTopHands($today_date, 'today');
+    $response['today']['top_hands'] = $getTopHands($today_date, 'today');
 
     // --- Process Tomorrow's Session ---
-    $stmt_tomorrow = $pdo->prepare("SELECT COUNT(*) as count FROM reservations WHERE reservation_date = ?");
+    $stmt_tomorrow = $pdo->prepare("SELECT COUNT(*) as count FROM reservations WHERE reservation_date = ? AND session_type = 'tomorrow'");
     $stmt_tomorrow->execute([$tomorrow_date]);
     $response['tomorrow']['count'] = (int) $stmt_tomorrow->fetchColumn();
-    // $response['tomorrow']['top_hands'] = $getTopHands($tomorrow_date, 'tomorrow');
+    $response['tomorrow']['top_hands'] = $getTopHands($tomorrow_date, 'tomorrow');
 
     // --- Check user's reservation status if logged in ---
     if ($user_id) {
-        $stmt_user_today = $pdo->prepare("SELECT 1 FROM reservations WHERE user_id = ? AND reservation_date = ?");
+        $stmt_user_today = $pdo->prepare("SELECT 1 FROM reservations WHERE user_id = ? AND reservation_date = ? AND session_type = 'today'");
         $stmt_user_today->execute([$user_id, $today_date]);
         if ($stmt_user_today->fetch()) {
             $response['today']['user_has_reserved'] = true;
         }
 
-        $stmt_user_tomorrow = $pdo->prepare("SELECT 1 FROM reservations WHERE user_id = ? AND reservation_date = ?");
+        $stmt_user_tomorrow = $pdo->prepare("SELECT 1 FROM reservations WHERE user_id = ? AND reservation_date = ? AND session_type = 'tomorrow'");
         $stmt_user_tomorrow->execute([$user_id, $tomorrow_date]);
         if ($stmt_user_tomorrow->fetch()) {
             $response['tomorrow']['user_has_reserved'] = true;
