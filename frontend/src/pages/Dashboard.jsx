@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
-import { getHandScore } from '../utils/pokerLogic'; // Assuming this can be used client-side for display
 
 // Mock hand for demonstration. In a real app, this would come from the game state.
 const MOCK_PLAYER_HAND = [
@@ -12,8 +11,8 @@ const MOCK_PLAYER_HAND = [
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [reservationInfo, setReservationInfo] = useState({
-    today: { count: 0, user_has_reserved: false, top_hands: [] },
-    tomorrow: { count: 0, user_has_reserved: false, top_hands: [] },
+    today: null, // Start as null to indicate not loaded
+    tomorrow: null, // Start as null to indicate not loaded
     loading: true
   });
   const navigate = useNavigate();
@@ -21,7 +20,18 @@ export default function Dashboard() {
   const getReservationStatus = useCallback(async () => {
     try {
       const res = await api.get('/get_reservation_status.php');
-      setReservationInfo({ ...res.data, loading: false });
+      const data = res.data;
+      // Defensive update: only update state if the response has the expected structure.
+      if (data && data.today && data.tomorrow) {
+        setReservationInfo({
+          today: data.today,
+          tomorrow: data.tomorrow,
+          loading: false
+        });
+      } else {
+        // If API response is not what we expect, stop loading but keep state valid
+        setReservationInfo(prev => ({ ...prev, loading: false }));
+      }
     } catch (e) {
       console.error("Could not check reservation status", e);
       setReservationInfo(prev => ({ ...prev, loading: false }));
@@ -29,9 +39,10 @@ export default function Dashboard() {
   }, []);
 
   const loadInitialData = useCallback(async () => {
+    setReservationInfo(prev => ({ ...prev, loading: true }));
     try {
-      const res = await api.get('/profile.php');
-      setUser(res.data);
+      const userRes = await api.get('/profile.php');
+      setUser(userRes.data);
       await getReservationStatus();
     } catch {
       navigate('/login');
@@ -43,9 +54,8 @@ export default function Dashboard() {
   }, [loadInitialData]);
 
   const makeReservation = async (sessionType) => {
-    if (reservationInfo[sessionType].user_has_reserved) return;
+    if (!reservationInfo[sessionType] || reservationInfo[sessionType].user_has_reserved) return;
 
-    // In a real application, you'd get the current player's hand from state.
     const playerHand = MOCK_PLAYER_HAND; 
     
     try {
@@ -54,8 +64,7 @@ export default function Dashboard() {
         hand: playerHand 
       });
       alert(res.data.message || '预约成功！');
-      // Refresh user points and reservation status
-      await loadInitialData();
+      await loadInitialData(); // Refresh all data
     } catch (e) {
       alert(e.response?.data?.message || '预约失败，请稍后再试');
     }
@@ -73,8 +82,20 @@ export default function Dashboard() {
 
   if (!user) return <div className="min-h-screen bg-gray-900 flex justify-center items-center"><p className="text-white animate-pulse">加载中...</p></div>;
 
-  const ReservationBlock = ({ session, title, onReserve }) => {
-    const { count, user_has_reserved, top_hands, loading } = session;
+  const ReservationBlock = ({ session, title, onReserve, loading }) => { // Correctly receive 'loading' as a prop
+    // Guard clause: If session data is not yet available, show a placeholder.
+    if (!session) {
+      return (
+        <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 animate-pulse">
+          <div className="h-7 bg-gray-700 rounded w-3/4 mx-auto"></div>
+          <div className="h-5 bg-gray-700 rounded w-1/2 mx-auto mt-4"></div>
+          <div className="h-14 bg-gray-700 rounded-xl w-full mx-auto mt-10"></div>
+        </div>
+      );
+    }
+    
+    // Now it's safe to destructure. 'loading' is a separate prop.
+    const { count, user_has_reserved, top_hands } = session;
     
     return (
       <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
@@ -101,7 +122,7 @@ export default function Dashboard() {
           disabled={user_has_reserved || loading}
           className="w-full h-14 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold text-lg shadow-lg hover:scale-105 transition-transform disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          {loading ? '查询中...' : (user_has_reserved ? '已预约' : '立即预约 (10 积分)')}
+          {loading ? '处理中...' : (user_has_reserved ? '已预约' : '立即预约 (10 积分)')}
         </button>
       </div>
     );
@@ -111,7 +132,6 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-md mx-auto space-y-6">
         
-        {/* User Info */}
         <div className="bg-gradient-to-b from-white/10 to-transparent p-8 rounded-[2.5rem] border border-white/10 text-center shadow-lg relative">
           <div className="absolute top-4 right-4">
             <button onClick={logout} className="text-white/40 hover:text-white text-xs">退出</button>
@@ -124,12 +144,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Game Button */}
         <button onClick={() => navigate('/game')} className="w-full h-16 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black rounded-2xl font-black text-xl shadow-lg hover:scale-105 transition-transform">
           进入游戏
         </button>
 
-        {/* Reservation Blocks */}
         <div className="space-y-4">
           <ReservationBlock 
             session={reservationInfo.today}
