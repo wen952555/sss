@@ -8,20 +8,54 @@ const MOCK_PLAYER_HAND = [
   'ace_of_spades', 'king_of_spades', 'queen_of_spades', 'jack_of_spades', '10_of_spades' 
 ];
 
+const ReservationBlock = ({ title, onReserve, loading, count, user_has_reserved, top_hands }) => {
+    return (
+      <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
+        <h3 className="text-center font-bold text-lg text-yellow-400 mb-2">{title}</h3>
+        <p className="text-center text-sm text-white/60 mb-4">当前已有 {loading ? '...' : count} 人预约</p>
+
+        <div className="mb-4 min-h-[80px]">
+          <h4 className="text-xs text-white/40 uppercase tracking-widest mb-2 text-center">- 牌型榜 -</h4>
+          {loading ? (
+             <div className="text-center text-sm text-white/40 italic">加载中...</div>
+          ) : top_hands && top_hands.length > 0 ? (
+            <ul className="text-center text-sm space-y-1">
+              {top_hands.map((hand, index) => (
+                <li key={index} className="truncate text-white/80">
+                  <span className={`font-bold ${index === 0 ? 'text-yellow-400' : (index === 1 ? 'text-gray-300' : 'text-orange-400')}`}>{index + 1}. {hand.username}</span>: {hand.hand_info}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-center text-sm text-white/40 italic">虚位以待</p>
+          )}
+        </div>
+
+        <button 
+          onClick={onReserve}
+          disabled={user_has_reserved || loading}
+          className="w-full h-14 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold text-lg shadow-lg hover:scale-105 transition-transform disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:shadow-none"
+        >
+          {loading ? '查询中...' : (user_has_reserved ? '已预约' : '立即预约 (10 积分)')}
+        </button>
+      </div>
+    );
+};
+
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [reservationInfo, setReservationInfo] = useState({
-    today: null, // Start as null to indicate not loaded
-    tomorrow: null, // Start as null to indicate not loaded
+    today: { count: 0, user_has_reserved: false, top_hands: [] },
+    tomorrow: { count: 0, user_has_reserved: false, top_hands: [] },
     loading: true
   });
   const navigate = useNavigate();
 
   const getReservationStatus = useCallback(async () => {
+    setReservationInfo(prev => ({ ...prev, loading: true }));
     try {
       const res = await api.get('/get_reservation_status.php');
       const data = res.data;
-      // Defensive update: only update state if the response has the expected structure.
       if (data && data.today && data.tomorrow) {
         setReservationInfo({
           today: data.today,
@@ -29,8 +63,7 @@ export default function Dashboard() {
           loading: false
         });
       } else {
-        // If API response is not what we expect, stop loading but keep state valid
-        setReservationInfo(prev => ({ ...prev, loading: false }));
+         setReservationInfo(prev => ({ ...prev, loading: false }));
       }
     } catch (e) {
       console.error("Could not check reservation status", e);
@@ -39,7 +72,6 @@ export default function Dashboard() {
   }, []);
 
   const loadInitialData = useCallback(async () => {
-    setReservationInfo(prev => ({ ...prev, loading: true }));
     try {
       const userRes = await api.get('/profile.php');
       setUser(userRes.data);
@@ -54,7 +86,7 @@ export default function Dashboard() {
   }, [loadInitialData]);
 
   const makeReservation = async (sessionType) => {
-    if (!reservationInfo[sessionType] || reservationInfo[sessionType].user_has_reserved) return;
+    if (reservationInfo[sessionType].user_has_reserved || reservationInfo.loading) return;
 
     const playerHand = MOCK_PLAYER_HAND; 
     
@@ -82,52 +114,6 @@ export default function Dashboard() {
 
   if (!user) return <div className="min-h-screen bg-gray-900 flex justify-center items-center"><p className="text-white animate-pulse">加载中...</p></div>;
 
-  const ReservationBlock = ({ session, title, onReserve, loading }) => { // Correctly receive 'loading' as a prop
-    // Guard clause: If session data is not yet available, show a placeholder.
-    if (!session) {
-      return (
-        <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 animate-pulse">
-          <div className="h-7 bg-gray-700 rounded w-3/4 mx-auto"></div>
-          <div className="h-5 bg-gray-700 rounded w-1/2 mx-auto mt-4"></div>
-          <div className="h-14 bg-gray-700 rounded-xl w-full mx-auto mt-10"></div>
-        </div>
-      );
-    }
-    
-    // Now it's safe to destructure. 'loading' is a separate prop.
-    const { count, user_has_reserved, top_hands } = session;
-    
-    return (
-      <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
-        <h3 className="text-center font-bold text-lg text-yellow-400 mb-2">{title}</h3>
-        <p className="text-center text-sm text-white/60 mb-4">当前已有 {count} 人预约</p>
-
-        <div className="mb-4 min-h-[80px]">
-          <h4 className="text-xs text-white/40 uppercase tracking-widest mb-2 text-center">- 牌型榜 -</h4>
-          {top_hands && top_hands.length > 0 ? (
-            <ul className="text-center text-sm space-y-1">
-              {top_hands.map((hand, index) => (
-                <li key={index} className="truncate text-white/80">
-                  <span className={`font-bold ${index === 0 ? 'text-yellow-400' : (index === 1 ? 'text-gray-300' : 'text-orange-400')}`}>{index + 1}. {hand.username}</span>: {hand.hand_info}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-center text-sm text-white/40 italic">虚位以待</p>
-          )}
-        </div>
-
-        <button 
-          onClick={onReserve}
-          disabled={user_has_reserved || loading}
-          className="w-full h-14 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold text-lg shadow-lg hover:scale-105 transition-transform disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          {loading ? '处理中...' : (user_has_reserved ? '已预约' : '立即预约 (10 积分)')}
-        </button>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-md mx-auto space-y-6">
@@ -150,16 +136,16 @@ export default function Dashboard() {
 
         <div className="space-y-4">
           <ReservationBlock 
-            session={reservationInfo.today}
             title="今晚 8 点场"
             onReserve={() => makeReservation('today')}
             loading={reservationInfo.loading}
+            {...reservationInfo.today}
           />
           <ReservationBlock 
-            session={reservationInfo.tomorrow}
             title="明晚 8 点场"
             onReserve={() => makeReservation('tomorrow')}
             loading={reservationInfo.loading}
+            {...reservationInfo.tomorrow}
           />
         </div>
         
