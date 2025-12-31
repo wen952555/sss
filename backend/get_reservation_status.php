@@ -1,7 +1,7 @@
 <?php
 session_start();
-require __DIR__ . '/db.php';
-require __DIR__ . '/utils.php';
+require __DIR__ . '/../db.php';
+require __DIR__ . '/../utils.php';
 
 header('Content-Type: application/json');
 
