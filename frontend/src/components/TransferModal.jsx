@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { userAPI } from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiSend, FiSearch, FiUser, RiCoinsLine } from 'react-icons/ri';
+import { FiSend, FiSearch, FiUser } from 'react-icons/fi'; // Fi系列从fi导入
+import { RiCoinsLine } from 'react-icons/ri'; // Ri系列从ri导入
 
 const TransferModal = ({ isOpen, onClose, currentUserId, currentPoints }) => {
   const [searchPhone, setSearchPhone] = useState('');
@@ -71,7 +72,7 @@ const TransferModal = ({ isOpen, onClose, currentUserId, currentPoints }) => {
       const response = await userAPI.transferPoints(selectedUser.user_id, amount);
       if (response.success) {
         toast.success('转账成功！');
-        onClose(true); // 传递成功标志
+        onClose(true);
       } else {
         toast.error(response.error || '转账失败');
       }
@@ -87,7 +88,6 @@ const TransferModal = ({ isOpen, onClose, currentUserId, currentPoints }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        {/* 头部 */}
         <div className="bg-gradient-to-r from-blue-700 to-purple-700 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -106,7 +106,6 @@ const TransferModal = ({ isOpen, onClose, currentUserId, currentPoints }) => {
           </div>
         </div>
         
-        {/* 搜索区域 */}
         <div className="p-6">
           <div className="space-y-4">
             <div>
@@ -130,7 +129,6 @@ const TransferModal = ({ isOpen, onClose, currentUserId, currentPoints }) => {
               </div>
             </div>
             
-            {/* 搜索结果 */}
             {searchResults.length > 0 && (
               <div className="bg-gray-800 rounded-lg p-4">
                 <h3 className="text-gray-400 text-sm mb-2">搜索结果</h3>
@@ -166,7 +164,6 @@ const TransferModal = ({ isOpen, onClose, currentUserId, currentPoints }) => {
               </div>
             )}
             
-            {/* 转账表单 */}
             {selectedUser && (
               <div className="space-y-4">
                 <div className="bg-gray-800 rounded-lg p-4">
@@ -215,7 +212,6 @@ const TransferModal = ({ isOpen, onClose, currentUserId, currentPoints }) => {
                   </div>
                 </div>
                 
-                {/* 快捷金额按钮 */}
                 <div className="grid grid-cols-4 gap-2">
                   {[10, 50, 100, 200].map((amount) => (
                     <button
@@ -228,7 +224,6 @@ const TransferModal = ({ isOpen, onClose, currentUserId, currentPoints }) => {
                   ))}
                 </div>
                 
-                {/* 转账按钮 */}
                 <button
                   onClick={handleTransfer}
                   disabled={isTransferring || !transferAmount || Number(transferAmount) > currentPoints}
