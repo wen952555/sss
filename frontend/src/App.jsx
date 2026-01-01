@@ -5,16 +5,21 @@ import Board from './components/Board';
 
 export default function App() {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
-  const [view, setView] = useState('sessions'); // sessions | game
+  const [view, setView] = useState('lobby'); // lobby | game
 
-  if (!user) return <Auth onLoginSuccess={(u) => { setUser(u); localStorage.setItem('user', JSON.stringify(u)); }} />;
+  const handleLogin = (u) => {
+    setUser(u);
+    localStorage.setItem('user', JSON.stringify(u));
+  };
+
+  if (!user) return <Auth onLoginSuccess={handleLogin} />;
 
   return (
-    <div style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
-      {view === 'sessions' ? (
-        <SessionList user={user} onJoin={() => setView('game')} />
+    <div style={{ height: '100%' }}>
+      {view === 'lobby' ? (
+        <SessionList user={user} onEnterGame={() => setView('game')} />
       ) : (
-        <Board user={user} onBack={() => setView('sessions')} />
+        <Board user={user} onBack={() => setView('lobby')} />
       )}
     </div>
   );

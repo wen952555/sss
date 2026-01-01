@@ -1,14 +1,13 @@
 <?php
-/**
- * 路径: backend/functions.php
- */
+// backend/functions.php
 function generateUID($pdo) {
-    $c = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    $chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     while (true) {
-        $u = ''; for($i=0;$i<4;$i++) $u .= $c[rand(0,35)];
-        $s = $pdo->prepare("SELECT id FROM users WHERE uid = ?");
-        $s->execute([$u]);
-        if (!$s->fetch()) return $u;
+        $uid = '';
+        for ($i = 0; $i < 4; $i++) $uid .= $chars[rand(0, 35)];
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE uid = ?");
+        $stmt->execute([$uid]);
+        if (!$stmt->fetch()) return $uid;
     }
 }
 function sendResponse($data) {
