@@ -2,5 +2,16 @@
   "appId": "com.wen952555.sss",
   "appName": "sss",
   "webDir": "dist",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "server": {
+    "allowNavigation": [
+      "sss.wen952555.me",
+      "wen76674.serv00.net"
+    ],
+    "cleartext": true,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
 }
