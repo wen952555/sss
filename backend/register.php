@@ -1,28 +1,39 @@
 <?php
-require 'db.php';
-require 'utils.php';
+// 引入 CORS 头部支持、数据库连接和错误处理
+require_once 'V2_cors_and_db.php';
 
-$data = json_decode(file_get_contents("php://input"), true);
-$phone = trim($data['phone'] ?? '');
-$password = $data['password'] ?? '';
+// 检查请求方法
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $username = $data['username'] ?? '';
+    $password = $data['password'] ?? '';
 
-if (empty($phone)) sendJSON(["error" => "请输入手机号"], 400);
-if (strlen($password) < 6) sendJSON(["error" => "密码至少6位"], 400);
+    if (empty($username) || empty($password)) {
+        send_json_response(['success' => false, 'message' => '用户名和密码不能为空']);
+        exit;
+    }
 
-// Use the new function and pass the database connection from db.php
-$short_id = generateUniqueShortId($pdo);
-$hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    // 检查用户名是否已存在
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    if ($stmt->fetchColumn() > 0) {
+        send_json_response(['success' => false, 'message' => '用户名已存在']);
+        exit;
+    }
 
-try {
-    $stmt = $pdo->prepare("INSERT INTO users (short_id, phone, password) VALUES (?, ?, ?)");
-    $stmt->execute([$short_id, $phone, $hashed_password]);
-    sendJSON(["success" => true, "short_id" => $short_id]);
-} catch (Exception $e) {
-    // Check if the error is a duplicate entry for the phone number
-    if ($e->getCode() == 23000) { // SQLSTATE for Integrity constraint violation
-        sendJSON(["error" => "手机号已存在"], 409);
+    // 生成唯一长 ID 和短 ID
+    $long_id = uniqid('user_', true);
+    $short_id = substr(base_convert(sha1($long_id), 16, 36), 0, 8);
+
+    // 密码哈希处理
+    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+
+    // 插入新用户，并给予初始积分
+    $stmt = $pdo->prepare("INSERT INTO users (id, username, password_hash, short_id, points) VALUES (?, ?, ?, ?, ?)");
+    if ($stmt->execute([$long_id, $username, $password_hash, $short_id, 100])) { // 初始积分为 100
+        send_json_response(['success' => true, 'message' => '注册成功']);
     } else {
-        sendJSON(["error" => "数据库错误，请稍后重试"], 500);
+        send_json_response(['success' => false, 'message' => '注册失败，请稍后再试']);
     }
 }
 ?>

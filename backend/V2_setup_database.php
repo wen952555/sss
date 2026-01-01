@@ -1,81 +1,66 @@
-<?php
-require __DIR__ . '/db.php';
+'''<?php
+// V2 版数据库设置脚本
+// 包含数据库连接
+require_once 'db_connect.php';
 
-echo "开始同步数据库结构...\n";
-
-// 建议在生产环境手动执行 ALTER TABLE，此处为初始化逻辑
+// 定义表结构
+// 使用 TEXT 作为主键类型以支持更长的 ID
+// short_id 用于外部展示和操作
 $sql = "
--- 用户表 (移除了 points，使用 phone 作为主要标识)
+-- 用户表
 CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    short_id VARCHAR(4) UNIQUE NOT NULL,
-    phone VARCHAR(20) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id TEXT PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    short_id VARCHAR(10) UNIQUE NOT NULL,
+    session_token VARCHAR(255) DEFAULT NULL,
+    session_expires_at DATETIME DEFAULT NULL,
+    points INT DEFAULT 100 -- 新增积分字段，默认为 100
+);
 
--- 场次表
-CREATE TABLE IF NOT EXISTS stadiums (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 预约场次表
+CREATE TABLE IF NOT EXISTS reservation_slots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type VARCHAR(50) NOT NULL, -- 'morning' 或 'afternoon'
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    total_slots INT NOT NULL,
+    UNIQUE (type)
+);
 
--- 牌局表
-CREATE TABLE IF NOT EXISTS stadium_deals (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    stadium_id INT NOT NULL,
-    deal_index INT NOT NULL,
-    hands JSON NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (stadium_id) REFERENCES stadiums(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 预约表 (支持分场次和牌型记录)
+-- 用户预约记录表
 CREATE TABLE IF NOT EXISTS reservations (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    slot_id INTEGER NOT NULL,
     reservation_date DATE NOT NULL,
-    session_type VARCHAR(20) NOT NULL DEFAULT 'today' COMMENT 'today 或 tomorrow',
-    hand_description VARCHAR(255) NULL,
-    hand_rank INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE KEY uq_user_res (user_id, reservation_date, session_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 游戏对局表
-CREATE TABLE IF NOT EXISTS active_games (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    stadium_id INT UNIQUE NOT NULL,
-    status ENUM('active', 'completed') DEFAULT 'active',
-    current_round INT DEFAULT 1,
-    player_1_id INT,
-    player_2_id INT,
-    player_3_id INT,
-    player_4_id INT,
-    last_action_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (stadium_id) REFERENCES stadiums(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 玩家出牌记录
-CREATE TABLE IF NOT EXISTS game_plays (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    active_game_id INT NOT NULL,
-    user_id INT NOT NULL,
-    round_number INT NOT NULL,
-    deal_id INT NOT NULL,
-    sorted_hand JSON NOT NULL,
-    score INT DEFAULT 0,
-    is_autopilot BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (active_game_id) REFERENCES active_games(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    status VARCHAR(50) DEFAULT 'active', -- active, cancelled
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (slot_id) REFERENCES reservation_slots (id),
+    UNIQUE (user_id, slot_id, reservation_date)
+);
 ";
 
 try {
+    // 检查 users 表是否存在 points 字段
+    $stmt = $pdo->query("PRAGMA table_info(users);");
+    $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+    
+    if (!in_array('points', $columns)) {
+        // 如果不存在，则添加
+        $pdo->exec("ALTER TABLE users ADD COLUMN points INT DEFAULT 100;");
+        echo "字段 'points' 已成功添加到 'users' 表。
+";
+    }
+
+    // 执行其他表结构同步
     $pdo->exec($sql);
-    echo "数据库结构同步成功！\n";
+    echo "数据库结构同步成功！
+";
+
 } catch (PDOException $e) {
-    die("数据库同步失败: " . $e->getMessage() . "\n");
+    die("数据库同步失败: " . $e->getMessage() . "
+");
 }
 ?>
+''
