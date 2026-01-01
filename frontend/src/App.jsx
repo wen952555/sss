@@ -29,7 +29,7 @@ function App() {
   return (
     <div>
       <Lobby user={user} onLogout={handleLogout} />
-      <Game />
+      <Game user={user} />
     </div>
   );
 }

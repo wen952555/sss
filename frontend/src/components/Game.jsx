@@ -1,55 +1,83 @@
+// frontend/src/components/Game.jsx
 import React, { useState } from 'react';
+import { request } from '../api';
 
-const SUITS = ['spades', 'hearts', 'diamonds', 'clubs'];
-const VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'];
+export default function Game({ user }) {
+  const [hand, setHand] = useState([]); // 还没选的牌
+  const [segments, setSegments] = useState({ front: [], mid: [], back: [] });
 
-export default function Game() {
-  const [hand, setHand] = useState([]);
+  const startNewGame = async () => {
+    const res = await request('deal');
+    if (res.cards) {
+      setHand(res.cards);
+      setSegments({ front: [], mid: [], back: [] });
+    }
+  };
 
-  const drawCards = () => {
-    // 模拟发牌逻辑（正式环境应从后端获取）
-    const deck = [];
-    SUITS.forEach(s => VALUES.forEach(v => deck.push(`${v}_of_${s}.svg`)));
-    const shuffled = deck.sort(() => 0.5 - Math.random()).slice(0, 13);
-    setHand(shuffled);
+  const moveTo = (card, target) => {
+    // 检查各段限制
+    if (target === 'front' && segments.front.length >= 3) return;
+    if (target === 'mid' && segments.mid.length >= 5) return;
+    if (target === 'back' && segments.back.length >= 5) return;
+
+    setHand(prev => prev.filter(c => c !== card));
+    setSegments(prev => ({ ...prev, [target]: [...prev[target], card] }));
+  };
+
+  const resetCard = (card, from) => {
+    setSegments(prev => ({ ...prev, [from]: prev[from].filter(c => c !== card) }));
+    setHand(prev => [...prev, card]);
+  };
+
+  const submitHand = async () => {
+    if (segments.front.length + segments.mid.length + segments.back.length !== 13) {
+        return alert("请分完13张牌");
+    }
+    const res = await request('submit_hand', { 
+        ...segments, 
+        user_id: user.id 
+    });
+    if (res.success) {
+        alert(res.msg);
+        window.location.reload(); // 刷新积分
+    } else {
+        alert(res.error);
+    }
   };
 
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <button 
-        onClick={drawCards} 
-        style={{ fontSize: '18px', padding: '10px 30px', background: '#27ae60', color: 'white' }}
-      >
-        开始洗牌
-      </button>
+    <div style={{ padding: '10px', maxWidth: '600px', margin: 'auto' }}>
+      <button onClick={startNewGame} style={{width:'100%', marginBottom:'10px'}}>重新发牌</button>
 
-      <div style={{ marginTop: '30px' }}>
-        <h4>我的手牌 (13张)</h4>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', 
-          gap: '10px',
-          background: 'rgba(255,255,255,0.1)',
-          padding: '15px',
-          borderRadius: '10px'
-        }}>
-          {hand.map((card, index) => (
-            <div key={index}>
-              <img 
-                src={`/cards/${card}`} 
-                alt={card} 
-                style={{ width: '100%', borderRadius: '4px', boxShadow: '2px 2px 5px rgba(0,0,0,0.5)' }} 
-                onError={(e) => e.target.src = '/cards/black_joker.svg'} 
-              />
+      {/* 分段区域 */}
+      {['front', 'mid', 'back'].map(seg => (
+        <div key={seg} style={{ background: 'rgba(255,255,255,0.1)', margin: '5px 0', padding: '10px', borderRadius: '8px' }}>
+          <small>{seg === 'front' ? '头道 (3张)' : seg === 'mid' ? '中道 (5张)' : '尾道 (5张)'}</small>
+          <div style={{ display: 'flex', minHeight: '60px' }}>
+            {segments[seg].map(c => (
+              <img key={c} src={`/cards/${c}`} onClick={() => resetCard(c, seg)} style={{ width: '45px', marginRight: '5px' }} />
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* 待选手牌 */}
+      <div style={{ marginTop: '20px', borderTop: '1px dashed #ccc', paddingTop: '10px' }}>
+        <p>点击下方扑克牌分段：</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+          {hand.map(c => (
+            <div key={c} style={{ margin: '2px', border: '1px solid #555' }}>
+              <img src={`/cards/${c}`} style={{ width: '50px' }} onClick={() => {
+                const target = segments.front.length < 3 ? 'front' : (segments.mid.length < 5 ? 'mid' : 'back');
+                moveTo(c, target);
+              }} />
             </div>
           ))}
         </div>
       </div>
 
-      {hand.length > 0 && (
-        <div style={{ marginTop: '20px' }}>
-          <p>（注：此处仅展示牌面，比牌算法由后端 game_logic.php 处理）</p>
-        </div>
+      {hand.length === 0 && segments.back.length === 5 && (
+        <button onClick={submitHand} style={{ width: '100%', marginTop: '20px', padding: '15px', background: '#e67e22' }}>确认出牌</button>
       )}
     </div>
   );
