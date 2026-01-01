@@ -1,52 +1,45 @@
 <?php
-/**
- * 路径: backend/game_logic.php
- */
+// backend/game_logic.php
 class Shisanshui {
     private static $vMap = ['2'=>2,'3'=>3,'4'=>4,'5'=>5,'6'=>6,'7'=>7,'8'=>8,'9'=>9,'10'=>10,'jack'=>11,'queen'=>12,'king'=>13,'ace'=>14];
 
-    public static function getHandScore($cards) {
-        $analysis = self::analyze($cards);
-        $score = $analysis['rank'] * 10000000000;
-        foreach ($analysis['powers'] as $i => $v) {
-            $score += $v * pow(15, (5 - $i));
-        }
-        return $score;
-    }
-
-    private static function analyze($cards) {
+    // AI 智理逻辑：简单实现：取出最强的5张作为底道，次强的5张作为中道，剩下3张作为前道
+    public static function autoSort($cards) {
         $parsed = [];
         foreach ($cards as $c) {
             preg_match('/(.*)_of_(.*)\.svg/', $c, $m);
-            $parsed[] = ['v' => self::$vMap[$m[1]], 's' => $m[2]];
+            $parsed[] = ['file' => $c, 'v' => self::$vMap[$m[1]], 's' => $m[2]];
+        }
+        // 按牌值从大到小排
+        usort($parsed, function($a, $b) { return $b['v'] - $a['v']; });
+        
+        $files = array_column($parsed, 'file');
+        return [
+            'back' => array_slice($files, 0, 5),
+            'mid'  => array_slice($files, 5, 5),
+            'front' => array_slice($files, 10, 3)
+        ];
+    }
+
+    public static function getHandScore($cards) {
+        if (count($cards) == 0) return 0;
+        $parsed = [];
+        foreach ($cards as $c) {
+            preg_match('/(.*)_of_(.*)\.svg/', $c, $m);
+            $parsed[] = ['v' => self::$vMap[$m[1]]];
         }
         usort($parsed, function($a, $b) { return $b['v'] - $a['v']; });
         $v = array_column($parsed, 'v');
-        $s = array_column($parsed, 's');
         $counts = array_count_values($v);
         arsort($counts);
+        $rank = 1; // 散牌
+        if (reset($counts) === 4) $rank = 8;
+        else if (reset($counts) === 3 && count($counts) === 2) $rank = 7;
+        else if (reset($counts) === 3) $rank = 4;
+        else if (reset($counts) === 2) $rank = count($counts) === 3 ? 3 : 2;
 
-        $isFlush = count(array_unique($s)) === 1;
-        $isStraight = false;
-        if (count($v) === 5) {
-            $uV = array_values(array_unique($v));
-            if (count($uV) === 5 && ($uV[0] - $uV[4] === 4)) $isStraight = true;
-            if (count($uV) === 5 && $v[0]==14 && $v[1]==5 && $v[4]==2) $isStraight = true; // A2345
-        }
-
-        if (count($cards) === 5) {
-            if ($isFlush && $isStraight) return ['rank'=>9, 'powers'=>$v];
-            if (reset($counts) === 4) return ['rank'=>8, 'powers'=>[key($counts)]];
-            if (reset($counts) === 3 && count($counts) === 2) return ['rank'=>7, 'powers'=>[key($counts)]];
-            if ($isFlush) return ['rank'=>6, 'powers'=>$v];
-            if ($isStraight) return ['rank'=>5, 'powers'=>$v];
-        }
-        if (reset($counts) === 3) return ['rank'=>4, 'powers'=>[key($counts)]];
-        if (reset($counts) === 2) {
-            $p = []; foreach($counts as $val=>$num) if($num==2) $p[]=$val;
-            if (count($p)==2) return ['rank'=>3, 'powers'=>[max($p), min($p), key(array_filter($counts, fn($n)=>$n==1))]];
-            return ['rank'=>2, 'powers'=>[key($counts), ...array_diff($v, [key($counts)])]];
-        }
-        return ['rank'=>1, 'powers'=>$v];
+        $score = $rank * 100000000;
+        foreach ($v as $i => $val) $score += $val * pow(15, 5-$i);
+        return $score;
     }
 }
