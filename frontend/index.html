@@ -1,18 +1,67 @@
+<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>十三水在线对战</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <title>十三水高级对战</title>
     <style>
-      body { margin: 0; background-color: #1a472a; color: white; font-family: sans-serif; }
-      input { padding: 8px; margin: 5px; border-radius: 4px; border: none; }
-      button { padding: 8px 15px; cursor: pointer; background: #f1c40f; border: none; border-radius: 4px; font-weight: bold; }
-      button:hover { background: #d4ac0d; }
+        body { 
+            margin: 0; 
+            background: radial-gradient(circle, #2d5a3f 0%, #1a472a 100%); 
+            color: white; 
+            font-family: 'PingFang SC', sans-serif;
+            overflow-x: hidden;
+        }
+        .card-img {
+            width: 60px;
+            height: 84px;
+            border-radius: 4px;
+            transition: transform 0.1s;
+            cursor: pointer;
+            border: 2px solid transparent;
+            box-sizing: border-box;
+            background: white;
+        }
+        .card-img.selected {
+            border: 3px solid #f1c40f !important;
+            box-shadow: 0 0 10px #f1c40f;
+        }
+        .row-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            min-height: 100px;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .row-title {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .card-grid {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: linear-gradient(to bottom, #f39c12, #e67e22);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 3px 0 #d35400;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 1px 0 #d35400; }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+</body>
 </html>
