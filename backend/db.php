@@ -1,19 +1,23 @@
 <?php
-// 解析 .env 获取配置
-function getEnvConfig($key) {
-    $env = parse_ini_file('.env');
-    return $env[$key] ?? null;
-}
-
-$host = getEnvConfig('DB_HOST');
-$dbname = getEnvConfig('DB_NAME');
-$user = getEnvConfig('DB_USER');
-$pass = getEnvConfig('DB_PASS');
-
+// backend/db.php
+$env = parse_ini_file('.env');
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
+    $host = $env['DB_HOST'];
+    $dbname = $env['DB_NAME'];
+    $user = $env['DB_USER'];
+    $pass = $env['DB_PASS'];
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // 初始化表结构
+    $pdo->exec("CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        phone VARCHAR(20) UNIQUE NOT NULL,
+        uid VARCHAR(4) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        points INT DEFAULT 1000,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
 } catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    die(json_encode(['error' => 'Database connection failed']));
 }
-?>

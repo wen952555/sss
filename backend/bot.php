@@ -1,60 +1,36 @@
 <?php
+// backend/bot.php
 require 'db.php';
-require 'utils.php';
+$env = parse_ini_file('.env');
+$token = $env['BOT_TOKEN'];
+$admin_id = $env['ADMIN_ID'];
 
-$content = file_get_contents("php://input");
-$update = json_decode($content, true);
-$token = getEnvConfig('BOT_TOKEN');
-$admin_id = getEnvConfig('ADMIN_TG_ID');
+$update = json_decode(file_get_contents('php://input'), true);
+if (!$update) exit;
 
-if (!$update || !isset($update['message'])) {
-    exit;
-}
+$msg = $update['message'];
+$text = $msg['text'];
+$chat_id = $msg['chat']['id'];
 
-$message = $update['message'];
-$chat_id = $message['chat']['id'];
-$text = $message['text'] ?? '';
+if ($chat_id != $admin_id) exit;
 
-function reply($cid, $txt, $tok) {
-    $url = "https://api.telegram.org/bot$tok/sendMessage";
-    $data = ['chat_id' => $cid, 'text' => $txt];
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_exec($ch);
-    curl_close($ch);
-}
-
-// Security Check: Only the admin can interact with this bot.
-if (empty($admin_id) || (string)$chat_id !== $admin_id) {
-    reply($chat_id, "您没有管理员权限。您的ID是: " . $chat_id, $token);
-    error_log("Unauthorized access attempt by chat ID: " . $chat_id);
-    exit;
-}
-
-if ($text == '/start') {
-    reply($chat_id, "指令列表:\n/users - 查看所有用户\n/del [ID] - 删除用户", $token);
-} elseif ($text == '/users') {
-    $stmt = $pdo->query("SELECT short_id FROM users");
-    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if (count($users) === 0) {
-        $out = "系统内没有用户。";
-    } else {
-        $out = "用户列表:\n";
-        foreach($users as $u) {
-            $out .= "ID: {$u['short_id']}\n";
-        }
-    }
-    reply($chat_id, $out, $token);
-} elseif (preg_match('/^\/del\s+(\w+)/', $text, $m)) {
-    $sid = $m[1];
-    $stmt = $pdo->prepare("DELETE FROM users WHERE short_id = ?");
-    if ($stmt->execute([$sid]) && $stmt->rowCount() > 0) {
-        reply($chat_id, "用户 $sid 已从系统删除", $token);
-    } else {
-        reply($chat_id, "操作失败。未找到用户 $sid 或数据库错误。", $token);
-    }
+if (strpos($text, '/points') === 0) {
+    $uid = str_replace('/points ', '', $text);
+    $stmt = $pdo->prepare("SELECT phone, points FROM users WHERE uid = ?");
+    $stmt->execute([$uid]);
+    $u = $stmt->fetch();
+    $reply = $u ? "用户 {$uid}\n手机: {$u['phone']}\n积分: {$u['points']}" : "未找到";
+} elseif (strpos($text, '/add') === 0) {
+    // 格式: /add UID 1000
+    list($cmd, $uid, $amt) = explode(' ', $text);
+    $pdo->prepare("UPDATE users SET points = points + ? WHERE uid = ?")->execute([$amt, $uid]);
+    $reply = "已给 $uid 增加 $amt 积分";
+} elseif (strpos($text, '/del') === 0) {
+    $uid = str_replace('/del ', '', $text);
+    $pdo->prepare("DELETE FROM users WHERE uid = ?")->execute([$uid]);
+    $reply = "用户 $uid 已删除";
 } else {
-    reply($chat_id, "未知指令: '$text'", $token);
+    $reply = "管理指令:\n/points UID - 查看\n/add UID 数量 - 增减\n/del UID - 删除";
 }
+
+file_get_contents("https://api.telegram.org/bot$token/sendMessage?chat_id=$chat_id&text=".urlencode($reply));

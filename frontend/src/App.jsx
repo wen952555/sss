@@ -1,22 +1,37 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Game from './pages/Game';
+// frontend/src/App.jsx
+import React, { useState, useEffect } from 'react';
+import Auth from './components/Auth';
+import Lobby from './components/Lobby';
+import Game from './components/Game';
 
 function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) setUser(JSON.parse(savedUser));
+  }, []);
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
+  };
+
+  if (!user) {
+    return <Auth onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-900 text-white">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/game" element={<Game />} />
-          <Route path="/" element={<Navigate to="/login" />} />
-        </Routes>
-      </div>
-    </Router>
+    <div>
+      <Lobby user={user} onLogout={handleLogout} />
+      <Game />
+    </div>
   );
 }
+
 export default App;

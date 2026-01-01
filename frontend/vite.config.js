@@ -8,7 +8,7 @@ export default defineConfig({
       '/api': {
         target: 'https://wen76674.serv00.net',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        rewrite: (path) => path.replace(/^\/api/, '/api.php')
       }
     }
   }
