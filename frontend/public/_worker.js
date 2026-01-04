@@ -1,19 +1,12 @@
-/* frontend/public/_worker.js */
 export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    if (url.pathname.startsWith('/api')) {
-      const backendUrl = "https://wen76674.serv00.net" + url.pathname + url.search;
-      const init = {
-        method: request.method,
-        headers: request.headers,
-        body: request.method === 'GET' ? undefined : await request.text()
-      };
-      const response = await fetch(backendUrl, init);
-      const newResponse = new Response(response.body, response);
-      newResponse.headers.set("Access-Control-Allow-Origin", "*");
-      return newResponse;
+    async fetch(request, env) {
+        const url = new URL(request.url);
+        if (url.pathname.startsWith('/api/')) {
+            // 重写URL以指向后端API
+            const newUrl = new URL(request.url.replace(url.origin, 'https://your-backend-api.com'));
+            return fetch(new Request(newUrl, request));
+        }
+        // 否则，提供静态文件
+        return env.ASSETS.fetch(request);
     }
-    return env.ASSETS.fetch(request);
-  }
 };
