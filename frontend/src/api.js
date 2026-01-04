@@ -1,8 +1,14 @@
-const API_BASE = '/api'; // 基础路径，由 _worker.js 或本地开发服务器处理
+const PROD_API_URL = 'https://wen76674.serv00.net/api.php';
+const DEV_API_BASE = '/api';
 
 // 通用的请求函数
 async function sendRequest(endpoint, action, data) {
-    const url = `${API_BASE}/${endpoint}?action=${action}`;
+    // 根据环境选择 URL
+    // import.meta.env.DEV 是 Vite 提供的环境变量
+    const url = import.meta.env.DEV
+        ? `${DEV_API_BASE}/${endpoint}?action=${action}`
+        : `${PROD_API_URL}?action=${action}`;
+
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -11,15 +17,31 @@ async function sendRequest(endpoint, action, data) {
             },
             body: JSON.stringify(data),
         });
+
         if (!response.ok) {
-            // 如果服务器返回非 2xx 状态码，也作为错误处理
-            const errorInfo = await response.json().catch(() => ({ error: '无法解析错误信息' }));
+            let errorInfo = { error: `HTTP 错误: ${response.status}` };
+            try {
+                // 尝试解析可能包含在响应体中的错误信息
+                errorInfo = await response.json();
+            } catch (e) {
+                // 如果响应体不是有效的JSON，则返回原始的文本
+                const text = await response.text();
+                console.error("非JSON响应:", text);
+                // HTML响应意味着代理或路由问题
+                if (text.trim().startsWith('<')) {
+                    return { success: false, error: 'API路由配置错误，收到HTML页面' };
+                }
+                return { success: false, error: `服务器返回无效响应: ${text}` };
+            }
             return { success: false, error: errorInfo.error || `HTTP 错误: ${response.status}` };
         }
+
         return await response.json();
     } catch (error) {
-        // 捕获网络错误等
         console.error(`请求到 ${url} 失败:`, error);
+        if (error instanceof TypeError) {
+            return { success: false, error: '网络请求失败。请检查您的网络连接或服务端是否在线。' };
+        }
         return { success: false, error: '网络错误，请稍后重试' };
     }
 }
