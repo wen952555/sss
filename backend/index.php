@@ -1,22 +1,31 @@
 <?php
 /* backend/index.php */
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    exit;
+// 允许跨域
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 86400');    // cache for 1 day
 }
 
-header("Content-Type: application/json");
+// 处理 OPTIONS 请求（预检请求）
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
+        header("Access-Control-Allow-Methods: GET, POST, OPTIONS");         
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
+        header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+    exit(0);
+}
 
-// 解析 URL 路径，忽略查询参数
+header("Content-Type: application/json; charset=UTF-8");
+
+// 路由逻辑
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+// 去掉基础路径（假设 index.php 在根目录，如果不是请调整）
 $path = trim($uri, '/');
 $segments = explode('/', $path);
 
-// 路由逻辑：/api/{module} -> api/{module}.php
-if (isset($segments[0]) && $segments[0] === 'api' && isset($segments[1])) {
+if (count($segments) >= 2 && $segments[0] === 'api') {
     $module = $segments[1];
     $apiFile = __DIR__ . '/api/' . $module . '.php';
 
@@ -24,9 +33,9 @@ if (isset($segments[0]) && $segments[0] === 'api' && isset($segments[1])) {
         require_once $apiFile;
     } else {
         http_response_code(404);
-        echo json_encode(['success' => false, 'error' => "API 模块 '$module' 未找到"]);
+        echo json_encode(['success' => false, 'error' => "Module '$module' not found."]);
     }
 } else {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => '无效的 API 请求路径']);
+    // 默认欢迎信息或错误提示
+    echo json_encode(['success' => false, 'error' => 'Invalid endpoint.', 'path' => $path]);
 }
