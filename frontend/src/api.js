@@ -1,13 +1,11 @@
-const PROD_API_URL = 'https://wen76674.serv00.net/api.php';
+const PROD_API_BASE = 'https://wen76674.serv00.net/api';
 const DEV_API_BASE = '/api';
 
 // 通用的请求函数
 async function sendRequest(endpoint, action, data) {
-    // 根据环境选择 URL
-    // import.meta.env.DEV 是 Vite 提供的环境变量
-    const url = import.meta.env.DEV
-        ? `${DEV_API_BASE}/${endpoint}?action=${action}`
-        : `${PROD_API_URL}?action=${action}`;
+    // 根据环境选择基础 URL
+    const base = import.meta.env.DEV ? DEV_API_BASE : PROD_API_BASE;
+    const url = `${base}/${endpoint}?action=${action}`;
 
     try {
         const response = await fetch(url, {
@@ -18,31 +16,21 @@ async function sendRequest(endpoint, action, data) {
             body: JSON.stringify(data),
         });
 
-        if (!response.ok) {
-            let errorInfo = { error: `HTTP 错误: ${response.status}` };
-            try {
-                // 尝试解析可能包含在响应体中的错误信息
-                errorInfo = await response.json();
-            } catch (e) {
-                // 如果响应体不是有效的JSON，则返回原始的文本
-                const text = await response.text();
-                console.error("非JSON响应:", text);
-                // HTML响应意味着代理或路由问题
-                if (text.trim().startsWith('<')) {
-                    return { success: false, error: 'API路由配置错误，收到HTML页面' };
-                }
-                return { success: false, error: `服务器返回无效响应: ${text}` };
-            }
-            return { success: false, error: errorInfo.error || `HTTP 错误: ${response.status}` };
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error("收到非 JSON 响应:", text);
+            return { success: false, error: "服务器返回了错误格式的内容" };
         }
 
-        return await response.json();
+        const result = await response.json();
+        if (!response.ok) {
+            return { success: false, error: result.error || `HTTP 错误: ${response.status}` };
+        }
+        return result;
     } catch (error) {
         console.error(`请求到 ${url} 失败:`, error);
-        if (error instanceof TypeError) {
-            return { success: false, error: '网络请求失败。请检查您的网络连接或服务端是否在线。' };
-        }
-        return { success: false, error: '网络错误，请稍后重试' };
+        return { success: false, error: '网络连接失败，请检查后端服务是否正常' };
     }
 }
 
