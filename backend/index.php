@@ -1,14 +1,23 @@
 <?php
 /* backend/index.php */
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
-require_once 'lib/DB.php';
-require_once 'lib/CardLogic.php';
 
-$path = explode('?', $_SERVER['REQUEST_URI'])[0];
-$method = $_SERVER['REQUEST_METHOD'];
+$path = trim($_SERVER['REQUEST_URI'], '/');
+$segments = explode('/', $path);
 
-// 简单的路由分发
-if ($path == '/api/register') include 'api/auth.php';
-if ($path == '/api/game/fetch') include 'api/game.php';
-if ($path == '/api/bot') include 'api/bot.php';
-// ...其他路由...
+// 简单的路由：期望的格式是 /api/auth?action=... 或 /api/game?action=...
+if (isset($segments[0]) && $segments[0] === 'api' && isset($segments[1])) {
+    $apiFile = __DIR__ . '/api/' . $segments[1] . '.php';
+
+    if (file_exists($apiFile)) {
+        require_once $apiFile;
+    } else {
+        http_response_code(404);
+        echo json_encode(['error' => 'API endpoint not found']);
+    }
+} else {
+    http_response_code(400);
+    echo json_encode(['error' => 'Invalid API request']);
+}

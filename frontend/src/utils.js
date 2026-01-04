@@ -1,22 +1,22 @@
 /* frontend/src/utils.js */
-export const numToName = (num) => {
-    if (num === 53) return "red_joker";
-    if (num === 54) return "black_joker";
-    const suits = ["spades", "hearts", "clubs", "diamonds"];
-    const values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king", "ace"];
-    const suit = suits[Math.floor((num - 1) / 13)];
-    const val = values[(num - 1) % 13];
-    return `${val}_of_${suit}`;
-};
 
-// 解析牌面数据用于校验
-export const parseCard = (num) => ({
-    val: ((num - 1) % 13) + 1,
-    suit: Math.floor((num - 1) / 13)
-});
+// 将数字 (1-52) 转换为牌面名称 (e.g., d1, s13)
+export function numToName(num) {
+    const suit = ['d', 'c', 'h', 's'][Math.floor((num - 1) / 13)];
+    const rank = ((num - 1) % 13) + 1;
+    return `${suit}${rank}`;
+}
 
-// 简单的相公检查 (头<中<尾)
-export const isIllegal = (head, mid, tail) => {
-    // 实际项目中需调用后端同样的 evaluate 逻辑
-    return false; // 占位
-};
+// 将数字 (1-52) 转换为可读的牌名 (e.g., 方块A, 黑桃K)
+export function cardToDisplayName(num) {
+    const suits = {'d': '方块', 'c': '梅花', 'h': '红心', 's': '黑桃'};
+    const ranks = {1: 'A', 11: 'J', 12: 'Q', 13: 'K'};
+    
+    const suitKey = ['d', 'c', 'h', 's'][Math.floor((num - 1) / 13)];
+    const rankNum = ((num - 1) % 13) + 1;
+    
+    const rankName = ranks[rankNum] || rankNum;
+    const suitName = suits[suitKey];
+    
+    return `${suitName}${rankName}`;
+}

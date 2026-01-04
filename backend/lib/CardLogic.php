@@ -1,80 +1,141 @@
 <?php
 /* backend/lib/CardLogic.php */
-class CardLogic {
-    // 牌型等级：同花顺(10) > 四条(9) > 葫芦(8) > 同花(7) > 顺子(6) > 三条(5) > 两对(4) > 对子(3) > 单张(2)
-    const TYPE_STRAIGHT_FLUSH = 10;
-    const TYPE_FOUR_KIND = 9;
-    const TYPE_FULL_HOUSE = 8;
-    const TYPE_FLUSH = 7;
-    const TYPE_STRAIGHT = 6;
-    const TYPE_THREE_KIND = 5;
-    const TYPE_TWO_PAIR = 4;
-    const TYPE_PAIR = 3;
-    const TYPE_SINGLE = 2;
 
-    // 格式化牌：把1-52转为 {val, suit}
-    public static function parse($nums) {
-        $res = [];
-        foreach($nums as $n) {
-            if($n > 52) continue; // 暂不计大小王进入普通牌型比对
-            $res[] = ['val' => (($n - 1) % 13) + 2, 'suit' => floor(($n - 1) / 13)];
+class CardLogic {
+    // 公共方法：检查牌面是否有效（是否相公）
+    public static function isXiangGong($head, $mid, $tail) {
+        if (count($head) !== 3 || count($mid) !== 5 || count($tail) !== 5) {
+            return true; // 墩数错误
         }
-        return $res;
+
+        $allCards = array_merge($head, $mid, $tail);
+        if (count(array_unique($allCards)) !== 13) {
+            return true; // 有重复的牌
+        }
+
+        // 比较大小：尾墩 > 中墩 > 头墩
+        if (self::compareHands($mid, $tail) > 0) {
+            return true; // 中墩比尾墩大
+        }
+        if (self::compareHands($head, $mid) > 0) {
+            return true; // 头墩比中墩大
+        }
+
+        return false; // 牌型有效
     }
 
-    // 评估一手牌（3张或5张）
-    public static function evaluate($nums) {
-        $cards = self::parse($nums);
-        $vals = array_column($cards, 'val');
-        sort($vals);
-        $suits = array_column($cards, 'suit');
+    // 比较两手牌的大小
+    public static function compareHands($handA, $handB) {
+        $typeA = self::getHandType($handA);
+        $typeB = self::getHandType($handB);
+
+        if ($typeA['type'] !== $typeB['type']) {
+            return $typeA['type'] - $typeB['type'];
+        }
+
+        // 类型相同，则比较牌的点数
+        for ($i = 0; $i < count($typeA['ranks']); $i++) {
+            if ($typeA['ranks'][$i] !== $typeB['ranks'][$i]) {
+                return $typeA['ranks'][$i] - $typeB['ranks'][$i];
+            }
+        }
+        return 0; // 完全相同
+    }
+
+    // 获取一手牌的牌型和用于比较的点数
+    public static function getHandType($hand) {
+        if (count($hand) === 3) {
+            return self::getHeadType($hand);
+        } elseif (count($hand) === 5) {
+            return self::getMidTailType($hand);
+        }
+        return ['type' => 0, 'ranks' => []]; // 不应该发生
+    }
+
+    // 辅助函数：获取已排序的点数数组 (A最大)
+    private static function getSortedRanks($hand) {
+        $ranks = array_map(function($c) { return ($c - 1) % 13; }, $hand); // 2->0, A->12
+        rsort($ranks);
+        return $ranks;
+    }
+
+    // 辅助函数：判断是否为顺子，并处理A-2-3-4-5的特殊情况
+    private static function isStraight(&$ranks) { // 注意：引用传递
+        // A-2-3-4-5 (12, 3, 2, 1, 0)
+        if ($ranks === [12, 3, 2, 1, 0]) {
+            $ranks = [3, 2, 1, 0, -1]; // 将A视为最小, 用于比较
+            return true;
+        }
+        // 普通顺子
+        for ($i = 0; $i < count($ranks) - 1; $i++) {
+            if ($ranks[$i] !== $ranks[$i+1] + 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // 获取头墩（3张）的牌型
+    private static function getHeadType($hand) {
+        $ranks = self::getSortedRanks($hand);
+        $rankCounts = array_count_values($ranks);
+
+        // 冲三 (三条)
+        if (in_array(3, $rankCounts)) return ['type' => 4, 'ranks' => $ranks];
+        // 对子
+        if (in_array(2, $rankCounts)) {
+            $pairRank = array_search(2, $rankCounts);
+            $kicker = array_search(1, $rankCounts);
+            return ['type' => 2, 'ranks' => [$pairRank, $kicker]];
+        }
+        // 散牌
+        return ['type' => 1, 'ranks' => $ranks];
+    }
+    
+    // 获取中墩/尾墩（5张）的牌型
+    private static function getMidTailType($hand) {
+        $ranks = self::getSortedRanks($hand);
+        $suits = array_map(function($c) { return floor(($c - 1) / 13); }, $hand);
+        
+        $rankCounts = array_count_values($ranks);
         $isFlush = count(array_unique($suits)) === 1;
         
-        // 顺子检查
-        $isStraight = true;
-        for($i=0; $i<count($vals)-1; $i++) {
-            if($vals[$i+1] - $vals[$i] !== 1) $isStraight = false;
+        $straightRanks = $ranks;
+        $isStraight = self::isStraight($straightRanks);
+
+        if ($isFlush && $isStraight) return ['type' => 9, 'ranks' => $straightRanks]; // 同花顺
+        if (in_array(4, $rankCounts)) { // 铁支
+            $quadRank = array_search(4, $rankCounts);
+            $kicker = array_search(1, $rankCounts);
+            return ['type' => 8, 'ranks' => [$quadRank, $kicker]];
         }
-        // 特殊顺子 A2345
-        if(!$isStraight && implode(',',$vals) === '2,3,4,5,14') $isStraight = true;
-
-        $counts = array_count_values($vals);
-        arsort($counts);
-        $freq = array_values($counts);
-        $keys = array_keys($counts);
-
-        if (count($nums) === 5) {
-            if ($isFlush && $isStraight) return [self::TYPE_STRAIGHT_FLUSH, $vals];
-            if ($freq[0] === 4) return [self::TYPE_FOUR_KIND, $keys];
-            if ($freq[0] === 3 && $freq[1] === 2) return [self::TYPE_FULL_HOUSE, $keys];
-            if ($isFlush) return [self::TYPE_FLUSH, $vals];
-            if ($isStraight) return [self::TYPE_STRAIGHT, $vals];
+        if (in_array(3, $rankCounts) && in_array(2, $rankCounts)) { // 葫芦
+            $tripleRank = array_search(3, $rankCounts);
+            $pairRank = array_search(2, $rankCounts);
+            return ['type' => 7, 'ranks' => [$tripleRank, $pairRank]];
         }
-
-        if ($freq[0] === 3) return [self::TYPE_THREE_KIND, $keys];
-        if ($freq[0] === 2 && ($freq[1] ?? 0) === 2) return [self::TYPE_TWO_PAIR, $keys];
-        if ($freq[0] === 2) return [self::TYPE_PAIR, $keys];
-        return [self::TYPE_SINGLE, $vals];
-    }
-
-    // 比较两组牌 (1:A赢, -1:B赢, 0:平)
-    public static function compareHand($handA, $handB) {
-        $resA = self::evaluate($handA);
-        $resB = self::evaluate($handB);
-        if ($resA[0] !== $resB[0]) return $resA[0] > $resB[0] ? 1 : -1;
-        // 等级相同比特征值 (从大到小比)
-        $vA = $resA[1]; rsort($vA);
-        $vB = $resB[1]; rsort($vB);
-        for($i=0; $i<count($vA); $i++) {
-            if ($vA[$i] !== $vB[$i]) return $vA[$i] > $vB[$i] ? 1 : -1;
+        if ($isFlush) return ['type' => 6, 'ranks' => $ranks]; // 同花
+        if ($isStraight) return ['type' => 5, 'ranks' => $straightRanks]; // 顺子
+        if (in_array(3, $rankCounts)) { // 三条
+            $tripleRank = array_search(3, $rankCounts);
+            $kickers = [];
+            foreach($ranks as $r) if($r !== $tripleRank) $kickers[] = $r;
+            return ['type' => 4, 'ranks' => array_merge([$tripleRank], $kickers)];
         }
-        return 0;
-    }
-
-    // 检查“相公”（头道必须 <= 中道 <= 尾道）
-    public static function isXiangGong($head, $mid, $tail) {
-        if (self::compareHand($head, $mid) === 1) return true;
-        if (self::compareHand($mid, $tail) === 1) return true;
-        return false;
+        if (count($rankCounts) === 3) { // 两对
+            $pairs = []; $kicker = -1;
+            foreach($rankCounts as $rank => $count) {
+                if($count == 2) $pairs[] = $rank; else $kicker = $rank;
+            }
+            rsort($pairs);
+            return ['type' => 3, 'ranks' => array_merge($pairs, [$kicker])];
+        }
+        if (count($rankCounts) === 4) { // 对子
+            $pairRank = array_search(2, $rankCounts);
+            $kickers = [];
+            foreach($ranks as $r) if($r !== $pairRank) $kickers[] = $r;
+            return ['type' => 2, 'ranks' => array_merge([$pairRank], $kickers)];
+        }
+        return ['type' => 1, 'ranks' => $ranks]; // 散牌
     }
 }
