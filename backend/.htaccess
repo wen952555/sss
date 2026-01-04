@@ -1,10 +1,5 @@
 # backend/.htaccess
 
-# 开启 PHP 错误显示
-php_flag display_errors On
-php_flag display_startup_errors On
-php_value error_reporting 32767
-
 # URL 重写规则
 <IfModule mod_rewrite.c>
     RewriteEngine On

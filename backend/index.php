@@ -1,6 +1,12 @@
 <?php
 /* backend/index.php */
 
+// 错误处理：记录到文件
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/error.log');
+ini_set('display_errors', 0); // 不在浏览器中显示错误
+error_reporting(E_ALL);
+
 // 允许跨域
 if (isset($_SERVER['HTTP_ORIGIN'])) {
     header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
