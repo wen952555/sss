@@ -1,5 +1,5 @@
 <?php
-// 允许跨域头，配合 Worker 转发
+// backend/api.php
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -11,22 +11,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 require_once 'db.php';
 
-// 获取模块和动作
+// 前端通过 api.php?module=auth&action=register 访问
 $module = $_GET['module'] ?? '';
 $action = $_GET['action'] ?? '';
 
-// 如果没有传 module 参数，尝试解析路径（可选）
-if (!$module && isset($_SERVER['PATH_INFO'])) {
-    $parts = explode('/', trim($_SERVER['PATH_INFO'], '/'));
-    // 这种模式支持 /api.php/auth/login 这种风格
-}
-
-if ($module == 'auth') {
+if ($module === 'auth') {
     include 'auth.php';
-} elseif ($module == 'game') {
+} elseif ($module === 'game') {
     include 'game.php';
-} elseif ($module == 'transfer') {
+} elseif ($module === 'transfer') {
     include 'transfer.php';
 } else {
-    echo json_encode(['msg' => 'Ready', 'time' => date('Y-m-d H:i:s')]);
+    echo json_encode(['msg' => 'Backend API is running', 'status' => 'OK']);
 }
