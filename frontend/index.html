@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>十三水</title>
     <script>
-      // 暴力拦截 stadium.js 报错
-      window.onerror = function(msg, url) {
-        if (url && url.includes('stadium.js')) return true; // 忽略该脚本的所有错误
+      // 屏蔽所有外部脚本触发的未捕获错误
+      window.onerror = function(message, source, lineno, colno, error) {
+        if (source && source.includes('stadium.js')) {
+          console.warn('忽略垃圾脚本错误:', source);
+          return true; 
+        }
       };
     </script>
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2641/2641440.png" />
