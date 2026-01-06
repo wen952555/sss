@@ -2,21 +2,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request);
 
-    // 1. 只拦截 /api/ 开头的请求转发到后端
+    // 1. 如果是 API 请求，转发到 Serv00
     if (url.pathname.startsWith('/api/')) {
-      const targetUrl = 'https://wen76674.serv00.net' + url.pathname.replace('/api/', '/') + url.search;
+      const backendUrl = 'https://wen76674.serv00.net' + url.pathname.replace('/api/', '/') + url.search;
       
-      // 使用基础请求透传
-      return fetch(new Request(targetUrl, {
-        method: request.method,
-        headers: request.headers,
-        body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : null,
-        redirect: 'manual'
-      }));
+      // 极其稳健的转发：不修改 body，直接透传请求
+      return fetch(new Request(backendUrl, request));
     }
 
-    // 2. 其余所有请求（图片、JS、HTML、Favicon）通通交给 Pages 托管
-    // 不要加任何 try-catch 逻辑，直接返回原生资源
+    // 2. 只有不是 API 的请求，才交给 Cloudflare Pages 静态资源
+    // 这样 favicon.ico 和其他脚本就不会触发 Worker 逻辑，也就不会 500
     return env.ASSETS.fetch(request);
   }
 };

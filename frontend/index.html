@@ -4,7 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>十三水</title>
-    <!-- 随便指一个在线图标，防止 favicon 404/500 -->
+    <script>
+      // 暴力拦截 stadium.js 报错
+      window.onerror = function(msg, url) {
+        if (url && url.includes('stadium.js')) return true; // 忽略该脚本的所有错误
+      };
+    </script>
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2641/2641440.png" />
   </head>
   <body>
