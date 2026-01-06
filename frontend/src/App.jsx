@@ -1,13 +1,15 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Auth from './pages/Auth';
 import Lobby from './pages/Lobby';
 import GameRoom from './pages/GameRoom';
 
-function App() {
-  const ProtectedRoute = ({ children }) => {
-    return localStorage.getItem('token') ? children : <Navigate to="/auth" />;
-  };
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  return token ? children : <Navigate to="/auth" />;
+};
 
+function App() {
   return (
     <BrowserRouter>
       <Routes>
