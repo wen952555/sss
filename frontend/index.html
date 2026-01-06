@@ -2,14 +2,25 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- 显式指定一个图标，防止浏览器盲目请求 /favicon.ico 导致 500 -->
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2641/2641440.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>十三水预约赛</title>
-    <meta name="description" content="基于异步模式的十三水竞技场">
+    <title>十三水竞技场</title>
+    <style>
+      /* 简单的 Loading 样式 */
+      #root:empty::before {
+        content: '游戏加载中...';
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        color: #c1a35f;
+        font-size: 1.2rem;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
-    <!-- Vite 将会自动注入 main.jsx -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
