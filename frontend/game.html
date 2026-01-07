@@ -1,0 +1,29 @@
+<div class="max-w-4xl mx-auto p-4">
+    <!-- 顶部进度与其它赛道情况 -->
+    <div class="flex justify-around bg-black/40 p-3 rounded mb-6 text-xs">
+        <div id="track-east">东: 1/10</div>
+        <div id="track-south">南: 等待</div>
+        <div id="track-west">西: 3/10</div>
+        <div id="track-north">北: 等待</div>
+    </div>
+
+    <!-- 牌桌区 -->
+    <div class="bg-green-800 rounded-3xl p-6 shadow-2xl border-8 border-amber-900 relative">
+        <!-- 头道 (3张) -->
+        <div id="row-0" class="flex justify-center gap-2 mb-4 h-24 border-b border-green-700 pb-2"></div>
+        <!-- 中道 (5张) -->
+        <div id="row-1" class="flex justify-center gap-2 mb-4 h-28 border-b border-green-700 pb-2"></div>
+        <!-- 尾道 (5张) -->
+        <div id="row-2" class="flex justify-center gap-2 h-28"></div>
+    </div>
+
+    <!-- 手牌区 -->
+    <div id="my-hand" class="flex flex-wrap justify-center gap-2 mt-8 min-h-[120px]">
+        <!-- 13张待选牌 -->
+    </div>
+
+    <div class="flex justify-center gap-4 mt-8">
+        <button onclick="resetHand()" class="px-6 py-2 bg-slate-700 rounded">重置</button>
+        <button onclick="submitTable()" class="px-10 py-2 bg-yellow-600 font-bold rounded">保存并下一局</button>
+    </div>
+</div>

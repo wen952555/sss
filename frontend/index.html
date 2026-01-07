@@ -1,22 +1,40 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>十三水</title>
-    <script>
-      // 屏蔽所有外部脚本触发的未捕获错误
-      window.onerror = function(message, source, lineno, colno, error) {
-        if (source && source.includes('stadium.js')) {
-          console.warn('忽略垃圾脚本错误:', source);
-          return true; 
-        }
-      };
-    </script>
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2641/2641440.png" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>十三水预约场</title>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+    <!-- 登录注册模态框 (略) -->
+    
+    <div id="lobby" class="container mx-auto p-4">
+        <header class="flex justify-between items-center py-6">
+            <h1 class="text-2xl font-bold text-yellow-500">十三水 · 异步竞技</h1>
+            <div id="user-info">加载中...</div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
+            <!-- 8点场卡片 -->
+            <div onclick="enterPool('8pm')" class="bg-slate-800 p-8 rounded-2xl border-2 border-transparent hover:border-yellow-500 cursor-pointer transition">
+                <h2 class="text-3xl mb-2">今晚 20:00 场</h2>
+                <p class="text-slate-400">已报名人数: <span id="count-8pm">0</span></p>
+                <div class="mt-4 text-sm text-yellow-600">点击进入理牌车厢</div>
+            </div>
+            <!-- 12点场卡片 -->
+            <div onclick="enterPool('12pm')" class="bg-slate-800 p-8 rounded-2xl border-2 border-transparent hover:border-blue-500 cursor-pointer transition">
+                <h2 class="text-3xl mb-2">明日 12:00 场</h2>
+                <p class="text-slate-400">已报名人数: <span id="count-12pm">0</span></p>
+            </div>
+        </div>
+
+        <!-- 实时榜单 -->
+        <div class="mt-12">
+            <h3 class="text-xl mb-4">实时完成场次榜</h3>
+            <div id="leaderboard" class="bg-slate-800 rounded-lg p-4">
+                <!-- 动态填充: 昵称 [1] -->
+            </div>
+        </div>
+    </div>
+</body>
 </html>

@@ -1,0 +1,7 @@
+Options -Indexes
+Header set Access-Control-Allow-Origin "https://xxx.9525.ip-ddns.com"
+Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+
+RewriteEngine On
+RewriteRule ^\.env$ - [F]
